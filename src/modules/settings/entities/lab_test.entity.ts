@@ -15,6 +15,9 @@ export class LabTest extends CustomBaseEntity {
   @Column({ type: 'varchar'})
   test_type: string;
 
+  @Column({type: 'varchar', nullable: true})
+  description: string;
+
   @ManyToOne(type => LabTestCategory)
   @JoinColumn({ name: 'lab_test_category_id' })
   public category!: LabTestCategory;

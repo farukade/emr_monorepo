@@ -3,7 +3,7 @@ import { RolesPermissionsModule } from './roles-permissions/roles-permissions.mo
 import { ServicesModule } from './services/services.module';
 import { RoomsModule } from './room/room.module';
 import { LabModule } from './lab/lab.module';
-import { DepartmentModule } from './department/department.module';
+import { DepartmentModule } from './departments/department.module';
 
 @Module({
     imports: [

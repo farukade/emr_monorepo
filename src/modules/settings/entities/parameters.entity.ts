@@ -6,4 +6,5 @@ import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 export class Parameter extends CustomBaseEntity {
   @Column({ type: 'varchar', length: 300, unique: true })
   name: string;
+
 }

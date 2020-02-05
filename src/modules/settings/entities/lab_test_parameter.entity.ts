@@ -6,6 +6,13 @@ import { Parameter } from './parameters.entity';
 
 @Entity({ name: 'lab_test_parameters' })
 export class LabTestParameter extends CustomBaseEntity {
+
+    @Column({type: 'varchar'})
+    parameter_type: string;
+
+    @Column({ type: 'varchar', length: 300, nullable: true})
+    referenceRange: string;
+
     @ManyToOne(
         type => LabTest,
         labTest => labTest.parameters,
