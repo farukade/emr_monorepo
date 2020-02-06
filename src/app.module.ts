@@ -22,6 +22,8 @@ fs.writeFileSync(
 @Module({
   imports: [
     TypeOrmModule.forRoot(appService.getTypeOrmConfig()),
+    HmoModule,
+    HRModule,
     PatientModule,
     AppointmentModule,
     ConsultationModule,

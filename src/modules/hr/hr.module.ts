@@ -1,13 +1,10 @@
 import { Module } from '@nestjs/common';
-import { StaffModule } from './staff/staff.module';
-import { PayrollModule } from './payroll/payroll.module';
-import { HousekeepingModule } from './housekeeping/housekeeping.module';
-import { LeavemgtModule } from './leavemgt/leavemgt.module';
+import { StaffController } from './staff.controller';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { StaffRepository } from './repositories/staff.repository';
 
 @Module({
-    imports: [
-        StaffModule,
-        PayrollModule,
-    ],
+    imports: [TypeOrmModule.forFeature([StaffRepository])],
+    controllers: [StaffController],
 })
 export class HRModule {}
