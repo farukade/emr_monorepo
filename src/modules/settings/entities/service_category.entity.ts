@@ -2,16 +2,20 @@ import { Type } from 'class-transformer';
 import { Column, Entity, OneToMany } from 'typeorm';
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 import { Service } from './service.entity';
+import { ServiceSubCategory } from './service_sub_category.entity';
 
 @Entity({ name: 'service_categories' })
 export class ServiceCategory extends CustomBaseEntity {
   @Column({ type: 'varchar', length: 300, unique: true })
   name: string;
 
+  @Column({ type: 'varchar', nullable: true })
+  notes: string;
+
   @OneToMany(
-    () => Service,
-    service => service.category,
+    () => ServiceSubCategory,
+    subCateogries => subCateogries.category,
     { onDelete: 'CASCADE' },
   )
-  services: Service[];
+  subCateogries: ServiceSubCategory[];
 }

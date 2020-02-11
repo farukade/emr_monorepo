@@ -6,6 +6,8 @@ export class ServiceDto {
 
   tariff: string;
 
-  service_category_id: string;
+  sub_category_id: string;
+  
+  category_id: string;
 
 }

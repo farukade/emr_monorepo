@@ -7,9 +7,10 @@ import { RoomCategory } from '../entities/room_category.entity';
 export class RoomRepository extends Repository<Room> {
 
     async createRoom(roomDto: RoomDto, category: RoomCategory): Promise<Room> {
-        const { name, status } = roomDto;
+        const { name, status, floor } = roomDto;
         const room = new Room();
         room.name = name;
+        room.floor = floor;
         room.status = status;
         room.category = category;
         await room.save();

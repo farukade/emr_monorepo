@@ -30,6 +30,9 @@ export class StaffDetails extends CustomBaseEntity {
   lga: string;
 
   @Column({ type: 'varchar', length: 300, nullable: true })
+  profile_pic: string;
+
+  @Column({ type: 'varchar', length: 300, nullable: true })
   bank_name: string;
 
   @Column({ type: 'varchar', length: 300, nullable: true })

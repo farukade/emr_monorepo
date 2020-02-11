@@ -10,6 +10,7 @@ import { StockDto } from './dto/stock.dto';
 import { StockRepository } from './stock.repository';
 import { Stock } from './entities/stock.entity';
 import { StockQtyDto } from './dto/stock.qty.dto';
+import { StockUploadDto } from './dto/stock.upload.dto';
 
 @Injectable()
 export class InventoryService {
@@ -52,8 +53,44 @@ export class InventoryService {
         stock.cost_price  = cost_price;
         stock.sales_price = sales_price;
         stock.quantity    = quantity;
+        stock.subCategory = subCategory;
+        stock.category    = category;
         await stock.save();
         return stock;
+    }
+
+    async downloadStocks() {
+        const fs = require('fs');
+        const createCsvWriter = require('csv-writer').createObjectCsvWriter;
+        const csvWriter = createCsvWriter({
+            path: 'services.csv',
+            header: [
+                {id: 'category', title: 'Category'},
+                {id: 'sub_category', title: 'SubCategory'},
+                {id: 'code', title: 'Code'},
+                {id: 'name', title: 'Service'},
+                {id: 'amount', title: 'Amount'},
+                {id: 'hmo_rate', title: 'HMO Rate'},
+            ],
+        });
+
+        const services = await this.stockRepository.find({relations: ['subCategory', 'category']});
+
+        for (const service of services) {
+            const data = [
+                {
+                    category: service.category.name,
+                    sub_category: (service.subCategory) ? service.subCategory.name : '',
+                    code: service.stock_code,
+                    name: service.name,
+                    amount: service.sales_price,
+                    hmo_rate: '',
+                },
+            ];
+
+            await csvWriter.writeRecords(data);
+        }
+        return 'Completed';
     }
 
     async updateStockQty(stockQtyDto: StockQtyDto): Promise<Stock> {
@@ -69,6 +106,53 @@ export class InventoryService {
 
         if (result.affected === 0) {
             throw new NotFoundException(`Stock with ID '${id}' not found`);
+        }
+    }
+
+    async doUploadStock(stockUploadDto: StockUploadDto, file: any) {
+        const csv = require('csv-parser');
+        const fs = require('fs');
+        const { category_id } = stockUploadDto;
+        // find category
+        const category = await this.inventoryCategoryRepository.findOne(category_id);
+        let subCategory;
+        try {
+            // read uploaded file
+            fs.createReadStream(file.path)
+            .pipe(csv())
+            .on('data', async (row) => {
+                // console.log(row['DRUG CLASS']);
+                // check if sub category exists
+                if (row['DRUG CLASS'] !== '') {
+                    subCategory = await this.inventorySubCategoryRepository.findOne({
+                        where: {name: row['DRUG CLASS']},
+                    });
+                    if (!subCategory) {
+                        subCategory = await this.inventorySubCategoryRepository.save({name: row['DRUG CLASS'], category});
+                        console.log('new sub category', row['DRUG CLASS']);
+                    }
+                }
+
+                if (subCategory) {
+                    if (row['BRAND NAME'] !== '') {
+                        // save stock
+                        await this.stockRepository.save({
+                            name: row['BRAND NAME'],
+                            stock_code: 'STU-' + Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5),
+                            quantity: row['QUANTITY ON HAND'],
+                            sales_price: row['SALES PRICE'].replace(',', ''),
+                            category,
+                            subCategory,
+                        });
+                    }
+                }
+            })
+            .on('end', () => {
+                console.log('CSV file successfully processed');
+            });
+            return {success: true};
+        } catch (err) {
+            return {success: false, message: err.message};
         }
     }
 
@@ -121,8 +205,8 @@ export class InventoryService {
         const subCategory = await this.inventorySubCategoryRepository.findOne(id);
         subCategory.name = name;
         subCategory.category = category;
-        await category.save();
-        return category;
+        await subCategory.save();
+        return subCategory;
     }
 
     async deleteSubCategory(id: string): Promise<void> {

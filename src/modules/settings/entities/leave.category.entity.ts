@@ -6,4 +6,7 @@ import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 export class LeaveCategory extends CustomBaseEntity {
   @Column({ type: 'varchar', length: 300, unique: true })
   name: string;
+
+  @Column({ type: 'varchar', length: 300 })
+  duration: number;
 }
