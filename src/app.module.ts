@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
-import {  appService } from './app.service';
+import { appService } from './app.service';
 import { HmoModule } from './modules/hmo/hmo.module';
 import { HRModule } from './modules/hr/hr.module';
 import { SettingsModule } from './modules/settings/settings.module';
@@ -13,6 +13,7 @@ import { ClinicalTasksModule } from './modules/clinical-tasks/clinical-tasks.mod
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { QueueSystemModule } from './modules/queue-system/queue-system.module';
 import fs = require('fs');
+import * as PostgressConnectionStringParser from "pg-connection-string";
 
 fs.writeFileSync(
   './ormconfig.json',
