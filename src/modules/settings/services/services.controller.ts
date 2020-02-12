@@ -1,9 +1,9 @@
 import { Controller, Get, Post, Patch, UsePipes, ValidationPipe, Body, Param, Delete, UseInterceptors, UploadedFile, Header, Res } from '@nestjs/common';
 import { ServicesService } from './services.service';
 import { Service } from '../entities/service.entity';
-import { ServiceCategory } from '../entities/Service_category.entity';
-import { ServiceDto } from './dto/Service.dto';
-import { ServiceCategoryDto } from './dto/Service.category.dto';
+import { ServiceCategory } from '../entities/service_category.entity';
+import { ServiceDto } from './dto/service.dto';
+import { ServiceCategoryDto } from './dto/service.category.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join, resolve } from 'path';
