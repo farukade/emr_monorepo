@@ -14,7 +14,7 @@ export class User extends CustomBaseEntity {
   @Column({ nullable: true })
   lastLogin: string;
 
-  @Column()
+  @Column({ nullable: true, default: 0 })
   status: string;
 
   @ManyToOne(() => Role)

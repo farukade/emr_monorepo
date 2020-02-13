@@ -1,9 +1,13 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { StaffRepository } from './staff/staff.repository';
+import { StaffModule } from './staff/staff.module';
+import { LeavemgtModule } from './leavemgt/leavemgt.module';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([StaffRepository])],
+    imports: [
+        StaffModule,
+        LeavemgtModule,
+    ],
     controllers: [],
 })
 export class HRModule {}

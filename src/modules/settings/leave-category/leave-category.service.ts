@@ -20,9 +20,10 @@ export class LeaveCategoryService {
     }
 
     async updateCategory(id: string, leaveCategoryDto: LeaveCategoryDto): Promise<LeaveCategory> {
-        const { name } = leaveCategoryDto;
+        const { name, duration } = leaveCategoryDto;
         const category = await this.leaveCategoryRepository.findOne(id);
         category.name = name;
+        category.duration = duration;
         await category.save();
         return category;
     }

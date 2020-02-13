@@ -33,6 +33,7 @@ export class RolesService {
     const { name, description } = createRoleDto;
     const role = await this.getRoleById(id);
     role.name = name;
+    role.slug = this.slugify(name);
     role.description = description;
     await role.save();
     return role;
@@ -44,5 +45,16 @@ export class RolesService {
     if (result.affected === 0) {
       throw new NotFoundException(`Role with ID '${id}' not found`);
     }
+  }
+
+  slugify(text) {
+    return text
+      .toString()
+      .toLowerCase()
+      .replace(/\s+/g, '-') // Replace spaces with -
+      .replace(/[^\w\-]+/g, '') // Remove all non-word chars
+      .replace(/\-\-+/g, '-') // Replace multiple - with single -
+      .replace(/^-+/, '') // Trim - from start of text
+      .replace(/-+$/, ''); // Trim - from end of text
   }
 }
