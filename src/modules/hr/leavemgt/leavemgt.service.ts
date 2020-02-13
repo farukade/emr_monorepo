@@ -4,7 +4,7 @@ import { LeaveApplicationRepository } from './leave_application.repository';
 import { StaffRepository } from '../staff/staff.repository';
 import { LeaveCategoryRepository } from '../../settings/leave-category/leave.category.repository';
 import { LeaveApplicationDto } from '../dto/leave.application.dto';
-import { LeaveApplication } from './leave_application.entity';
+import { LeaveApplication } from '../entities/leave_application.entity';
 
 @Injectable()
 export class LeavemgtService {

@@ -1,7 +1,7 @@
 import { Type } from 'class-transformer';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
-import { StaffDetails } from '../staff/staff_details.entity';
+import { StaffDetails } from './staff_details.entity';
 import { LeaveCategory } from '../../settings/entities/leave.category.entity';
 
 @Entity({ name: 'leave_applications' })

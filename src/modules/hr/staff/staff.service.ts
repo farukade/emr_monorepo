@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { StaffRepository } from './staff.repository';
 import { StaffDto } from '../dto/staff.dto';
-import { StaffDetails } from './staff_details.entity';
+import { StaffDetails } from '../entities/staff_details.entity';
 import { UserRepository } from '../user.repository';
 import { RoleRepository } from '../../settings/roles-permissions/role.repository';
 import { DepartmentRepository } from '../../settings/departments/department.repository';
@@ -80,6 +80,7 @@ export class StaffService {
         staff.employment_start_date = staffDto.employment_start_date;
         staff.annual_salary = staffDto.annual_salary;
         staff.monthly_salary = staffDto.monthly_salary;
+        staff.emp_code = 'DEDA-' + Math.floor(Math.random() * 4),
 
         await staff.save();
 
@@ -99,6 +100,6 @@ export class StaffService {
     async changeUserName() {}
 
     async getHash(password: string | undefined): Promise<string> {
-        return bcrypt.hash(password, 'deda');
+        return bcrypt.hash(password, 10);
     }
 }

@@ -1,7 +1,7 @@
 import { Controller, Get, Body, Post, Patch, Param, Delete } from '@nestjs/common';
 import { LeavemgtService } from './leavemgt.service';
 import { LeaveApplicationDto } from '../dto/leave.application.dto';
-import { LeaveApplication } from './leave_application.entity';
+import { LeaveApplication } from '../entities/leave_application.entity';
 
 @Controller('hr/leave-management')
 export class LeavemgtController {

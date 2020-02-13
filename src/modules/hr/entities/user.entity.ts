@@ -1,7 +1,7 @@
 import { Type } from 'class-transformer';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
-import { Role } from '../settings/entities/role.entity';
-import { CustomBaseEntity } from '../../common/entities/custom-base.entity';
+import { Role } from '../../settings/entities/role.entity';
+import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 
 @Entity({ name: 'users' })
 export class User extends CustomBaseEntity {

@@ -1,8 +1,8 @@
 import { EntityRepository, Repository } from 'typeorm';
-import { StaffDetails } from './staff_details.entity';
+import { StaffDetails } from '../entities/staff_details.entity';
 import { StaffDto } from '../dto/staff.dto';
 import { Department } from '../../settings/entities/department.entity';
-import { User } from '../user.entity';
+import { User } from '../entities/user.entity';
 
 @EntityRepository(StaffDetails)
 export class StaffRepository extends Repository<StaffDetails> {
@@ -38,10 +38,11 @@ export class StaffRepository extends Repository<StaffDetails> {
         staff.monthly_salary = staffDto.monthly_salary;
         staff.department = department;
         staff.user = user;
+        staff.emp_code = 'DEDA-' + Math.floor(Math.random() * 90000),
 
         await staff.save();
 
         return staff;
     }
-    
+
 }

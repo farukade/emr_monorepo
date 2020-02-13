@@ -2,7 +2,7 @@ import { Type } from 'class-transformer';
 import { Column, Entity, OneToMany, ManyToOne, JoinColumn, OneToOne } from 'typeorm';
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 import { Department } from '../../settings/entities/department.entity';
-import { User } from '../user.entity';
+import { User } from './user.entity';
 
 @Entity({ name: 'staff_details' })
 export class StaffDetails extends CustomBaseEntity {
@@ -90,6 +90,9 @@ export class StaffDetails extends CustomBaseEntity {
 
   @Column({ type: 'varchar', length: 300, nullable: true })
   monthly_salary: string;
+
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  emp_code: string;
 
   @ManyToOne(type => Department)
   @JoinColumn({name: 'department_id'})
