@@ -1,15 +1,19 @@
 import { CustomBaseEntity } from '../../../../common/entities/custom-base.entity';
 import { Column, Entity, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
-import { StaffDetails } from '../../staff/entities/staff_details.entity';
 import { SalaryPaymentAllowance } from './salary_payment_allowance.entity';
-import { SalaryDeductionAllowance } from './salary_payment_deductions.entity';
+import { SalaryPaymentDeduction } from './salary_payment_deductions.entity';
 
 @Entity({ name: 'salary_payments' })
 export class SalaryPayment extends CustomBaseEntity {
 
-    @ManyToOne(type => StaffDetails)
-    @JoinColumn({ name: 'staff_id' })
-    staff: StaffDetails;
+    @Column({ type: 'varchar' })
+    emp_code: string;
+
+    @Column({ type: 'varchar' })
+    staff_name: string;
+
+    @Column({ type: 'varchar' })
+    department: string;
 
     @Column({ type: 'varchar', length: 20})
     payment_month: string;
@@ -24,7 +28,7 @@ export class SalaryPayment extends CustomBaseEntity {
     amount_paid: number;
 
     @Column({ type: 'varchar', nullable: true})
-    comment: number;
+    comment: string;
 
     @Column({ type: 'smallint', default: 0})
     status: number;
@@ -37,9 +41,9 @@ export class SalaryPayment extends CustomBaseEntity {
     allowances: SalaryPaymentAllowance[];
 
     @OneToMany(
-        () => SalaryDeductionAllowance,
+        () => SalaryPaymentDeduction,
         deductions => deductions.payment,
         { eager: true, onDelete: 'CASCADE' },
     )
-    deductions: SalaryDeductionAllowance[];
+    deductions: SalaryPaymentDeduction[];
 }

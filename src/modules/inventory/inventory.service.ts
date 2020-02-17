@@ -195,7 +195,7 @@ export class InventoryService {
     getAllSubCategories(): Promise<InventorySubCategory[]> {
         return this.inventorySubCategoryRepository.find();
     }
-    
+
     async getSubCategories(categoryID: string): Promise<InventorySubCategory[]> {
         return this.inventorySubCategoryRepository.find({where: {inventory_category_id: categoryID}});
     }

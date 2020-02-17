@@ -3,7 +3,7 @@ import { Column, Entity, ManyToOne, JoinColumn } from 'typeorm';
 import { SalaryPayment } from './salary_payment.entity';
 
 @Entity({ name: 'salary_payment_deductions' })
-export class SalaryDeductionAllowance extends CustomBaseEntity {
+export class SalaryPaymentDeduction extends CustomBaseEntity {
 
     @ManyToOne(
         type => SalaryPayment,
