@@ -10,6 +10,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import { StockUploadDto } from './dto/stock.upload.dto';
+import { InventorySubCategory } from './entities/inventory.sub-category.entity';
 
 @Controller('inventory')
 export class InventoryController {
@@ -18,6 +19,11 @@ export class InventoryController {
     /**
      * INVENTORY CATEGORIES
      */
+    @Get('/stocks')
+    getAllStocks(): Promise<Stock[]> {
+        return this.inventoryService.getAllStocks();
+    }
+
     @Get('/stocks-by-category/:id')
     getStocksByCategory(@Param('id') category_id: string): Promise<Stock[]> {
         return this.inventoryService.getStocksByCategory(category_id);
@@ -112,6 +118,11 @@ export class InventoryController {
     /**
      * INVENTORY SUB CATEGORIES
      */
+    @Get('sub-categories')
+    getAllSubCategories(): Promise<InventorySubCategory[]> {
+        return this.inventoryService.getAllSubCategories();
+    }
+
     @Get('categories/:id/sub-categories')
     getSubCategories(@Param('id') id: string): Promise<InventoryCategory[]> {
         return this.inventoryService.getSubCategories(id);

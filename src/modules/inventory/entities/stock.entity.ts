@@ -24,7 +24,7 @@ export class Stock extends CustomBaseEntity {
   @Column({ type: 'varchar', nullable: true})
   quantity: string;
 
-  @ManyToOne(type => InventorySubCategory)
+  @ManyToOne(type => InventorySubCategory, { nullable: true })
   @JoinColumn({ name: 'sub_category_id' })
   public subCategory!: InventorySubCategory;
 
