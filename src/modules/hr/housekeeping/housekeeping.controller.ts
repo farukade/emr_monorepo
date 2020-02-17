@@ -5,6 +5,8 @@ import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadRoasterDto } from './dto/upload-roaster.dto';
+import { ListRoasterDto } from './dto/list-roaster.dto';
+import { Roaster } from './entities/roaster.entity';
 
 @Controller('hr/housekeeping')
 export class HousekeepingController {
@@ -34,5 +36,10 @@ export class HousekeepingController {
         @Body() uploadRoasterDto: UploadRoasterDto,
     ) {
         return this.housekeepingService.doUploadRoaster(file, uploadRoasterDto);
+    }
+
+    @Post('list-roaster')
+    listRoaster(@Body() listRoasterDto: ListRoasterDto): Promise<Roaster[]> {
+        return this.housekeepingService.listRoaster(listRoasterDto);
     }
 }

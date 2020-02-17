@@ -7,10 +7,17 @@ import { SalaryDeduction } from './entities/salary_deduction.entity';
 import { GeneratePayrollDto } from './dto/generate.payroll.dto';
 import { MakePaymentDto } from './dto/make-payment.dto';
 import { UpdatePayslipDto } from './dto/update.payroll.dto';
+import { ListPayrollDto } from './dto/list.payroll.dto';
+import { SalaryPayment } from './entities/salary_payment.entity';
 
 @Controller('hr/payroll')
 export class PayrollController {
     constructor(private payrollService: PayrollService) {}
+
+    @Post('list-payroll')
+    listPayslips(@Body() listPayrollDto: ListPayrollDto): Promise<SalaryPayment[]> {
+        return this.payrollService.listPayroll(listPayrollDto);
+    }
 
     @Post('update-allowances')
     updateAllowances(@Body() salaryAllowanceDto: SalaryAllowanceDto): Promise<any> {

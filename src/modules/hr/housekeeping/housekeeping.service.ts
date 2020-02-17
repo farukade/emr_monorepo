@@ -1,19 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RoasterRepository } from './roaster.repository';
-import { RoasterItemRepository } from './roaster.item.repository';
 import { DownloadRoasterDto } from './dto/download-roaster.dto';
 import { DepartmentRepository } from '../../settings/departments/department.repository';
 import { StaffRepository } from '../staff/staff.repository';
 import * as moment from 'moment';
+import { ListRoasterDto } from './dto/list-roaster.dto';
+import { Roaster } from './entities/roaster.entity';
+import { Department } from '../../settings/entities/department.entity';
+import { StaffDetails } from '../staff/entities/staff_details.entity';
 
 @Injectable()
 export class HousekeepingService {
     constructor(
         @InjectRepository(RoasterRepository)
         private roasterRepository: RoasterRepository,
-        @InjectRepository(RoasterItemRepository)
-        private roasterItemRepository: RoasterItemRepository,
         @InjectRepository(DepartmentRepository)
         private departmentRepository: DepartmentRepository,
         @InjectRepository(StaffRepository)
@@ -63,8 +64,7 @@ export class HousekeepingService {
         const { period, department_id } = uploadRoasterDto;
         // find department
         const department = await this.departmentRepository.findOne(department_id);
-        // save roaster
-        const roaster = await this.roasterRepository.save({ department, period });
+
         const noOfDays = moment(period, 'YYYY-MM').daysInMonth();
 
         const csv = require('csv-parser');
@@ -80,7 +80,10 @@ export class HousekeepingService {
                     schedule: [],
                 };
                 for (let index = 1; index <= noOfDays; index++) {
-                    data.schedule.push({duty: row[`Day${index}`]});
+                    data.schedule.push({
+                        date: index,
+                        duty: row[`Day${index}`],
+                    });
                 }
                 content.push(data);
             })
@@ -90,16 +93,35 @@ export class HousekeepingService {
                     const staff = await this.staffRepository.findOne({where: {emp_code: item.emp_code}});
                     const data = {
                         staff,
-                        roaster,
+                        department,
+                        period,
                         schedule: item.schedule,
                     };
-                    await this.roasterItemRepository.save(data);
+                    await this.roasterRepository.save(data);
                 }
             });
             return {success: true};
         } catch (err) {
             return {success: false, message: err.message};
         }
+    }
+
+    async listRoaster(listRoasterDto: ListRoasterDto): Promise<Roaster[]> {
+        const { department_id, period} = listRoasterDto;
+
+        const query = this.roasterRepository.createQueryBuilder('roaster')
+                        .leftJoin(Department, 'dept', 'roaster.department_id = dept.id')
+                        .innerJoin(StaffDetails, 'staff', 'roaster.staff_id = staff.id')
+                        .select(['period, roaster.id, schedule'])
+                        .addSelect('dept.name as deptName, staff.first_name, staff.last_name')
+                        .where('roaster.period = :period', { period });
+        if (department_id !== '') {
+            const department = await this.departmentRepository.findOne(department_id);
+            query.andWhere('roaster.department_id = :department_id', {department});
+        }
+        const results = await query.getRawMany();
+
+        return results;
     }
 
     slugify(text) {

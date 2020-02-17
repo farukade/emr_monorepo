@@ -16,6 +16,7 @@ import { UpdatePayslipDto } from './dto/update.payroll.dto';
 import { SalaryPayment } from './entities/salary_payment.entity';
 import { SalaryPaymentAllowanceRepository } from './repositories/salary.payment.allowances.repository';
 import { SalaryPaymentDeductionRepository } from './repositories/salary.payment.deductions.repository';
+import { ListPayrollDto } from './dto/list.payroll.dto';
 
 @Injectable()
 export class PayrollService {
@@ -74,7 +75,7 @@ export class PayrollService {
             const staffs = await this.staffRepository.createQueryBuilder('staff')
                                 .innerJoin(Department, 'dept', 'staff.department_id = dept.id')
                                 .select(['first_name, last_name, emp_code, monthly_salary'])
-                                .addSelect('dept.name')
+                                .addSelect('dept.name, dept.id')
                                 .getRawMany();
             const payrollData = [];
             for (const staff of staffs) {
@@ -91,6 +92,7 @@ export class PayrollService {
                     emp_code: staff.emp_code,
                     staff_name: staff.first_name + ' ' + staff.last_name,
                     department: staff.dept_name,
+                    department_id: staff.dept_id,
                     total_allowance: staff.monthly_salary,
                     total_deduction: totalDeductions,
                     amount_paid: staff.monthly_salary - totalDeductions,
@@ -170,6 +172,19 @@ export class PayrollService {
                 payment: payslip,
             });
         }
+    }
+
+    async listPayroll(listPayrollDto: ListPayrollDto): Promise<SalaryPayment[]> {
+        const {department_id, period} = listPayrollDto;
+
+        const query = this.salaryPaymentRepository.createQueryBuilder('payroll')
+                            .where('payroll.payment_month = :payment_month', { payment_month: period});
+        if (department_id !== '') {
+            query.andWhere('payroll.department_id = department_id', { department_id });
+        }
+        const results = await query.getMany();
+
+        return results;
     }
 
     async getDeductions() {

@@ -15,6 +15,9 @@ export class SalaryPayment extends CustomBaseEntity {
     @Column({ type: 'varchar' })
     department: string;
 
+    @Column({ type: 'varchar' })
+    department_id: string;
+
     @Column({ type: 'varchar', length: 20})
     payment_month: string;
 
