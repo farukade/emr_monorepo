@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RoasterRepository } from './roaster.repository';
 import { RoasterItemRepository } from './roaster.item.repository';
-import { DownloadRoasterDto } from '../dto/download-roaster.dto';
+import { DownloadRoasterDto } from './dto/download-roaster.dto';
 import { DepartmentRepository } from '../../settings/departments/department.repository';
 import { StaffRepository } from '../staff/staff.repository';
 import * as moment from 'moment';

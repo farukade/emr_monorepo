@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { StaffRepository } from './staff.repository';
-import { StaffDto } from '../dto/staff.dto';
-import { StaffDetails } from '../entities/staff_details.entity';
+import { StaffDto } from './dto/staff.dto';
+import { StaffDetails } from './entities/staff_details.entity';
 import { UserRepository } from '../user.repository';
 import { RoleRepository } from '../../settings/roles-permissions/role.repository';
 import { DepartmentRepository } from '../../settings/departments/department.repository';

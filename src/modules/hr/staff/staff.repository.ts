@@ -1,6 +1,6 @@
 import { EntityRepository, Repository } from 'typeorm';
-import { StaffDetails } from '../entities/staff_details.entity';
-import { StaffDto } from '../dto/staff.dto';
+import { StaffDetails } from './entities/staff_details.entity';
+import { StaffDto } from './dto/staff.dto';
 import { Department } from '../../settings/entities/department.entity';
 import { User } from '../entities/user.entity';
 

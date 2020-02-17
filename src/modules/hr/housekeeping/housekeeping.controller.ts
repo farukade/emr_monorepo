@@ -1,10 +1,10 @@
 import { Controller, Post, Body, Res, Header, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { HousekeepingService } from './housekeeping.service';
-import { DownloadRoasterDto } from '../dto/download-roaster.dto';
+import { DownloadRoasterDto } from './dto/download-roaster.dto';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { UploadRoasterDto } from '../dto/upload-roaster.dto';
+import { UploadRoasterDto } from './dto/upload-roaster.dto';
 
 @Controller('hr/housekeeping')
 export class HousekeepingController {

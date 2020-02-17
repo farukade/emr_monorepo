@@ -1,8 +1,8 @@
 import { Type } from 'class-transformer';
 import { Column, Entity, OneToMany, ManyToOne, JoinColumn, OneToOne } from 'typeorm';
-import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
-import { Department } from '../../settings/entities/department.entity';
-import { User } from './user.entity';
+import { CustomBaseEntity } from '../../../../common/entities/custom-base.entity';
+import { Department } from '../../../settings/entities/department.entity';
+import { User } from '../../entities/user.entity';
 
 @Entity({ name: 'staff_details' })
 export class StaffDetails extends CustomBaseEntity {

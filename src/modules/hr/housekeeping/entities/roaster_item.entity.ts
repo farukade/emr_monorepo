@@ -1,7 +1,7 @@
-import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
+import { CustomBaseEntity } from '../../../../common/entities/custom-base.entity';
 import { ManyToOne, Column, Entity, JoinColumn } from 'typeorm';
 import { Roaster } from './roaster.entity';
-import { StaffDetails } from './staff_details.entity';
+import { StaffDetails } from '../../staff/entities/staff_details.entity';
 import { scheduled } from 'rxjs';
 
 @Entity({ name: 'roaster_items'})
