@@ -28,7 +28,7 @@ export class InventoryService {
     */
 
     getAllStocks(): Promise<Stock[]> {
-        return this.stockRepository.find();
+        return this.stockRepository.find({relations: ['subCategory', 'category']});
     }
 
     async getStocksByCategory(category_id: string): Promise<Stock[]> {
@@ -193,7 +193,7 @@ export class InventoryService {
     */
 
     getAllSubCategories(): Promise<InventorySubCategory[]> {
-        return this.inventorySubCategoryRepository.find();
+        return this.inventorySubCategoryRepository.find({relations: ['category']});
     }
 
     async getSubCategories(categoryID: string): Promise<InventorySubCategory[]> {
