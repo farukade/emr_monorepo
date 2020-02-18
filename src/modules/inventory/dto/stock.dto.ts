@@ -18,7 +18,6 @@ export class StockDto {
   @IsNotEmpty()
   category_id: string;
 
-  @IsNotEmpty()
   sub_category_id: string;
 
 }
