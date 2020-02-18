@@ -20,9 +20,9 @@ export class PatientService {
         return found;
     }
 
-    async saveNewPatient(patientDto: PatientDto): Promise<Patient> {
-        const nok = await this.patientRepository.saveNOK(patientDto);
+    async saveNewPatient(patientDto: PatientDto) {
+        // const nok = await this.patientRepository.saveNOK(patientDto);
 
-        const staff = await this.patientRepository.savePatient(patientDto);
+        // const staff = await this.patientRepository.savePatient(patientDto);
     }
 }
