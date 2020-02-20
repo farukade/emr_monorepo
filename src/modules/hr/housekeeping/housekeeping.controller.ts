@@ -17,7 +17,7 @@ export class HousekeepingController {
     async downloadRoaster(@Query() query, @Res() res) {
         const resp = await this.housekeepingService.downloadEmtpyRoaster(query);
         if (resp.message === 'Completed') {
-            res.sendFile(join(__dirname, '../../../../') + '/' + resp.filename);
+            res.sendFile(join(__dirname, '../../../../') + '/' + resp.filename + '.csv');
         }
     }
 
