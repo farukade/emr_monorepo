@@ -47,7 +47,7 @@ export class InventoryController {
         @Res() res) {
         const resp = await this.inventoryService.downloadStocks();
         if (resp.success) {
-            res.sendFile(join(__dirname, '../../../../backend') + '/stocks.csv');
+            res.sendFile(join(__dirname, '../../../') + '/stocks.csv');
         }
     }
 

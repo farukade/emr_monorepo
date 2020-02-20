@@ -13,11 +13,11 @@ export class HousekeepingController {
 
     @Get('download-roaster')
     @Header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    @Header('Content-Disposition', 'attachment;')
+    @Header('Content-Disposition', 'attachment; filename=roaster.csv')
     async downloadRoaster(@Query() query, @Res() res) {
         const resp = await this.housekeepingService.downloadEmtpyRoaster(query);
         if (resp.message === 'Completed') {
-            res.sendFile(join(__dirname, '../../../../') + '/' + resp.filename + '.csv');
+            res.sendFile(join(__dirname, '../../../../') + '/roaster.csv');
         }
     }
 

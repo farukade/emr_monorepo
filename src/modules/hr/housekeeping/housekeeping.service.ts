@@ -25,7 +25,7 @@ export class HousekeepingService {
         const { department_id, period } = query;
         // find department
         const department = await this.departmentRepository.findOne(department_id);
-        const filename = `${this.slugify(department.name)}-${this.slugify(period)}-roaster.csv`;
+        const filename = `roaster.csv`;
         const noOfDays = moment(period, 'YYYY-MM').daysInMonth();
         const fs = require('fs');
         const createCsvWriter = require('csv-writer').createObjectCsvWriter;
@@ -44,18 +44,29 @@ export class HousekeepingService {
 
         // find staffs
         const staffs = await this.staffRepository.find({where: {department}});
-        let sn = 1;
-        for (const staff of staffs) {
+        if (staffs) {
+            let sn = 1;
+            for (const staff of staffs) {
+                const data = [
+                    {
+                        sn,
+                        emp_code: staff.emp_code,
+                        name: `${staff.last_name}, ${staff.first_name}`,
+                    },
+                ];
+
+                await csvWriter.writeRecords(data);
+                sn++;
+            }
+        } else {
             const data = [
                 {
-                    sn,
-                    emp_code: staff.emp_code,
-                    name: `${staff.last_name}, ${staff.first_name}`,
+                    sn: '',
+                    emp_code: '',
+                    name: '',
                 },
             ];
-
-            await csvWriter.writeRecords(data);
-            sn++;
+            await csvWriter.writeRecords({data});
         }
         return {message: 'Completed', filename};
     }
