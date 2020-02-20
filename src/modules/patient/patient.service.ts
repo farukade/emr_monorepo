@@ -20,9 +20,15 @@ export class PatientService {
         return found;
     }
 
-    async saveNewPatient(patientDto: PatientDto) {
-        // const nok = await this.patientRepository.saveNOK(patientDto);
+    async saveNewPatient(patientDto: PatientDto): Promise<any> {
+        try {
+            const nok = await this.patientNOKRepository.saveNOK(patientDto);
 
-        // const staff = await this.patientRepository.savePatient(patientDto);
+            const staff = await this.patientRepository.savePatient(patientDto, nok);
+
+            return {success: true, staff};
+        } catch (err) {
+            return {success: false, message: err.message};
+        }
     }
 }

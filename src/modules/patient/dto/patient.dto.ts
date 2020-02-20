@@ -1,9 +1,14 @@
+import { IsNotEmpty } from "class-validator";
+
 export class PatientDto {
 
+    @IsNotEmpty()
     surname: string;
 
+    @IsNotEmpty()
     other_names: string;
-
+    
+    @IsNotEmpty()
     date_of_birth: string;
 
     occupation: string;
@@ -19,6 +24,8 @@ export class PatientDto {
     maritalStatus: string;
 
     ethnicity: string;
+
+    insurranceStatus: string;
 
     referredBy: string;
 

@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RoasterRepository } from './roaster.repository';
-import { DownloadRoasterDto } from './dto/download-roaster.dto';
 import { DepartmentRepository } from '../../settings/departments/department.repository';
 import { StaffRepository } from '../staff/staff.repository';
 import * as moment from 'moment';
@@ -9,6 +8,7 @@ import { ListRoasterDto } from './dto/list-roaster.dto';
 import { Roaster } from './entities/roaster.entity';
 import { Department } from '../../settings/entities/department.entity';
 import { StaffDetails } from '../staff/entities/staff_details.entity';
+import { UploadRoasterDto } from './dto/upload-roaster.dto';
 
 @Injectable()
 export class HousekeepingService {
@@ -21,10 +21,10 @@ export class HousekeepingService {
         private staffRepository: StaffRepository,
     ) {}
 
-    async downloadEmtpyRoaster(downloadRoasterDto: DownloadRoasterDto) {
-        const { department_id, period } = downloadRoasterDto;
+    async downloadEmtpyRoaster(query) {
+        const { department_id, period } = query;
         // find department
-        const department = await this.departmentRepository.findOne(downloadRoasterDto.department_id);
+        const department = await this.departmentRepository.findOne(department_id);
         const filename = `${this.slugify(department.name)}-${this.slugify(period)}-roaster.csv`;
         const noOfDays = moment(period, 'YYYY-MM').daysInMonth();
         const fs = require('fs');
@@ -60,7 +60,7 @@ export class HousekeepingService {
         return {message: 'Completed', filename};
     }
 
-    async doUploadRoaster(file: any, uploadRoasterDto: DownloadRoasterDto) {
+    async doUploadRoaster(file: any, uploadRoasterDto: UploadRoasterDto) {
         const { period, department_id } = uploadRoasterDto;
         // find department
         const department = await this.departmentRepository.findOne(department_id);

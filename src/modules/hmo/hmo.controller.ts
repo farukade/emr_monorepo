@@ -13,7 +13,7 @@ export class HmoController {
     constructor(private hmoService: HmoService) {}
 
     @Get()
-    getDepartment(): Promise<Hmo[]> {
+    getHmo(): Promise<Hmo[]> {
         return this.hmoService.getHmos();
     }
 
@@ -28,7 +28,7 @@ export class HmoController {
             },
         }),
     }))
-    createDepartment(@Body() hmoDto: HmoDto,  @UploadedFile() file): Promise<Hmo> {
+    createHmo(@Body() hmoDto: HmoDto,  @UploadedFile() file): Promise<Hmo> {
         return this.hmoService.createHmo(hmoDto, (file) ? `${this.SERVER_URL}${file.path}` : '');
     }
 
@@ -43,7 +43,7 @@ export class HmoController {
             },
         }),
     }))
-    updateDepartment(
+    updateHmo(
         @Param('id') id: string,
         @Body() hmoDto: HmoDto,
         @UploadedFile() file,
@@ -52,7 +52,7 @@ export class HmoController {
     }
 
     @Delete('/:id')
-    deleteDepartment(@Param('id') id: string): Promise<void> {
+    deleteHmo(@Param('id') id: string): Promise<void> {
         return this.hmoService.deleteHmo(id);
     }
 }

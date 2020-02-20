@@ -67,7 +67,7 @@ export class InventoryService {
         const fs = require('fs');
         const createCsvWriter = require('csv-writer').createObjectCsvWriter;
         const csvWriter = createCsvWriter({
-            path: 'services.csv',
+            path: 'stocks.csv',
             header: [
                 {id: 'category', title: 'Category'},
                 {id: 'sub_category', title: 'SubCategory'},
@@ -78,23 +78,42 @@ export class InventoryService {
             ],
         });
 
-        const services = await this.stockRepository.find({relations: ['subCategory', 'category']});
+        try {
+            const stocks = await this.stockRepository.find({relations: ['subCategory', 'category']});
 
-        for (const service of services) {
-            const data = [
-                {
-                    category: service.category.name,
-                    sub_category: (service.subCategory) ? service.subCategory.name : '',
-                    code: service.stock_code,
-                    name: service.name,
-                    amount: service.sales_price,
-                    hmo_rate: '',
-                },
-            ];
+            if (stocks.length) {
+                for (const stock of stocks) {
+                    const data = [
+                        {
+                            category: stock.category.name,
+                            sub_category: (stock.subCategory) ? stock.subCategory.name : '',
+                            code: stock.stock_code,
+                            name: stock.name,
+                            amount: stock.sales_price,
+                            hmo_rate: '',
+                        },
+                    ];
 
-            await csvWriter.writeRecords(data);
+                    await csvWriter.writeRecords(data);
+                }
+            } else {
+                const data = [
+                    {
+                        category: '',
+                        sub_category: '',
+                        code: '',
+                        name: '',
+                        amount: '',
+                        hmo_rate: '',
+                    },
+                ];
+                await csvWriter.writeRecords({data});
+
+            }
+            return {success: true};
+        } catch (error) {
+            return {success: false, message: error.message };
         }
-        return 'Completed';
     }
 
     async updateStockQty(stockQtyDto: StockQtyDto): Promise<Stock> {

@@ -1,6 +1,7 @@
 import { CustomBaseEntity } from '../../common/entities/custom-base.entity';
-import { Entity, Column, OneToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, OneToOne, JoinColumn, OneToMany } from 'typeorm';
 import { PatientNOK } from './patient-next-of-kin.entity';
+import { Appointment } from '../frontdesk/appointment/appointment.entity';
 
 @Entity({ name: 'patients' })
 export class Patient extends CustomBaseEntity {
@@ -32,6 +33,9 @@ export class Patient extends CustomBaseEntity {
     @Column({ type: 'varchar', nullable: true})
     maritalStatus: string;
 
+    @Column({ type: 'varchar'})
+    insurranceStatus: string;
+
     @Column({ type: 'varchar', nullable: true})
     ethnicity: string;
 
@@ -41,4 +45,7 @@ export class Patient extends CustomBaseEntity {
     @OneToOne(type => PatientNOK)
     @JoinColumn()
     nextOfKin: PatientNOK;
+
+    @OneToMany(type => Appointment, appointment => appointment.patient)
+    appointments!: Appointment;
 }
