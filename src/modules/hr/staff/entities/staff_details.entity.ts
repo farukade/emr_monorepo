@@ -94,6 +94,9 @@ export class StaffDetails extends CustomBaseEntity {
   @Column({ type: 'varchar', length: 20, nullable: true })
   emp_code: string;
 
+  @Column({ type: 'boolean', nullable: false, default: false })
+  is_consultant: boolean;
+
   @ManyToOne(type => Department)
   @JoinColumn({name: 'department_id'})
   department: Department;

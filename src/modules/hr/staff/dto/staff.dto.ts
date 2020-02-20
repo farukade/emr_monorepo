@@ -66,4 +66,6 @@ export class StaffDto {
     annual_salary: string;
 
     monthly_salary: string;
+
+    is_consultant: boolean;
 }
