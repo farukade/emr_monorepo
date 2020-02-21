@@ -127,8 +127,8 @@ export class HousekeepingService {
                         .addSelect('dept.name as deptName, staff.first_name, staff.last_name')
                         .where('roaster.period = :period', { period });
         if (department_id !== '') {
-            const department = await this.departmentRepository.findOne(department_id);
-            query.andWhere('roaster.department_id = :department_id', {department});
+            // const department = await this.departmentRepository.findOne(department_id);
+            query.andWhere('roaster.department_id = :department_id', {department_id});
         }
         const results = await query.getRawMany();
 
