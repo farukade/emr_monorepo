@@ -7,7 +7,7 @@ export class PatientDto {
 
     @IsNotEmpty()
     other_names: string;
-    
+
     @IsNotEmpty()
     date_of_birth: string;
 

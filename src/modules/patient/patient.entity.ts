@@ -7,6 +7,9 @@ import { Appointment } from '../frontdesk/appointment/appointment.entity';
 export class Patient extends CustomBaseEntity {
 
     @Column({ type: 'varchar'})
+    fileNumber: string;
+
+    @Column({ type: 'varchar'})
     surname: string;
 
     @Column({ type: 'varchar'})
@@ -42,7 +45,7 @@ export class Patient extends CustomBaseEntity {
     @Column({ type: 'varchar', nullable: true})
     referredBy: string;
 
-    @OneToOne(type => PatientNOK)
+    @OneToOne(type => PatientNOK, { cascade: true })
     @JoinColumn()
     nextOfKin: PatientNOK;
 

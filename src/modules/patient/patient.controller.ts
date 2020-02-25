@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { PatientService } from './patient.service';
 import { Patient } from './patient.entity';
 import { PatientDto } from './dto/patient.dto';
@@ -7,9 +7,16 @@ import { PatientDto } from './dto/patient.dto';
 export class PatientController {
     constructor(private patientService: PatientService) {}
 
-    @Get('list-patients')
+    @Get('list')
     listAllPatients(): Promise<Patient[]> {
         return this.patientService.listAllPatients();
+    }
+
+    @Get('find')
+    findPatientRecord(
+        @Query('query') query: string,
+    ): Promise<Patient[]> {
+        return this.patientService.findPatient(query);
     }
 
     @Post('save')
@@ -18,8 +25,17 @@ export class PatientController {
     }
 
     @Patch(':id/update')
-    updatePatient(@Body() patientDto: PatientDto) {
-        
+    updatePatient(
+        @Param('id') id: string,
+        @Body() patientDto: PatientDto) {
+        return this.patientService.updatePatientRecord(id, patientDto);
+    }
+
+    @Delete(':id')
+    deletePatient(
+        @Param('id') id: string,
+    ): Promise<void> {
+        return this.patientService.deletePatient(id);
     }
 
 }

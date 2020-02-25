@@ -8,6 +8,7 @@ export class PatientRepository extends Repository<Patient> {
 
     async savePatient(patientDto: PatientDto, nextOfkin: PatientNOK) {
         const patient = new Patient();
+        patient.fileNumber          =  'DEDA-' + Math.floor(Math.random() * 90000),
         patient.surname             = patientDto.surname;
         patient.other_names         = patientDto.other_names;
         patient.address             = patientDto.address;
