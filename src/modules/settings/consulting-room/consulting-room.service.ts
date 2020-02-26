@@ -15,7 +15,7 @@ export class ConsultingRoomService {
     }
 
     async createConsultingRoom(consultingRoomDto: ConsultingRoomDto): Promise<ConsultingRoom> {
-        return this.consultingRoomRepository.saveConsultingRoom(ConsultingRoomDto);
+        return this.consultingRoomRepository.saveConsultingRoom(consultingRoomDto);
     }
 
     async updateConsultingRoom(id: string, consultingRoomDto: ConsultingRoomDto): Promise<ConsultingRoom> {
