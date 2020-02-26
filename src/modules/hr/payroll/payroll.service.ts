@@ -91,8 +91,8 @@ export class PayrollService {
                 payrollData.push({
                     emp_code: staff.emp_code,
                     staff_name: staff.first_name + ' ' + staff.last_name,
-                    department: staff.dept_name,
-                    department_id: staff.dept_id,
+                    department: staff.name,
+                    department_id: staff.id,
                     total_allowance: staff.monthly_salary,
                     total_deduction: totalDeductions,
                     amount_paid: staff.monthly_salary - totalDeductions,
