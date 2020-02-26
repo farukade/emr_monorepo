@@ -6,14 +6,16 @@ import { HmoModule } from './modules/hmo/hmo.module';
 import { HRModule } from './modules/hr/hr.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { PatientModule } from './modules/patient/patient.module';
-import { AppointmentModule } from './modules/appointment/appointment.module';
 import { ConsultationModule } from './modules/consultation/consultation.module';
 import { FinanceModule } from './modules/finance/finance.module';
 import { ClinicalTasksModule } from './modules/clinical-tasks/clinical-tasks.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
-import { QueueSystemModule } from './modules/queue-system/queue-system.module';
+import { QueueSystemModule } from './modules/frontdesk/queue-system/queue-system.module';
+import { FrontdeskModule } from './modules/frontdesk/frontdesk.module';
+import { UtilityModule } from './modules/utility/utility.module';
+
 import fs = require('fs');
-import * as PostgressConnectionStringParser from "pg-connection-string";
+import * as PostgressConnectionStringParser from 'pg-connection-string';
 
 fs.writeFileSync(
   './ormconfig.json',
@@ -26,14 +28,16 @@ fs.writeFileSync(
     HmoModule,
     HRModule,
     PatientModule,
-    AppointmentModule,
     ConsultationModule,
     FinanceModule,
     ClinicalTasksModule,
     InventoryModule,
     QueueSystemModule,
     SettingsModule,
+    FrontdeskModule,
+    UtilityModule,
   ],
   controllers: [AppController],
+  providers: [],
 })
 export class AppModule {}

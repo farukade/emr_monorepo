@@ -1,6 +1,5 @@
-import { Controller, Post, Body, Res, Header, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Post, Body, Res, Header, UseInterceptors, UploadedFile, Get, Query } from '@nestjs/common';
 import { HousekeepingService } from './housekeeping.service';
-import { DownloadRoasterDto } from './dto/download-roaster.dto';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -12,13 +11,13 @@ import { Roaster } from './entities/roaster.entity';
 export class HousekeepingController {
     constructor(private housekeepingService: HousekeepingService) {}
 
-    @Post('download-roaster')
+    @Get('download-roaster')
     @Header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    @Header('Content-Disposition', 'attachment;')
-    async downloadRoaster(@Body() downloadRoasterDto: DownloadRoasterDto, @Res() res) {
-        const resp = await this.housekeepingService.downloadEmtpyRoaster(downloadRoasterDto);
+    @Header('Content-Disposition', 'attachment; filename=roaster.csv')
+    async downloadRoaster(@Query() query, @Res() res) {
+        const resp = await this.housekeepingService.downloadEmtpyRoaster(query);
         if (resp.message === 'Completed') {
-            res.sendFile(join(__dirname, '../../../../') + '/' + resp.filename);
+            res.sendFile(join(__dirname, '../../../../') + '/roaster.csv');
         }
     }
 

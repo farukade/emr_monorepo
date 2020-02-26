@@ -12,7 +12,7 @@ export class SalaryPayment extends CustomBaseEntity {
     @Column({ type: 'varchar' })
     staff_name: string;
 
-    @Column({ type: 'varchar' })
+    @Column({ type: 'varchar', nullable: true })
     department: string;
 
     @Column({ type: 'varchar' })

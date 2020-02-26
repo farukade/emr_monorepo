@@ -37,6 +37,7 @@ export class StaffRepository extends Repository<StaffDetails> {
         staff.annual_salary = staffDto.annual_salary;
         staff.monthly_salary = staffDto.monthly_salary;
         staff.department = department;
+        staff.is_consultant = staffDto.is_consultant;
         staff.user = user;
         staff.emp_code = 'DEDA-' + Math.floor(Math.random() * 90000),
 

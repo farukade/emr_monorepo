@@ -23,7 +23,7 @@ export class StaffService {
     ) {}
 
     async getStaffs(): Promise<StaffDetails[]> {
-        const staffs = await this.staffRepository.find({relations: ['department']});
+        const staffs = await this.staffRepository.find({relations: ['department', 'user']});
         return staffs;
     }
 
@@ -80,6 +80,7 @@ export class StaffService {
         staff.employment_start_date = staffDto.employment_start_date;
         staff.annual_salary = staffDto.annual_salary;
         staff.monthly_salary = staffDto.monthly_salary;
+        staff.is_consultant = staffDto.is_consultant;
         staff.emp_code = 'DEDA-' + Math.floor(Math.random() * 4),
 
         await staff.save();

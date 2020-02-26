@@ -45,9 +45,9 @@ export class InventoryController {
     @Header('Content-Disposition', 'attachment; filename=stocks.csv')
     async downloadServices(
         @Res() res) {
-        const message = await this.inventoryService.downloadStocks();
-        if (message === 'Completed') {
-            res.sendFile(join(__dirname, '../../../../') + '/stocks.csv');
+        const resp = await this.inventoryService.downloadStocks();
+        if (resp.success) {
+            res.sendFile(join(__dirname, '../../../') + '/stocks.csv');
         }
     }
 

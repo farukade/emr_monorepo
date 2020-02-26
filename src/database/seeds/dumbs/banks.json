@@ -1,0 +1,22 @@
+[
+    {"id": 1, "name": "Access Bank Nigeria Plc"},
+    {"id": 2, "name": "Diamond Bank Plc"},
+    {"id": 3, "name": "Ecobank Nigeria"},
+    {"id": 4, "name": "Enterprise Bank Plc" },
+    {"id": 5, "name": "Fidelity Bank Plc" },
+    {"id": 6, "name": "First Bank of Nigeria Plc"},
+    {"id": 7, "name": "First City Monument Bank"},
+    {"id": 8, "name": "Guaranty Trust Bank Plc"},
+    {"id": 9, "name": "Heritage Bank"},
+    {"id": 10, "name": "Jaiz Bank"},
+    {"id": 11, "name": "Keystone Bank Ltd"},
+    {"id": 12, "name": "Mainstreet Bank Plc"},
+    {"id": 13, "name": "Skye Bank Plc"},
+    {"id": 14, "name": "Stanbic IBTC Plc"},
+    {"id": 15, "name": "Sterling Bank Plc"},
+    {"id": 16, "name": "Union Bank Nigeria Plc"},
+    {"id": 17, "name": "United Bank for Africa Plc"},
+    {"id": 18, "name": "Unity Bank Plc"},
+    {"id": 19, "name": "WEMA Bank Plc"},
+    {"id": 20, "name": "Zenith Bank International"}
+]

@@ -25,7 +25,7 @@ export class StaffController {
         return this.staffService.updateStaffDetails(id, staffDto);
     }
 
-    @Delete()
+    @Delete(':id')
     deleteStaff(
         @Param('id') id: string,
     ): Promise<void> {
