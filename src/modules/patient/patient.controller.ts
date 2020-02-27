@@ -14,9 +14,9 @@ export class PatientController {
 
     @Get('find')
     findPatientRecord(
-        @Query('query') query: string,
+        @Query('q') q: string,
     ): Promise<Patient[]> {
-        return this.patientService.findPatient(query);
+        return this.patientService.findPatient(q);
     }
 
     @Post('save')
