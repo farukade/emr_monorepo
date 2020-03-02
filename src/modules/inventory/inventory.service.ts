@@ -42,7 +42,10 @@ export class InventoryService {
     async createStock(stockDto: StockDto): Promise<Stock> {
         const { category_id, sub_category_id } = stockDto;
         const category = await this.inventoryCategoryRepository.findOne(category_id);
-        const subCategory = await this.inventorySubCategoryRepository.findOne(sub_category_id);
+        let subCategory;
+        if (sub_category_id) {
+            subCategory = await this.inventorySubCategoryRepository.findOne(sub_category_id);
+        }
         return this.stockRepository.saveStock(stockDto, category, subCategory);
     }
 

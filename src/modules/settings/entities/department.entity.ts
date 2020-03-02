@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
-import { Column, Entity } from 'typeorm';
+import { Column, Entity, OneToOne, JoinColumn } from 'typeorm';
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
+import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 
 @Entity({ name: 'departments' })
 export class Department extends CustomBaseEntity {
@@ -9,4 +10,11 @@ export class Department extends CustomBaseEntity {
 
   @Column({ type: 'varchar', length: 300, nullable: true })
   description: string;
+
+  @OneToOne(
+    type => StaffDetails,
+    { eager: true, onDelete: 'CASCADE' },
+  )
+  @JoinColumn({ name: 'hod_id' })
+  staff: StaffDetails;
 }
