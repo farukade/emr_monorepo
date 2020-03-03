@@ -19,8 +19,9 @@ export class AppointmentDto {
     consulting_room_id: string;
 
     duration: string;
+    description: string;
 
-    refferedBy: string;
+    referredBy: string;
 
     referralCompany: string;
 }

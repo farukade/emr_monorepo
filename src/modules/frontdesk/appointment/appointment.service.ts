@@ -7,6 +7,7 @@ import { SpecializationRepository } from '../../settings/specialization/speciali
 import { DepartmentRepository } from '../../settings/departments/department.repository';
 import { ConsultingRoomRepository } from '../../settings/consulting-room/consulting-room.repository';
 import { Appointment } from './appointment.entity';
+import * as moment from 'moment';
 
 @Injectable()
 export class AppointmentService {
@@ -22,6 +23,16 @@ export class AppointmentService {
         @InjectRepository(ConsultingRoomRepository)
         private consultingRoomRepository: ConsultingRoomRepository,
     ) {}
+
+    async todaysAppointments(): Promise<Appointment[]> {
+        const today = moment().format('YYYY-MM-DD');
+        const results = await this.appointmentRepository.find({
+            where: {appointment_date: today},
+            relations: ['department', 'patient', 'specialization', 'consultingRoom'],
+        });
+
+        return results;
+    }
 
     async saveNewAppointment(appointmentDto: AppointmentDto): Promise<Appointment> {
         const { patient_id, department_id, specialization_id, consulting_room_id} = appointmentDto;

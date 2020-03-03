@@ -12,9 +12,10 @@ import { Logger } from '@nestjs/common';
 import { Socket, Server } from 'socket.io';
 import { AppointmentService } from './appointment.service';
 import { AppointmentDto } from './dto/appointment.dto';
+import { Appointment } from './appointment.entity';
 
 @WebSocketGateway()
-@Controller('appointments')
+@Controller('front-desk/appointments')
 export class AppointmentController implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
 
     @WebSocketServer() server: Server;
@@ -25,7 +26,12 @@ export class AppointmentController implements OnGatewayInit, OnGatewayConnection
     @Post('new')
     createNewAppointment(@Body() appointmentDto: AppointmentDto) {
         const appointment = this.appointmentService.saveNewAppointment(appointmentDto);
-        this.server.emit('newAppointment', {message: 'New Appointment'});
+        // this.server.emit('newAppointment', {message: 'New Appointment'});
+    }
+
+    @Get('today')
+    getTodayAppointment(): Promise<Appointment[]> {
+        return this.appointmentService.todaysAppointments();
     }
 
     afterInit(server: Server) {

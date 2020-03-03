@@ -37,8 +37,11 @@ export class Appointment extends CustomBaseEntity {
     appointment_date: string;
 
     @Column({ nullable: true })
-    refferedBy: string;
+    referredBy: string;
 
     @Column({ nullable: true })
     referralCompany: string;
+
+    @Column({nullable: true})
+    description: string;
 }

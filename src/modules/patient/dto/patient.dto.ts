@@ -1,4 +1,4 @@
-import { IsNotEmpty } from "class-validator";
+import { IsNotEmpty, IsEmail } from "class-validator";
 
 export class PatientDto {
 
@@ -15,6 +15,7 @@ export class PatientDto {
 
     address: string;
 
+    @IsEmail()
     email: string;
 
     phoneNumber: string;
@@ -29,8 +30,10 @@ export class PatientDto {
 
     referredBy: string;
 
+    @IsNotEmpty()
     nok_surname: string;
 
+    @IsNotEmpty()
     nok_other_names: string;
 
     nok_date_of_birth: string;
@@ -39,6 +42,7 @@ export class PatientDto {
 
     nok_address: string;
 
+    @IsEmail()
     nok_email: string;
 
     nok_phoneNumber: string;

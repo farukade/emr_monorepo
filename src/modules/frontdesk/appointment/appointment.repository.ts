@@ -25,7 +25,8 @@ export class AppointmentRepository extends Repository<Appointment> {
         appointment.appointment_date = appointmentDto.appointment_date;
         appointment.appointment_type = appointmentDto.appointment_type;
         appointment.duration = appointmentDto.duration;
-        appointment.refferedBy = appointmentDto.refferedBy;
+        appointment.description = appointmentDto.description;
+        appointment.referredBy = appointmentDto.referredBy;
         appointment.referralCompany = appointmentDto.referralCompany;
         await appointment.save();
 

@@ -5,4 +5,6 @@ export class DepartmentDto {
   name: string;
 
   description: string;
+
+  hod_id: string;
 }

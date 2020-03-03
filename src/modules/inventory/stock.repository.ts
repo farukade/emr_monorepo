@@ -17,7 +17,9 @@ export class StockRepository extends Repository<Stock> {
         stock.sales_price = sales_price;
         stock.quantity    = quantity;
         stock.category    = category;
-        stock.subCategory = subCategory;
+        if (subCategory) {
+            stock.subCategory = subCategory;
+        }
         await stock.save();
         return stock;
     }
