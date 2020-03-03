@@ -67,7 +67,7 @@ export class PayrollService {
     async generatePayroll(generatePayrollDto: GeneratePayrollDto): Promise<SalaryPayment[]> {
         const { payment_month } = generatePayrollDto;
         // check if payroll exists for the given period
-        let payroll = await this.salaryPaymentRepository.find({ where: {payment_month}});
+        let payroll = await this.salaryPaymentRepository.find({ where: {payment_month}, relations: ['allowances', 'deductions']});
 
         if (!payroll.length) {
 
@@ -130,11 +130,11 @@ export class PayrollService {
             payslip.comment = comment;
             await payslip.save();
 
-            if (allowances.length) {
+            if (allowances) {
                 await this.savePayslipAllowances(allowances, payslip);
             }
 
-            if (deductions.length) {
+            if (deductions) {
                 await this.savePayslipDeductions(deductions, payslip);
             }
             return { successs: true };
@@ -182,6 +182,17 @@ export class PayrollService {
         if (department_id !== '') {
             query.andWhere('payroll.department_id = department_id', { department_id });
         }
+        const results = await query.getMany();
+
+        return results;
+    }
+
+    async listStaffPayroll(id: string): Promise<SalaryPayment[]> {
+        const staff = await this.staffRepository.findOne(id);
+
+        const query = this.salaryPaymentRepository.createQueryBuilder('payroll')
+                            .where('payroll.emp_code = :emp_code', { emp_code: staff.emp_code});
+
         const results = await query.getMany();
 
         return results;
