@@ -31,7 +31,6 @@ export class DepartmentsService {
         let staff;
         if (hod_id) {
             staff = await this.staffRepository.findOne(hod_id);
-            console.log(staff);
         }
         const department = await this.departmentRepository.findOne(id);
         department.name = name;

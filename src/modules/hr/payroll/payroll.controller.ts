@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Patch } from '@nestjs/common';
+import { Controller, Post, Body, Patch, Get, Param } from '@nestjs/common';
 import { PayrollService } from './payroll.service';
 import { SalaryAllowanceDto } from './dto/salary.allowance.dto';
 import { SalaryAllowance } from './entities/salary_allowance.entity';
@@ -17,6 +17,11 @@ export class PayrollController {
     @Post('list-payroll')
     listPayslips(@Body() listPayrollDto: ListPayrollDto): Promise<SalaryPayment[]> {
         return this.payrollService.listPayroll(listPayrollDto);
+    }
+
+    @Get(':staffId/list')
+    listStaffPayroll(@Param() staffId: string): Promise<SalaryPayment[]> {
+        return this.payrollService.listStaffPayroll(staffId);
     }
 
     @Post('update-allowances')
