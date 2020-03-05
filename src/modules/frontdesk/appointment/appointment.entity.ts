@@ -26,7 +26,7 @@ export class Appointment extends CustomBaseEntity {
     @JoinColumn({ name: 'specialization_id'})
     specialization: Specialization;
 
-    @ManyToOne(type => ConsultingRoom)
+    @ManyToOne(type => ConsultingRoom, {nullable: true})
     @JoinColumn({ name: 'consulting_room_id'})
     consultingRoom: ConsultingRoom;
 
@@ -44,4 +44,7 @@ export class Appointment extends CustomBaseEntity {
 
     @Column({nullable: true})
     description: string;
+
+    @Column({type: 'smallint', default: 0})
+    status: number;
 }

@@ -8,6 +8,7 @@ import { DepartmentRepository } from '../../settings/departments/department.repo
 import { ConsultingRoomRepository } from '../../settings/consulting-room/consulting-room.repository';
 import { Appointment } from './appointment.entity';
 import * as moment from 'moment';
+import { QueueSystemRepository } from '../queue-system/queue-system.repository';
 
 @Injectable()
 export class AppointmentService {
@@ -22,6 +23,8 @@ export class AppointmentService {
         private departmentRepository: DepartmentRepository,
         @InjectRepository(ConsultingRoomRepository)
         private consultingRoomRepository: ConsultingRoomRepository,
+        @InjectRepository(QueueSystemRepository)
+        private queueSystemRepository: QueueSystemRepository,
     ) {}
 
     async todaysAppointments(): Promise<Appointment[]> {
@@ -34,20 +37,49 @@ export class AppointmentService {
         return results;
     }
 
-    async saveNewAppointment(appointmentDto: AppointmentDto): Promise<Appointment> {
-        const { patient_id, department_id, specialization_id, consulting_room_id} = appointmentDto;
-        // find patient details
-        const patient = await this.patientRepository.findOne(patient_id);
-        // find department details
-        const department = await this.departmentRepository.findOne(department_id);
-        // find specialization
-        const specialization = await this.specializationRepository.findOne(specialization_id);
-        // find consulting room
-        const consultingRoom = await this.consultingRoomRepository.findOne(consulting_room_id);
+    async saveNewAppointment(appointmentDto: AppointmentDto): Promise<any> {
+        try {
+            const { patient_id, department_id, specialization_id, consulting_room_id, sendToQueue} = appointmentDto;
+            // find patient details
+            const patient = await this.patientRepository.findOne(patient_id);
+            // find department details
+            const department = await this.departmentRepository.findOne(department_id);
+            // find specialization
+            const specialization = await this.specializationRepository.findOne(specialization_id);
+            // find consulting room
+            const consultingRoom = await this.consultingRoomRepository.findOne(consulting_room_id);
 
-        const result = await this.appointmentRepository.saveAppointment(appointmentDto, patient, specialization, department, consultingRoom);
+            const appointment = await this.appointmentRepository.saveAppointment(appointmentDto, patient, specialization, department, consultingRoom);
 
-        return result;
+            let queue;
+
+            if (sendToQueue) {
+                let queueNumber;
+                const lastQueueRes = await this.queueSystemRepository.find({take: 1, order: {createdAt: 'DESC'}});
+                if (lastQueueRes.length) {
+                    // check if last queue date is today
+                    const lastQueue = lastQueueRes[0];
+                    const today = moment();
+                    const isSameDay = today.isSame(lastQueue.createdAt, 'd');
+                    if (isSameDay) {
+                        queueNumber = lastQueue.queueNumber + 1;
+                    } else {
+                        queueNumber = 1;
+                    }
+                } else {
+                    queueNumber = 1;
+                }
+                // add appointment to queue
+                queue = await this.queueSystemRepository.saveQueue(appointment, queueNumber);
+                // update appointment status
+                appointment.status = 1;
+                await appointment.save();
+            }
+
+            return { success: true, appointment, queue };
+        } catch (error) {
+            return { success: false, message: error.message };
+        }
 
     }
 }
