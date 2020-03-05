@@ -19,10 +19,12 @@ export class AppointmentDto {
     consulting_room_id: string;
 
     duration: string;
-    
+
     description: string;
 
     referredBy: string;
 
     referralCompany: string;
+
+    sendToQueue: boolean;
 }
