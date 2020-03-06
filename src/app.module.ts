@@ -16,6 +16,7 @@ import { UtilityModule } from './modules/utility/utility.module';
 
 import fs = require('fs');
 import * as PostgressConnectionStringParser from 'pg-connection-string';
+import { AuthModule } from './modules/auth/auth.module';
 
 fs.writeFileSync(
   './ormconfig.json',
@@ -25,6 +26,7 @@ fs.writeFileSync(
 @Module({
   imports: [
     TypeOrmModule.forRoot(appService.getTypeOrmConfig()),
+    AuthModule,
     HmoModule,
     HRModule,
     PatientModule,

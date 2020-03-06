@@ -72,7 +72,7 @@ export class AppointmentService {
                 // add appointment to queue
                 queue = await this.queueSystemRepository.saveQueue(appointment, queueNumber);
                 // update appointment status
-                appointment.status = 1;
+                appointment.status = 'In Queue';
                 await appointment.save();
             }
 
