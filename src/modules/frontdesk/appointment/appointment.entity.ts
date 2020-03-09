@@ -45,6 +45,6 @@ export class Appointment extends CustomBaseEntity {
     @Column({nullable: true})
     description: string;
 
-    @Column({type: 'smallint', default: 0})
-    status: number;
+    @Column({type: 'varchar', default: 'Pending'})
+    status: string;
 }
