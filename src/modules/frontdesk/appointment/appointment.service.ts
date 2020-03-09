@@ -80,6 +80,21 @@ export class AppointmentService {
         } catch (error) {
             return { success: false, message: error.message };
         }
+    }
 
+    listAppointments(params) {
+        const {startDate, endDate} = params;
+        const query = this.queueSystemRepository.createQueryBuilder('q');
+        if (startDate !== '') {
+            const start = new Date(startDate);
+            query.where(`q.createdAt >= '${start.toISOString()}'`);
+        }
+        if (endDate !== '') {
+            const end = new Date(endDate);
+            query.where(`q.createdAt <= '${end.toISOString()}'`);
+        }
+        const result = query.getRawMany();
+
+        return result;
     }
 }
