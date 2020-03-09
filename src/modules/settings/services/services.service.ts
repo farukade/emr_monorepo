@@ -140,18 +140,32 @@ export class ServicesService {
 
         const services = await this.serviceRepository.find({relations: ['subCategory', 'category']});
 
-        for (const service of services) {
+        if (services.length) {
+            for (const service of services) {
+                const data = [
+                    {
+                        category: service.category.name,
+                        sub_category: (service.subCategory) ? service.subCategory.name : '',
+                        code: service.code,
+                        name: service.name,
+                        amount: service.tariff,
+                        hmo_rate: '',
+                    },
+                ];
+
+                await csvWriter.writeRecords(data);
+            }
+        } else {
             const data = [
                 {
-                    category: service.category.name,
-                    sub_category: (service.subCategory) ? service.subCategory.name : '',
-                    code: service.code,
-                    name: service.name,
-                    amount: service.tariff,
+                    category: '',
+                    sub_category: '',
+                    code: '',
+                    name: '',
+                    amount: '',
                     hmo_rate: '',
                 },
             ];
-
             await csvWriter.writeRecords(data);
         }
         return 'Completed';
