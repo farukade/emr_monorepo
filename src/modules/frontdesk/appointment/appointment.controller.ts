@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query } from '@nestjs/common';
 
 import { Logger } from '@nestjs/common';
 import { AppointmentService } from './appointment.service';
@@ -18,5 +18,12 @@ export class AppointmentController {
     @Get('today')
     getTodayAppointment(): Promise<Appointment[]> {
         return this.appointmentService.todaysAppointments();
+    }
+
+    @Get('')
+    listAppointments(
+        @Query() params: string,
+    ) {
+        return this.appointmentService.listAppointments(params);
     }
 }

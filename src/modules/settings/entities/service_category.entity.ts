@@ -18,4 +18,11 @@ export class ServiceCategory extends CustomBaseEntity {
     { onDelete: 'CASCADE' },
   )
   subCateogries: ServiceSubCategory[];
+
+  @OneToMany(
+    () => Service,
+    service => service.subCategory,
+    { onDelete: 'CASCADE' },
+  )
+  services: Service[];
 }

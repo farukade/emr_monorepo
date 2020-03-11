@@ -7,6 +7,7 @@ import { LabModule } from './lab/lab.module';
 import { DepartmentModule } from './departments/department.module';
 import { LeaveCategoryModule } from './leave-category/leave-category.module';
 import { SpecializationModule } from './specialization/specialization.module';
+import { DiagnosisModule } from './diagnosis/diagnosis.module';
 
 @Module({
     imports: [
@@ -18,6 +19,7 @@ import { SpecializationModule } from './specialization/specialization.module';
         DepartmentModule,
         LeaveCategoryModule,
         SpecializationModule,
+        DiagnosisModule,
     ],
 })
 export class SettingsModule {}
