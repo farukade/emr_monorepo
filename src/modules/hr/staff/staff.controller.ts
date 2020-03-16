@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Patch, Param, Get, Delete } from '@nestjs/common';
+import { Controller, Post, Body, Patch, Param, Get, Delete, UsePipes, ValidationPipe } from '@nestjs/common';
 import { StaffDto } from './dto/staff.dto';
 import { StaffDetails } from './entities/staff_details.entity';
 import { StaffService } from './staff.service';
@@ -13,6 +13,7 @@ export class StaffController {
     }
 
     @Post()
+    @UsePipes(ValidationPipe)
     createNewStaff(@Body() staffDto: StaffDto): Promise<StaffDetails> {
         return this.staffService.addNewStaff(staffDto);
     }

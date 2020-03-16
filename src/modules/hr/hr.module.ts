@@ -4,6 +4,7 @@ import { StaffModule } from './staff/staff.module';
 import { LeavemgtModule } from './leavemgt/leavemgt.module';
 import { HousekeepingModule } from './housekeeping/housekeeping.module';
 import { PayrollModule } from './payroll/payroll.module';
+import { AppraisalModule } from './appraisal/appraisal.module';
 
 @Module({
     imports: [
@@ -11,6 +12,7 @@ import { PayrollModule } from './payroll/payroll.module';
         LeavemgtModule,
         HousekeepingModule,
         PayrollModule,
+        AppraisalModule,
     ],
     controllers: [],
 })
