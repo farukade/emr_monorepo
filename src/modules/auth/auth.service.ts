@@ -2,10 +2,10 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { JWTHelper } from '../../common/utils/JWTHelper';
-import { StaffDetails } from '../hr/staff/entities/staff_details.entity';
 import { LoginUserDto } from './dto/login-user.dto';
 import { User } from '../hr/entities/user.entity';
 import { AuthRepository } from './auth.repository';
+import { StaffRepository } from '../hr/staff/staff.repository';
 
 @Injectable()
 export class AuthService {
@@ -14,6 +14,8 @@ export class AuthService {
   constructor(
     @InjectRepository(AuthRepository)
     private readonly authRepository: AuthRepository,
+    @InjectRepository(StaffRepository)
+    private readonly staffRepository: StaffRepository,
   ) {}
 
   async getUsers(): Promise<User[]> {
@@ -25,7 +27,7 @@ export class AuthService {
   }
 
   async getUserByUsername(username: string): Promise<User> {
-    return await this.authRepository.findOne({ username });
+    return await this.authRepository.findOne({ where: {username}, relations: ['role']});
   }
 
   async loginUser(loginUserDto: LoginUserDto) {
@@ -38,9 +40,11 @@ export class AuthService {
         const { expires_in, token } = await JWTHelper.createToken(
           user.username,
         );
+        const staff = await this.staffRepository.findOne({where: {user}, relations: ['department']});
         const newUser = JSON.parse(JSON.stringify(user));
         newUser.token = token;
         newUser.expires_in = expires_in;
+        newUser.details = staff;
         delete newUser.password;
         return newUser;
       }
