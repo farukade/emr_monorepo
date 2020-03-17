@@ -13,7 +13,7 @@ import { LoginUserDto } from './dto/login-user.dto';
 import { AuthService } from './auth.service';
 import { User } from '../hr/entities/user.entity';
 
-@Controller('users')
+@Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
@@ -27,7 +27,7 @@ export class AuthController {
         return this.authService.getUserByUsername(userName);
     }
 
-  @Put()
+  @Post('login')
   @UsePipes(ValidationPipe)
   loginUser(@Body() loginUserDto: LoginUserDto) {
     return this.authService.loginUser(loginUserDto);

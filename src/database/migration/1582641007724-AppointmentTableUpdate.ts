@@ -29,7 +29,7 @@ export class AppointmentTableUpdate1582641007724 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "appointments" ALTER COLUMN "referralCompany" DROP NOT NULL`, undefined);
         await queryRunner.query(`ALTER TABLE "appointments" ADD CONSTRAINT "FK_8592c8a9f19602a39b5a0439972" FOREIGN KEY ("department_id") REFERENCES "departments"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`, undefined);
         await queryRunner.query(`ALTER TABLE "appointments" ADD CONSTRAINT "FK_6190189cadfb770db4d6f3692cc" FOREIGN KEY ("specialization_id") REFERENCES "specializations"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`, undefined);
-        await queryRunner.query(`ALTER TABLE "appointments" ADD CONSTRAINT "FK_727da4ad68b4996775bb8314dcf" FOREIGN KEY ("consulting_room_id") REFERENCES "services"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`, undefined);
+        await queryRunner.query(`ALTER TABLE "appointments" ADD CONSTRAINT "FK_727da4ad68b4996775bb8314dcf" FOREIGN KEY ("consulting_room_id") REFERENCES "consulting_rooms"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`, undefined);
         await queryRunner.query(`ALTER TABLE "services" ADD CONSTRAINT "FK_308851f63428d10577555a55c6b" FOREIGN KEY ("sub_category_id") REFERENCES "service_sub_categories"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`, undefined);
         await queryRunner.query(`ALTER TABLE "services" ADD CONSTRAINT "FK_1f8d1173481678a035b4a81a4ec" FOREIGN KEY ("category_id") REFERENCES "service_categories"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`, undefined);
     }

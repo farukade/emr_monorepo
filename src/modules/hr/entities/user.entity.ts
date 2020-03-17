@@ -1,7 +1,8 @@
 import { Type } from 'class-transformer';
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
 import { Role } from '../../settings/entities/role.entity';
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
+import { StaffDetails } from '../staff/entities/staff_details.entity';
 
 @Entity({ name: 'users' })
 export class User extends CustomBaseEntity {
@@ -21,4 +22,7 @@ export class User extends CustomBaseEntity {
   @JoinColumn({ name: 'role_id' })
   @Type(() => Role)
   role: Role;
+
+  @OneToOne(type => StaffDetails)
+  details: StaffDetails;
 }
