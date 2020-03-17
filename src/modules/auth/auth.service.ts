@@ -34,7 +34,8 @@ export class AuthService {
     const user = await this.getUserByUsername(loginUserDto.username);
 
     if (user) {
-      if (this.compareHash(loginUserDto.password, user.password)) {
+      const isSame = await this.compareHash(loginUserDto.password, user.password);
+      if (isSame) {
         user.lastLogin = new Date().toString();
         await user.save();
         const { expires_in, token } = await JWTHelper.createToken(
