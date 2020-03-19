@@ -1,7 +1,7 @@
 import { EntityRepository, Repository } from 'typeorm';
 import { Appointment } from './appointment.entity';
 import { AppointmentDto } from './dto/appointment.dto';
-import { Patient } from '../../patient/patient.entity';
+import { Patient } from '../../patient/entities/patient.entity';
 import { Specialization } from '../../settings/entities/specialization.entity';
 import { Department } from '../../settings/entities/department.entity';
 import { ConsultingRoom } from '../../settings/entities/consulting-room.entity';

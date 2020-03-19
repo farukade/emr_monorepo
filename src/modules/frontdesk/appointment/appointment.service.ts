@@ -50,6 +50,9 @@ export class AppointmentService {
             const consultingRoom = await this.consultingRoomRepository.findOne(consulting_room_id);
 
             const appointment = await this.appointmentRepository.saveAppointment(appointmentDto, patient, specialization, department, consultingRoom);
+            // update patient appointment date
+            patient.lastAppointmentDate = new Date().toString();
+            await patient.save();
 
             let queue;
 

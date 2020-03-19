@@ -1,4 +1,4 @@
-import { CustomBaseEntity } from '../../common/entities/custom-base.entity';
+import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 import { Entity, Column } from 'typeorm';
 
 @Entity({ name: 'patient_next_of_kins' })

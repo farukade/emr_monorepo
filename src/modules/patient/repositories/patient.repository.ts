@@ -1,7 +1,7 @@
 import { EntityRepository, Repository } from 'typeorm';
-import { Patient } from '../patient.entity';
+import { Patient } from '../entities/patient.entity';
 import { PatientDto } from '../dto/patient.dto';
-import { PatientNOK } from '../patient-next-of-kin.entity';
+import { PatientNOK } from '../entities/patient-next-of-kin.entity';
 
 @EntityRepository(Patient)
 export class PatientRepository extends Repository<Patient> {
@@ -9,9 +9,9 @@ export class PatientRepository extends Repository<Patient> {
     async savePatient(patientDto: PatientDto, nextOfkin: PatientNOK) {
         const patient = new Patient();
         patient.fileNumber          =  'DEDA-' + Math.floor(Math.random() * 90000),
-        patient.surname             = patientDto.surname;
-        patient.other_names         = patientDto.other_names;
-        patient.address             = patientDto.address;
+        patient.surname             = patientDto.surname.toLocaleLowerCase();
+        patient.other_names         = patientDto.other_names.toLocaleLowerCase();
+        patient.address             = patientDto.address.toLocaleLowerCase();
         patient.date_of_birth       = patientDto.date_of_birth;
         patient.occupation          = patientDto.occupation;
         patient.gender              = patientDto.gender;

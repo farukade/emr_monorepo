@@ -31,4 +31,19 @@ export class JWTHelper {
       });
     });
   }
+
+  /**
+   *
+   * @param {string} user
+   */
+
+  static async getUser(token: String) {
+    try {
+      const user = await JWTHelper.verifyToken(token, true);
+      return user;
+    } catch (err) {
+      return false;
+    }
+  }
+
 }
