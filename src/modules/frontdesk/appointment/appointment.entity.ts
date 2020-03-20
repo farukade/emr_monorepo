@@ -1,6 +1,6 @@
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 import { Entity, ManyToOne, JoinColumn, Column } from 'typeorm';
-import { Patient } from '../../patient/patient.entity';
+import { Patient } from '../../patient/entities/patient.entity';
 import { Department } from '../../settings/entities/department.entity';
 import { Specialization } from '../../settings/entities/specialization.entity';
 import { ConsultingRoom } from '../../settings/entities/consulting-room.entity';

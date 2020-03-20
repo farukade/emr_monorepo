@@ -17,6 +17,11 @@ export class ServicesController {
         return this.servicesService.getAllServices();
     }
 
+    @Get('/consultation')
+    getConsultationServices(): Promise<Service[]> {
+        return this.servicesService.getConsultationServices();
+    }
+
     @Post()
     @UsePipes(ValidationPipe)
     createService(@Body() serviceDto: ServiceDto): Promise<Service> {

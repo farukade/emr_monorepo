@@ -1,5 +1,5 @@
 import { EntityRepository, Repository } from 'typeorm';
-import { PatientNOK } from '../patient-next-of-kin.entity';
+import { PatientNOK } from '../entities/patient-next-of-kin.entity';
 import { PatientDto } from '../dto/patient.dto';
 
 @EntityRepository(PatientNOK)

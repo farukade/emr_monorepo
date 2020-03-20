@@ -1,7 +1,7 @@
-import { CustomBaseEntity } from '../../common/entities/custom-base.entity';
+import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 import { Entity, Column, OneToOne, JoinColumn, OneToMany } from 'typeorm';
 import { PatientNOK } from './patient-next-of-kin.entity';
-import { Appointment } from '../frontdesk/appointment/appointment.entity';
+import { Appointment } from '../../frontdesk/appointment/appointment.entity';
 
 @Entity({ name: 'patients' })
 export class Patient extends CustomBaseEntity {
@@ -48,6 +48,12 @@ export class Patient extends CustomBaseEntity {
     @OneToOne(type => PatientNOK, { cascade: true })
     @JoinColumn()
     nextOfKin: PatientNOK;
+
+    @Column({ nullable: true })
+    lastAppointmentDate: string;
+
+    @Column({ nullable: true, default: 0 })
+    noOfVisits: number;
 
     @OneToMany(type => Appointment, appointment => appointment.patient)
     appointments!: Appointment;

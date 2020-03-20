@@ -34,7 +34,7 @@ export class StaffService {
         const department = await this.departmentRepository.findOne(staffDto.department_id);
         // save user
         const user = await this.userRepository.save({
-            username: staffDto.username,
+            username: staffDto.username.toLocaleLowerCase(),
             password: await this.getHash(staffDto.password),
             role,
         });
@@ -53,9 +53,9 @@ export class StaffService {
 
         // find staff
         const staff = await this.staffRepository.findOne(id);
-        staff.first_name     = staffDto.first_name;
-        staff.last_name      = staffDto.last_name;
-        staff.other_names    = staffDto.other_names;
+        staff.first_name     = staffDto.first_name.toLocaleLowerCase();
+        staff.last_name      = staffDto.last_name.toLocaleLowerCase();
+        staff.other_names    = staffDto.other_names.toLocaleLowerCase();
         staff.address        = staffDto.address;
         staff.phone_number   = staffDto.phone_number;
         staff.email          = staffDto.email;
