@@ -88,13 +88,13 @@ export class AppointmentService {
     listAppointments(params) {
         const {startDate, endDate} = params;
         const query = this.queueSystemRepository.createQueryBuilder('q');
-        if (startDate !== '') {
-            const start = new Date(startDate);
-            query.where(`q.createdAt >= '${start.toISOString()}'`);
+        if (startDate && startDate !== '') {
+            const start = moment(startDate).endOf('day').toISOString();
+            query.where(`q.createdAt >= '${start}'`);
         }
-        if (endDate !== '') {
-            const end = new Date(endDate);
-            query.where(`q.createdAt <= '${end.toISOString()}'`);
+        if (endDate && endDate !== '') {
+            const end = moment(endDate).endOf('day').toISOString();
+            query.where(`q.createdAt <= '${end}'`);
         }
         const result = query.getRawMany();
 
