@@ -14,6 +14,10 @@ import { PatientAllergyDto } from './dto/patient.allergy.dto';
 import { PatientVital } from './entities/patient_vitals.entity';
 import { PatientAntenatal } from './entities/patient_antenatal.entity';
 import { PatientAllergy } from './entities/patient_allergies.entity';
+import { PatientRequestHelper } from '../../common/utils/PatientRequestHelper';
+import { PatientRequestRepository } from './repositories/patient_request.repository';
+import { PatientRequest } from './entities/patient_requests.entity';
+import * as moment from 'moment';
 
 @Injectable()
 export class PatientService {
@@ -28,6 +32,8 @@ export class PatientService {
         private patientAntenatalRepository: PatientAntenatalRepository,
         @InjectRepository(PatientAllergyRepository)
         private patientAllergyRepository: PatientAllergyRepository,
+        @InjectRepository(PatientRequestRepository)
+        private patientRequestRepository: PatientRequestRepository,
         @InjectRepository(ServiceRepository)
         private serviceRepository: ServiceRepository,
     ) {}
@@ -123,12 +129,45 @@ export class PatientService {
         }
     }
 
-    async getVitals(id): Promise<PatientVital[]> {
-        const patient = await this.patientRepository.findOne(id);
+    async doUpdateVital(vitalId, param): Promise<any> {
+        try {
+            const vital = await this.patientVitalRepository.findOne(vitalId);
+            vital.reading = param.reading;
+            vital.readingType = param.readingType;
+            await vital.save();
 
-        const vitals = await this.patientVitalRepository.find({where: {patient}});
+            return {success: true, vital };
+        } catch (error) {
+            return {success: false, message: error.message };
+        }
+    }
+
+    async getVitals(id, urlParams): Promise<PatientVital[]> {
+        const {startDate, endDate} = urlParams;
+
+        const query = this.patientVitalRepository.createQueryBuilder('q')
+                        .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
+                        .where('q.patient_id = :id', {id});
+        if (startDate && startDate !== '') {
+            const start = moment(startDate).endOf('day').toISOString();
+            query.andWhere(`q.createdAt >= '${start}'`);
+        }
+        if (endDate && endDate !== '') {
+            const end = moment(endDate).endOf('day').toISOString();
+            query.andWhere(`q.createdAt <= '${end}'`);
+        }
+        const vitals = query.getMany();
 
         return vitals;
+    }
+
+    async deleteVital(id: string) {
+        const result = await this.patientVitalRepository.delete(id);
+
+        if (result.affected === 0) {
+            throw new NotFoundException(`Patient vital with ID '${id}' not found`);
+        }
+        return {success: true};
     }
 
     async doSaveAntenatal(param: PatientAntenatalDto): Promise<any> {
@@ -143,12 +182,48 @@ export class PatientService {
         }
     }
 
-    async getAntenatals(id): Promise<PatientAntenatal[]> {
-        const patient = await this.patientRepository.findOne(id);
+    async getAntenatals(id, urlParams): Promise<PatientAntenatal[]> {
+        const {startDate, endDate} = urlParams;
 
-        const antenatals = await this.patientAntenatalRepository.find({where: {patient}});
+        const query = this.patientAntenatalRepository.createQueryBuilder('q')
+                        .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
+                        .where('q.patient_id = :id', {id});
+        if (startDate && startDate !== '') {
+            const start = moment(startDate).endOf('day').toISOString();
+            query.andWhere(`q.createdAt >= '${start}'`);
+        }
+        if (endDate && endDate !== '') {
+            const end = moment(endDate).endOf('day').toISOString();
+            query.andWhere(`q.createdAt <= '${end}'`);
+        }
+        const antenatals = query.getMany();
 
         return antenatals;
+    }
+
+    async doUpdateAntenatal(antenatalId, param: PatientAntenatalDto): Promise<any> {
+        try {
+            const antenatal = await this.patientAntenatalRepository.findOne(antenatalId);
+            antenatal.fetalHeartRate = param.fetalHeartRate;
+            antenatal.fetalLie = param.fetalLie;
+            antenatal.positionOfFetus = param.positionOfFetus;
+            antenatal.heightOfFunds = param.heightOfFunds;
+            antenatal.relationshipToBrim = param.relationshipToBrim;
+            await antenatal.save();
+
+            return {success: true, antenatal };
+        } catch (error) {
+            return {success: false, message: error.message };
+        }
+    }
+
+    async deleteAntenatal(id: string) {
+        const result = await this.patientAntenatalRepository.delete(id);
+
+        if (result.affected === 0) {
+            throw new NotFoundException(`Patient antenatal with ID '${id}' not found`);
+        }
+        return {success: true};
     }
 
     async doSaveAllergies(param: PatientAllergyDto): Promise<any> {
@@ -163,11 +238,113 @@ export class PatientService {
         }
     }
 
-    async getAllergies(id): Promise<PatientAllergy[]> {
-        const patient = await this.patientRepository.findOne(id);
+    async doUpdateAllergy(allergyId, param: PatientAllergyDto): Promise<any> {
+        try {
+            const allergy = await this.patientAllergyRepository.findOne(allergyId);
+            allergy.category = param.category;
+            allergy.allergy = param.allergy;
+            allergy.severity = param.severity;
+            allergy.reaction = param.reaction;
+            allergy.save();
 
-        const allergies = await this.patientAllergyRepository.find({where: {patient}});
+            return {success: true, allergy };
+
+        } catch (error) {
+            return {success: false, message: error.message };
+        }
+    }
+
+    async getAllergies(id, urlParams): Promise<PatientAllergy[]> {
+        const {startDate, endDate} = urlParams;
+
+        const query = this.patientAllergyRepository.createQueryBuilder('q')
+                        .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
+                        .where('q.patient_id = :id', {id});
+        if (startDate && startDate !== '') {
+            const start = moment(startDate).endOf('day').toISOString();
+            query.andWhere(`q.createdAt >= '${start}'`);
+        }
+        if (endDate && endDate !== '') {
+            const end = moment(endDate).endOf('day').toISOString();
+            query.andWhere(`q.createdAt <= '${end}'`);
+        }
+        const allergies = query.getMany();
 
         return allergies;
+    }
+
+    async deleteAllergy(id: string) {
+        const result = await this.patientAllergyRepository.delete(id);
+
+        if (result.affected === 0) {
+            throw new NotFoundException(`Patient allergy with ID '${id}' not found`);
+        }
+        return {success: true};
+    }
+
+    async doSaveRequest(param) {
+        const { requestType, patient_id } = param;
+        if (!requestType && requestType === '' ) {
+            return {success: false, message: 'Request Type cannot be empty'};
+        }
+        let res;
+        const patient = await this.patientRepository.findOne(patient_id);
+        switch (requestType) {
+            case 'lab':
+                res = await PatientRequestHelper.handleLabRequest(param, patient);
+                break;
+            case 'pharmacy':
+                res = await PatientRequestHelper.handlePharmacyRequest(param, patient);
+                break;
+            case 'physiotherapy':
+                res = await PatientRequestHelper.handlePhysiotherapyRequest(param, patient);
+                break;
+            case 'opthalmology':
+                res = await PatientRequestHelper.handleOpthalmolgyRequest(param, patient);
+                break;
+            case 'dentistry':
+                res = await PatientRequestHelper.handleDentistryRequest(param, patient);
+                break;
+            case 'imaging':
+                res = await PatientRequestHelper.handleImagingRequest(param, patient);
+                break;
+            case 'procedure':
+                res = await PatientRequestHelper.handleProcedureRequest(param, patient);
+                break;
+            default:
+                res = {success: false, message: 'No data'};
+                break;
+        }
+        return res;
+    }
+
+    async doListRequest(requestType, patient_id, urlParams): Promise<PatientRequest[]> {
+        const {startDate, endDate} = urlParams;
+
+        const query = this.patientRequestRepository.createQueryBuilder('q')
+                        .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
+                        .where('q.patient_id = :patient_id', {patient_id})
+                        .andWhere('q.requestType = :requestType', {requestType});
+
+        if (startDate && startDate !== '') {
+            const start = moment(startDate).endOf('day').toISOString();
+            query.andWhere(`q.createdAt >= '${start}'`);
+        }
+        if (endDate && endDate !== '') {
+            const end = moment(endDate).endOf('day').toISOString();
+            query.andWhere(`q.createdAt <= '${end}'`);
+        }
+        const allergies = query.getMany();
+
+        return allergies;
+    }
+
+    async deleteRequest(id: string) {
+        const result = await this.patientRequestRepository.delete(id);
+
+        if (result.affected === 0) {
+            throw new NotFoundException(`Patient request with ID '${id}' not found`);
+        }
+        return {success: true};
     }
 }
