@@ -48,7 +48,7 @@ export class PatientService {
         const found = this.patientRepository.find({where: [
             {surname: Like(`%${param.toLocaleLowerCase()}%`)},
             {other_names: Like(`%${param.toLocaleLowerCase()}%`)},
-            {fileNumber: Like(`%${param.toLocaleLowerCase()}%`)},
+            {fileNumber: Like(`%${param}%`)},
         ]});
 
         return found;

@@ -73,6 +73,11 @@ export class InventoryController {
         return this.inventoryService.deleteStock(id);
     }
 
+    @Get('/stocks/:id')
+    getStock(@Param('id') id: string): Promise<Stock> {
+        return this.inventoryService.getStockById(id);
+    }
+
     @Post('/stocks/bulk-upload')
     @UseInterceptors(FileInterceptor('file', {
         storage: diskStorage({
