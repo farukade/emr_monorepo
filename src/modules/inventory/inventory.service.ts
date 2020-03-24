@@ -76,28 +76,28 @@ export class InventoryService {
         const csvWriter = createCsvWriter({
             path: 'stocks.csv',
             header: [
-                {id: 'category', title: 'Category'},
-                {id: 'sub_category', title: 'SubCategory'},
-                {id: 'code', title: 'Code'},
-                {id: 'name', title: 'Service'},
-                {id: 'amount', title: 'Amount'},
-                {id: 'hmo_rate', title: 'HMO Rate'},
+                {id: 'category', title: 'DRUG CLASS'},
+                {id: 'stock_code', title: 'STOCK CODE'},
+                {id: 'name', title: 'BRAND NAME'},
+                {id: 'generic_name', title: 'GENERIC NAME'},
+                {id: 'quantity', title: 'QUANTITY ON HAND'},
+                {id: 'sales_price', title: 'SALES PRICE'},
             ],
         });
 
         try {
-            const stocks = await this.stockRepository.find({relations: ['subCategory', 'category']});
+            const stocks = await this.stockRepository.find({relations: ['subCategory']});
 
             if (stocks.length) {
                 for (const stock of stocks) {
                     const data = [
                         {
-                            category: stock.category.name,
-                            sub_category: (stock.subCategory) ? stock.subCategory.name : '',
+                            category: (stock.subCategory) ? stock.subCategory.name : '',
                             code: stock.stock_code,
                             name: stock.name,
-                            amount: stock.sales_price,
-                            hmo_rate: '',
+                            generic_name: '',
+                            quantity: stock.quantity,
+                            sales_price: stock.sales_price,
                         },
                     ];
 
@@ -107,11 +107,11 @@ export class InventoryService {
                 const data = [
                     {
                         category: '',
-                        sub_category: '',
                         code: '',
                         name: '',
-                        amount: '',
-                        hmo_rate: '',
+                        generic_name: '',
+                        quantity: '',
+                        sales_price: '',
                     },
                 ];
                 await csvWriter.writeRecords({data});
