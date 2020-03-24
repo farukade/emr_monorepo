@@ -143,6 +143,7 @@ export class InventoryService {
         const csv = require('csv-parser');
         const fs = require('fs');
         const { category_id } = stockUploadDto;
+        const content = [];
         // find category
         const category = await this.inventoryCategoryRepository.findOne(category_id);
         let subCategory;
@@ -151,34 +152,36 @@ export class InventoryService {
             fs.createReadStream(file.path)
             .pipe(csv())
             .on('data', async (row) => {
-                // console.log(row['DRUG CLASS']);
-                // check if sub category exists
-                if (row['DRUG CLASS'] !== '') {
-                    subCategory = await this.inventorySubCategoryRepository.findOne({
-                        where: {name: row['DRUG CLASS']},
-                    });
-                    if (!subCategory) {
-                        subCategory = await this.inventorySubCategoryRepository.save({name: row['DRUG CLASS'], category});
-                        console.log('new sub category', row['DRUG CLASS']);
-                    }
-                }
-
-                if (subCategory) {
-                    if (row['BRAND NAME'] !== '') {
-                        // save stock
-                        await this.stockRepository.save({
-                            name: row['BRAND NAME'],
-                            stock_code: 'STU-' + Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5),
-                            quantity: row['QUANTITY ON HAND'],
-                            sales_price: row['SALES PRICE'].replace(',', ''),
-                            category,
-                            subCategory,
-                        });
-                    }
-                }
+                const data = {
+                    category: row['DRUG CLASS'],
+                    name: row['BRAND NAME'],
+                    quantity: row['QUANTITY ON HAND'],
+                    sales_price: row['SALES PRICE'].replace(',', ''),
+                    stock_code: 'STU-' + Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5),
+                };
+                content.push(data);
             })
-            .on('end', () => {
-                console.log('CSV file successfully processed');
+            .on('end', async () => {
+                for (const item of content) {
+                    // check if sub category exists
+                    if (item.category !== '') {
+                        subCategory = await this.inventorySubCategoryRepository.findOne({
+                            where: {name: item.category},
+                        });
+                        if (!subCategory) {
+                            subCategory = await this.inventorySubCategoryRepository.save({name: item.category, category});
+                        }
+                    }
+
+                    if (subCategory) {
+                        if (item.name !== '') {
+                            item.subCategory = subCategory;
+                            item.category = category;
+                            // save stock
+                            await this.stockRepository.save(item);
+                        }
+                    }
+                }
             });
             return {success: true};
         } catch (err) {
