@@ -22,7 +22,7 @@ export class ServicesService {
     ) {}
 
     async getAllServices(): Promise<Service[]> {
-        return this.serviceRepository.find({relations: ['category']});
+        return this.serviceRepository.find({relations: ['category', 'subCategory']});
     }
 
     async getServiceById(id: string): Promise<Service> {
@@ -191,7 +191,7 @@ export class ServicesService {
     */
 
     async getServicesCategory(): Promise<ServiceCategory[]> {
-        return this.serviceCategoryRepository.find({relations: ['services']});
+        return this.serviceCategoryRepository.find({relations: ['services', 'subCateogries']});
     }
 
     async createServiceCategory(serviceCategoryDto: ServiceCategoryDto): Promise<ServiceCategory> {

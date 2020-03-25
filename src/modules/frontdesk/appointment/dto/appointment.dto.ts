@@ -8,7 +8,7 @@ export class AppointmentDto {
     department_id: string;
 
     @IsNotEmpty()
-    appointment_type: string;
+    serviceType: string;
 
     appointment_date: string;
 

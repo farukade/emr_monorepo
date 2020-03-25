@@ -9,6 +9,8 @@ import { ConsultingRoomRepository } from '../../settings/consulting-room/consult
 import { Appointment } from './appointment.entity';
 import * as moment from 'moment';
 import { QueueSystemRepository } from '../queue-system/queue-system.repository';
+import { Service } from '../../settings/entities/service.entity';
+import { ServiceRepository } from '../../settings/services/service.repository';
 
 @Injectable()
 export class AppointmentService {
@@ -25,6 +27,8 @@ export class AppointmentService {
         private consultingRoomRepository: ConsultingRoomRepository,
         @InjectRepository(QueueSystemRepository)
         private queueSystemRepository: QueueSystemRepository,
+        @InjectRepository(ServiceRepository)
+        private serviceRepository: ServiceRepository,
     ) {}
 
     async todaysAppointments(): Promise<Appointment[]> {
@@ -39,7 +43,7 @@ export class AppointmentService {
 
     async saveNewAppointment(appointmentDto: AppointmentDto): Promise<any> {
         try {
-            const { patient_id, department_id, specialization_id, consulting_room_id, sendToQueue} = appointmentDto;
+            const { patient_id, department_id, specialization_id, consulting_room_id, sendToQueue, serviceType} = appointmentDto;
             // find patient details
             const patient = await this.patientRepository.findOne(patient_id);
             // find department details
@@ -48,8 +52,10 @@ export class AppointmentService {
             const specialization = await this.specializationRepository.findOne(specialization_id);
             // find consulting room
             const consultingRoom = await this.consultingRoomRepository.findOne(consulting_room_id);
+            // find service
+            const service = await this.serviceRepository.findOne(serviceType);
 
-            const appointment = await this.appointmentRepository.saveAppointment(appointmentDto, patient, specialization, department, consultingRoom);
+            const appointment = await this.appointmentRepository.saveAppointment(appointmentDto, patient, specialization, department, consultingRoom, service);
             // update patient appointment date
             patient.lastAppointmentDate = new Date().toString();
             await patient.save();
@@ -99,5 +105,45 @@ export class AppointmentService {
         const result = query.getRawMany();
 
         return result;
+    }
+
+    async checkAppointmentStatus(params) {
+        const {patient_id, service_id} = params;
+        // find service
+        const service = await this.serviceRepository.findOne(service_id);
+        const gracePeriodParams = service.gracePeriod.split(' ');
+        let limit = service.noOfVisits;
+        const duration = parseInt(gracePeriodParams[0], 10);
+        if (duration > limit) {
+            limit = duration;
+        }
+        // find patient last appointment
+        const appointments = await this.appointmentRepository.createQueryBuilder('appointment')
+                .where('appointment.patient_id = :patient_id', {patient_id})
+                .andWhere('appointment.service_id = :service_id', {service_id})
+                .select(['appointment.createdAt as created_at'])
+                .orderBy('appointment.createdAt', 'DESC')
+                .limit(limit)
+                .getRawMany();
+        if (appointments.length) {
+            const lastVisit = moment(appointments[0].created_at);
+            // calculate current grace period
+            // eslint-disable-next-line
+            // const gracePeriod = moment().subtract("1", gracePeriodParams[1]).startOf('day');
+            // // check if previous visit is within grace period
+            // if (this.isWithinGracePeriod(lastVisit, gracePeriod)) {
+            //     // if () {
+            //     // }
+            //     return {isPaying: false, amount: 0};
+            // } else {
+            //     return {isPaying: true, amount: parseFloat(service.tariff)};
+            // }
+        } else {
+            return {isPaying: true, amount: parseFloat(service.tariff), appointments};
+        }
+    }
+
+    private isWithinGracePeriod(lastVisit, gracePeriod) {
+        return lastVisit.isAfter(gracePeriod);
     }
 }

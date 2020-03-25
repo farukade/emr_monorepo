@@ -9,6 +9,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConsultingRoomRepository } from '../../settings/consulting-room/consulting-room.repository';
 import { AppointmentGateway } from './appointment.gateway';
 import { QueueSystemRepository } from '../queue-system/queue-system.repository';
+import { ServiceRepository } from '../../settings/services/service.repository';
 
 @Module({
   imports: [TypeOrmModule.forFeature([
@@ -18,6 +19,7 @@ import { QueueSystemRepository } from '../queue-system/queue-system.repository';
     SpecializationRepository,
     ConsultingRoomRepository,
     QueueSystemRepository,
+    ServiceRepository,
   ])],
   controllers: [AppointmentController],
   providers: [AppointmentGateway, AppointmentService],

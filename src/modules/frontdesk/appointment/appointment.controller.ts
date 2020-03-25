@@ -26,4 +26,11 @@ export class AppointmentController {
     ) {
         return this.appointmentService.listAppointments(params);
     }
+
+    @Get('validate')
+    validateNewAppointment(
+        @Query() params: string,
+    ) {
+        return this.appointmentService.checkAppointmentStatus(params);
+    }
 }
