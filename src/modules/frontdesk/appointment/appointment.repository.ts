@@ -6,6 +6,7 @@ import { Specialization } from '../../settings/entities/specialization.entity';
 import { Department } from '../../settings/entities/department.entity';
 import { ConsultingRoom } from '../../settings/entities/consulting-room.entity';
 import * as moment from 'moment';
+import { Service } from '../../settings/entities/service.entity';
 
 @EntityRepository(Appointment)
 export class AppointmentRepository extends Repository<Appointment> {
@@ -16,6 +17,7 @@ export class AppointmentRepository extends Repository<Appointment> {
         specialization: Specialization,
         department: Department,
         consultingRoom: ConsultingRoom,
+        service: Service,
     ) {
         const appointment_date = moment(appointmentDto.appointment_date).format('YYYY-MM-DD');
         const appointment = new Appointment();
@@ -24,7 +26,7 @@ export class AppointmentRepository extends Repository<Appointment> {
         appointment.specialization = specialization;
         appointment.consultingRoom = consultingRoom;
         appointment.appointment_date = appointment_date;
-        appointment.appointment_type = appointmentDto.appointment_type;
+        appointment.serviceType = service;
         appointment.duration = appointmentDto.duration;
         appointment.description = appointmentDto.description;
         appointment.referredBy = appointmentDto.referredBy;

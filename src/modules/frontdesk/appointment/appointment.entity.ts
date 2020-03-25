@@ -4,6 +4,7 @@ import { Patient } from '../../patient/entities/patient.entity';
 import { Department } from '../../settings/entities/department.entity';
 import { Specialization } from '../../settings/entities/specialization.entity';
 import { ConsultingRoom } from '../../settings/entities/consulting-room.entity';
+import { Service } from '../../settings/entities/service.entity';
 
 @Entity({ name: 'appointments'})
 export class Appointment extends CustomBaseEntity {
@@ -19,9 +20,6 @@ export class Appointment extends CustomBaseEntity {
     @JoinColumn({ name: 'department_id'})
     department: Department;
 
-    @Column()
-    appointment_type: string;
-
     @ManyToOne(type => Specialization)
     @JoinColumn({ name: 'specialization_id'})
     specialization: Specialization;
@@ -29,6 +27,10 @@ export class Appointment extends CustomBaseEntity {
     @ManyToOne(type => ConsultingRoom, {nullable: true})
     @JoinColumn({ name: 'consulting_room_id'})
     consultingRoom: ConsultingRoom;
+
+    @ManyToOne(type => Service, {nullable: true})
+    @JoinColumn({ name: 'service_id'})
+    serviceType: Service;
 
     @Column({ nullable: true})
     duration: string;

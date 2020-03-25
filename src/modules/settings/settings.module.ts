@@ -8,6 +8,7 @@ import { DepartmentModule } from './departments/department.module';
 import { LeaveCategoryModule } from './leave-category/leave-category.module';
 import { SpecializationModule } from './specialization/specialization.module';
 import { DiagnosisModule } from './diagnosis/diagnosis.module';
+import { RequestTypesModule } from './request-types/request-types.module';
 
 @Module({
     imports: [
@@ -20,6 +21,7 @@ import { DiagnosisModule } from './diagnosis/diagnosis.module';
         LeaveCategoryModule,
         SpecializationModule,
         DiagnosisModule,
+        RequestTypesModule,
     ],
 })
 export class SettingsModule {}
