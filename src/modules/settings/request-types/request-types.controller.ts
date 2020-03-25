@@ -12,6 +12,13 @@ export class RequestTypesController {
         return this.requestTypeService.getRequestTypes();
     }
 
+    @Get(':group')
+    getRequestTypeByGrop(
+        @Param(':group') group: string,
+    ): Promise<RequestType[]> {
+        return this.requestTypeService.getRequestTypesByGroup(group);
+    }
+
     @Post()
     @UsePipes(ValidationPipe)
     createRequestType(@Body() requestTypeDto: RequestTypeDto): Promise<RequestType> {

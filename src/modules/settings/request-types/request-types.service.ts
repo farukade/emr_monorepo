@@ -10,8 +10,13 @@ export class RequestTypesService {
         @InjectRepository(RequestTypeRepository)
         private requestTypeRepository: RequestTypeRepository,
     ) {}
+
     async getRequestTypes(): Promise<RequestType[]> {
-        return this.requestTypeRepository.find();
+        return await this.requestTypeRepository.find();
+    }
+
+    async getRequestTypesByGroup(group: string): Promise<RequestType[]> {
+        return await this.requestTypeRepository.find({where: {group}});
     }
 
     async createRequestType(requestTypeDto: RequestTypeDto): Promise<RequestType> {
