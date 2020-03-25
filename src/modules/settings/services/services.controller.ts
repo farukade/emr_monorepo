@@ -17,7 +17,7 @@ export class ServicesController {
         return this.servicesService.getAllServices();
     }
 
-    @Get('/consultation')
+    @Get('/consultations')
     getConsultationServices(): Promise<Service[]> {
         return this.servicesService.getConsultationServices();
     }

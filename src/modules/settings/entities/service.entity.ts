@@ -16,6 +16,9 @@ export class Service extends CustomBaseEntity {
   discount: string;
 
   @Column({ type: 'varchar', length: 300, nullable: true })
+  note: string;
+
+  @Column({ type: 'varchar', length: 300, nullable: true })
   gracePeriod: string;
 
   @Column({ nullable: true })

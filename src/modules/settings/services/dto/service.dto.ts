@@ -10,4 +10,10 @@ export class ServiceDto {
   
   category_id: string;
 
+  noOfVisits: number;
+
+  gracePeriod: string;
+
+  note: string;
+
 }
