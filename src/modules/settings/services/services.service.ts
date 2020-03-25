@@ -53,15 +53,21 @@ export class ServicesService {
     }
 
     async updateService(id: string, serviceDto: ServiceDto): Promise<Service> {
-        const { name, tariff, sub_category_id, category_id } = serviceDto;
-        const category = await this.serviceCategoryRepository.findOne(category_id);
-        const subCategory = await this.serviceSubCategoryRepository.findOne(sub_category_id);
-        const service = await this.getServiceById(id);
-        service.name = name;
-        service.tariff = tariff;
-        service.category = category;
+        const { name, tariff, sub_category_id, category_id, noOfVisits, gracePeriod, note } = serviceDto;
+        const category      = await this.serviceCategoryRepository.findOne(category_id);
+
+        const subCategory   = await this.serviceSubCategoryRepository.findOne(sub_category_id);
+
+        const service       = await this.getServiceById(id);
+        service.name        = name;
+        service.tariff      = tariff;
+        service.category    = category;
         service.subCategory = subCategory;
+        service.gracePeriod = gracePeriod;
+        service.noOfVisits  = noOfVisits;
+        service.note        = note;
         await service.save();
+
         return service;
     }
 

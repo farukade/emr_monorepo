@@ -18,6 +18,7 @@ import { PatientRequestHelper } from '../../common/utils/PatientRequestHelper';
 import { PatientRequestRepository } from './repositories/patient_request.repository';
 import { PatientRequest } from './entities/patient_requests.entity';
 import * as moment from 'moment';
+import { HmoRepository } from '../hmo/hmo.repository';
 
 @Injectable()
 export class PatientService {
@@ -36,6 +37,8 @@ export class PatientService {
         private patientRequestRepository: PatientRequestRepository,
         @InjectRepository(ServiceRepository)
         private serviceRepository: ServiceRepository,
+        @InjectRepository(HmoRepository)
+        private hmoRepository: HmoRepository,
     ) {}
 
     async listAllPatients(): Promise<Patient[]> {
@@ -56,9 +59,14 @@ export class PatientService {
 
     async saveNewPatient(patientDto: PatientDto): Promise<any> {
         try {
+            const {hmoId} = patientDto;
+            let hmo;
+            if (hmoId && hmoId !== '') {
+                hmo = await this.hmoRepository.findOne(hmoId);
+            }
             const nok = await this.patientNOKRepository.saveNOK(patientDto);
 
-            const patient = await this.patientRepository.savePatient(patientDto, nok);
+            const patient = await this.patientRepository.savePatient(patientDto, nok, hmo);
 
             return {success: true, patient};
         } catch (err) {
@@ -91,6 +99,10 @@ export class PatientService {
             patient.nextOfKin.phoneNumber         = patientDto.nok_phoneNumber;
             patient.nextOfKin.maritalStatus       = patientDto.nok_maritalStatus;
             patient.nextOfKin.ethnicity           = patientDto.nok_ethnicity;
+            if (patientDto.hmoId && patientDto.hmoId !== '') {
+                const hmo = await this.hmoRepository.findOne(patientDto.hmoId);
+                patient.hmo = hmo;
+            }
             patient.save();
 
             return {success: true, patient};
@@ -117,13 +129,17 @@ export class PatientService {
         const { patient_id, readingType, reading } = param;
         try {
             const patient = await this.patientRepository.findOne(patient_id);
-            const data = {
-                readingType,
-                reading,
-                patient,
-            };
-            const readings = await this.patientVitalRepository.save(data);
-            return {success: true, readings };
+            if (patient) {
+                const data = {
+                    readingType,
+                    reading,
+                    patient,
+                };
+                const readings = await this.patientVitalRepository.save(data);
+                return {success: true, readings };
+            } else {
+                return {success: false, message: 'Patient record was not found'};
+            }
         } catch (error) {
             return {success: false, message: error.message };
         }

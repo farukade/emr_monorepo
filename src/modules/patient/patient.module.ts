@@ -9,6 +9,7 @@ import { PatientVitalRepository } from './repositories/patient_vitals.repository
 import { PatientAntenatalRepository } from './repositories/patient_antenatal.repository';
 import { PatientAllergyRepository } from './repositories/patient_allergy.repository';
 import { PatientRequestRepository } from './repositories/patient_request.repository';
+import { HmoRepository } from '../hmo/hmo.repository';
 
 @Module({
   imports: [TypeOrmModule.forFeature([
@@ -18,6 +19,7 @@ import { PatientRequestRepository } from './repositories/patient_request.reposit
     PatientAntenatalRepository,
     PatientRequestRepository,
     PatientAllergyRepository,
+    HmoRepository,
     ServiceRepository])],
   controllers: [PatientController],
   providers: [PatientService],

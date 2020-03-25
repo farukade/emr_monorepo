@@ -28,6 +28,8 @@ export class PatientDto {
 
     insurranceStatus: string;
 
+    hmoId: string;
+
     referredBy: string;
 
     @IsNotEmpty()
