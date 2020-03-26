@@ -12,6 +12,9 @@ import { QueueSystemRepository } from '../queue-system/queue-system.repository';
 import { Service } from '../../settings/entities/service.entity';
 import { ServiceRepository } from '../../settings/services/service.repository';
 import { Queue } from '../queue-system/queue.entity';
+import { Patient } from '../../patient/entities/patient.entity';
+import { Department } from '../../settings/entities/department.entity';
+import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
 
 @Injectable()
 export class AppointmentService {
@@ -30,6 +33,8 @@ export class AppointmentService {
         private queueSystemRepository: QueueSystemRepository,
         @InjectRepository(ServiceRepository)
         private serviceRepository: ServiceRepository,
+        @InjectRepository(TransactionsRepository)
+        private transactionsRepository: TransactionsRepository,
     ) {}
 
     async todaysAppointments(): Promise<Appointment[]> {
@@ -62,6 +67,7 @@ export class AppointmentService {
             await patient.save();
 
             let queue;
+            let payment;
 
             if (sendToQueue) {
                 let queueNumber;
@@ -81,19 +87,21 @@ export class AppointmentService {
                 }
 
                 // add appointment to queue
-                queue = await this.saveQueue(appointment, queueNumber, patient, amount);
+                const queueRes = await this.saveQueue(appointment, queueNumber, patient, amount, service);
+                queue = queueRes.queue;
+                payment = queueRes.payment;
                 // update appointment status
                 appointment.status = 'In Queue';
                 await appointment.save();
             }
 
-            return { success: true, appointment, queue };
+            return { success: true, appointment, queue, payment };
         } catch (error) {
             return { success: false, message: error.message };
         }
     }
 
-    listAppointments(params) {
+    async listAppointments(params) {
         const {startDate, endDate} = params;
         const query = this.queueSystemRepository.createQueryBuilder('q');
         if (startDate && startDate !== '') {
@@ -104,7 +112,7 @@ export class AppointmentService {
             const end = moment(endDate).endOf('day').toISOString();
             query.where(`q.createdAt <= '${end}'`);
         }
-        const result = query.getRawMany();
+        const result = await query.getRawMany();
 
         return result;
     }
@@ -132,8 +140,9 @@ export class AppointmentService {
         }
     }
 
-    private async saveQueue(appointment, queueNumber, patient, amount) {
+    private async saveQueue(appointment, queueNumber, patient, amount, service) {
         const queue = new Queue();
+        let payment;
         queue.patientName = appointment.patient.surname + ', ' + appointment.patient.other_names;
         queue.appointment = appointment;
         await queue.save();
@@ -145,10 +154,23 @@ export class AppointmentService {
             queue.department = department;
             queue.queueNumber= queueNumber;
             queue.status     = 1;
+            payment = await this.saveTransaction(patient, department, service, amount);
         }
         await queue.save();
 
-        return queue;
+        return {queue, payment};
+    }
+
+    private async saveTransaction(patient: Patient, department: Department, service: Service, amount) {
+        const data = {
+            patient,
+            department,
+            serviceType: service,
+            amount,
+            description: service.name,
+        };
+        const transaction = await this.transactionsRepository.save(data);
+        return transaction;
     }
 
     private isWithinGracePeriod(lastVisit, gracePeriod) {

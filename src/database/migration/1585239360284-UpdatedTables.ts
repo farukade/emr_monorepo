@@ -12,5 +12,4 @@ export class UpdatedTables1585239360284 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "patient_requests" DROP COLUMN "status"`, undefined);
         await queryRunner.query(`ALTER TABLE "hmo_rates" DROP COLUMN "comment"`, undefined);
     }
-
 }
