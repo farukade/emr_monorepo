@@ -25,4 +25,7 @@ export class HmoRate extends CustomBaseEntity {
 
   @Column({ type: 'varchar', nullable: true })
   percentage: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  comment: string;
 }

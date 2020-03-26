@@ -149,7 +149,7 @@ export class ServicesService {
                 {id: 'code', title: 'Code'},
                 {id: 'name', title: 'Service'},
                 {id: 'amount', title: 'Amount'},
-                {id: 'hmo_rate', title: 'HMO Rate'},
+                // {id: 'hmo_rate', title: 'HMO Rate'},
             ],
         });
 
