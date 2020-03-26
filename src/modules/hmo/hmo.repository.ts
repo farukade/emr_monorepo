@@ -9,7 +9,7 @@ export class HmoRepository extends Repository<Hmo> {
         const { name, address, phoneNumber, email }  = hmoDto;
         const hmo       = new Hmo();
         hmo.name        = name;
-        hmo.logo        = logo;
+        // hmo.logo        = logo;
         hmo.address     = address;
         hmo.phoneNumber = phoneNumber;
         hmo.email       = email;

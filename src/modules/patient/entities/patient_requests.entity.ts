@@ -13,4 +13,7 @@ export class PatientRequest extends CustomBaseEntity {
 
     @ManyToOne(type => Patient)
     patient: Patient;
+
+    @Column({type: 'smallint', default: 0})
+    status: number;
 }
