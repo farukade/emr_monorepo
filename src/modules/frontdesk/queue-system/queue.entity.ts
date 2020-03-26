@@ -8,15 +8,17 @@ import {
   JoinColumn,
   CreateDateColumn,
   PrimaryGeneratedColumn,
+  ManyToOne,
 } from 'typeorm';
 import { Appointment } from '../appointment/appointment.entity';
+import { Department } from '../../settings/entities/department.entity';
 
 @Entity({ name: 'queues' })
 export class Queue extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({type: 'integer'})
+  @Column({type: 'integer', nullable: true})
   queueNumber: number;
 
   @Column({type: 'varchar'})
@@ -25,6 +27,13 @@ export class Queue extends BaseEntity {
   @OneToOne(() => Appointment)
   @JoinColumn({name: 'appointment_id'})
   appointment: Appointment;
+
+  @ManyToOne(() => Department)
+  @JoinColumn({name: 'department_id'})
+  department: Department;
+
+  @Column({type: 'smallint', default: 0})
+  status: number;
 
   @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;

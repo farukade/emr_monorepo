@@ -15,7 +15,8 @@ export class QueueSystemService {
         const today = moment().format('YYYY-MM-DD');
 
         const queues = await this.queueSystemRepository.find({
-            where: {createdAt: today},
+            where: {createdAt: today, status: 1},
+            relations: ['appointment', 'appointment.patient'],
             take: 10,
         });
 

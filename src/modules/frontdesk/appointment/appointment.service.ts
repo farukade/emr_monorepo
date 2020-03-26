@@ -11,6 +11,7 @@ import * as moment from 'moment';
 import { QueueSystemRepository } from '../queue-system/queue-system.repository';
 import { Service } from '../../settings/entities/service.entity';
 import { ServiceRepository } from '../../settings/services/service.repository';
+import { Queue } from '../queue-system/queue.entity';
 
 @Injectable()
 export class AppointmentService {
@@ -43,7 +44,7 @@ export class AppointmentService {
 
     async saveNewAppointment(appointmentDto: AppointmentDto): Promise<any> {
         try {
-            const { patient_id, department_id, specialization_id, consulting_room_id, sendToQueue, serviceType} = appointmentDto;
+            const { patient_id, department_id, specialization_id, consulting_room_id, sendToQueue, serviceType, amount} = appointmentDto;
             // find patient details
             const patient = await this.patientRepository.findOne(patient_id);
             // find department details
@@ -78,8 +79,9 @@ export class AppointmentService {
                 } else {
                     queueNumber = 1;
                 }
+
                 // add appointment to queue
-                queue = await this.queueSystemRepository.saveQueue(appointment, queueNumber);
+                queue = await this.saveQueue(appointment, queueNumber, patient, amount);
                 // update appointment status
                 appointment.status = 'In Queue';
                 await appointment.save();
@@ -111,39 +113,83 @@ export class AppointmentService {
         const {patient_id, service_id} = params;
         // find service
         const service = await this.serviceRepository.findOne(service_id);
-        const gracePeriodParams = service.gracePeriod.split(' ');
-        let limit = service.noOfVisits;
-        const duration = parseInt(gracePeriodParams[0], 10);
-        if (duration > limit) {
-            limit = duration;
+
+        let resGracePeriod, resNoOfVisits;
+
+        if (service.gracePeriod) {
+            const gracePeriodParams = service.gracePeriod.split(' ');
+            resGracePeriod = await this.verifyGracePeriod(gracePeriodParams, patient_id, service_id);
         }
-        // find patient last appointment
-        const appointments = await this.appointmentRepository.createQueryBuilder('appointment')
-                .where('appointment.patient_id = :patient_id', {patient_id})
-                .andWhere('appointment.service_id = :service_id', {service_id})
-                .select(['appointment.createdAt as created_at'])
-                .orderBy('appointment.createdAt', 'DESC')
-                .limit(limit)
-                .getRawMany();
-        if (appointments.length) {
-            const lastVisit = moment(appointments[0].created_at);
-            // calculate current grace period
-            // eslint-disable-next-line
-            // const gracePeriod = moment().subtract("1", gracePeriodParams[1]).startOf('day');
-            // // check if previous visit is within grace period
-            // if (this.isWithinGracePeriod(lastVisit, gracePeriod)) {
-            //     // if () {
-            //     // }
-            //     return {isPaying: false, amount: 0};
-            // } else {
-            //     return {isPaying: true, amount: parseFloat(service.tariff)};
-            // }
+
+        if (service.noOfVisits) {
+            resNoOfVisits = await this.verifyNoOfVisits(service.noOfVisits, patient_id, service_id);
+        }
+
+        if (resGracePeriod && resNoOfVisits) {
+            return {isPaying: false, amount: 0};
         } else {
-            return {isPaying: true, amount: parseFloat(service.tariff), appointments};
+            return {isPaying: true, amount: parseInt(service.tariff, 10)};
         }
+    }
+
+    private async saveQueue(appointment, queueNumber, patient, amount) {
+        const queue = new Queue();
+        queue.patientName = appointment.patient.surname + ', ' + appointment.patient.other_names;
+        queue.appointment = appointment;
+        await queue.save();
+        if (patient.insuranceStatus === 'HMO') {
+            const department = await this.departmentRepository.findOne({where: {name: 'HMO'}});
+            queue.department = department;
+        } else {
+            const department = await this.departmentRepository.findOne({where: {name: 'Paypoint'}});
+            queue.department = department;
+            queue.queueNumber= queueNumber;
+            queue.status     = 1;
+        }
+        await queue.save();
+
+        return queue;
     }
 
     private isWithinGracePeriod(lastVisit, gracePeriod) {
         return lastVisit.isAfter(gracePeriod);
+    }
+
+    private async verifyGracePeriod(gracePeriodParams, patient_id, service_id) {
+         // find patient last appointment
+        const appointments = await this.appointmentRepository.createQueryBuilder('appointment')
+            .where('appointment.patient_id = :patient_id', {patient_id})
+            .andWhere('appointment.service_id = :service_id', {service_id})
+            .select(['appointment.createdAt as created_at'])
+            .orderBy('appointment.createdAt', 'DESC')
+            .limit(gracePeriodParams[0])
+            .getRawMany();
+        let result = true;
+        if (appointments.length) {
+            for (const appointment of appointments) {
+                const lastVisit = moment(appointments[0].created_at);
+                const gracePeriod = moment().subtract(gracePeriodParams[0], gracePeriodParams[1]).startOf('day');
+                if (!this.isWithinGracePeriod(lastVisit, gracePeriod)) {
+                    result = false;
+                    return;
+                }
+            }
+        }
+        return result;
+    }
+
+    private async verifyNoOfVisits(noOfVisits, patient_id, service_id) {
+        const appointments = await this.appointmentRepository.createQueryBuilder('appointment')
+            .where('appointment.patient_id = :patient_id', {patient_id})
+            .andWhere('appointment.service_id = :service_id', {service_id})
+            .select(['appointment.createdAt as created_at'])
+            .orderBy('appointment.createdAt', 'DESC')
+            .limit(noOfVisits)
+            .getRawMany();
+        if (appointments.length < noOfVisits) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }

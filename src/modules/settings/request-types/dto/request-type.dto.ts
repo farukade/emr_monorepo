@@ -6,4 +6,6 @@ export class RequestTypeDto {
   @IsNotEmpty()
   group: string;
 
+  amount: number;
+
 }

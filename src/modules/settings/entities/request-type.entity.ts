@@ -9,4 +9,7 @@ export class RequestType extends CustomBaseEntity {
 
     @Column({ type: 'varchar', length: 300 })
     group: string;
+
+    @Column({type: 'float4'})
+    amount: number;
 }
