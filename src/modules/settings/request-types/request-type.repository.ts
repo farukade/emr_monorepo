@@ -6,10 +6,11 @@ import { RequestTypeDto } from './dto/request-type.dto';
 export class RequestTypeRepository extends Repository<RequestType> {
 
     async saveRequestType(requestTypeDto: RequestTypeDto): Promise<RequestType> {
-        const { name, group }  = requestTypeDto;
+        const { name, group, amount }  = requestTypeDto;
         const requestType  = new RequestType();
         requestType.name   = name;
-        requestType.group   = group;
+        requestType.group  = group;
+        requestType.amount = amount;
         await requestType.save();
         return requestType;
     }

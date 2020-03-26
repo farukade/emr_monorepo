@@ -24,10 +24,11 @@ export class RequestTypesService {
     }
 
     async updateRequestType(id: string, requestTypeDto: RequestTypeDto): Promise<RequestType> {
-        const { name, group } = requestTypeDto;
-        const requestType = await this.requestTypeRepository.findOne(id);
-        requestType.name = name;
-        requestType.group = group;
+        const { name, group, amount } = requestTypeDto;
+        const requestType   = await this.requestTypeRepository.findOne(id);
+        requestType.name    = name;
+        requestType.group   = group;
+        requestType.amount  = amount;
         await requestType.save();
         return requestType;
     }

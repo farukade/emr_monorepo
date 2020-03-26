@@ -27,4 +27,6 @@ export class AppointmentDto {
     referralCompany: string;
 
     sendToQueue: boolean;
+
+    amount: string;
 }
