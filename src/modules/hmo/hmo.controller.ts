@@ -64,7 +64,7 @@ export class HmoController {
         @Res() res) {
         const message = await this.hmoService.dowloadHmoSample();
         if (message === 'Completed') {
-            res.sendFile(join(__dirname, '../../../../') + '/hmo-sample.csv');
+            res.sendFile(join(__dirname, '../../../') + '/hmo-sample.csv');
         }
     }
 
@@ -77,7 +77,7 @@ export class HmoController {
     ) {
         const message = await this.hmoService.downloadHmoRate(query);
         if (message === 'Completed') {
-            res.sendFile(join(__dirname, '../../../../') + '/hmo-rate-sample.csv');
+            res.sendFile(join(__dirname, '../../../') + '/hmo-rate-sample.csv');
         }
     }
 
