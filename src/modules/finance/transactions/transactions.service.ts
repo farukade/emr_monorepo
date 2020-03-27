@@ -7,6 +7,9 @@ import { Transactions } from './transaction.entity';
 import { TransactionDto } from './dto/transaction.dto';
 import { DepartmentRepository } from '../../settings/departments/department.repository';
 import { ServiceRepository } from '../../settings/services/service.repository';
+import { Patient } from '../../patient/entities/patient.entity';
+import { Service } from '../../settings/entities/service.entity';
+import { Department } from '../../settings/entities/department.entity';
 
 @Injectable()
 export class TransactionsService {
@@ -24,7 +27,12 @@ export class TransactionsService {
 
     async fetchList(params): Promise<Transactions[]> {
         const {startDate, endDate, patient_id, status} = params;
-        const query = this.transactionsRepository.createQueryBuilder('q');
+        const query = this.transactionsRepository.createQueryBuilder('q')
+        .innerJoin('q.patient', 'patient')
+        .leftJoin('q.department', 'department')
+        .leftJoin('q.serviceType', 'service')
+        .addSelect('patient.surname, patient.other_names, department.name as deptName, service.name as serviceName');
+
         if (startDate && startDate !== '') {
             const start = moment(startDate).endOf('day').toISOString();
             query.where(`q.createdAt >= '${start}'`);
