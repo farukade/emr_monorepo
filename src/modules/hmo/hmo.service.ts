@@ -139,11 +139,10 @@ export class HmoService {
 
     async downloadHmoRate(query) {
         const {downloadType} = query;
-
         if (downloadType === 'services') {
-            return await this.downloadHmoServices();
+            return this.downloadHmoServices();
         } else {
-            return await this.downloadHmoStocks();
+            return this.downloadHmoStocks();
         }
     }
 
@@ -151,7 +150,7 @@ export class HmoService {
         const fs = require('fs');
         const createCsvWriter = require('csv-writer').createObjectCsvWriter;
         const csvWriter = createCsvWriter({
-            path: 'services.csv',
+            path: 'hmo-rate-sample.csv',
             header: [
                 {id: 'category', title: 'CATEGORY'},
                 {id: 'sub_category', title: 'SUB CATEGORY'},
@@ -205,7 +204,7 @@ export class HmoService {
         const fs = require('fs');
         const createCsvWriter = require('csv-writer').createObjectCsvWriter;
         const csvWriter = createCsvWriter({
-            path: 'stocks.csv',
+            path: 'hmo-rate-sample.csv',
             header: [
                 {id: 'category', title: 'DRUG CLASS'},
                 {id: 'stock_code', title: 'STOCK CODE'},
