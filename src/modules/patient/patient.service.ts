@@ -52,7 +52,7 @@ export class PatientService {
             {surname: Like(`%${param.toLocaleLowerCase()}%`)},
             {other_names: Like(`%${param.toLocaleLowerCase()}%`)},
             {fileNumber: Like(`%${param}%`)},
-        ]});
+        ], relations: ['nextOfKin']});
 
         return found;
     }
