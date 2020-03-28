@@ -113,7 +113,7 @@ export class HmoService {
             .pipe(csv())
             .on('data', (row) => {
                 const data = {
-                    name: row.name,
+                    name: row['HMO Name'],
                     address: row.Address,
                     email: row['Email Address'],
                     phoneNumber: row['Phone Number'],
