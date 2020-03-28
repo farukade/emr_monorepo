@@ -26,6 +26,17 @@ export class HmoService {
         return this.hmoRepository.find();
     }
 
+    async getHmoTariff(id, urlParams): Promise<HmoRate[]> {
+        const {listType } = urlParams;
+        // find hmo record
+        const hmo = await this.hmoRepository.findOne(id);
+        if  (listType === 'services') {
+            return await this.hmoRateRepository.find({where: {hmo}, relations: ['service']});
+        } else {
+            return await this.hmoRateRepository.find({where: {hmo}, relations: ['stock']});
+        }
+    }
+
     async createHmo(hmoDto: HmoDto, logo): Promise<Hmo> {
         return this.hmoRepository.saveHmo(hmoDto, logo);
     }
