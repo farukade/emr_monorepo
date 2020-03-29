@@ -2,7 +2,7 @@ import { Controller, Get, Query, Post, UsePipes, ValidationPipe, Body, Patch, Pa
 import { TransactionsService } from './transactions.service';
 import { Transactions } from './transaction.entity';
 import { TransactionDto } from './dto/transaction.dto';
-import { Transaction } from '@nestjs/common/interfaces/external/kafka-options.interface';
+import { ProcessTransactionDto } from './dto/process-transaction.dto';
 
 @Controller('transactions')
 export class TransactionsController {
@@ -30,6 +30,15 @@ export class TransactionsController {
         @Body() transactionDto: TransactionDto,
     ): Promise<any> {
         return this.transactionsService.update(id, transactionDto);
+    }
+
+    @Patch('/:id/process')
+    @UsePipes(ValidationPipe)
+    processTransaction(
+        @Param('id') id: string,
+        @Body() transactionDto: ProcessTransactionDto,
+    ): Promise<any> {
+        return this.transactionsService.processTransaction(id, transactionDto);
     }
 
     @Delete('/:id')
