@@ -288,9 +288,9 @@ export class HmoService {
                     let service;
                     let stock;
                     if (uploadType === 'services') {
-                        service = await this.serviceRepository.find({ where: {code: item.code}});
+                        service = await this.serviceRepository.findOne({ where: {code: item.code}});
                     } else {
-                        stock = this.stockRepository.find({ where: {stock_code: item.code }});
+                        stock = await this.stockRepository.findOne({ where: {stock_code: item.code }});
                     }
                     const hmoRate       = new HmoRate();
                     hmoRate.hom         = hmo;
