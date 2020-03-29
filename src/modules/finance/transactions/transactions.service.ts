@@ -62,6 +62,91 @@ export class TransactionsService {
         return result;
     }
 
+    async fetchDashboardTransactions() {
+        const startOfDay = moment().startOf('day').toISOString();
+        const endOfDay   = moment().endOf('day').toISOString();
+        const dailyTotal = await this.transactionsRepository.createQueryBuilder('transaction')
+                                    .where(`transaction.createdAt >= '${startOfDay}'`)
+                                    .andWhere(`transaction.createdAt <= '${endOfDay}'`)
+                                    .select('SUM(amount) as amount')
+                                    .getRawOne();
+        const unpaidTotal = await this.transactionsRepository.createQueryBuilder('transaction')
+                                    .where(`transaction.createdAt >= '${startOfDay}'`)
+                                    .andWhere(`transaction.createdAt <= '${endOfDay}'`)
+                                    .andWhere('transaction.status = :status', {status: 0})
+                                    .select('SUM(amount) as amount')
+                                    .getRawOne();
+        const totalCash = await this.transactionsRepository.createQueryBuilder('transaction')
+                                    .where(`transaction.createdAt >= '${startOfDay}'`)
+                                    .andWhere(`transaction.createdAt <= '${endOfDay}'`)
+                                    .andWhere('transaction.status = :status', {status: 1})
+                                    .andWhere('transaction.payment_type = :type', {type: 'Cash'})
+                                    .select('SUM(amount) as amount')
+                                    .getRawOne();
+        const totalPOS = await this.transactionsRepository.createQueryBuilder('transaction')
+                                    .where(`transaction.createdAt >= '${startOfDay}'`)
+                                    .andWhere(`transaction.createdAt <= '${endOfDay}'`)
+                                    .andWhere('transaction.status = :status', {status: 1})
+                                    .andWhere('transaction.payment_type = :type', {type: 'POS'})
+                                    .select('SUM(amount) as amount')
+                                    .getRawOne();
+        const totalCheque = await this.transactionsRepository.createQueryBuilder('transaction')
+                                    .where(`transaction.createdAt >= '${startOfDay}'`)
+                                    .andWhere(`transaction.createdAt <= '${endOfDay}'`)
+                                    .andWhere('transaction.status = :status', {status: 1})
+                                    .andWhere('transaction.payment_type = :type', {type: 'Cheque'})
+                                    .select('SUM(amount) as amount')
+                                    .getRawOne();
+        const totalOutstanding = await this.transactionsRepository.createQueryBuilder('transaction')
+                                    .where(`transaction.createdAt >= '${startOfDay}'`)
+                                    .andWhere(`transaction.createdAt <= '${endOfDay}'`)
+                                    .andWhere('transaction.status = :status', {status: 1})
+                                    .select('SUM(balance) as amount')
+                                    .getRawOne();
+        return {dailyTotal, unpaidTotal, totalCash, totalPOS, totalCheque, totalOutstanding};
+    }
+
+    async listDashboardTransactions(params) {
+        const {transactionType } = params;
+        const startOfDay = moment().startOf('day').toISOString();
+        const endOfDay   = moment().endOf('day').toISOString();
+        const query = this.transactionsRepository.createQueryBuilder('transaction')
+                                    .where(`transaction.createdAt >= '${startOfDay}'`)
+                                    .andWhere(`transaction.createdAt <= '${endOfDay}'`);
+        let result;
+        switch (transactionType) {
+            case 'daily-total':
+                result = await query.getRawMany();
+                break;
+            case 'total-unpaid':
+                result = await query.where('transaction.status = :status', {status: 0}).getRawMany();
+                break;
+            case 'total-cash':
+                result = await query.where('transaction.status = :status', {status: 1})
+                                    .andWhere('transaction.payment_type = :type', {type: 'Cash'})
+                                    .getRawMany();
+                break;
+            case 'total-pos':
+                result = await query.where('transaction.status = :status', {status: 1})
+                                    .andWhere('transaction.payment_type = :type', {type: 'POS'})
+                                    .getRawMany();
+                break;
+            case 'total-cheque':
+                result = await query.where('transaction.status = :status', {status: 1})
+                                    .andWhere('transaction.payment_type = :type', {type: 'Cheque'})
+                                    .getRawMany();
+                break;
+            case 'total-outstanding':
+                result = await query.where('transaction.status = :status', {status: 1})
+                                    .andWhere('transaction.balance > :balance', {balance: 0})
+                                    .getRawMany();
+                break;
+            default:
+                break;
+        }
+        return result;
+    }
+
     async save(transactionDto: TransactionDto): Promise<any> {
         const {patient_id, department_id, serviceType, amount, description, payment_type} = transactionDto;
         // find patient record
@@ -123,6 +208,7 @@ export class TransactionsService {
             if (amount_paid < transaction.amount) {
                 transaction.balance = transaction.amount - amount_paid;
             }
+            transaction.status = 1;
             await transaction.save();
 
             return {success: true, transaction };

@@ -275,7 +275,7 @@ export class HmoService {
             .pipe(csv())
             .on('data', async (row) => {
                 const data = {
-                    code: row.Code,
+                    code: row.CODE,
                     hmo_rate: row['HMO TARIFF'],
                     percentage: row.PERCENTAGE,
                     comment: row.COMMENT,

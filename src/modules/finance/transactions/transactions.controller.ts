@@ -15,6 +15,20 @@ export class TransactionsController {
         return this.transactionsService.fetchList(urlParams);
     }
 
+    @Get('dashboard')
+    getDashboardTransaction(
+        @Query() urlParams,
+    ): Promise<any> {
+        return this.transactionsService.fetchDashboardTransactions();
+    }
+
+    @Get('dashboard-list')
+    getDashboardTransactionList(
+        @Query() urlParams,
+    ): Promise<any> {
+        return this.transactionsService.listDashboardTransactions(urlParams);
+    }
+
     @Post()
     @UsePipes(ValidationPipe)
     saveTransaction(
