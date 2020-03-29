@@ -19,6 +19,8 @@ import { PatientRequestRepository } from './repositories/patient_request.reposit
 import { PatientRequest } from './entities/patient_requests.entity';
 import * as moment from 'moment';
 import { HmoRepository } from '../hmo/hmo.repository';
+import { VoucherRepository } from '../finance/vouchers/voucher.repository';
+import { Voucher } from '../finance/vouchers/voucher.entity';
 
 @Injectable()
 export class PatientService {
@@ -39,6 +41,8 @@ export class PatientService {
         private serviceRepository: ServiceRepository,
         @InjectRepository(HmoRepository)
         private hmoRepository: HmoRepository,
+        @InjectRepository(VoucherRepository)
+        private voucherRepository: VoucherRepository,
     ) {}
 
     async listAllPatients(): Promise<Patient[]> {
@@ -156,6 +160,33 @@ export class PatientService {
         } catch (error) {
             return {success: false, message: error.message };
         }
+    }
+
+    async getVouchers(id, urlParams): Promise<Voucher[]> {
+        const {startDate, endDate, status} = urlParams;
+
+        const query = this.voucherRepository.createQueryBuilder('v')
+                        .where('v.patient_id = :id', {id});
+        if (startDate && startDate !== '') {
+            const start = moment(startDate).endOf('day').toISOString();
+            query.andWhere(`q.createdAt >= '${start}'`);
+        }
+        if (endDate && endDate !== '') {
+            const end = moment(endDate).endOf('day').toISOString();
+            query.andWhere(`q.createdAt <= '${end}'`);
+        }
+        if (status && status !== '') {
+            let stat;
+            if (status === 'active') {
+                stat = true;
+            } else {
+                stat = false;
+            }
+            query.andWhere('q.isActive = :status', {status: stat});
+        }
+        const vouchers = query.getMany();
+
+        return vouchers;
     }
 
     async getVitals(id, urlParams): Promise<PatientVital[]> {

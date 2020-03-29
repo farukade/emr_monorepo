@@ -204,6 +204,12 @@ export class TransactionsService {
                 const voucher = await this.voucherRepository.findOne(voucher_id);
                 transaction.voucher = voucher;
                 transaction.voucher_amount = voucher_amount;
+                voucher.amount_used = voucher.amount_used + voucher_amount;
+                await voucher.save();
+                if (voucher.amount_used === voucher.amount) {
+                    voucher.isActive = false;
+                    await voucher.save();
+                }
             }
             if (amount_paid < transaction.amount) {
                 transaction.balance = transaction.amount - amount_paid;

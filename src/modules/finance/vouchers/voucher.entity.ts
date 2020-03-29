@@ -11,6 +11,9 @@ export class Voucher extends CustomBaseEntity {
     @Column({type: 'float4'})
     amount: number;
 
+    @Column({type: 'float4', nullable: true})
+    amount_used: number;
+
     @Column()
     duration: string;
 

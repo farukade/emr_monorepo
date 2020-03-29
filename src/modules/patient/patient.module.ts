@@ -10,6 +10,7 @@ import { PatientAntenatalRepository } from './repositories/patient_antenatal.rep
 import { PatientAllergyRepository } from './repositories/patient_allergy.repository';
 import { PatientRequestRepository } from './repositories/patient_request.repository';
 import { HmoRepository } from '../hmo/hmo.repository';
+import { VoucherRepository } from '../finance/vouchers/voucher.repository';
 
 @Module({
   imports: [TypeOrmModule.forFeature([
@@ -20,7 +21,9 @@ import { HmoRepository } from '../hmo/hmo.repository';
     PatientRequestRepository,
     PatientAllergyRepository,
     HmoRepository,
-    ServiceRepository])],
+    ServiceRepository,
+    VoucherRepository,
+  ])],
   controllers: [PatientController],
   providers: [PatientService],
 })
