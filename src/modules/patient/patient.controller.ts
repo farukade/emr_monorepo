@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UsePipes, ValidationPipe, UseInterceptors, UploadedFile, Res } from '@nestjs/common';
 import { PatientService } from './patient.service';
 import { Patient } from './entities/patient.entity';
 import { PatientDto } from './dto/patient.dto';
@@ -9,6 +9,10 @@ import { PatientAntenatal } from './entities/patient_antenatal.entity';
 import { PatientAllergy } from './entities/patient_allergies.entity';
 import { PatientRequest } from './entities/patient_requests.entity';
 import { Voucher } from '../finance/vouchers/voucher.entity';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname, join } from 'path';
+import fs = require('fs');
 
 @Controller('patient')
 export class PatientController {
@@ -59,7 +63,6 @@ export class PatientController {
     ): Promise <Voucher[]> {
         return this.patientService.getVouchers(id, urlParams);
     }
-
 
     @Get(':id/vitals')
     getVitals(
@@ -172,6 +175,53 @@ export class PatientController {
         @Param('requestId') requestId: string,
     ) {
         return this.patientService.deleteRequest(requestId);
+    }
+
+    @Post(':id/upload-document')
+    @UsePipes(ValidationPipe)
+    @UseInterceptors(FileInterceptor('file', {
+        storage: diskStorage({
+            destination: './uploads',
+            filename: (req, file, cb) => {
+                const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('');
+                return cb(null, `${randomName}${extname(file.originalname)}`);
+            },
+        }),
+    }))
+    uploadDocument(
+        @Param('id') id: string,
+        @Body() param,
+        @UploadedFile() file,
+    ): Promise<any> {
+        return this.patientService.doUploadDocument(id, param, (file) ? `${file.filename}` : '');
+    }
+
+    @Post(':requestId/upload-request-document')
+    @UsePipes(ValidationPipe)
+    @UseInterceptors(FileInterceptor('file', {
+        storage: diskStorage({
+            destination: './uploads',
+            filename: (req, file, cb) => {
+                const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('');
+                return cb(null, `${randomName}${extname(file.originalname)}`);
+            },
+        }),
+    }))
+    uploadRequestDocument(
+        @Param('requestId') id: string,
+        @Body() param,
+        @UploadedFile() file,
+    ): Promise<any> {
+        return this.patientService.doUploadRequestDocument(id, param, (file) ? `${file.filename}` : '');
+    }
+
+    @Get('download/:filename')
+    downloadFile(
+        @Param('filename') filename,
+        @Res() response,
+    ) {
+        // const file = fs.readFile(`uploads/${filename}`)
+        return response.sendFile(join(__dirname, '../../../uploads/') + filename  );
     }
 
 }

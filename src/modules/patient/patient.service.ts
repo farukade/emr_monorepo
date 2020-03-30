@@ -21,6 +21,8 @@ import * as moment from 'moment';
 import { HmoRepository } from '../hmo/hmo.repository';
 import { VoucherRepository } from '../finance/vouchers/voucher.repository';
 import { Voucher } from '../finance/vouchers/voucher.entity';
+import { PatientDocument } from './entities/patient_documents.entity';
+import { PatientRequestDocument } from './entities/patient_request_documents.entity';
 
 @Injectable()
 export class PatientService {
@@ -393,5 +395,37 @@ export class PatientService {
             throw new NotFoundException(`Patient request with ID '${id}' not found`);
         }
         return {success: true};
+    }
+
+    async doUploadDocument(id, param, fileName) {
+
+        const patient = await this.patientRepository.findOne(id);
+        try {
+            const doc = new PatientDocument();
+            doc.patient = patient;
+            doc.document_type = param.document_type;
+            doc.document_name = fileName;
+            await doc.save();
+
+            return {success: true };
+        } catch (error) {
+            return {success: false, message: error.message };
+        }
+    }
+
+    async doUploadRequestDocument(id, param, fileName) {
+
+        const request = await this.patientRequestRepository.findOne(id);
+        try {
+            const doc = new PatientRequestDocument();
+            doc.request = request;
+            doc.document_type = param.document_type;
+            doc.document_name = fileName;
+            await doc.save();
+
+            return {success: true };
+        } catch (error) {
+            return {success: false, message: error.message };
+        }
     }
 }
