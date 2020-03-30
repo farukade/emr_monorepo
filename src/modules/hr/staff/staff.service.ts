@@ -7,6 +7,7 @@ import { UserRepository } from '../user.repository';
 import { RoleRepository } from '../../settings/roles-permissions/role.repository';
 import { DepartmentRepository } from '../../settings/departments/department.repository';
 import * as bcrypt from 'bcrypt';
+import { Like } from 'typeorm';
 
 @Injectable()
 export class StaffService {
@@ -25,6 +26,16 @@ export class StaffService {
     async getStaffs(): Promise<StaffDetails[]> {
         const staffs = await this.staffRepository.find({relations: ['department', 'user']});
         return staffs;
+    }
+
+    async findStaffs(param: string): Promise<StaffDetails[]> {
+        const found = this.staffRepository.find({where: [
+            {first_name: Like(`%${param.toLocaleLowerCase()}%`)},
+            {last_name: Like(`%${param.toLocaleLowerCase()}%`)},
+            {emp_code: Like(`%${param}%`)},
+        ], relations: ['nextOfKin']});
+
+        return found;
     }
 
     async addNewStaff(staffDto: StaffDto): Promise<StaffDetails> {

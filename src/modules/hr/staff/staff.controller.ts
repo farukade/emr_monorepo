@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Patch, Param, Get, Delete, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Controller, Post, Body, Patch, Param, Get, Delete, UsePipes, ValidationPipe, Query } from '@nestjs/common';
 import { StaffDto } from './dto/staff.dto';
 import { StaffDetails } from './entities/staff_details.entity';
 import { StaffService } from './staff.service';
@@ -10,6 +10,13 @@ export class StaffController {
     @Get()
     listStaffs() {
         return this.staffService.getStaffs();
+    }
+
+    @Get('find')
+    findStaffDetails(
+        @Query('q') q: string,
+    ): Promise<StaffDetails[]> {
+        return this.staffService.findStaffs(q);
     }
 
     @Post()
