@@ -8,6 +8,7 @@ import { PatientVital } from './entities/patient_vitals.entity';
 import { PatientAntenatal } from './entities/patient_antenatal.entity';
 import { PatientAllergy } from './entities/patient_allergies.entity';
 import { PatientRequest } from './entities/patient_requests.entity';
+import { Voucher } from '../finance/vouchers/voucher.entity';
 
 @Controller('patient')
 export class PatientController {
@@ -50,6 +51,15 @@ export class PatientController {
     ) {
         return this.patientService.checkPaymentStatus(param);
     }
+
+    @Get(':id/vouchers')
+    getVouchers(
+        @Param('id') id: string,
+        @Query() urlParams,
+    ): Promise <Voucher[]> {
+        return this.patientService.getVouchers(id, urlParams);
+    }
+
 
     @Get(':id/vitals')
     getVitals(

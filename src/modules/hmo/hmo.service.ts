@@ -26,6 +26,17 @@ export class HmoService {
         return this.hmoRepository.find();
     }
 
+    async getHmoTariff(id, urlParams): Promise<HmoRate[]> {
+        const {listType } = urlParams;
+        // find hmo record
+        const hmo = await this.hmoRepository.findOne(id);
+        if  (listType === 'services') {
+            return await this.hmoRateRepository.find({where: {hmo}, relations: ['service']});
+        } else {
+            return await this.hmoRateRepository.find({where: {hmo}, relations: ['stock']});
+        }
+    }
+
     async createHmo(hmoDto: HmoDto, logo): Promise<Hmo> {
         return this.hmoRepository.saveHmo(hmoDto, logo);
     }
@@ -102,7 +113,7 @@ export class HmoService {
             .pipe(csv())
             .on('data', (row) => {
                 const data = {
-                    name: row.name,
+                    name: row['HMO Name'],
                     address: row.Address,
                     email: row['Email Address'],
                     phoneNumber: row['Phone Number'],
@@ -128,11 +139,10 @@ export class HmoService {
 
     async downloadHmoRate(query) {
         const {downloadType} = query;
-
         if (downloadType === 'services') {
-            return await this.downloadHmoServices();
+            return this.downloadHmoServices();
         } else {
-            return await this.downloadHmoStocks();
+            return this.downloadHmoStocks();
         }
     }
 
@@ -140,7 +150,7 @@ export class HmoService {
         const fs = require('fs');
         const createCsvWriter = require('csv-writer').createObjectCsvWriter;
         const csvWriter = createCsvWriter({
-            path: 'services.csv',
+            path: 'hmo-rate-sample.csv',
             header: [
                 {id: 'category', title: 'CATEGORY'},
                 {id: 'sub_category', title: 'SUB CATEGORY'},
@@ -194,7 +204,7 @@ export class HmoService {
         const fs = require('fs');
         const createCsvWriter = require('csv-writer').createObjectCsvWriter;
         const csvWriter = createCsvWriter({
-            path: 'stocks.csv',
+            path: 'hmo-rate-sample.csv',
             header: [
                 {id: 'category', title: 'DRUG CLASS'},
                 {id: 'stock_code', title: 'STOCK CODE'},
@@ -265,7 +275,7 @@ export class HmoService {
             .pipe(csv())
             .on('data', async (row) => {
                 const data = {
-                    code: row.Code,
+                    code: row.CODE,
                     hmo_rate: row['HMO TARIFF'],
                     percentage: row.PERCENTAGE,
                     comment: row.COMMENT,
@@ -278,9 +288,9 @@ export class HmoService {
                     let service;
                     let stock;
                     if (uploadType === 'services') {
-                        service = await this.serviceRepository.find({ where: {code: item.code}});
+                        service = await this.serviceRepository.findOne({ where: {code: item.code}});
                     } else {
-                        stock = this.stockRepository.find({ where: {stock_code: item.code }});
+                        stock = await this.stockRepository.findOne({ where: {stock_code: item.code }});
                     }
                     const hmoRate       = new HmoRate();
                     hmoRate.hom         = hmo;

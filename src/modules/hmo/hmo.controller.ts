@@ -6,16 +6,25 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import { HmoUploadRateDto } from './dto/hmo.upload-rate.dto';
+import { HmoRate } from './hmo-rate.entity';
 
 @Controller('hmos')
 export class HmoController {
-    SERVER_URL: string  =  'http://localhost:3000/';
+    SERVER_URL: string  =  process.env.SERVER_URL;
 
     constructor(private hmoService: HmoService) {}
 
     @Get()
     getHmo(): Promise<Hmo[]> {
         return this.hmoService.getHmos();
+    }
+
+    @Get(':id/tariff')
+    getHmoTariff(
+        @Param('id') id: string,
+        @Query() params,
+    ): Promise<HmoRate[]> {
+        return this.hmoService.getHmoTariff(id, params);
     }
 
     @Post()

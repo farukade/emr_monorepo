@@ -13,5 +13,8 @@ export class TransactionDto {
     @IsNotEmpty()
     amount: number;
 
+    @IsNotEmpty()
+    payment_type: string;
+
     description: string;
 }
