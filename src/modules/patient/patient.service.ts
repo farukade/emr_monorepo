@@ -190,7 +190,7 @@ export class PatientService {
             }
             query.andWhere('q.isActive = :status', {status: stat});
         }
-        const vouchers = query.getMany();
+        const vouchers = await query.getMany();
 
         return vouchers;
     }
@@ -199,7 +199,7 @@ export class PatientService {
         const {startDate, endDate, documentType} = urlParams;
 
         const query = this.patientDocumentRepository.createQueryBuilder('v')
-                        .select(['document_name'])
+                        .select(['v.document_name'])
                         .where('v.patient_id = :id', {id});
         if (startDate && startDate !== '') {
             const start = moment(startDate).endOf('day').toISOString();
@@ -212,7 +212,7 @@ export class PatientService {
         if (documentType && documentType !== '') {
             query.andWhere('q.document_type = :document_type', {document_type: documentType});
         }
-        const documents = query.getMany();
+        const documents = await query.getMany();
 
         return documents;
     }
@@ -220,7 +220,7 @@ export class PatientService {
     async getRequestDocuments(id, urlParams): Promise<PatientRequestDocument[]> {
         const {startDate, endDate, documentType} = urlParams;
 
-        const documents = this.connection.getRepository(PatientRequestDocument).createQueryBuilder('d')
+        const documents = await this.connection.getRepository(PatientRequestDocument).createQueryBuilder('d')
                         .select(['document_name'])
                         .where('d.id = :id', {id})
                         .getMany();
@@ -451,19 +451,20 @@ export class PatientService {
         }
     }
 
-    async doUploadRequestDocument(id, param, fileName) {
-
+    async doUploadRequestDocument(id, param, files) {
         const request = await this.patientRequestRepository.findOne(id);
-        try {
-            const doc = new PatientRequestDocument();
-            doc.request = request;
-            doc.document_type = param.document_type;
-            doc.document_name = fileName;
-            await doc.save();
-
-            return {success: true };
-        } catch (error) {
-            return {success: false, message: error.message };
+        for (const file of files) {
+            try {
+                const doc = new PatientRequestDocument();
+                doc.request = request;
+                doc.document_type = param.document_type;
+                doc.document_name = file.filename;
+                await doc.save();
+    
+            } catch (error) {
+                return {success: false, message: error.message };
+            }
         }
+        return {success: true };
     }
 }

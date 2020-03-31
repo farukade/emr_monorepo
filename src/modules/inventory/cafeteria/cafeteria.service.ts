@@ -170,14 +170,13 @@ export class CafeteriaService {
                     let category;
                     // check if category exists
                     if (item.category !== '') {
-                        category = await this.cafeteriaInventoryCategoryRepository.findOne({
+                        category = await this.cafeteriaItemCategoryRepository.findOne({
                             where: {name: item.category},
                         });
                         if (!category) {
-                            category = await this.cafeteriaInventoryCategoryRepository.save({name: item.category});
+                            category = await this.cafeteriaItemCategoryRepository.save({name: item.category});
                         }
                     }
-
                     if (category) {
                         if (item.name !== '') {
                             await this.cafeteriaItemRepository.save({
