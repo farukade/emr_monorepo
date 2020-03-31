@@ -107,6 +107,15 @@ export class CafeteriaController {
         return this.inventoryService.deleteInventory(id);
     }
 
+    @Patch('/inventory/:id/update')
+    @UsePipes(ValidationPipe)
+    updateInventory(
+        @Param('id') id: string,
+        @Body() param: CafeteriaInventoryDto,
+    ): Promise<CafeteriaInventory> {
+        return this.inventoryService.updateInventory(id, param);
+    }
+
     // @Get('/items/:id')
     // getItem(@Param('id') id: string): Promise<CafeteriaItem> {
     //     return this.inventoryService.getItemById(id);
