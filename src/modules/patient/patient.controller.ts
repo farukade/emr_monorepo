@@ -13,6 +13,8 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import fs = require('fs');
+import { PatientDocument } from './entities/patient_documents.entity';
+import { PatientRequestDocument } from './entities/patient_request_documents.entity';
 
 @Controller('patient')
 export class PatientController {
@@ -62,6 +64,22 @@ export class PatientController {
         @Query() urlParams,
     ): Promise <Voucher[]> {
         return this.patientService.getVouchers(id, urlParams);
+    }
+
+    @Get(':id/documents')
+    getPatientDocument(
+        @Param('id') id: string,
+        @Query() urlParams,
+    ): Promise <PatientDocument[]> {
+        return this.patientService.getDocuments(id, urlParams);
+    }
+
+    @Get(':requestId/request-document')
+    getRequestDocument(
+        @Param('id') id: string,
+        @Query() urlParams,
+    ): Promise <PatientRequestDocument[]> {
+        return this.patientService.getRequestDocuments(id, urlParams);
     }
 
     @Get(':id/vitals')
