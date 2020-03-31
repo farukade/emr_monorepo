@@ -72,6 +72,13 @@ export class ServicesController {
         return this.servicesService.getServicesCategory();
     }
 
+    @Get('/categories/:id')
+    getServicesByCategory(
+        @Param('id') id: string,
+    ): Promise<Service[]> {
+        return this.servicesService.getServicesByCategory(id);
+    }
+
     @Post('/categories')
     @UsePipes(ValidationPipe)
     createServiceCategory(@Body() serviceCategoryDto: ServiceCategoryDto): Promise<ServiceCategory> {
