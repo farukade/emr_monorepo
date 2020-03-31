@@ -4,7 +4,7 @@ import { PatientRepository } from './repositories/patient.repository';
 import { PatientNOKRepository } from './repositories/patient.nok.repository';
 import { Patient } from './entities/patient.entity';
 import { PatientDto } from './dto/patient.dto';
-import { Like } from 'typeorm';
+import { Like, Connection } from 'typeorm';
 import { ServiceRepository } from '../settings/services/service.repository';
 import { PatientVitalRepository } from './repositories/patient_vitals.repository';
 import { PatientAntenatalRepository } from './repositories/patient_antenatal.repository';
@@ -23,6 +23,7 @@ import { VoucherRepository } from '../finance/vouchers/voucher.repository';
 import { Voucher } from '../finance/vouchers/voucher.entity';
 import { PatientDocument } from './entities/patient_documents.entity';
 import { PatientRequestDocument } from './entities/patient_request_documents.entity';
+import { PatientDocumentRepository } from './repositories/patient_document.repository';
 
 @Injectable()
 export class PatientService {
@@ -45,6 +46,9 @@ export class PatientService {
         private hmoRepository: HmoRepository,
         @InjectRepository(VoucherRepository)
         private voucherRepository: VoucherRepository,
+        @InjectRepository(PatientDocumentRepository)
+        private patientDocumentRepository: PatientDocumentRepository,
+        private connection: Connection,
     ) {}
 
     async listAllPatients(): Promise<Patient[]> {
@@ -186,9 +190,42 @@ export class PatientService {
             }
             query.andWhere('q.isActive = :status', {status: stat});
         }
-        const vouchers = query.getMany();
+        const vouchers = await query.getMany();
 
         return vouchers;
+    }
+
+    async getDocuments(id, urlParams): Promise<PatientDocument[]> {
+        const {startDate, endDate, documentType} = urlParams;
+
+        const query = this.patientDocumentRepository.createQueryBuilder('v')
+                        .select(['v.document_name'])
+                        .where('v.patient_id = :id', {id});
+        if (startDate && startDate !== '') {
+            const start = moment(startDate).endOf('day').toISOString();
+            query.andWhere(`q.createdAt >= '${start}'`);
+        }
+        if (endDate && endDate !== '') {
+            const end = moment(endDate).endOf('day').toISOString();
+            query.andWhere(`q.createdAt <= '${end}'`);
+        }
+        if (documentType && documentType !== '') {
+            query.andWhere('q.document_type = :document_type', {document_type: documentType});
+        }
+        const documents = await query.getMany();
+
+        return documents;
+    }
+
+    async getRequestDocuments(id, urlParams): Promise<PatientRequestDocument[]> {
+        const {startDate, endDate, documentType} = urlParams;
+
+        const documents = await this.connection.getRepository(PatientRequestDocument).createQueryBuilder('d')
+                        .select(['document_name'])
+                        .where('d.id = :id', {id})
+                        .getMany();
+
+        return documents;
     }
 
     async getVitals(id, urlParams): Promise<PatientVital[]> {
@@ -372,6 +409,7 @@ export class PatientService {
 
         const query = this.patientRequestRepository.createQueryBuilder('q')
                         .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
+                        .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
                         .where('q.patient_id = :patient_id', {patient_id})
                         .andWhere('q.requestType = :requestType', {requestType});
 
@@ -413,19 +451,20 @@ export class PatientService {
         }
     }
 
-    async doUploadRequestDocument(id, param, fileName) {
-
+    async doUploadRequestDocument(id, param, files) {
         const request = await this.patientRequestRepository.findOne(id);
-        try {
-            const doc = new PatientRequestDocument();
-            doc.request = request;
-            doc.document_type = param.document_type;
-            doc.document_name = fileName;
-            await doc.save();
-
-            return {success: true };
-        } catch (error) {
-            return {success: false, message: error.message };
+        for (const file of files) {
+            try {
+                const doc = new PatientRequestDocument();
+                doc.request = request;
+                doc.document_type = param.document_type;
+                doc.document_name = file.filename;
+                await doc.save();
+    
+            } catch (error) {
+                return {success: false, message: error.message };
+            }
         }
+        return {success: true };
     }
 }

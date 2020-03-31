@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UsePipes, ValidationPipe, UseInterceptors, UploadedFile, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UsePipes, ValidationPipe, UseInterceptors, UploadedFile, Res, UploadedFiles } from '@nestjs/common';
 import { PatientService } from './patient.service';
 import { Patient } from './entities/patient.entity';
 import { PatientDto } from './dto/patient.dto';
@@ -9,10 +9,12 @@ import { PatientAntenatal } from './entities/patient_antenatal.entity';
 import { PatientAllergy } from './entities/patient_allergies.entity';
 import { PatientRequest } from './entities/patient_requests.entity';
 import { Voucher } from '../finance/vouchers/voucher.entity';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import fs = require('fs');
+import { PatientDocument } from './entities/patient_documents.entity';
+import { PatientRequestDocument } from './entities/patient_request_documents.entity';
 
 @Controller('patient')
 export class PatientController {
@@ -62,6 +64,22 @@ export class PatientController {
         @Query() urlParams,
     ): Promise <Voucher[]> {
         return this.patientService.getVouchers(id, urlParams);
+    }
+
+    @Get(':id/documents')
+    getPatientDocument(
+        @Param('id') id: string,
+        @Query() urlParams,
+    ): Promise <PatientDocument[]> {
+        return this.patientService.getDocuments(id, urlParams);
+    }
+
+    @Get(':requestId/request-document')
+    getRequestDocument(
+        @Param('id') id: string,
+        @Query() urlParams,
+    ): Promise <PatientRequestDocument[]> {
+        return this.patientService.getRequestDocuments(id, urlParams);
     }
 
     @Get(':id/vitals')
@@ -198,7 +216,7 @@ export class PatientController {
 
     @Post(':requestId/upload-request-document')
     @UsePipes(ValidationPipe)
-    @UseInterceptors(FileInterceptor('file', {
+    @UseInterceptors(FilesInterceptor('files', 20, {
         storage: diskStorage({
             destination: './uploads',
             filename: (req, file, cb) => {
@@ -210,9 +228,9 @@ export class PatientController {
     uploadRequestDocument(
         @Param('requestId') id: string,
         @Body() param,
-        @UploadedFile() file,
-    ): Promise<any> {
-        return this.patientService.doUploadRequestDocument(id, param, (file) ? `${file.filename}` : '');
+        @UploadedFiles() files,
+    ) {
+        return this.patientService.doUploadRequestDocument(id, param, files);
     }
 
     @Get('download/:filename')

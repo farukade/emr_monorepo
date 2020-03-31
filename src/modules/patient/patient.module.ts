@@ -11,10 +11,12 @@ import { PatientAllergyRepository } from './repositories/patient_allergy.reposit
 import { PatientRequestRepository } from './repositories/patient_request.repository';
 import { HmoRepository } from '../hmo/hmo.repository';
 import { VoucherRepository } from '../finance/vouchers/voucher.repository';
+import { PatientDocumentRepository } from './repositories/patient_document.repository';
 
 @Module({
   imports: [TypeOrmModule.forFeature([
     PatientRepository,
+    PatientDocumentRepository,
     PatientNOKRepository,
     PatientVitalRepository,
     PatientAntenatalRepository,
