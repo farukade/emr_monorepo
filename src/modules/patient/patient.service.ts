@@ -199,7 +199,7 @@ export class PatientService {
         const {startDate, endDate, documentType} = urlParams;
 
         const query = this.patientDocumentRepository.createQueryBuilder('v')
-                        .select(['v.document_name'])
+                        .select(['v.document_name', 'v.document_type'])
                         .where('v.patient_id = :id', {id});
         if (startDate && startDate !== '') {
             const start = moment(startDate).endOf('day').toISOString();
