@@ -409,7 +409,7 @@ export class PatientService {
 
         const query = this.patientRequestRepository.createQueryBuilder('q')
                         .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
-                        .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
+                        // .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
                         .where('q.patient_id = :patient_id', {patient_id})
                         .andWhere('q.requestType = :requestType', {requestType});
 
