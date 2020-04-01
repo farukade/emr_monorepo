@@ -199,7 +199,7 @@ export class PatientService {
         const {startDate, endDate, documentType} = urlParams;
 
         const query = this.patientDocumentRepository.createQueryBuilder('v')
-                        .select(['v.document_name'])
+                        .select(['v.document_name', 'v.document_type'])
                         .where('v.patient_id = :id', {id});
         if (startDate && startDate !== '') {
             const start = moment(startDate).endOf('day').toISOString();
@@ -409,7 +409,7 @@ export class PatientService {
 
         const query = this.patientRequestRepository.createQueryBuilder('q')
                         .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
-                        .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
+                        // .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
                         .where('q.patient_id = :patient_id', {patient_id})
                         .andWhere('q.requestType = :requestType', {requestType});
 

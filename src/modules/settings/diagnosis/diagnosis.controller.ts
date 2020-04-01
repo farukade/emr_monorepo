@@ -1,4 +1,4 @@
-import { Controller, Post, UseInterceptors, UploadedFile, Patch, UsePipes, ValidationPipe, Param, Body, Get } from '@nestjs/common';
+import { Controller, Post, UseInterceptors, UploadedFile, Patch, UsePipes, ValidationPipe, Param, Body, Get, Query } from '@nestjs/common';
 import { DiagnosisService } from './diagnosis.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { extname } from 'path';
@@ -13,6 +13,13 @@ export class DiagnosisController {
     @Get()
     getDiagnosis(): Promise<Diagnosis[]> {
         return this.diagnosisService.getAllDiagnosis();
+    }
+
+    @Get('search')
+    findDiagnosis(
+        @Query() param,
+    ): Promise<Diagnosis[]> {
+        return this.diagnosisService.findDiagnosis(param);
     }
 
     @Post('/upload')

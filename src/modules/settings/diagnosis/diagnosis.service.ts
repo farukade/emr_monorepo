@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DiagnosisRepository } from './diagnosis.repository';
 import { DiagnosisUpdateDto } from './dto/diagnosis-update.dto';
 import { Diagnosis } from '../entities/diagnosis.entity';
+import { Like } from 'typeorm';
 
 @Injectable()
 export class DiagnosisService {
@@ -13,6 +14,15 @@ export class DiagnosisService {
 
     async getAllDiagnosis(): Promise<Diagnosis[]> {
         return this.diagnosisRepository.find();
+    }
+
+    async findDiagnosis(urlParam): Promise<Diagnosis[]> {
+        const {q} = urlParam;
+
+        return this.diagnosisRepository.find({where: [
+            {procedureCode: Like(`%${q}%`)},
+            {icd10Code: Like(`%${q}%`)},
+        ]});
     }
 
     async doUpload(file: any) {
