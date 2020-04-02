@@ -14,9 +14,9 @@ export class StaffController {
 
     @Get('find')
     findStaffDetails(
-        @Query('q') q: string,
+        @Query() param,
     ): Promise<StaffDetails[]> {
-        return this.staffService.findStaffs(q);
+        return this.staffService.findStaffs(param);
     }
 
     @Post()

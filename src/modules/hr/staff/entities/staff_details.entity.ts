@@ -3,6 +3,7 @@ import { Column, Entity, OneToMany, ManyToOne, JoinColumn, OneToOne } from 'type
 import { CustomBaseEntity } from '../../../../common/entities/custom-base.entity';
 import { Department } from '../../../settings/entities/department.entity';
 import { User } from '../../entities/user.entity';
+import { Transactions } from '../../../finance/transactions/transaction.entity';
 
 @Entity({ name: 'staff_details' })
 export class StaffDetails extends CustomBaseEntity {
@@ -104,5 +105,8 @@ export class StaffDetails extends CustomBaseEntity {
   @OneToOne(type => User)
   @JoinColumn({ name: 'user_id' })
   user: User;
+
+  @OneToMany(type => Transactions, transaction => transaction.staff)
+  transactions!: Transactions;
 
 }

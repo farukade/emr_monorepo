@@ -12,6 +12,7 @@ import { Service } from '../../settings/entities/service.entity';
 import { Department } from '../../settings/entities/department.entity';
 import { ProcessTransactionDto } from './dto/process-transaction.dto';
 import { VoucherRepository } from '../vouchers/voucher.repository';
+import { StaffRepository } from '../../hr/staff/staff.repository';
 
 @Injectable()
 export class TransactionsService {
@@ -27,16 +28,15 @@ export class TransactionsService {
         private serviceRepository: ServiceRepository,
         @InjectRepository(VoucherRepository)
         private voucherRepository: VoucherRepository,
+        @InjectRepository(StaffRepository)
+        private staffRepository: StaffRepository,
     ) {}
 
     async fetchList(params): Promise<Transactions[]> {
-        const {startDate, endDate, patient_id, status, payment_type} = params;
+        const {startDate, endDate, patient_id, staff_id, status, payment_type, transaction_type} = params;
 
         const query = this.transactionsRepository.createQueryBuilder('q')
-        .innerJoin('q.patient', 'patient')
-        .leftJoin('q.department', 'department')
-        .leftJoin('q.serviceType', 'service')
-        .addSelect('patient.surname, patient.other_names, department.name as deptName, service.name as serviceName');
+        .where('q.transaction_type = :type', {type: transaction_type});
 
         if (startDate && startDate !== '') {
             const start = moment(startDate).endOf('day').toISOString();
@@ -53,30 +53,59 @@ export class TransactionsService {
             query.where('q.patient_id = :patient_id', {patient_id});
         }
 
+        if (staff_id && staff_id !== '') {
+            query.where('q.staff_id = :staff_id', {staff_id});
+        }
+
         if (status) {
             query.where('q.status = :status', {status});
         }
 
-        const result = await query.getRawMany();
+        const transactions = await query.getRawMany();
 
-        return result;
+        for (const transaction of transactions) {
+            if (transaction.q_department_id) {
+                const department = await this.departmentRepository.findOne(transaction.q_department_id);
+                transaction.department = department;
+            }
+
+            if (transaction.q_staff_id) {
+                const staff = await this.staffRepository.findOne(transaction.q_staff_id);
+                transaction.staff = staff;
+            }
+
+            if (transaction.q_patient_id) {
+                const patient = await this.patientRepository.findOne(transaction.q_patient_id);
+                transaction.patient = patient;
+            }
+
+            if (transaction.q_service_id) {
+                const service = await this.serviceRepository.findOne(transaction.q_service_id);
+                transaction.service = service;
+            }
+        }
+
+        return transactions;
     }
 
     async fetchDashboardTransactions() {
         const startOfDay = moment().startOf('day').toISOString();
         const endOfDay   = moment().endOf('day').toISOString();
         const dailyTotal = await this.transactionsRepository.createQueryBuilder('transaction')
+                                    .where('transaction.transaction_type = :type', {type: 'billing'})
                                     .where(`transaction.createdAt >= '${startOfDay}'`)
                                     .andWhere(`transaction.createdAt <= '${endOfDay}'`)
                                     .select('SUM(amount) as amount')
                                     .getRawOne();
         const unpaidTotal = await this.transactionsRepository.createQueryBuilder('transaction')
+                                    .where('transaction.transaction_type = :type', {type: 'billing'})
                                     .where(`transaction.createdAt >= '${startOfDay}'`)
                                     .andWhere(`transaction.createdAt <= '${endOfDay}'`)
                                     .andWhere('transaction.status = :status', {status: 0})
                                     .select('SUM(amount) as amount')
                                     .getRawOne();
         const totalCash = await this.transactionsRepository.createQueryBuilder('transaction')
+                                    .where('transaction.transaction_type = :type', {type: 'billing'})
                                     .where(`transaction.createdAt >= '${startOfDay}'`)
                                     .andWhere(`transaction.createdAt <= '${endOfDay}'`)
                                     .andWhere('transaction.status = :status', {status: 1})
@@ -84,6 +113,7 @@ export class TransactionsService {
                                     .select('SUM(amount) as amount')
                                     .getRawOne();
         const totalPOS = await this.transactionsRepository.createQueryBuilder('transaction')
+                                    .where('transaction.transaction_type = :type', {type: 'billing'})
                                     .where(`transaction.createdAt >= '${startOfDay}'`)
                                     .andWhere(`transaction.createdAt <= '${endOfDay}'`)
                                     .andWhere('transaction.status = :status', {status: 1})
@@ -91,6 +121,7 @@ export class TransactionsService {
                                     .select('SUM(amount) as amount')
                                     .getRawOne();
         const totalCheque = await this.transactionsRepository.createQueryBuilder('transaction')
+                                    .where('transaction.transaction_type = :type', {type: 'billing'})
                                     .where(`transaction.createdAt >= '${startOfDay}'`)
                                     .andWhere(`transaction.createdAt <= '${endOfDay}'`)
                                     .andWhere('transaction.status = :status', {status: 1})
@@ -98,6 +129,7 @@ export class TransactionsService {
                                     .select('SUM(amount) as amount')
                                     .getRawOne();
         const totalOutstanding = await this.transactionsRepository.createQueryBuilder('transaction')
+                                    .where('transaction.transaction_type = :type', {type: 'billing'})
                                     .where(`transaction.createdAt >= '${startOfDay}'`)
                                     .andWhere(`transaction.createdAt <= '${endOfDay}'`)
                                     .andWhere('transaction.status = :status', {status: 1})
@@ -111,6 +143,7 @@ export class TransactionsService {
         const startOfDay = moment().startOf('day').toISOString();
         const endOfDay   = moment().endOf('day').toISOString();
         const query = this.transactionsRepository.createQueryBuilder('transaction')
+                                    .where('transaction.transaction_type = :type', {type: 'billing'})
                                     .where(`transaction.createdAt >= '${startOfDay}'`)
                                     .andWhere(`transaction.createdAt <= '${endOfDay}'`);
         let result;
@@ -163,6 +196,7 @@ export class TransactionsService {
                 amount,
                 description,
                 payment_type,
+                transaction_type: 'billing',
             });
             return {success: true, transaction };
         } catch (error) {
@@ -229,5 +263,27 @@ export class TransactionsService {
         if (result.affected === 0) {
             throw new NotFoundException(`Transaction with ID '${id}' not found`);
         }
+    }
+
+    async getTransaction(id: string): Promise<Transactions> {
+        const result = await this.transactionsRepository.findOne({where: {id}, relations: ['items']});
+
+        if (!result) {
+            throw new NotFoundException(`Transaction with ID '${id}' not found`);
+        }
+
+        return result;
+    }
+
+    async cafeteriaDailyTotal() {
+        const startOfDay = moment().startOf('day').toISOString();
+        const endOfDay   = moment().endOf('day').toISOString();
+        const query = await this.transactionsRepository.createQueryBuilder('transaction')
+                                .where('transaction.transaction_type = :type', {type: 'cafeteria'})
+                                .where(`transaction.createdAt >= '${startOfDay}'`)
+                                .andWhere(`transaction.createdAt <= '${endOfDay}'`)
+                                .select('SUM(amount) as amount')
+                                .getRawOne();
+        return query;
     }
 }

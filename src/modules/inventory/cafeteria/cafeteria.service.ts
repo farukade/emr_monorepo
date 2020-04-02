@@ -13,6 +13,12 @@ import { CafeteriaInventoryCategoryDto } from './dto/cafeteria.inventory.categor
 import { CafeteriaItemCategory } from './entities/cafeteria_item_category.entity';
 import { CafeteriaItemCategoryDto } from './dto/cafeteria.item.category.dto';
 import { CafeteriaInventory } from './entities/cafeteria_inventory.entity';
+import { CafeteriaSalesDto } from './dto/cafeteria-sales.dto';
+import { Transactions } from '../../finance/transactions/transaction.entity';
+import { Connection, Like } from 'typeorm';
+import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
+import { Patient } from '../../patient/entities/patient.entity';
+import { TransactionItems } from '../../finance/transactions/transaction-items.entity';
 
 @Injectable()
 export class CafeteriaService {
@@ -25,14 +31,30 @@ export class CafeteriaService {
         private cafeteriaItemCategoryRepository: CafeteriaItemCategoryRepository,
         @InjectRepository(CafeteriaItemRepository)
         private cafeteriaItemRepository: CafeteriaItemRepository,
+        private connection: Connection,
     ) {}
 
     /*
         INVENTORY
     */
 
-    async getAllItems(): Promise<CafeteriaItem[]> {
-        return await this.cafeteriaItemRepository.find({relations: ['category']});
+    async getAllItems(urlParam): Promise<CafeteriaItem[]> {
+        const {q} = urlParam;
+
+        const query = this.cafeteriaItemRepository.createQueryBuilder('q');
+                        // .relation(CafeteriaItemCategory, 'category');
+        if (q && q !== '') {
+            query.where('q.name LIKE  :query', {query: `%${q}%`});
+        }
+        return await query.getRawMany();
+    }
+
+    async findItem(urlParam): Promise<CafeteriaItem[]> {
+        const {q} = urlParam;
+
+        return await this.cafeteriaItemRepository.find({where: [
+            {name: Like(`%${q}%`)},
+        ]});
     }
 
     async getItemById(id): Promise<CafeteriaItem> {
@@ -306,6 +328,41 @@ export class CafeteriaService {
 
         if (result.affected === 0) {
             throw new NotFoundException(`Cafeteria item category with ID '${id}' not found`);
+        }
+    }
+
+    async saveSales(param: CafeteriaSalesDto): Promise<any> {
+        const { user_type, user_id, amount, amount_paid, payment_type, items } = param;
+        try {
+            const transaction = new Transactions();
+            transaction.transaction_type  = 'cafeteria';
+            transaction.amount            = amount;
+            transaction.amount_paid       = amount_paid;
+            transaction.payment_type      = payment_type;
+            transaction.status            = 1;
+
+            if (user_type === 'staff') {
+                const staff = await this.connection.getRepository(StaffDetails)
+                                        .createQueryBuilder('s').where('s.id = :id', {id: user_id}).getOne();
+                transaction.staff = staff;
+            } else if (user_type === 'patient') {
+                const patient = await this.connection.getRepository(Patient)
+                                        .createQueryBuilder('s').where('s.id = :id', {id: user_id}).getOne();
+                transaction.patient = patient;
+            }
+            await transaction.save();
+
+            for (const sale of items) {
+                const parentItem = await this.cafeteriaItemRepository.findOne(sale.item_id);
+                const item       = new TransactionItems();
+                item.amount      = sale.amount;
+                item.item        = parentItem;
+                item.transaction = transaction;
+                await item.save();
+            }
+            return {success: true, transaction};
+        } catch (error) {
+            return {success: false, message: error.message};
         }
     }
 }

@@ -15,11 +15,23 @@ export class TransactionsController {
         return this.transactionsService.fetchList(urlParams);
     }
 
+    @Get('show/:id')
+    getTransaction(
+        @Param('id') id: string,
+    ): Promise<Transactions> {
+        return this.transactionsService.getTransaction(id);
+    }
+
     @Get('dashboard')
     getDashboardTransaction(
         @Query() urlParams,
     ): Promise<any> {
         return this.transactionsService.fetchDashboardTransactions();
+    }
+
+    @Get('cafeteria-daily')
+    getCafeteriaDailytotal() {
+        return this.transactionsService.cafeteriaDailyTotal();
     }
 
     @Get('dashboard-list')
