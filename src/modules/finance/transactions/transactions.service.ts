@@ -143,7 +143,7 @@ export class TransactionsService {
         const startOfDay = moment().startOf('day').toISOString();
         const endOfDay   = moment().endOf('day').toISOString();
         const query = this.transactionsRepository.createQueryBuilder('transaction')
-                            .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
+                            .innerJoin(Patient, 'patient', 'transaction.patient_id = patient.id')
                             .where('transaction.transaction_type = :type', {type: 'billing'})
                             .where(`transaction.createdAt >= '${startOfDay}'`)
                             .andWhere(`transaction.createdAt <= '${endOfDay}'`);
