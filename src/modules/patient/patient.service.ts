@@ -408,7 +408,7 @@ export class PatientService {
         const {startDate, endDate} = urlParams;
 
         const query = this.patientRequestRepository.createQueryBuilder('q')
-                        .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
+                        .innerJoin(Patient, 'patient', 'q.patientId = patient.id')
                         // .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
                         .where('q.patient_id = :patient_id', {patient_id})
                         .andWhere('q.requestType = :requestType', {requestType});
@@ -429,19 +429,18 @@ export class PatientService {
     async listRequests(requestType, urlParams): Promise<PatientRequest[]> {
         const {startDate, endDate} = urlParams;
 
-        const query = this.patientRequestRepository.createQueryBuilder('q')
-                        .innerJoin(Patient, 'patient', 'q.patientId = patient.id')
-                        .addSelect('patient.surname, patient.other_names')
-                        .andWhere('q.requestType = :requestType', {requestType});
+        const query = this.patientRequestRepository.createQueryBuilder('patient_request')
+                        .leftJoinAndSelect('patient_request.patient', 'patient')
+                        .andWhere('patient_request.requestType = :requestType', {requestType});
 
         if (startDate && startDate !== '') {
             const start = moment(startDate).endOf('day').toISOString();
-            query.andWhere(`q.createdAt >= '${start}'`);
+            query.andWhere(`patient_request.createdAt >= '${start}'`);
         }
 
         if (endDate && endDate !== '') {
             const end = moment(endDate).endOf('day').toISOString();
-            query.andWhere(`q.createdAt <= '${end}'`);
+            query.andWhere(`patient_request.createdAt <= '${end}'`);
         }
 
         const requests = query.getMany();
