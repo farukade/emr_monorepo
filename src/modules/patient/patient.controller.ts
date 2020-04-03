@@ -178,9 +178,16 @@ export class PatientController {
     ) {
         return this.patientService.doSaveRequest(param);
     }
+    @Get('/requests/:requestType')
+    getRequests(
+        @Param('requestType') requestType: string,
+        @Query() urlParams,
+    ): Promise <PatientRequest[]> {
+        return this.patientService.listRequests(requestType, urlParams);
+    }
 
     @Get(':patientId/request/:requestType')
-    getRequests(
+    getPatientRequests(
         @Param('patientId') id: string,
         @Param('requestType') requestType: string,
         @Query() urlParams,

@@ -426,6 +426,28 @@ export class PatientService {
         return allergies;
     }
 
+    async listRequests(requestType, urlParams): Promise<PatientRequest[]> {
+        const {startDate, endDate} = urlParams;
+
+        const query = this.patientRequestRepository.createQueryBuilder('q')
+                        .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
+                        .andWhere('q.requestType = :requestType', {requestType});
+
+        if (startDate && startDate !== '') {
+            const start = moment(startDate).endOf('day').toISOString();
+            query.andWhere(`q.createdAt >= '${start}'`);
+        }
+
+        if (endDate && endDate !== '') {
+            const end = moment(endDate).endOf('day').toISOString();
+            query.andWhere(`q.createdAt <= '${end}'`);
+        }
+
+        const requests = query.getMany();
+
+        return requests;
+    }
+
     async deleteRequest(id: string) {
         const result = await this.patientRequestRepository.delete(id);
 
