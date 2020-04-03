@@ -431,6 +431,7 @@ export class PatientService {
 
         const query = this.patientRequestRepository.createQueryBuilder('q')
                         .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
+                        .addSelect('patient.surname, patient.other_names')
                         .andWhere('q.requestType = :requestType', {requestType});
 
         if (startDate && startDate !== '') {
