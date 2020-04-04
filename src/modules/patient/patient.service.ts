@@ -408,8 +408,7 @@ export class PatientService {
         const {startDate, endDate} = urlParams;
 
         const query = this.patientRequestRepository.createQueryBuilder('q')
-                        .innerJoin(Patient, 'patient', 'q.patientId = patient.id')
-                        // .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
+                        .leftJoinAndSelect('q.patient', 'patient')
                         .where('q.patient_id = :patient_id', {patient_id})
                         .andWhere('q.requestType = :requestType', {requestType});
 
