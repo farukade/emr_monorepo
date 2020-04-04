@@ -408,8 +408,7 @@ export class PatientService {
         const {startDate, endDate} = urlParams;
 
         const query = this.patientRequestRepository.createQueryBuilder('q')
-                        .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
-                        // .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
+                        .leftJoinAndSelect('q.patient', 'patient')
                         .where('q.patient_id = :patient_id', {patient_id})
                         .andWhere('q.requestType = :requestType', {requestType});
 
@@ -424,6 +423,28 @@ export class PatientService {
         const allergies = query.getMany();
 
         return allergies;
+    }
+
+    async listRequests(requestType, urlParams): Promise<PatientRequest[]> {
+        const {startDate, endDate} = urlParams;
+
+        const query = this.patientRequestRepository.createQueryBuilder('patient_request')
+                        .leftJoinAndSelect('patient_request.patient', 'patient')
+                        .andWhere('patient_request.requestType = :requestType', {requestType});
+
+        if (startDate && startDate !== '') {
+            const start = moment(startDate).endOf('day').toISOString();
+            query.andWhere(`patient_request.createdAt >= '${start}'`);
+        }
+
+        if (endDate && endDate !== '') {
+            const end = moment(endDate).endOf('day').toISOString();
+            query.andWhere(`patient_request.createdAt <= '${end}'`);
+        }
+
+        const requests = query.getMany();
+
+        return requests;
     }
 
     async deleteRequest(id: string) {

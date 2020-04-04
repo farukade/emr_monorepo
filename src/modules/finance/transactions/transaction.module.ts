@@ -7,6 +7,7 @@ import { PatientRepository } from '../../patient/repositories/patient.repository
 import { ServiceRepository } from '../../settings/services/service.repository';
 import { DepartmentRepository } from '../../settings/departments/department.repository';
 import { VoucherRepository } from '../vouchers/voucher.repository';
+import { StaffRepository } from '../../hr/staff/staff.repository';
 
 @Module({
     imports: [TypeOrmModule.forFeature([
@@ -15,6 +16,7 @@ import { VoucherRepository } from '../vouchers/voucher.repository';
         DepartmentRepository,
         ServiceRepository,
         VoucherRepository,
+        StaffRepository,
     ])],
     controllers: [TransactionsController],
     providers: [TransactionsService],

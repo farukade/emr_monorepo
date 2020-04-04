@@ -28,12 +28,13 @@ export class StaffService {
         return staffs;
     }
 
-    async findStaffs(param: string): Promise<StaffDetails[]> {
+    async findStaffs(param): Promise<StaffDetails[]> {
+        const { q } = param;
         const found = this.staffRepository.find({where: [
-            {first_name: Like(`%${param.toLocaleLowerCase()}%`)},
-            {last_name: Like(`%${param.toLocaleLowerCase()}%`)},
-            {emp_code: Like(`%${param}%`)},
-        ], relations: ['nextOfKin']});
+            {first_name: Like(`%${q.toLocaleLowerCase()}%`)},
+            {last_name: Like(`%${q.toLocaleLowerCase()}%`)},
+            {emp_code: Like(`%${q}%`)},
+        ]});
 
         return found;
     }

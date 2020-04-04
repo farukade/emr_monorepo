@@ -1,4 +1,4 @@
-import { Controller, Body, ValidationPipe, UsePipes, Post, Get, Patch, Param, Delete, UseInterceptors, UploadedFile, Header, Res } from '@nestjs/common';
+import { Controller, Body, ValidationPipe, UsePipes, Post, Get, Patch, Param, Delete, UseInterceptors, UploadedFile, Header, Res, Query } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
@@ -12,6 +12,7 @@ import { CafeteriaInventoryCategory } from './entities/cafeteria_inventory_categ
 import { CafeteriaInventoryCategoryDto } from './dto/cafeteria.inventory.category.dto';
 import { CafeteriaItemCategory } from './entities/cafeteria_item_category.entity';
 import { CafeteriaItemCategoryDto } from './dto/cafeteria.item.category.dto';
+import { CafeteriaSalesDto } from './dto/cafeteria-sales.dto';
 
 @Controller('cafeteria')
 export class CafeteriaController {
@@ -21,8 +22,10 @@ export class CafeteriaController {
      * INVENTORY ITEMS
      */
     @Get('/items')
-    getAllItems(): Promise<CafeteriaItem[]> {
-        return this.inventoryService.getAllItems();
+    getAllItems(
+        @Query() urlParam,
+    ): Promise<CafeteriaItem[]> {
+        return this.inventoryService.getAllItems(urlParam);
     }
 
     @Get('/items-by-category/:id')
@@ -175,5 +178,11 @@ export class CafeteriaController {
     @Delete('/items/categories/:id')
     deleteItemCategory(@Param('id') id: string): Promise<void> {
         return this.inventoryService.deleteItemCategory(id);
+    }
+
+    @Post('/sales')
+    @UsePipes(ValidationPipe)
+    postSales(@Body() param: CafeteriaSalesDto): Promise<any> {
+        return this.inventoryService.saveSales(param);
     }
 }
