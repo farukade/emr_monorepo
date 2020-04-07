@@ -1,4 +1,4 @@
-import { Controller, Get, Post, UsePipes, ValidationPipe, Body, Patch, Param, Delete, UploadedFile, UseInterceptors, Header, Res, Query } from '@nestjs/common';
+import { Controller, Get, Post, UsePipes, ValidationPipe, Body, Patch, Param, Delete, UploadedFile, UseInterceptors, Header, Res, Query, Request } from '@nestjs/common';
 import { HmoService } from './hmo.service';
 import { Hmo } from './hmo.entity';
 import { HmoDto } from './dto/hmo.dto';
@@ -23,15 +23,21 @@ export class HmoController {
     @Get('/transactions')
     getHmoTransactions(
         @Query() params,
+        @Request() request,
     ): Promise<Transactions[]> {
-        return this.hmoService.fetchTransactions(params);
+        const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 2;
+        const page = request.query.hasOwnProperty('page') ? request.query.page : 0;
+        return this.hmoService.fetchTransactions({page, limit}, params);
     }
 
     @Get('/transactions/pending')
     getHmoPendingTransactions(
         @Query() params,
+        @Request() request,        
     ): Promise<Transactions[]> {
-        return this.hmoService.fetchPendingTransactions(params);
+        const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 2;
+        const page = request.query.hasOwnProperty('page') ? request.query.page : 0;
+        return this.hmoService.fetchPendingTransactions({page, limit}, params);
     }
 
     @Get(':id/tariff')

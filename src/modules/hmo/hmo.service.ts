@@ -17,6 +17,7 @@ import { Appointment } from '../frontdesk/appointment/appointment.entity';
 import { Queue } from '../frontdesk/queue-system/queue.entity';
 import { Department } from '../settings/entities/department.entity';
 import { QueueSystemRepository } from '../frontdesk/queue-system/queue-system.repository';
+import { PaginationOptionsInterface } from '../../common/paginate';
 
 @Injectable()
 export class HmoService {
@@ -321,12 +322,15 @@ export class HmoService {
         }
     }
 
-    async fetchTransactions(params): Promise<Transactions[]> {
+    async fetchTransactions(options: PaginationOptionsInterface, params): Promise<Transactions[]> {
         const {startDate, endDate, patient_id, status, page, limit } = params;
 
         const query = this.transactionsRepository.createQueryBuilder('q')
-                            .innerJoinAndSelect(Patient, 'patient', 'q.patient_id = patient.id')
-                            .where('q.payment_type = :type', {type: 'HMO'});
+                            .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
+                            .leftJoin(Hmo, 'hmo', `"patient"."hmoId" = "hmo"."id"`)
+                            .where('q.payment_type = :type', {type: 'HMO'})
+                            .select('q.*')
+                            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, hmo.name as hmo_name, hmo.id as hmo_id');
 
         if (startDate && startDate !== '') {
             const start = moment(startDate).endOf('day').toISOString();
@@ -344,18 +348,21 @@ export class HmoService {
             query.andWhere('q.status = :status', {status});
         }
 
-        const transactions = await query.take(limit).skip((page === 1) ? page : page * limit).getRawMany();
+        const transactions = await query.take(options.limit).skip((options.page === 1) ? options.page : options.page * options.limit).getRawMany();
 
         return transactions;
     }
 
-    async fetchPendingTransactions(params): Promise<Transactions[]> {
-        const {startDate, endDate, page, limit } = params;
+    async fetchPendingTransactions(options: PaginationOptionsInterface, params): Promise<Transactions[]> {
+        const {startDate, endDate } = params;
 
         const query = this.transactionsRepository.createQueryBuilder('q')
-                        .innerJoinAndSelect(Patient, 'patient', 'q.patient_id = patient.id')
+                        .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
+                        .leftJoin(Hmo, 'hmo', `"patient"."hmoId" = "hmo"."id"`)
                         .where('q.payment_type = :type', {type: 'HMO'})
-                        .andWhere('q.hmo_approval_status = :status', {status: 0});
+                        .andWhere('q.hmo_approval_status = :status', {status: 0})
+                        .select('q.*')
+                        .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, hmo.name as hmo_name, hmo.id as hmo_id');
 
         if (startDate && startDate !== '') {
             const start = moment(startDate).endOf('day').toISOString();
@@ -366,7 +373,7 @@ export class HmoService {
             query.andWhere(`q.createdAt <= '${end}'`);
         }
 
-        const transactions = await query.take(limit).skip((page === 1) ? page : page * limit).getRawMany();
+        const transactions = await query.take(options.limit).skip((options.page === 1) ? options.page : options.page * options.limit).getRawMany();
 
         return transactions;
     }
