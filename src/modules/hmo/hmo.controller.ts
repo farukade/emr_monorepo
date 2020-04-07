@@ -7,6 +7,7 @@ import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import { HmoUploadRateDto } from './dto/hmo.upload-rate.dto';
 import { HmoRate } from './hmo-rate.entity';
+import { Transactions } from '../finance/transactions/transaction.entity';
 
 @Controller('hmos')
 export class HmoController {
@@ -17,6 +18,20 @@ export class HmoController {
     @Get()
     getHmo(): Promise<Hmo[]> {
         return this.hmoService.getHmos();
+    }
+
+    @Get('/transactions')
+    getHmoTransactions(
+        @Query() params,
+    ): Promise<Transactions[]> {
+        return this.hmoService.fetchTransactions(params);
+    }
+
+    @Get('/transactions/pending')
+    getHmoPendingTransactions(
+        @Query() params,
+    ): Promise<Transactions[]> {
+        return this.hmoService.fetchPendingTransactions(params);
     }
 
     @Get(':id/tariff')
@@ -118,5 +133,13 @@ export class HmoController {
         @Body() uploadDto: HmoUploadRateDto,
     ) {
         return this.hmoService.doUploadRate(uploadDto, file);
+    }
+
+    @Get('transactions/:id/process')
+    processTransaction(
+        @Query() param,
+        @Param('id') id: string,
+    ) {
+        return this.hmoService.processTransaction(param, id);
     }
 }

@@ -6,18 +6,22 @@ export class PatientRequestHelper {
     constructor(private patientRequestRepo: PatientRequestRepository) {
     }
 
-    static async handleLabRequest(param, patient) {
+    static async handleLabRequest(param, patient, createdBy) {
         const {requestType, requestBody, id} = param;
         const data = {
             requestType,
             requestBody,
             patient,
+            createdBy : '',
+            lastChangedBy: '',
         };
         let res;
         try {
             if (id && id !== '') {
+                data.lastChangedBy = createdBy;
                 res = await this.update(data, id);
             } else {
+                data.createdBy = createdBy;
                 res = await this.save(data);
             }
             return {success: true, data: res};
@@ -26,19 +30,23 @@ export class PatientRequestHelper {
         }
     }
 
-    static async handlePharmacyRequest(param, patient) {
+    static async handlePharmacyRequest(param, patient, createdBy) {
         const {requestType, requestBody, id} = param;
         const data = {
             requestType,
             requestBody,
             patient,
+            createdBy: '',
+            lastChangedBy: '',
         };
 
         let res;
         try {
             if (id && id !== '') {
+                data.lastChangedBy = createdBy;
                 res = await this.update(data, id);
             } else {
+                data.createdBy = createdBy;
                 res = await this.save(data);
             }
             return {success: true, data: res};
@@ -47,19 +55,23 @@ export class PatientRequestHelper {
         }
     }
 
-    static async handlePhysiotherapyRequest(param, patient) {
+    static async handlePhysiotherapyRequest(param, patient, createdBy) {
         const {requestType, requestBody, id} = param;
         const data = {
             requestType,
             requestBody,
             patient,
+            createdBy: '',
+            lastChangedBy: '',
         };
 
         let res;
         try {
             if (id && id !== '') {
+                data.lastChangedBy = createdBy;
                 res = await this.update(data, id);
             } else {
+                data.createdBy = createdBy;
                 res = await this.save(data);
             }
             return {success: true, data: res};
@@ -68,19 +80,23 @@ export class PatientRequestHelper {
         }
     }
 
-    static async handleOpthalmolgyRequest(param, patient) {
+    static async handleOpthalmolgyRequest(param, patient, createdBy) {
         const {requestType, requestBody, id} = param;
         const data = {
             requestType,
             requestBody,
             patient,
+            createdBy: '',
+            lastChangedBy: '',
         };
 
         let res;
         try {
             if (id && id !== '') {
+                data.lastChangedBy = createdBy;
                 res = await this.update(data, id);
             } else {
+                data.createdBy = createdBy;
                 res = await this.save(data);
             }
             return {success: true, data: res};
@@ -89,19 +105,23 @@ export class PatientRequestHelper {
         }
     }
 
-    static async handleDentistryRequest(param, patient) {
+    static async handleDentistryRequest(param, patient, createdBy) {
         const {requestType, requestBody, id} = param;
         const data = {
             requestType,
             requestBody,
             patient,
+            createdBy: '',
+            lastChangedBy: '',
         };
 
         let res;
         try {
             if (id && id !== '') {
+                data.lastChangedBy = createdBy;
                 res = await this.update(data, id);
             } else {
+                data.createdBy = createdBy;
                 res = await this.save(data);
             }
             return {success: true, data: res};
@@ -110,19 +130,23 @@ export class PatientRequestHelper {
         }
     }
 
-    static async handleImagingRequest(param, patient) {
+    static async handleImagingRequest(param, patient, createdBy) {
         const {requestType, requestBody, id} = param;
         const data = {
             requestType,
             requestBody,
             patient,
+            createdBy: '',
+            lastChangedBy: '',
         };
 
         let res;
         try {
             if (id && id !== '') {
+                data.lastChangedBy = createdBy;
                 res = await this.update(data, id);
             } else {
+                data.createdBy = createdBy;
                 res = await this.save(data);
             }
             return {success: true, data: res};
@@ -131,19 +155,23 @@ export class PatientRequestHelper {
         }
     }
 
-    static async handleProcedureRequest(param, patient) {
+    static async handleProcedureRequest(param, patient, createdBy) {
         const {requestType, requestBody, id} = param;
         const data = {
             requestType,
             requestBody,
             patient,
+            createdBy: '',
+            lastChangedBy: '',
         };
 
         let res;
         try {
             if (id && id !== '') {
+                data.lastChangedBy = createdBy;
                 res = await this.update(data, id);
             } else {
+                data.createdBy = createdBy;
                 res = await this.save(data);
             }
             return {success: true, data: res};

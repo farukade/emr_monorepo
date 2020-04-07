@@ -13,6 +13,10 @@ import { Department } from '../../settings/entities/department.entity';
 import { ProcessTransactionDto } from './dto/process-transaction.dto';
 import { VoucherRepository } from '../vouchers/voucher.repository';
 import { StaffRepository } from '../../hr/staff/staff.repository';
+import { Pagination, PaginationOptionsInterface } from '../../../common/paginate';
+import { getConnection } from 'typeorm-seeding';
+import { Appointment } from '../../frontdesk/appointment/appointment.entity';
+import { QueueSystemRepository } from '../../frontdesk/queue-system/queue-system.repository';
 
 @Injectable()
 export class TransactionsService {
@@ -30,9 +34,11 @@ export class TransactionsService {
         private voucherRepository: VoucherRepository,
         @InjectRepository(StaffRepository)
         private staffRepository: StaffRepository,
+        @InjectRepository(QueueSystemRepository)
+        private queueSystemRepository: QueueSystemRepository,
     ) {}
 
-    async fetchList(params): Promise<Transactions[]> {
+    async fetchList(options: PaginationOptionsInterface, params): Promise<Transactions[]> {
         const {startDate, endDate, patient_id, staff_id, status, payment_type, transaction_type} = params;
 
         const query = this.transactionsRepository.createQueryBuilder('q')
@@ -40,28 +46,28 @@ export class TransactionsService {
 
         if (startDate && startDate !== '') {
             const start = moment(startDate).endOf('day').toISOString();
-            query.where(`q.createdAt >= '${start}'`);
+            query.andWhere(`q.createdAt >= '${start}'`);
         }
         if (endDate && endDate !== '') {
             const end = moment(endDate).endOf('day').toISOString();
-            query.where(`q.createdAt <= '${end}'`);
+            query.andWhere(`q.createdAt <= '${end}'`);
         }
         if (payment_type && payment_type !== '') {
-            query.where(`q.payment_type = '${payment_type}'`);
+            query.andWhere(`q.payment_type = '${payment_type}'`);
         }
         if (patient_id && patient_id !== '') {
-            query.where('q.patient_id = :patient_id', {patient_id});
+            query.andWhere('q.patient_id = :patient_id', {patient_id});
         }
 
         if (staff_id && staff_id !== '') {
-            query.where('q.staff_id = :staff_id', {staff_id});
+            query.andWhere('q.staff_id = :staff_id', {staff_id});
         }
 
         if (status) {
-            query.where('q.status = :status', {status});
+            query.andWhere('q.status = :status', {status});
         }
 
-        const transactions = await query.getRawMany();
+        const transactions = await query.take(options.limit).skip(options.page * options.limit).getRawMany();
 
         for (const transaction of transactions) {
             if (transaction.q_department_id) {
@@ -233,7 +239,7 @@ export class TransactionsService {
     async processTransaction(id: string, transactionDto: ProcessTransactionDto): Promise<any> {
         const {voucher_id, amount_paid, voucher_amount, payment_type} = transactionDto;
         try {
-            const transaction = await this.transactionsRepository.findOne(id);
+            const transaction = await this.transactionsRepository.findOne(id, {relations: ['department']});
             transaction.amount_paid = amount_paid;
             transaction.payment_type  = payment_type;
             if (payment_type === 'Voucher') {
@@ -252,8 +258,18 @@ export class TransactionsService {
             }
             transaction.status = 1;
             await transaction.save();
-
-            return {success: true, transaction };
+            // find appointment
+            const appointment = await getConnection().getRepository(Appointment).findOne({
+                where: {patient: transaction.patient, status: 'Pending Paypoint Approval'},
+            });
+            let queue;
+            if (appointment) {
+                // get paypoint department
+                const department = await getConnection().getRepository(Department).findOne({where: {name: transaction.department.name}});
+                // create new queue
+                queue = await this.queueSystemRepository.saveQueue(appointment, department);
+            }
+            return {success: true, transaction, queue};
         } catch (error) {
             return {success: false, message: error.message };
         }

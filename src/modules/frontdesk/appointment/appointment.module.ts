@@ -11,6 +11,7 @@ import { AppointmentGateway } from './appointment.gateway';
 import { QueueSystemRepository } from '../queue-system/queue-system.repository';
 import { ServiceRepository } from '../../settings/services/service.repository';
 import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
+import { ServiceCategoryRepository } from '../../settings/services/service.category.repository';
 
 @Module({
   imports: [TypeOrmModule.forFeature([
@@ -21,6 +22,7 @@ import { TransactionsRepository } from '../../finance/transactions/transactions.
     ConsultingRoomRepository,
     QueueSystemRepository,
     ServiceRepository,
+    ServiceCategoryRepository,
     TransactionsRepository,
   ])],
   controllers: [AppointmentController],

@@ -15,6 +15,7 @@ import { Queue } from '../queue-system/queue.entity';
 import { Patient } from '../../patient/entities/patient.entity';
 import { Department } from '../../settings/entities/department.entity';
 import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
+import { ServiceCategoryRepository } from '../../settings/services/service.category.repository';
 
 @Injectable()
 export class AppointmentService {
@@ -33,6 +34,8 @@ export class AppointmentService {
         private queueSystemRepository: QueueSystemRepository,
         @InjectRepository(ServiceRepository)
         private serviceRepository: ServiceRepository,
+        @InjectRepository(ServiceCategoryRepository)
+        private serviceCategoryRepository: ServiceCategoryRepository,
         @InjectRepository(TransactionsRepository)
         private transactionsRepository: TransactionsRepository,
     ) {}
@@ -49,7 +52,7 @@ export class AppointmentService {
 
     async saveNewAppointment(appointmentDto: AppointmentDto): Promise<any> {
         try {
-            const { patient_id, department_id, specialization_id, consulting_room_id, sendToQueue, serviceType, amount} = appointmentDto;
+            const { patient_id, department_id, specialization_id, consulting_room_id, sendToQueue, serviceType, serviceCategory, amount} = appointmentDto;
             // find patient details
             const patient = await this.patientRepository.findOne(patient_id);
             // find department details
@@ -60,40 +63,34 @@ export class AppointmentService {
             const consultingRoom = await this.consultingRoomRepository.findOne(consulting_room_id);
             // find service
             const service = await this.serviceRepository.findOne(serviceType);
+            // find service category
+            const category = await this.serviceCategoryRepository.findOne(serviceCategory);
 
-            const appointment = await this.appointmentRepository.saveAppointment(appointmentDto, patient, specialization, department, consultingRoom, service);
+            const appointment = await this.appointmentRepository.saveAppointment(appointmentDto, patient, specialization, department, consultingRoom, service, category);
             // update patient appointment date
             patient.lastAppointmentDate = new Date().toString();
             await patient.save();
 
             let queue;
-            let payment;
+            let paymentType = '';
 
             if (sendToQueue) {
-                let queueNumber;
-                const lastQueueRes = await this.queueSystemRepository.find({take: 1, order: {createdAt: 'DESC'}});
-                if (lastQueueRes.length) {
-                    // check if last queue date is today
-                    const lastQueue = lastQueueRes[0];
-                    const today = moment();
-                    const isSameDay = today.isSame(lastQueue.createdAt, 'd');
-                    if (isSameDay) {
-                        queueNumber = lastQueue.queueNumber + 1;
-                    } else {
-                        queueNumber = 1;
-                    }
+                if (patient.insurranceStatus === 'HMO') {
+                    paymentType  = 'HMO';
+                    // update appointment status
+                    appointment.status = 'Pending HMO Approval';
+                    await appointment.save();
                 } else {
-                    queueNumber = 1;
-                }
+                    const paypoint = await this.departmentRepository.findOne({where: {name: 'Paypoint'}});
 
-                // add appointment to queue
-                const queueRes = await this.saveQueue(appointment, queueNumber, patient, amount, service);
-                queue = queueRes.queue;
-                payment = queueRes.payment;
-                // update appointment status
-                appointment.status = 'In Queue';
-                await appointment.save();
+                    queue = await this.queueSystemRepository.saveQueue(appointment, paypoint);
+                    // update appointment status
+                    appointment.status = 'Pending Paypoint Approval';
+                    await appointment.save();
+                }
             }
+            // save payment
+            const payment = await this.saveTransaction(patient, service, amount, paymentType);
 
             return { success: true, appointment, queue, payment };
         } catch (error) {
@@ -140,34 +137,16 @@ export class AppointmentService {
         }
     }
 
-    private async saveQueue(appointment, queueNumber, patient, amount, service) {
-        const queue = new Queue();
-        let payment;
-        queue.patientName = appointment.patient.surname + ', ' + appointment.patient.other_names;
-        queue.appointment = appointment;
-        await queue.save();
-        if (patient.insuranceStatus === 'HMO') {
-            const department = await this.departmentRepository.findOne({where: {name: 'HMO'}});
-            queue.department = department;
-        } else {
-            const department = await this.departmentRepository.findOne({where: {name: 'Paypoint'}});
-            queue.department = department;
-            queue.queueNumber= queueNumber;
-            queue.status     = 1;
-            payment = await this.saveTransaction(patient, department, service, amount);
-        }
-        await queue.save();
+    private async saveTransaction(patient: Patient, service: Service, amount, paymentType) {
+        const department = await this.departmentRepository.findOne({where: {name: 'Vitals'}});
 
-        return {queue, payment};
-    }
-
-    private async saveTransaction(patient: Patient, department: Department, service: Service, amount) {
         const data = {
             patient,
-            department,
             serviceType: service,
+            department,
             amount,
             description: service.name,
+            payment_type: paymentType,
         };
         const transaction = await this.transactionsRepository.save(data);
         return transaction;

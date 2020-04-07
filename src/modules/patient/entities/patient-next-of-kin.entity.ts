@@ -14,6 +14,9 @@ export class PatientNOK extends CustomBaseEntity {
     date_of_birth: string;
 
     @Column({ type: 'varchar', nullable: true})
+    relationship: string;
+
+    @Column({ type: 'varchar', nullable: true})
     occupation: string;
 
     @Column({ type: 'varchar', nullable: true})

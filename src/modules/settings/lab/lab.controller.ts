@@ -1,4 +1,4 @@
-import { Controller, Get, Post, UsePipes, ValidationPipe, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, UsePipes, ValidationPipe, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
 import { LabService } from './lab.service';
 import { LabTestCategory } from '../entities/lab_test_category.entity';
 import { LabCategoryDto } from './dto/lab.category.dto';
@@ -6,7 +6,9 @@ import { Parameter } from '../entities/parameters.entity';
 import { ParameterDto } from './dto/parameter.dto';
 import { LabTest } from '../entities/lab_test.entity';
 import { LabTestDto } from './dto/lab_test.dto';
+import { AuthGuard } from '@nestjs/passport';
 
+@UseGuards(AuthGuard('jwt'))
 @Controller('lab-tests')
 export class LabController {
 
@@ -22,9 +24,12 @@ export class LabController {
 
     @Post()
     @UsePipes(ValidationPipe)
-    createLabTest(@Body() labTestDto: LabTestDto): Promise<any> {
+    createLabTest(
+        @Body() labTestDto: LabTestDto,
+        @Request() req,
+    ): Promise<any> {
         const { parameters } = labTestDto;
-        return this.labService.createLabTest(labTestDto);
+        return this.labService.createLabTest(labTestDto, req.user.username);
     }
 
     @Patch(':id/update')
@@ -32,8 +37,9 @@ export class LabController {
     updateLabTest(
         @Param('id') id: string,
         @Body() labTestDto: LabTestDto,
+        @Request() req,
     ): Promise<LabTest> {
-        return this.labService.updateLabTest(id, labTestDto);
+        return this.labService.updateLabTest(id, labTestDto, req.user.username);
     }
 
     @Delete(':id')
@@ -51,8 +57,11 @@ export class LabController {
 
     @Post('/categories')
     @UsePipes(ValidationPipe)
-    createLabTestCategory(@Body() labCategoryDto: LabCategoryDto): Promise<LabTestCategory> {
-        return this.labService.createCategory(labCategoryDto);
+    createLabTestCategory(
+        @Body() labCategoryDto: LabCategoryDto,
+        @Request() req,
+    ): Promise<LabTestCategory> {
+        return this.labService.createCategory(labCategoryDto, req.user.username);
     }
 
     @Patch('categories/:id/update')
@@ -60,8 +69,9 @@ export class LabController {
     updateCategory(
         @Param('id') id: string,
         @Body() labCategoryDto: LabCategoryDto,
+        @Request() req,
     ): Promise<LabTestCategory> {
-        return this.labService.updateCategory(id, labCategoryDto);
+        return this.labService.updateCategory(id, labCategoryDto, req.user.username);
     }
 
     @Delete('categories/:id')

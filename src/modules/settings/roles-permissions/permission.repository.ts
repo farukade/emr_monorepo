@@ -11,11 +11,12 @@ export class PermissionRepository extends Repository<Permission> {
     return permissions;
   }
 
-  async createPermission(permissionDto: PermissionsDto): Promise<Permission> {
+  async createPermission(permissionDto: PermissionsDto, createdBy): Promise<Permission> {
     const { name } = permissionDto;
 
     const permission = new Permission();
     permission.name = name;
+    permission.createdBy = createdBy;
 
     await permission.save();
 

@@ -8,11 +8,15 @@ import {
   Post,
   UsePipes,
   ValidationPipe,
+  UseGuards,
+  Request,
 } from '@nestjs/common';
 import { CreateRoleDto } from './dto/role.dto';
 import { Role } from '../entities/role.entity';
 import { RolesService } from './roles.service';
+import { AuthGuard } from '@nestjs/passport';
 
+@UseGuards(AuthGuard('jwt'))
 @Controller('settings/roles')
 export class RolesController {
   constructor(private roleService: RolesService) {}
@@ -24,8 +28,11 @@ export class RolesController {
 
   @Post()
   @UsePipes(ValidationPipe)
-  createRole(@Body() createRoleDto: CreateRoleDto): Promise<Role> {
-    return this.roleService.createRole(createRoleDto);
+  createRole(
+    @Body() createRoleDto: CreateRoleDto,
+    @Request() req,
+  ): Promise<Role> {
+    return this.roleService.createRole(createRoleDto, req.user.usernam);
   }
 
   @Patch('/:id/update')
@@ -33,8 +40,9 @@ export class RolesController {
   updateRole(
     @Param('id') id: string,
     @Body() createRoleDto: CreateRoleDto,
+    @Request() req,
   ): Promise<Role> {
-    return this.roleService.updateRole(id, createRoleDto);
+    return this.roleService.updateRole(id, createRoleDto, req.user.username);
   }
 
   @Delete('/:id')

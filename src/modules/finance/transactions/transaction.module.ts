@@ -8,6 +8,7 @@ import { ServiceRepository } from '../../settings/services/service.repository';
 import { DepartmentRepository } from '../../settings/departments/department.repository';
 import { VoucherRepository } from '../vouchers/voucher.repository';
 import { StaffRepository } from '../../hr/staff/staff.repository';
+import { QueueSystemRepository } from '../../frontdesk/queue-system/queue-system.repository';
 
 @Module({
     imports: [TypeOrmModule.forFeature([
@@ -17,6 +18,7 @@ import { StaffRepository } from '../../hr/staff/staff.repository';
         ServiceRepository,
         VoucherRepository,
         StaffRepository,
+        QueueSystemRepository,
     ])],
     controllers: [TransactionsController],
     providers: [TransactionsService],

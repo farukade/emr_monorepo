@@ -11,6 +11,7 @@ export class PatientNOKRepository extends Repository<PatientNOK> {
         nok.other_names         = patientDto.nok_other_names;
         nok.address             = patientDto.nok_address;
         nok.date_of_birth       = patientDto.nok_date_of_birth;
+        nok.relationship        = patientDto.relationship;
         nok.occupation          = patientDto.nok_occupation;
         nok.gender              = patientDto.nok_gender;
         nok.email               = patientDto.nok_email;

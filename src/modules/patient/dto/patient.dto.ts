@@ -40,6 +40,8 @@ export class PatientDto {
 
     nok_date_of_birth: string;
 
+    relationship: string;
+
     nok_occupation: string;
 
     nok_address: string;

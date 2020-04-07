@@ -39,7 +39,7 @@ export class AuthService {
         user.lastLogin = new Date().toString();
         await user.save();
         const { expires_in, token } = await JWTHelper.createToken(
-          user.username,
+          {username: user.username, userId: user.id},
         );
         const staff = await this.staffRepository.findOne({where: {user}, relations: ['department']});
         const newUser = JSON.parse(JSON.stringify(user));

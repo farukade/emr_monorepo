@@ -1,8 +1,10 @@
-import { Controller, Get, Query, Post, UsePipes, ValidationPipe, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Query, Post, UsePipes, ValidationPipe, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
 import { VouchersService } from './vouchers.service';
 import { Voucher } from './voucher.entity';
 import { VoucherDto } from './dto/voucher.dto';
+import { AuthGuard } from '@nestjs/passport';
 
+@UseGuards(AuthGuard('jwt'))
 @Controller('vouchers')
 export class VouchersController {
     constructor(private voucherService: VouchersService) {}
@@ -18,8 +20,9 @@ export class VouchersController {
     @UsePipes(ValidationPipe)
     saveVoucher(
         @Body() voucherDto: VoucherDto,
+        @Request() req,
     ): Promise<any> {
-        return this.voucherService.save(voucherDto);
+        return this.voucherService.save(voucherDto, req.user.username);
     }
 
     @Patch('/:id/update')
@@ -27,8 +30,9 @@ export class VouchersController {
     updateVoucher(
         @Param('id') id: string,
         @Body() voucherDto: VoucherDto,
+        @Request() req,
     ): Promise<any> {
-        return this.voucherService.update(id, voucherDto);
+        return this.voucherService.update(id, voucherDto, req.user.username);
     }
 
     @Delete('/:id')

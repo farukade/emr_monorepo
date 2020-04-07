@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UsePipes, ValidationPipe, UseInterceptors, UploadedFile, Res, UploadedFiles } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UsePipes, ValidationPipe, UseInterceptors, UploadedFile, Res, UploadedFiles, UseGuards, Request } from '@nestjs/common';
 import { PatientService } from './patient.service';
 import { Patient } from './entities/patient.entity';
 import { PatientDto } from './dto/patient.dto';
@@ -15,7 +15,9 @@ import { extname, join } from 'path';
 import fs = require('fs');
 import { PatientDocument } from './entities/patient_documents.entity';
 import { PatientRequestDocument } from './entities/patient_request_documents.entity';
+import { AuthGuard } from '@nestjs/passport';
 
+@UseGuards(AuthGuard('jwt'))
 @Controller('patient')
 export class PatientController {
     constructor(private patientService: PatientService) {}
@@ -33,15 +35,20 @@ export class PatientController {
     }
 
     @Post('save')
-    saveNewPatient(@Body() patientDto: PatientDto) {
-        return this.patientService.saveNewPatient(patientDto);
+    saveNewPatient(
+        @Body() patientDto: PatientDto,
+        @Request() req,
+    ) {
+        return this.patientService.saveNewPatient(patientDto, req.user.username);
     }
 
     @Patch(':id/update')
     updatePatient(
         @Param('id') id: string,
-        @Body() patientDto: PatientDto) {
-        return this.patientService.updatePatientRecord(id, patientDto);
+        @Body() patientDto: PatientDto,
+        @Request() req,
+    ) {
+        return this.patientService.updatePatientRecord(id, patientDto, req.user.username);
     }
 
     @Delete(':id')
@@ -93,16 +100,18 @@ export class PatientController {
     @Post('save-vitals')
     saveVitals(
         @Body() param,
+        @Request() req,
     ) {
-        return this.patientService.doSaveVitals(param);
+        return this.patientService.doSaveVitals(param, req.user.username);
     }
 
     @Patch(':vitalId/update-vital')
     updateVital(
         @Param('vitalId') vitalId: string,
         @Body() param,
+        @Request() req,
     ) {
-        return this.patientService.doUpdateVital(vitalId, param);
+        return this.patientService.doUpdateVital(vitalId, param, req.user.username);
     }
 
     @Delete(':vitalId/delete-vital')
@@ -123,16 +132,18 @@ export class PatientController {
     @Post('save-antenatal')
     saveAntenatal(
         @Body() param: PatientAntenatalDto,
+        @Request() req,
     ) {
-        return this.patientService.doSaveAntenatal(param);
+        return this.patientService.doSaveAntenatal(param, req.user.username);
     }
 
     @Patch(':antenatalId/update-antenatal')
     updateAntenatal(
         @Param('antenatalId') antenatalId: string,
         @Body() param: PatientAntenatalDto,
+        @Request() req,
     ) {
-        return this.patientService.doUpdateAntenatal(antenatalId, param);
+        return this.patientService.doUpdateAntenatal(antenatalId, param, req.user.username);
     }
 
     @Delete(':antenatalId/delete-antenatal')
@@ -153,16 +164,18 @@ export class PatientController {
     @Post('save-allergies')
     saveAllergies(
         @Body() param: PatientAllergyDto,
+        @Request() req,
     ) {
-        return this.patientService.doSaveAllergies(param);
+        return this.patientService.doSaveAllergies(param, req.user.username);
     }
 
     @Patch(':allergyId/update-allergy')
     updateAllergy(
         @Param('allergyId') allergyId: string,
         @Body() param: PatientAllergyDto,
+        @Request() req,
     ) {
-        return this.patientService.doUpdateAllergy(allergyId, param);
+        return this.patientService.doUpdateAllergy(allergyId, param, req.user.username);
     }
 
     @Delete(':allergyId/delete-allergy')
@@ -175,8 +188,9 @@ export class PatientController {
     @Post('save-request')
     saveRequest(
         @Body() param,
+        @Request() req,
     ) {
-        return this.patientService.doSaveRequest(param);
+        return this.patientService.doSaveRequest(param, req.user.username);
     }
     @Get('/requests/:requestType')
     getRequests(
@@ -217,8 +231,9 @@ export class PatientController {
         @Param('id') id: string,
         @Body() param,
         @UploadedFile() file,
+        @Request() req,
     ): Promise<any> {
-        return this.patientService.doUploadDocument(id, param, (file) ? `${file.filename}` : '');
+        return this.patientService.doUploadDocument(id, param, (file) ? `${file.filename}` : '', req.user.username);
     }
 
     @Post(':requestId/upload-request-document')
@@ -236,8 +251,9 @@ export class PatientController {
         @Param('requestId') id: string,
         @Body() param,
         @UploadedFiles() files,
+        @Request() req,
     ) {
-        return this.patientService.doUploadRequestDocument(id, param, files);
+        return this.patientService.doUploadRequestDocument(id, param, files, req.user.username);
     }
 
     @Get('download/:filename')
