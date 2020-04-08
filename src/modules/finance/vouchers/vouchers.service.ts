@@ -11,6 +11,8 @@ import { Patient } from '../../patient/entities/patient.entity';
 import { Service } from '../../settings/entities/service.entity';
 import { Department } from '../../settings/entities/department.entity';
 import { TransactionsRepository } from '../transactions/transactions.repository';
+import { User } from '../../hr/entities/user.entity';
+import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 
 @Injectable()
 export class VouchersService {
@@ -28,7 +30,14 @@ export class VouchersService {
         const {startDate, endDate, patient_id, status} = params;
         const query = this.voucherRepository.createQueryBuilder('q')
         .innerJoin('q.patient', 'patient')
-        .addSelect('patient.surname, patient.other_names');
+        .leftJoin(User, 'creator', 'q.createdBy = creator.username')
+        .innerJoin(User, 'updator', 'q.lastChangedBy = updator.username')
+        .innerJoin(StaffDetails, 'staff1', 'staff1.user_id = creator.id')
+        .innerJoin(StaffDetails, 'staff2', 'staff2.user_id = updator.id')
+        .select('q.id, q.voucher_no, q.amount, q.amount_used')
+        .addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
+        .addSelect('CONCAT(staff2.first_name || \' \' || staff2.last_name) as updated_by, staff2.id as updated_by_id')
+        .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient-id')
 
         if (startDate && startDate !== '') {
             const start = moment(startDate).endOf('day').toISOString();
@@ -51,7 +60,7 @@ export class VouchersService {
         return result;
     }
 
-    async save(voucherDto: VoucherDto): Promise<any> {
+    async save(voucherDto: VoucherDto, createdBy): Promise<any> {
         const {patient_id, amount, duration, voucher_no, transaction_id} = voucherDto;
         // find patient record
         const patient = await this.patientRepository.findOne(patient_id);
@@ -62,6 +71,7 @@ export class VouchersService {
                 amount,
                 duration,
                 voucher_no,
+                createdBy,
             });
             if (transaction_id && transaction_id !== '') {
                 await this.addVoucherToTransaction(voucher, transaction_id);
@@ -72,7 +82,7 @@ export class VouchersService {
         }
     }
 
-    async update(id: string, voucherDto: VoucherDto): Promise<any> {
+    async update(id: string, voucherDto: VoucherDto, updatedBy): Promise<any> {
         const {patient_id, amount, duration, voucher_no} = voucherDto;
         // find patient record
         const patient = await this.patientRepository.findOne(patient_id);
@@ -83,6 +93,7 @@ export class VouchersService {
             voucher.amount      = amount;
             voucher.duration    = duration;
             voucher.voucher_no  = voucher_no;
+            voucher.lastChangedBy  = updatedBy;
             await voucher.save();
 
             return {success: true, voucher };

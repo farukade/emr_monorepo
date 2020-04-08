@@ -8,11 +8,15 @@ import {
   Post,
   UsePipes,
   ValidationPipe,
+  UseGuards,
+  Request,
 } from '@nestjs/common';
 import { PermissionsDto } from './dto/permissions.dto';
 import { Permission } from '../entities/permission.entity';
 import { PermissionsService } from './permissions.service';
+import { AuthGuard } from '@nestjs/passport';
 
+@UseGuards(AuthGuard('jwt'))
 @Controller('settings/permissions')
 export class PermissionsController {
   constructor(private permissionService: PermissionsService) {}
@@ -24,8 +28,11 @@ export class PermissionsController {
 
   @Post()
   @UsePipes(ValidationPipe)
-  createPermission(@Body() permissionDto: PermissionsDto): Promise<Permission> {
-    return this.permissionService.createPermission(permissionDto);
+  createPermission(
+    @Body() permissionDto: PermissionsDto,
+    @Request() req,
+  ): Promise<Permission> {
+    return this.permissionService.createPermission(permissionDto, req.user.username);
   }
 
   @Patch('/:id/update')
@@ -33,8 +40,9 @@ export class PermissionsController {
   updatePermission(
     @Param('id') id: string,
     @Body() permissionDto: PermissionsDto,
+    @Request() req,
   ): Promise<Permission> {
-    return this.permissionService.updatePermission(id, permissionDto);
+    return this.permissionService.updatePermission(id, permissionDto, req.user.username);
   }
 
   @Delete('/:id')

@@ -8,13 +8,14 @@ import { Parameter } from '../entities/parameters.entity';
 @EntityRepository(LabTest)
 export class LabTestRepository extends Repository<LabTest> {
 
-    async saveLabTest(labTestDto: LabTestDto, category: LabTestCategory): Promise<LabTest> {
+    async saveLabTest(labTestDto: LabTestDto, category: LabTestCategory, createdBy: string): Promise<LabTest> {
         const { name, price, test_type, description, parameters, sub_tests  } = labTestDto;
         const labTest = new LabTest();
         labTest.name    = name;
         labTest.price   = price;
         labTest.test_type = test_type;
         labTest.description = description;
+        labTest.createdBy = createdBy;
         labTest.category = category;
         await this.manager.save(labTest);
 
@@ -29,13 +30,14 @@ export class LabTestRepository extends Repository<LabTest> {
         return labTest;
     }
 
-    async updateLabTest(labTestDto: LabTestDto, labTest: LabTest, category: LabTestCategory): Promise<LabTest> {
+    async updateLabTest(labTestDto: LabTestDto, labTest: LabTest, category: LabTestCategory, updatedBy: string): Promise<LabTest> {
         const { name, price, test_type, parameters, sub_tests, description  } = labTestDto;
         labTest.name    = name;
         labTest.price   = price;
         labTest.test_type = test_type;
         labTest.description = description;
         labTest.category = category;
+        labTest.lastChangedBy = updatedBy;
         await this.manager.save(labTest);
 
         // delete previous parameters

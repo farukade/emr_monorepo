@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Post, UsePipes, ValidationPipe, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Query, Post, UsePipes, ValidationPipe, Body, Patch, Param, Delete, Request } from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
 import { Transactions } from './transaction.entity';
 import { TransactionDto } from './dto/transaction.dto';
@@ -11,8 +11,11 @@ export class TransactionsController {
     @Get('list')
     getTransactions(
         @Query() urlParams,
-    ): Promise<Transactions[]> {
-        return this.transactionsService.fetchList(urlParams);
+        @Request() request,
+    ) {
+        const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 2;
+        const page = request.query.hasOwnProperty('page') ? request.query.page : 0;
+        return this.transactionsService.fetchList({page, limit}, urlParams);
     }
 
     @Get('show/:id')

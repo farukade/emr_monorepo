@@ -29,19 +29,19 @@ export class LabService {
         return this.labTestRepository.find({relations:['category']});
     }
 
-    async createLabTest(labTestDto: LabTestDto): Promise<LabTest> {
+    async createLabTest(labTestDto: LabTestDto, createdBy: string): Promise<LabTest> {
         const { lab_category_id } = labTestDto;
         const category = await this.labTestCategoryRepo.findOne(lab_category_id);
 
-        return this.labTestRepository.saveLabTest(labTestDto, category);
+        return this.labTestRepository.saveLabTest(labTestDto, category, createdBy);
     }
 
-    async updateLabTest(id: string, labTestDto: LabTestDto): Promise<LabTest> {
+    async updateLabTest(id: string, labTestDto: LabTestDto, updatedBy: string): Promise<LabTest> {
         const { lab_category_id } = labTestDto;
         const category = await this.labTestCategoryRepo.findOne(lab_category_id);
         const labTest = await this.labTestRepository.findOne(id);
 
-        return this.labTestRepository.updateLabTest(labTestDto, labTest, category);
+        return this.labTestRepository.updateLabTest(labTestDto, labTest, category, updatedBy);
     }
 
     async deleteLabTest(id: string): Promise<void> {
@@ -59,14 +59,15 @@ export class LabService {
         return this.labTestCategoryRepo.find();
     }
 
-    async createCategory(labCategoryDto: LabCategoryDto): Promise<LabTestCategory> {
-        return this.labTestCategoryRepo.saveCategory(labCategoryDto);
+    async createCategory(labCategoryDto: LabCategoryDto, createdBy: string): Promise<LabTestCategory> {
+        return this.labTestCategoryRepo.saveCategory(labCategoryDto, createdBy);
     }
 
-    async updateCategory(id: string, labCategoryDto: LabCategoryDto): Promise<LabTestCategory> {
+    async updateCategory(id: string, labCategoryDto: LabCategoryDto, updatedBy: string): Promise<LabTestCategory> {
         const { name } = labCategoryDto;
         const category = await this.labTestCategoryRepo.findOne(id);
         category.name = name;
+        category.lastChangedBy = updatedBy;
         await category.save();
         return category;
     }

@@ -1,8 +1,10 @@
-import { Controller, Get, Post, UsePipes, ValidationPipe, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, UsePipes, ValidationPipe, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
 import { DepartmentsService } from './departments.service';
 import { Department } from '../entities/department.entity';
 import { DepartmentDto } from './dto/department.dto';
+import { AuthGuard } from '@nestjs/passport';
 
+@UseGuards(AuthGuard('jwt'))
 @Controller('departments')
 export class DepartmentsController {
     constructor(private departmentService: DepartmentsService) {}
@@ -14,8 +16,11 @@ export class DepartmentsController {
 
     @Post()
     @UsePipes(ValidationPipe)
-    createDepartment(@Body() departmentDto: DepartmentDto): Promise<Department> {
-        return this.departmentService.createDepartment(departmentDto);
+    createDepartment(
+        @Body() departmentDto: DepartmentDto,
+        @Request() req,
+    ): Promise<Department> {
+        return this.departmentService.createDepartment(departmentDto, req.user.username);
     }
 
     @Patch('/:id/update')
@@ -23,8 +28,9 @@ export class DepartmentsController {
     updateDepartment(
         @Param('id') id: string,
         @Body() departmentDto: DepartmentDto,
+        @Request() req,
     ): Promise<Department> {
-        return this.departmentService.updateDepartment(id, departmentDto);
+        return this.departmentService.updateDepartment(id, departmentDto, req.user.username);
     }
 
     @Delete('/:id')

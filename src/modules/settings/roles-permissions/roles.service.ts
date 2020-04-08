@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { CreateRoleDto } from './dto/role.dto';
 import { Role } from '../entities/role.entity';
 import { RoleRepository } from './role.repository';
+import { User } from '../../hr/entities/user.entity';
+import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 
 @Injectable()
 export class RolesService {
@@ -12,7 +14,15 @@ export class RolesService {
   ) {}
 
   async getAllRole(): Promise<Role[]> {
-    return this.roleRepository.getRoles();
+    return await this.roleRepository.createQueryBuilder('role')
+          .leftJoin(User, 'creator', 'role.createdBy = creator.username')
+          .innerJoin(User, 'updator', 'role.lastChangedBy = updator.username')
+          .innerJoin(StaffDetails, 'staff1', 'staff1.user_id = creator.id')
+          .innerJoin(StaffDetails, 'staff2', 'staff2.user_id = updator.id')
+          .select('role.id, role.name, role.description')
+          .addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
+          .addSelect('CONCAT(staff2.first_name || \' \' || staff2.last_name) as updated_by, staff2.id as updated_by_id')
+          .getRawMany();
   }
 
   async getRoleById(id: string): Promise<Role> {
@@ -25,16 +35,17 @@ export class RolesService {
     return found;
   }
 
-  async createRole(createRoleDto: CreateRoleDto): Promise<Role> {
-    return this.roleRepository.createRole(createRoleDto);
+  async createRole(createRoleDto: CreateRoleDto, userId: string): Promise<Role> {
+    return this.roleRepository.createRole(createRoleDto, userId);
   }
 
-  async updateRole(id: string, createRoleDto: CreateRoleDto): Promise<Role> {
+  async updateRole(id: string, createRoleDto: CreateRoleDto, userId: string): Promise<Role> {
     const { name, description } = createRoleDto;
     const role = await this.getRoleById(id);
     role.name = name;
     role.slug = this.slugify(name);
     role.description = description;
+    role.lastChangedBy = userId;
     await role.save();
     return role;
   }

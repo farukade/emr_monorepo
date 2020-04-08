@@ -24,7 +24,7 @@ export class Queue extends BaseEntity {
   @Column({type: 'varchar'})
   patientName: string;
 
-  @OneToOne(() => Appointment)
+  @ManyToOne(() => Appointment)
   @JoinColumn({name: 'appointment_id'})
   appointment: Appointment;
 

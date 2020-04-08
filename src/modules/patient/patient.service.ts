@@ -24,6 +24,8 @@ import { Voucher } from '../finance/vouchers/voucher.entity';
 import { PatientDocument } from './entities/patient_documents.entity';
 import { PatientRequestDocument } from './entities/patient_request_documents.entity';
 import { PatientDocumentRepository } from './repositories/patient_document.repository';
+import { User } from '../hr/entities/user.entity';
+import { StaffDetails } from '../hr/staff/entities/staff_details.entity';
 
 @Injectable()
 export class PatientService {
@@ -67,7 +69,7 @@ export class PatientService {
         return found;
     }
 
-    async saveNewPatient(patientDto: PatientDto): Promise<any> {
+    async saveNewPatient(patientDto: PatientDto, createdBy: string): Promise<any> {
         try {
             const {hmoId} = patientDto;
             let hmo;
@@ -76,7 +78,7 @@ export class PatientService {
             }
             const nok = await this.patientNOKRepository.saveNOK(patientDto);
 
-            const patient = await this.patientRepository.savePatient(patientDto, nok, hmo);
+            const patient = await this.patientRepository.savePatient(patientDto, nok, hmo, createdBy);
 
             return {success: true, patient};
         } catch (err) {
@@ -84,7 +86,7 @@ export class PatientService {
         }
     }
 
-    async updatePatientRecord(id: string, patientDto: PatientDto): Promise<any> {
+    async updatePatientRecord(id: string, patientDto: PatientDto, updatedBy: string): Promise<any> {
         try {
             const patient = await this.patientRepository.findOne(id, {relations: ['nextOfKin']});
             patient.surname             = patientDto.surname.toLocaleLowerCase();
@@ -99,10 +101,12 @@ export class PatientService {
             patient.ethnicity           = patientDto.ethnicity;
             patient.referredBy          = patientDto.referredBy;
             patient.insurranceStatus    = patientDto.insurranceStatus;
+            patient.lastChangedBy       = updatedBy;
             patient.nextOfKin.surname   = patientDto.nok_surname;
             patient.nextOfKin.other_names         = patientDto.nok_other_names;
             patient.nextOfKin.address             = patientDto.nok_address;
             patient.nextOfKin.date_of_birth       = patientDto.nok_date_of_birth;
+            patient.nextOfKin.relationship        = patientDto.relationship;
             patient.nextOfKin.occupation          = patientDto.nok_occupation;
             patient.nextOfKin.gender              = patientDto.nok_gender;
             patient.nextOfKin.email               = patientDto.nok_email;
@@ -135,7 +139,7 @@ export class PatientService {
         const patient = this.patientRepository.findOne(patient_id);
     }
 
-    async doSaveVitals(param): Promise<any> {
+    async doSaveVitals(param, createdBy: string): Promise<any> {
         const { patient_id, readingType, reading } = param;
         try {
             const patient = await this.patientRepository.findOne(patient_id);
@@ -144,6 +148,7 @@ export class PatientService {
                     readingType,
                     reading,
                     patient,
+                    createdBy,
                 };
                 const readings = await this.patientVitalRepository.save(data);
                 return {success: true, readings };
@@ -155,11 +160,12 @@ export class PatientService {
         }
     }
 
-    async doUpdateVital(vitalId, param): Promise<any> {
+    async doUpdateVital(vitalId, param, updatedBy): Promise<any> {
         try {
             const vital = await this.patientVitalRepository.findOne(vitalId);
             vital.reading = param.reading;
             vital.readingType = param.readingType;
+            vital.lastChangedBy = updatedBy;
             await vital.save();
 
             return {success: true, vital };
@@ -256,12 +262,14 @@ export class PatientService {
         return {success: true};
     }
 
-    async doSaveAntenatal(param: PatientAntenatalDto): Promise<any> {
+    async doSaveAntenatal(param: PatientAntenatalDto, createdBy): Promise<any> {
         const { patient_id } = param;
         try {
             const patient = await this.patientRepository.findOne(patient_id);
             param.patient = patient;
             const antenatal = await this.patientAntenatalRepository.save(param);
+            antenatal.createdBy = createdBy;
+            antenatal.save();
             return {success: true, antenatal };
         } catch (error) {
             return {success: false, message: error.message };
@@ -287,7 +295,7 @@ export class PatientService {
         return antenatals;
     }
 
-    async doUpdateAntenatal(antenatalId, param: PatientAntenatalDto): Promise<any> {
+    async doUpdateAntenatal(antenatalId, param: PatientAntenatalDto, updatedBy): Promise<any> {
         try {
             const antenatal = await this.patientAntenatalRepository.findOne(antenatalId);
             antenatal.fetalHeartRate = param.fetalHeartRate;
@@ -295,6 +303,7 @@ export class PatientService {
             antenatal.positionOfFetus = param.positionOfFetus;
             antenatal.heightOfFunds = param.heightOfFunds;
             antenatal.relationshipToBrim = param.relationshipToBrim;
+            antenatal.lastChangedBy = updatedBy;
             await antenatal.save();
 
             return {success: true, antenatal };
@@ -312,25 +321,28 @@ export class PatientService {
         return {success: true};
     }
 
-    async doSaveAllergies(param: PatientAllergyDto): Promise<any> {
+    async doSaveAllergies(param: PatientAllergyDto, createdBy): Promise<any> {
         const { patient_id } = param;
         try {
             const patient = await this.patientRepository.findOne(patient_id);
             param.patient = patient;
             const allergy = await this.patientAllergyRepository.save(param);
+            allergy.createdBy = createdBy;
+            allergy.save();
             return {success: true, allergy };
         } catch (error) {
             return {success: false, message: error.message };
         }
     }
 
-    async doUpdateAllergy(allergyId, param: PatientAllergyDto): Promise<any> {
+    async doUpdateAllergy(allergyId, param: PatientAllergyDto, updatedBy): Promise<any> {
         try {
             const allergy = await this.patientAllergyRepository.findOne(allergyId);
             allergy.category = param.category;
             allergy.allergy = param.allergy;
             allergy.severity = param.severity;
             allergy.reaction = param.reaction;
+            allergy.lastChangedBy = updatedBy;
             allergy.save();
 
             return {success: true, allergy };
@@ -368,7 +380,7 @@ export class PatientService {
         return {success: true};
     }
 
-    async doSaveRequest(param) {
+    async doSaveRequest(param, createdBy) {
         const { requestType, patient_id } = param;
         if (!requestType && requestType === '' ) {
             return {success: false, message: 'Request Type cannot be empty'};
@@ -377,25 +389,25 @@ export class PatientService {
         const patient = await this.patientRepository.findOne(patient_id);
         switch (requestType) {
             case 'lab':
-                res = await PatientRequestHelper.handleLabRequest(param, patient);
+                res = await PatientRequestHelper.handleLabRequest(param, patient, createdBy);
                 break;
             case 'pharmacy':
-                res = await PatientRequestHelper.handlePharmacyRequest(param, patient);
+                res = await PatientRequestHelper.handlePharmacyRequest(param, patient, createdBy);
                 break;
             case 'physiotherapy':
-                res = await PatientRequestHelper.handlePhysiotherapyRequest(param, patient);
+                res = await PatientRequestHelper.handlePhysiotherapyRequest(param, patient, createdBy);
                 break;
             case 'opthalmology':
-                res = await PatientRequestHelper.handleOpthalmolgyRequest(param, patient);
+                res = await PatientRequestHelper.handleOpthalmolgyRequest(param, patient, createdBy);
                 break;
             case 'dentistry':
-                res = await PatientRequestHelper.handleDentistryRequest(param, patient);
+                res = await PatientRequestHelper.handleDentistryRequest(param, patient, createdBy);
                 break;
             case 'imaging':
-                res = await PatientRequestHelper.handleImagingRequest(param, patient);
+                res = await PatientRequestHelper.handleImagingRequest(param, patient, createdBy);
                 break;
             case 'procedure':
-                res = await PatientRequestHelper.handleProcedureRequest(param, patient);
+                res = await PatientRequestHelper.handleProcedureRequest(param, patient, createdBy);
                 break;
             default:
                 res = {success: false, message: 'No data'};
@@ -408,7 +420,12 @@ export class PatientService {
         const {startDate, endDate} = urlParams;
 
         const query = this.patientRequestRepository.createQueryBuilder('q')
-                        .leftJoinAndSelect('q.patient', 'patient')
+                        .leftJoin('patient_request.patient', 'patient')
+                        .leftJoin(User, 'creator', 'q.createdBy = creator.username')
+                        .innerJoin(StaffDetails, 'staff1', 'staff1.user_id = creator.id')
+                        .select('q.id, q.requestType, q.requestBody')
+                        .addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
+                        .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id')
                         .where('q.patient_id = :patient_id', {patient_id})
                         .andWhere('q.requestType = :requestType', {requestType});
 
@@ -429,7 +446,12 @@ export class PatientService {
         const {startDate, endDate} = urlParams;
 
         const query = this.patientRequestRepository.createQueryBuilder('patient_request')
-                        .leftJoinAndSelect('patient_request.patient', 'patient')
+                        .leftJoin('patient_request.patient', 'patient')
+                        .leftJoin(User, 'creator', 'patient_request.createdBy = creator.username')
+                        .innerJoin(StaffDetails, 'staff1', 'staff1.user_id = creator.id')
+                        .select('patient_request.id, patient_request.requestType, patient_request.requestBody')
+                        .addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
+                        .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id')
                         .andWhere('patient_request.requestType = :requestType', {requestType});
 
         if (startDate && startDate !== '') {
@@ -442,7 +464,7 @@ export class PatientService {
             query.andWhere(`patient_request.createdAt <= '${end}'`);
         }
 
-        const requests = query.getMany();
+        const requests = query.getRawMany();
 
         return requests;
     }
@@ -456,7 +478,7 @@ export class PatientService {
         return {success: true};
     }
 
-    async doUploadDocument(id, param, fileName) {
+    async doUploadDocument(id, param, fileName, createdBy) {
 
         const patient = await this.patientRepository.findOne(id);
         try {
@@ -464,6 +486,7 @@ export class PatientService {
             doc.patient = patient;
             doc.document_type = param.document_type;
             doc.document_name = fileName;
+            doc.createdBy = createdBy;
             await doc.save();
 
             return {success: true };
@@ -472,7 +495,7 @@ export class PatientService {
         }
     }
 
-    async doUploadRequestDocument(id, param, files) {
+    async doUploadRequestDocument(id, param, files, createdBy) {
         const request = await this.patientRequestRepository.findOne(id);
         for (const file of files) {
             try {
@@ -480,8 +503,8 @@ export class PatientService {
                 doc.request = request;
                 doc.document_type = param.document_type;
                 doc.document_name = file.filename;
+                doc.createdBy = createdBy;
                 await doc.save();
-    
             } catch (error) {
                 return {success: false, message: error.message };
             }

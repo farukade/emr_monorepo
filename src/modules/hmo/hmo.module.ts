@@ -6,9 +6,18 @@ import { HmoRepository } from './hmo.repository';
 import { ServiceRepository } from '../settings/services/service.repository';
 import { StockRepository } from '../inventory/stock.repository';
 import { HmoRateRepository } from './hmo-rate.repository';
+import { TransactionsRepository } from '../finance/transactions/transactions.repository';
+import { QueueSystemRepository } from '../frontdesk/queue-system/queue-system.repository';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([HmoRepository, HmoRateRepository, ServiceRepository, StockRepository])],
+  imports: [TypeOrmModule.forFeature([
+    HmoRepository,
+    HmoRateRepository,
+    ServiceRepository,
+    StockRepository,
+    TransactionsRepository,
+    QueueSystemRepository,
+  ])],
   controllers: [HmoController],
   providers: [HmoService],
 })

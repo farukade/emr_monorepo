@@ -62,6 +62,9 @@ export class Transactions extends CustomBaseEntity {
     @Column({type: 'smallint', default: 0})
     status: number;
 
+    @Column({type: 'smallint', default: 0})
+    hmo_approval_status: number;
+
     @OneToMany(
         () => TransactionItems,
         items => items.transaction,

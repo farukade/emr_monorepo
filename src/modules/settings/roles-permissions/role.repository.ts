@@ -11,13 +11,14 @@ export class RoleRepository extends Repository<Role> {
     return roles;
   }
 
-  async createRole(createRoleDto: CreateRoleDto): Promise<Role> {
+  async createRole(createRoleDto: CreateRoleDto, userId: string): Promise<Role> {
     const { name, description } = createRoleDto;
 
     const role = new Role();
     role.name = name;
     role.slug = this.slugify(name);
     role.description = description;
+    role.createdBy = userId;
 
     await role.save();
 

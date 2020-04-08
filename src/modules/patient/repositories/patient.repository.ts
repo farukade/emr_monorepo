@@ -7,7 +7,7 @@ import { Hmo } from '../../hmo/hmo.entity';
 @EntityRepository(Patient)
 export class PatientRepository extends Repository<Patient> {
 
-    async savePatient(patientDto: PatientDto, nextOfkin: PatientNOK, hmo: Hmo) {
+    async savePatient(patientDto: PatientDto, nextOfkin: PatientNOK, hmo: Hmo, createdBy) {
         const patient = new Patient();
         patient.fileNumber          =  'DEDA-' + Math.floor(Math.random() * 90000),
         patient.surname             = patientDto.surname.toLocaleLowerCase();
@@ -22,6 +22,7 @@ export class PatientRepository extends Repository<Patient> {
         patient.ethnicity           = patientDto.ethnicity;
         patient.referredBy          = patientDto.referredBy;
         patient.insurranceStatus    = patientDto.insurranceStatus;
+        patient.createdBy           = createdBy;
         patient.nextOfKin           = nextOfkin;
         if (hmo) {
             patient.hmo = hmo;

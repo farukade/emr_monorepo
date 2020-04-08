@@ -1,4 +1,4 @@
-import { Controller, Get, Post, UsePipes, ValidationPipe, Body, Patch, Param, Delete, UploadedFile, UseInterceptors, Header, Res, Query } from '@nestjs/common';
+import { Controller, Get, Post, UsePipes, ValidationPipe, Body, Patch, Param, Delete, UploadedFile, UseInterceptors, Header, Res, Query, Request } from '@nestjs/common';
 import { HmoService } from './hmo.service';
 import { Hmo } from './hmo.entity';
 import { HmoDto } from './dto/hmo.dto';
@@ -7,6 +7,7 @@ import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import { HmoUploadRateDto } from './dto/hmo.upload-rate.dto';
 import { HmoRate } from './hmo-rate.entity';
+import { Transactions } from '../finance/transactions/transaction.entity';
 
 @Controller('hmos')
 export class HmoController {
@@ -17,6 +18,26 @@ export class HmoController {
     @Get()
     getHmo(): Promise<Hmo[]> {
         return this.hmoService.getHmos();
+    }
+
+    @Get('/transactions')
+    getHmoTransactions(
+        @Query() params,
+        @Request() request,
+    ): Promise<Transactions[]> {
+        const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 2;
+        const page = request.query.hasOwnProperty('page') ? request.query.page : 0;
+        return this.hmoService.fetchTransactions({page, limit}, params);
+    }
+
+    @Get('/transactions/pending')
+    getHmoPendingTransactions(
+        @Query() params,
+        @Request() request,        
+    ): Promise<Transactions[]> {
+        const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 2;
+        const page = request.query.hasOwnProperty('page') ? request.query.page : 0;
+        return this.hmoService.fetchPendingTransactions({page, limit}, params);
     }
 
     @Get(':id/tariff')
@@ -118,5 +139,13 @@ export class HmoController {
         @Body() uploadDto: HmoUploadRateDto,
     ) {
         return this.hmoService.doUploadRate(uploadDto, file);
+    }
+
+    @Get('transactions/:id/process')
+    processTransaction(
+        @Query() param,
+        @Param('id') id: string,
+    ) {
+        return this.hmoService.processTransaction(param, id);
     }
 }

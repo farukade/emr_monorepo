@@ -5,10 +5,11 @@ import { ConsultingRoom } from '../entities/consulting-room.entity';
 @EntityRepository(ConsultingRoom)
 export class ConsultingRoomRepository extends Repository<ConsultingRoom> {
 
-    async saveConsultingRoom(consultingRoomDto: ConsultingRoomDto): Promise<ConsultingRoom> {
+    async saveConsultingRoom(consultingRoomDto: ConsultingRoomDto, createdBy): Promise<ConsultingRoom> {
         const { name }  = consultingRoomDto;
         const consultingRoom  = new ConsultingRoom();
         consultingRoom.name   = name;
+        consultingRoom.createdBy   = createdBy;
         await consultingRoom.save();
         return consultingRoom;
     }

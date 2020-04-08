@@ -8,6 +8,16 @@ import { ServiceRepository } from '../settings/services/service.repository';
 import { StockRepository } from '../inventory/stock.repository';
 import { HmoRate } from './hmo-rate.entity';
 import { HmoRateRepository } from './hmo-rate.repository';
+import { TransactionsRepository } from '../finance/transactions/transactions.repository';
+import * as moment from 'moment';
+import { Transactions } from '../finance/transactions/transaction.entity';
+import { Patient } from '../patient/entities/patient.entity';
+import { getConnection } from 'typeorm';
+import { Appointment } from '../frontdesk/appointment/appointment.entity';
+import { Queue } from '../frontdesk/queue-system/queue.entity';
+import { Department } from '../settings/entities/department.entity';
+import { QueueSystemRepository } from '../frontdesk/queue-system/queue-system.repository';
+import { PaginationOptionsInterface } from '../../common/paginate';
 
 @Injectable()
 export class HmoService {
@@ -20,6 +30,10 @@ export class HmoService {
         private serviceRepository: ServiceRepository,
         @InjectRepository(StockRepository)
         private stockRepository: StockRepository,
+        @InjectRepository(TransactionsRepository)
+        private transactionsRepository: TransactionsRepository,
+        @InjectRepository(QueueSystemRepository)
+        private queueSystemRepository: QueueSystemRepository,
     ) {}
 
     async getHmos(): Promise<Hmo[]> {
@@ -306,5 +320,89 @@ export class HmoService {
         } catch (err) {
             return {success: false, message: err.message};
         }
+    }
+
+    async fetchTransactions(options: PaginationOptionsInterface, params): Promise<Transactions[]> {
+        const {startDate, endDate, patient_id, status, page, limit } = params;
+
+        const query = this.transactionsRepository.createQueryBuilder('q')
+                            .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
+                            .leftJoin(Hmo, 'hmo', `"patient"."hmoId" = "hmo"."id"`)
+                            .where('q.payment_type = :type', {type: 'HMO'})
+                            .select('q.*')
+                            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, hmo.name as hmo_name, hmo.id as hmo_id');
+
+        if (startDate && startDate !== '') {
+            const start = moment(startDate).endOf('day').toISOString();
+            query.andWhere(`q.createdAt >= '${start}'`);
+        }
+        if (endDate && endDate !== '') {
+            const end = moment(endDate).endOf('day').toISOString();
+            query.andWhere(`q.createdAt <= '${end}'`);
+        }
+        if (patient_id && patient_id !== '') {
+            query.andWhere('q.patient_id = :patient_id', {patient_id});
+        }
+
+        if (status) {
+            query.andWhere('q.status = :status', {status});
+        }
+
+        const transactions = await query.take(options.limit).skip((options.page === 1) ? options.page : options.page * options.limit).getRawMany();
+
+        return transactions;
+    }
+
+    async fetchPendingTransactions(options: PaginationOptionsInterface, params): Promise<Transactions[]> {
+        const {startDate, endDate } = params;
+
+        const query = this.transactionsRepository.createQueryBuilder('q')
+                        .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
+                        .leftJoin(Hmo, 'hmo', `"patient"."hmoId" = "hmo"."id"`)
+                        .where('q.payment_type = :type', {type: 'HMO'})
+                        .andWhere('q.hmo_approval_status = :status', {status: 0})
+                        .select('q.*')
+                        .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, hmo.name as hmo_name, hmo.id as hmo_id');
+
+        if (startDate && startDate !== '') {
+            const start = moment(startDate).endOf('day').toISOString();
+            query.andWhere(`q.createdAt >= '${start}'`);
+        }
+        if (endDate && endDate !== '') {
+            const end = moment(endDate).endOf('day').toISOString();
+            query.andWhere(`q.createdAt <= '${end}'`);
+        }
+
+        const transactions = await query.take(options.limit).skip((options.page === 1) ? options.page : options.page * options.limit).getRawMany();
+
+        return transactions;
+    }
+
+    async processTransaction(urlParams, id) {
+        const { action } = urlParams;
+        try {
+
+            const transaction = await this.transactionsRepository.findOne(id, {relations: ['patient']});
+            if (action === 1) {
+                transaction.hmo_approval_status = 1;
+            } else {
+                transaction.hmo_approval_status = 2;
+            }
+            await transaction.save();
+            // find appointment
+            const appointment = await getConnection().getRepository(Appointment).findOne({
+                where: {patient: transaction.patient, status: 'Pending HMO Approval'},
+            });
+            appointment.status = 'Pending Paypoint Approval';
+            appointment.save();
+            // get paypoint department
+            const paypoint = await getConnection().getRepository(Department).findOne({where: {name: 'Paypoint'}});
+            // create new queue
+            const queue = await this.queueSystemRepository.saveQueue(appointment, paypoint);
+            return {success: true, transaction, queue};
+        } catch (error) {
+            return {success: false, message: error.message};
+        }
+
     }
 }
