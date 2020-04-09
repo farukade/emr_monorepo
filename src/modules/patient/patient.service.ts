@@ -26,6 +26,7 @@ import { PatientRequestDocument } from './entities/patient_request_documents.ent
 import { PatientDocumentRepository } from './repositories/patient_document.repository';
 import { User } from '../hr/entities/user.entity';
 import { StaffDetails } from '../hr/staff/entities/staff_details.entity';
+import { RequestPaymentHelper } from '../../common/utils/RequestPaymentHelper';
 
 @Injectable()
 export class PatientService {
@@ -385,29 +386,72 @@ export class PatientService {
         if (!requestType && requestType === '' ) {
             return {success: false, message: 'Request Type cannot be empty'};
         }
-        let res;
-        const patient = await this.patientRepository.findOne(patient_id);
+        let res = {};
+        const patient = await this.patientRepository.findOne(patient_id, {relations: ['hmo']});
         switch (requestType) {
             case 'lab':
-                res = await PatientRequestHelper.handleLabRequest(param, patient, createdBy);
+                // save request
+                let labRequest = await PatientRequestHelper.handleLabRequest(param, patient, createdBy);
+                if (labRequest.success) {
+                    // save transaction
+                    const payment = await RequestPaymentHelper.clinicalLabPayment(param.requestBody, patient, createdBy);
+                    labRequest = {...labRequest, ...payment};
+                }
+                res = labRequest;
                 break;
             case 'pharmacy':
-                res = await PatientRequestHelper.handlePharmacyRequest(param, patient, createdBy);
+                let pharmacyReq = await PatientRequestHelper.handlePharmacyRequest(param, patient, createdBy);
+                if (pharmacyReq.success) {
+                    // save transaction
+                    const payment = await RequestPaymentHelper.pharmacyPayment(param.requestBody, patient, createdBy);
+                    pharmacyReq = {...pharmacyReq, ...payment};
+                }
+                res = pharmacyReq;
                 break;
             case 'physiotherapy':
-                res = await PatientRequestHelper.handlePhysiotherapyRequest(param, patient, createdBy);
+                let physio = await PatientRequestHelper.handlePhysiotherapyRequest(param, patient, createdBy);
+                if (physio.success) {
+                    // save transaction
+                    const payment = await RequestPaymentHelper.physiotherapyPayment(param.requestBody, patient, createdBy);
+                    physio = {...physio, ...payment};
+                }
+                res = physio;
                 break;
             case 'opthalmology':
-                res = await PatientRequestHelper.handleOpthalmolgyRequest(param, patient, createdBy);
+                let req = await PatientRequestHelper.handleOpthalmolgyRequest(param, patient, createdBy);
+                if (pharmacyReq.success) {
+                    // save transaction
+                    const payment = await RequestPaymentHelper.opthalmologyPayment(param.requestBody, patient, createdBy);
+                    req = {...req, ...payment};
+                }
+                res = req;
                 break;
             case 'dentistry':
-                res = await PatientRequestHelper.handleDentistryRequest(param, patient, createdBy);
+                let dentistry = await PatientRequestHelper.handleDentistryRequest(param, patient, createdBy);
+                if (dentistry.success) {
+                    // save transaction
+                    const payment = await RequestPaymentHelper.dentistryPayment(param.requestBody, patient, createdBy);
+                    dentistry = {...dentistry, ...payment};
+                }
+                res = dentistry;
                 break;
             case 'imaging':
-                res = await PatientRequestHelper.handleImagingRequest(param, patient, createdBy);
+                let imaging = await PatientRequestHelper.handleImagingRequest(param, patient, createdBy);
+                if (imaging.success) {
+                    // save transaction
+                    const payment = await RequestPaymentHelper.imagingPayment(param.requestBody, patient, createdBy);
+                    imaging = {...imaging, ...payment};
+                }
+                res = dentistry;
                 break;
             case 'procedure':
-                res = await PatientRequestHelper.handleProcedureRequest(param, patient, createdBy);
+                let procedure = await PatientRequestHelper.handleProcedureRequest(param, patient, createdBy);
+                if (procedure.success && param.requestBody.bill_now === true) {
+                    // save transaction
+                    const payment = await RequestPaymentHelper.procedurePayment(param.requestBody, patient, createdBy);
+                    procedure = {...procedure, ...payment};
+                }
+                res = procedure;
                 break;
             default:
                 res = {success: false, message: 'No data'};
@@ -420,7 +464,7 @@ export class PatientService {
         const {startDate, endDate} = urlParams;
 
         const query = this.patientRequestRepository.createQueryBuilder('q')
-                        .leftJoin('patient_request.patient', 'patient')
+                        .leftJoin('q.patient', 'patient')
                         .leftJoin(User, 'creator', 'q.createdBy = creator.username')
                         .innerJoin(StaffDetails, 'staff1', 'staff1.user_id = creator.id')
                         .select('q.id, q.requestType, q.requestBody')

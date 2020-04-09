@@ -6,9 +6,7 @@ import { HmoModule } from './modules/hmo/hmo.module';
 import { HRModule } from './modules/hr/hr.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { PatientModule } from './modules/patient/patient.module';
-import { ConsultationModule } from './modules/consultation/consultation.module';
 import { FinanceModule } from './modules/finance/finance.module';
-import { ClinicalTasksModule } from './modules/clinical-tasks/clinical-tasks.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { QueueSystemModule } from './modules/frontdesk/queue-system/queue-system.module';
 import { FrontdeskModule } from './modules/frontdesk/frontdesk.module';
@@ -31,9 +29,7 @@ fs.writeFileSync(
     HmoModule,
     HRModule,
     PatientModule,
-    ConsultationModule,
     FinanceModule,
-    ClinicalTasksModule,
     InventoryModule,
     QueueSystemModule,
     SettingsModule,

@@ -18,7 +18,6 @@ import { Transactions } from '../../finance/transactions/transaction.entity';
 import { Connection, Like } from 'typeorm';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 import { Patient } from '../../patient/entities/patient.entity';
-import { TransactionItems } from '../../finance/transactions/transaction-items.entity';
 
 @Injectable()
 export class CafeteriaService {
@@ -350,16 +349,13 @@ export class CafeteriaService {
                                         .createQueryBuilder('s').where('s.id = :id', {id: user_id}).getOne();
                 transaction.patient = patient;
             }
-            await transaction.save();
-
+            const data = [];
             for (const sale of items) {
                 const parentItem = await this.cafeteriaItemRepository.findOne(sale.item_id);
-                const item       = new TransactionItems();
-                item.amount      = sale.amount;
-                item.item        = parentItem;
-                item.transaction = transaction;
-                await item.save();
+                data.push({name: parentItem.name, amount});
             }
+            transaction.transaction_details = data;
+            await transaction.save();
             return {success: true, transaction};
         } catch (error) {
             return {success: false, message: error.message};
