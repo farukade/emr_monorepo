@@ -15,12 +15,12 @@ export class ConsultingRoomService {
     async getConsultingRooms(): Promise<ConsultingRoom[]> {
         return await this.consultingRoomRepository.createQueryBuilder('q')
         .leftJoin(User, 'creator', 'q.createdBy = creator.username')
-        .innerJoin(User, 'updator', 'q.lastChangedBy = updator.username')
+        // .innerJoin(User, 'updator', 'q.lastChangedBy = updator.username')
         .innerJoin(StaffDetails, 'staff1', 'staff1.user_id = creator.id')
-        .innerJoin(StaffDetails, 'staff2', 'staff2.user_id = updator.id')
+        // .innerJoin(StaffDetails, 'staff2', 'staff2.user_id = updator.id')
         .select('q.id, q.name')
         .addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
-        .addSelect('CONCAT(staff2.first_name || \' \' || staff2.last_name) as updated_by, staff2.id as updated_by_id')
+        // .addSelect('CONCAT(staff2.first_name || \' \' || staff2.last_name) as updated_by, staff2.id as updated_by_id')
         .getRawMany();
     }
 
