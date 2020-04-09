@@ -12,6 +12,8 @@ import { PatientRequestRepository } from './repositories/patient_request.reposit
 import { HmoRepository } from '../hmo/hmo.repository';
 import { VoucherRepository } from '../finance/vouchers/voucher.repository';
 import { PatientDocumentRepository } from './repositories/patient_document.repository';
+import { AntenatalModule } from './antenatal/antenatal.module';
+import { AdmissionsModule } from './admissions/admissions.module';
 
 @Module({
   imports: [TypeOrmModule.forFeature([
@@ -25,7 +27,7 @@ import { PatientDocumentRepository } from './repositories/patient_document.repos
     HmoRepository,
     ServiceRepository,
     VoucherRepository,
-  ])],
+  ]), AntenatalModule, AdmissionsModule],
   controllers: [PatientController],
   providers: [PatientService],
 })

@@ -73,10 +73,12 @@ export class AppointmentService {
 
             let queue;
             let paymentType = '';
-
+            let hmoApprovalStatus = 0;
+            
             if (sendToQueue) {
                 if (patient.insurranceStatus === 'HMO') {
                     paymentType  = 'HMO';
+                    hmoApprovalStatus = 1;
                     // update appointment status
                     appointment.status = 'Pending HMO Approval';
                     await appointment.save();
@@ -90,7 +92,7 @@ export class AppointmentService {
                 }
             }
             // save payment
-            const payment = await this.saveTransaction(patient, service, amount, paymentType);
+            const payment = await this.saveTransaction(patient, service, amount, paymentType, hmoApprovalStatus);
 
             return { success: true, appointment, queue, payment };
         } catch (error) {
@@ -137,7 +139,7 @@ export class AppointmentService {
         }
     }
 
-    private async saveTransaction(patient: Patient, service: Service, amount, paymentType) {
+    private async saveTransaction(patient: Patient, service: Service, amount, paymentType, hmoApprovalStatus) {
         const department = await this.departmentRepository.findOne({where: {name: 'Vitals'}});
 
         const data = {
@@ -147,6 +149,7 @@ export class AppointmentService {
             amount,
             description: service.name,
             payment_type: paymentType,
+            hmo_approval_status: hmoApprovalStatus,
         };
         const transaction = await this.transactionsRepository.save(data);
         return transaction;

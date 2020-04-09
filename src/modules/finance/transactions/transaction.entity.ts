@@ -5,7 +5,6 @@ import { Department } from '../../settings/entities/department.entity';
 import { Service } from '../../settings/entities/service.entity';
 import { Voucher } from '../vouchers/voucher.entity';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
-import { TransactionItems } from './transaction-items.entity';
 
 @Entity({ name: 'transactions'})
 export class Transactions extends CustomBaseEntity {
@@ -65,9 +64,6 @@ export class Transactions extends CustomBaseEntity {
     @Column({type: 'smallint', default: 0})
     hmo_approval_status: number;
 
-    @OneToMany(
-        () => TransactionItems,
-        items => items.transaction,
-    )
-    items: TransactionItems[];
+    @Column({type: 'jsonb', nullable: true})
+    transaction_details: any;
 }

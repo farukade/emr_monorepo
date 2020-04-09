@@ -384,9 +384,9 @@ export class HmoService {
 
             const transaction = await this.transactionsRepository.findOne(id, {relations: ['patient']});
             if (action === 1) {
-                transaction.hmo_approval_status = 1;
-            } else {
                 transaction.hmo_approval_status = 2;
+            } else {
+                transaction.hmo_approval_status = 3;
             }
             await transaction.save();
             // find appointment

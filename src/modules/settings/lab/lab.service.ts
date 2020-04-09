@@ -26,7 +26,7 @@ export class LabService {
     */
 
     async getTests(): Promise<LabTest[]> {
-        return this.labTestRepository.find({relations:['category']});
+        return this.labTestRepository.find({relations: ['category', 'parameters']});
     }
 
     async createLabTest(labTestDto: LabTestDto, createdBy: string): Promise<LabTest> {
