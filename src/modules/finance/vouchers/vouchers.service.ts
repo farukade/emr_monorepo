@@ -37,7 +37,7 @@ export class VouchersService {
         .select('q.id, q.voucher_no, q.amount, q.amount_used')
         .addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
         .addSelect('CONCAT(staff2.first_name || \' \' || staff2.last_name) as updated_by, staff2.id as updated_by_id')
-        .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient-id')
+        .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id');
 
         if (startDate && startDate !== '') {
             const start = moment(startDate).endOf('day').toISOString();
