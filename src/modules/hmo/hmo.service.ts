@@ -323,7 +323,7 @@ export class HmoService {
     }
 
     async fetchTransactions(options: PaginationOptionsInterface, params): Promise<Transactions[]> {
-        const {startDate, endDate, patient_id, status, page, limit } = params;
+        const {startDate, endDate, patient_id, hmo_id, status, page, limit } = params;
 
         const query = this.transactionsRepository.createQueryBuilder('q')
                             .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
@@ -340,6 +340,9 @@ export class HmoService {
             const end = moment(endDate).endOf('day').toISOString();
             query.andWhere(`q.createdAt <= '${end}'`);
         }
+        if (hmo_id && hmo_id !== '') {
+            query.andWhere('q.id = :hmo_id', {hmo_id});
+        }
         if (patient_id && patient_id !== '') {
             query.andWhere('q.patient_id = :patient_id', {patient_id});
         }
@@ -354,7 +357,7 @@ export class HmoService {
     }
 
     async fetchPendingTransactions(options: PaginationOptionsInterface, params): Promise<Transactions[]> {
-        const {startDate, endDate } = params;
+        const {startDate, endDate, hmo_id } = params;
 
         const query = this.transactionsRepository.createQueryBuilder('q')
                         .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
@@ -371,6 +374,9 @@ export class HmoService {
         if (endDate && endDate !== '') {
             const end = moment(endDate).endOf('day').toISOString();
             query.andWhere(`q.createdAt <= '${end}'`);
+        }
+        if (hmo_id && hmo_id !== '') {
+            query.andWhere('q.id = :hmo_id', {hmo_id});
         }
 
         const transactions = await query.take(options.limit).skip((options.page === 1) ? options.page : options.page * options.limit).getRawMany();

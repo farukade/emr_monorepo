@@ -284,7 +284,7 @@ export class TransactionsService {
     }
 
     async getTransaction(id: string): Promise<Transactions> {
-        const result = await this.transactionsRepository.findOne({where: {id}, relations: ['items']});
+        const result = await this.transactionsRepository.findOne({where: {id}});
 
         if (!result) {
             throw new NotFoundException(`Transaction with ID '${id}' not found`);
