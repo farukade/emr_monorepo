@@ -61,7 +61,8 @@ export class CafeteriaService {
     }
 
     async getItemsByCategory(category_id: string): Promise<CafeteriaItem[]> {
-        return this.cafeteriaItemRepository.find({ where: {category_id}});
+        const category = await this.cafeteriaItemCategoryRepository.findOne(category_id);
+        return this.cafeteriaItemRepository.find({ where: {category}});
     }
 
     async createItem(itemDto: CafeteriaItemDto): Promise<CafeteriaItem> {
@@ -228,7 +229,8 @@ export class CafeteriaService {
     }
 
     async getInventoryByCategory(category_id: string): Promise<CafeteriaInventory[]> {
-        return this.cafeteriaInventoryRepository.find({ where: {category_id}});
+        const category = await this.cafeteriaInventoryCategoryRepository.findOne(category_id);
+        return this.cafeteriaInventoryRepository.find({ where: {category}});
     }
 
     async createInventory(itemDto: CafeteriaInventoryDto): Promise<CafeteriaInventory> {
