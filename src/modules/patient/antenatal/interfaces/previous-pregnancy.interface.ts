@@ -1,4 +1,4 @@
-export class IPreviousPregnancyInterface {
+export interface IPreviousPregnancyInterface {
     gravida: string;
     para: string;
     alive: string;

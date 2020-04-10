@@ -31,13 +31,13 @@ export class VouchersService {
         const query = this.voucherRepository.createQueryBuilder('q')
         .innerJoin('q.patient', 'patient')
         .leftJoin(User, 'creator', 'q.createdBy = creator.username')
-        .innerJoin(User, 'updator', 'q.lastChangedBy = updator.username')
+        // .innerJoin(User, 'updator', 'q.lastChangedBy = updator.username')
         .innerJoin(StaffDetails, 'staff1', 'staff1.user_id = creator.id')
-        .innerJoin(StaffDetails, 'staff2', 'staff2.user_id = updator.id')
+        // .innerJoin(StaffDetails, 'staff2', 'staff2.user_id = updator.id')
         .select('q.id, q.voucher_no, q.amount, q.amount_used')
         .addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
-        .addSelect('CONCAT(staff2.first_name || \' \' || staff2.last_name) as updated_by, staff2.id as updated_by_id')
-        .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient-id')
+        // .addSelect('CONCAT(staff2.first_name || \' \' || staff2.last_name) as updated_by, staff2.id as updated_by_id')
+        .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id');
 
         if (startDate && startDate !== '') {
             const start = moment(startDate).endOf('day').toISOString();

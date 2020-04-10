@@ -467,7 +467,7 @@ export class PatientService {
                         .leftJoin('q.patient', 'patient')
                         .leftJoin(User, 'creator', 'q.createdBy = creator.username')
                         .innerJoin(StaffDetails, 'staff1', 'staff1.user_id = creator.id')
-                        .select('q.id, q.requestType, q.requestBody')
+                        .select('q.id, q.requestType, q.requestBody, q.createdAt')
                         .addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
                         .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id')
                         .where('q.patient_id = :patient_id', {patient_id})
@@ -481,7 +481,7 @@ export class PatientService {
             const end = moment(endDate).endOf('day').toISOString();
             query.andWhere(`q.createdAt <= '${end}'`);
         }
-        const allergies = query.getMany();
+        const allergies = query.getRawMany();
 
         return allergies;
     }
@@ -493,7 +493,7 @@ export class PatientService {
                         .leftJoin('patient_request.patient', 'patient')
                         .leftJoin(User, 'creator', 'patient_request.createdBy = creator.username')
                         .innerJoin(StaffDetails, 'staff1', 'staff1.user_id = creator.id')
-                        .select('patient_request.id, patient_request.requestType, patient_request.requestBody')
+                        .select('patient_request.id, patient_request.requestType, patient_request.requestBody, patient_request.createdAt')
                         .addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
                         .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id')
                         .andWhere('patient_request.requestType = :requestType', {requestType});
