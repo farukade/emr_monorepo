@@ -8,7 +8,7 @@ export class TransactionDto {
     department_id: string;
 
     @IsNotEmpty()
-    serviceType: string;
+    serviceType: string[];
 
     @IsNotEmpty()
     amount: number;
