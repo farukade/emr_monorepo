@@ -192,19 +192,24 @@ export class TransactionsService {
         const {patient_id, department_id, serviceType, amount, description, payment_type} = transactionDto;
         // find patient record
         const patient = await this.patientRepository.findOne(patient_id);
-        // find service record
-        const service = await this.serviceRepository.findOne(serviceType);
+        const items = [];
+        for (const serviceId of serviceType) {
+            // find service record
+            const service = await this.serviceRepository.findOne(serviceId);
+            items.push({name: service.name, amount: service.tariff});
+
+        }
         // find department record
         const department = await this.departmentRepository.findOne(department_id);
         try {
             const transaction = await this.transactionsRepository.save({
                 patient,
-                serviceType: service,
                 department,
                 amount,
                 description,
                 payment_type,
                 transaction_type: 'billing',
+                transaction_details: items,
             });
             return {success: true, transaction };
         } catch (error) {
@@ -216,18 +221,23 @@ export class TransactionsService {
         const {patient_id, department_id, serviceType, amount, description, payment_type} = transactionDto;
         // find patient record
         const patient = await this.patientRepository.findOne(patient_id);
-        // find service record
-        const service = await this.serviceRepository.findOne(serviceType);
+        const items = [];
+        for (const serviceId of serviceType) {
+            // find service record
+            const service = await this.serviceRepository.findOne(serviceId);
+            items.push({name: service.name, amount: service.tariff});
+
+        }
         // find department record
         const department = await this.departmentRepository.findOne(department_id);
         try {
             const transaction = await this.transactionsRepository.findOne(id);
             transaction.patient     = patient;
-            transaction.serviceType = service;
             transaction.department  = department;
             transaction.amount      = amount;
             transaction.description = description;
-            transaction.payment_type= payment_type;
+            transaction.payment_type = payment_type;
+            transaction.transaction_details = items;
             await transaction.save();
 
             return {success: true, transaction };

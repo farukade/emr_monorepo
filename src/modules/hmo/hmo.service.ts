@@ -12,7 +12,7 @@ import { TransactionsRepository } from '../finance/transactions/transactions.rep
 import * as moment from 'moment';
 import { Transactions } from '../finance/transactions/transaction.entity';
 import { Patient } from '../patient/entities/patient.entity';
-import { getConnection } from 'typeorm';
+import { getConnection, Like } from 'typeorm';
 import { Appointment } from '../frontdesk/appointment/appointment.entity';
 import { Queue } from '../frontdesk/queue-system/queue.entity';
 import { Department } from '../settings/entities/department.entity';
@@ -36,8 +36,17 @@ export class HmoService {
         private queueSystemRepository: QueueSystemRepository,
     ) {}
 
-    async getHmos(): Promise<Hmo[]> {
-        return this.hmoRepository.find();
+    async getHmos(urlParams): Promise<Hmo[]> {
+        const { name } = urlParams;
+        let searchParam = {};
+        if (name && name !== '') {
+            searchParam = {
+                where: {
+                    name: Like(`%${name}%`),
+                },
+            };
+        }
+        return this.hmoRepository.find(searchParam);
     }
 
     async getHmoTariff(id, urlParams): Promise<HmoRate[]> {
@@ -58,7 +67,7 @@ export class HmoService {
     async updateHmo(id: string, hmoDto: HmoDto, logo): Promise<Hmo> {
         const { name, address, phoneNumber, email }  = hmoDto;
         const hmo = await this.hmoRepository.findOne(id);
-        hmo.name        = name;
+        hmo.name        = name.toLocaleLowerCase();
         // hmo.logo        = logo;
         hmo.address     = address;
         hmo.phoneNumber = phoneNumber;
@@ -138,7 +147,7 @@ export class HmoService {
                 for (const item of content) {
                     // save service
                     await this.hmoRepository.save({
-                            name: item.name,
+                            name: item.name.toLowerCase(),
                             address: item.address,
                             email: item.email,
                             phoneNumber: item.phoneNumber,
@@ -341,7 +350,7 @@ export class HmoService {
             query.andWhere(`q.createdAt <= '${end}'`);
         }
         if (hmo_id && hmo_id !== '') {
-            query.andWhere('q.id = :hmo_id', {hmo_id});
+            query.andWhere('hmo.id = :hmo_id', {hmo_id});
         }
         if (patient_id && patient_id !== '') {
             query.andWhere('q.patient_id = :patient_id', {patient_id});
@@ -376,7 +385,7 @@ export class HmoService {
             query.andWhere(`q.createdAt <= '${end}'`);
         }
         if (hmo_id && hmo_id !== '') {
-            query.andWhere('q.id = :hmo_id', {hmo_id});
+            query.andWhere('hmo.id = :hmo_id', {hmo_id});
         }
 
         const transactions = await query.take(options.limit).skip((options.page === 1) ? options.page : options.page * options.limit).getRawMany();

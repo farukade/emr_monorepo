@@ -16,8 +16,10 @@ export class HmoController {
     constructor(private hmoService: HmoService) {}
 
     @Get()
-    getHmo(): Promise<Hmo[]> {
-        return this.hmoService.getHmos();
+    getHmo(
+        @Query() param,
+    ): Promise<Hmo[]> {
+        return this.hmoService.getHmos(param);
     }
 
     @Get('/transactions')
@@ -33,7 +35,7 @@ export class HmoController {
     @Get('/transactions/pending')
     getHmoPendingTransactions(
         @Query() params,
-        @Request() request,        
+        @Request() request,
     ): Promise<Transactions[]> {
         const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 2;
         const page = request.query.hasOwnProperty('page') ? request.query.page : 0;
