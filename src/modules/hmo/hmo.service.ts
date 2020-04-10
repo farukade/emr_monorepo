@@ -350,7 +350,7 @@ export class HmoService {
             query.andWhere(`q.createdAt <= '${end}'`);
         }
         if (hmo_id && hmo_id !== '') {
-            query.andWhere('q.id = :hmo_id', {hmo_id});
+            query.andWhere('hmo.id = :hmo_id', {hmo_id});
         }
         if (patient_id && patient_id !== '') {
             query.andWhere('q.patient_id = :patient_id', {patient_id});
@@ -385,7 +385,7 @@ export class HmoService {
             query.andWhere(`q.createdAt <= '${end}'`);
         }
         if (hmo_id && hmo_id !== '') {
-            query.andWhere('q.id = :hmo_id', {hmo_id});
+            query.andWhere('hmo.id = :hmo_id', {hmo_id});
         }
 
         const transactions = await query.take(options.limit).skip((options.page === 1) ? options.page : options.page * options.limit).getRawMany();
