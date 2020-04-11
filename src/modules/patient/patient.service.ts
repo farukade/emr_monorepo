@@ -419,7 +419,7 @@ export class PatientService {
                 break;
             case 'opthalmology':
                 let req = await PatientRequestHelper.handleOpthalmolgyRequest(param, patient, createdBy);
-                if (pharmacyReq.success) {
+                if (req.success) {
                     // save transaction
                     const payment = await RequestPaymentHelper.opthalmologyPayment(param.requestBody, patient, createdBy);
                     req = {...req, ...payment};
