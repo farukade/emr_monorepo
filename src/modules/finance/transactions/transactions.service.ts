@@ -188,7 +188,7 @@ export class TransactionsService {
         return result;
     }
 
-    async save(transactionDto: TransactionDto): Promise<any> {
+    async save(transactionDto: TransactionDto, createdBy): Promise<any> {
         const {patient_id, department_id, serviceType, amount, description, payment_type} = transactionDto;
         // find patient record
         const patient = await this.patientRepository.findOne(patient_id);
@@ -210,6 +210,8 @@ export class TransactionsService {
                 payment_type,
                 transaction_type: 'billing',
                 transaction_details: items,
+                createdBy,
+                lastChangedBy: createdBy,
             });
             return {success: true, transaction };
         } catch (error) {
@@ -217,7 +219,7 @@ export class TransactionsService {
         }
     }
 
-    async update(id: string, transactionDto: TransactionDto): Promise<any> {
+    async update(id: string, transactionDto: TransactionDto, createdBy): Promise<any> {
         const {patient_id, department_id, serviceType, amount, description, payment_type} = transactionDto;
         // find patient record
         const patient = await this.patientRepository.findOne(patient_id);
@@ -238,6 +240,7 @@ export class TransactionsService {
             transaction.description = description;
             transaction.payment_type = payment_type;
             transaction.transaction_details = items;
+            transaction.lastChangedBy   = createdBy;
             await transaction.save();
 
             return {success: true, transaction };
@@ -246,7 +249,7 @@ export class TransactionsService {
         }
     }
 
-    async processTransaction(id: string, transactionDto: ProcessTransactionDto): Promise<any> {
+    async processTransaction(id: string, transactionDto: ProcessTransactionDto, updatedBy): Promise<any> {
         const {voucher_id, amount_paid, voucher_amount, payment_type} = transactionDto;
         try {
             const transaction = await this.transactionsRepository.findOne(id, {relations: ['department']});
@@ -267,6 +270,7 @@ export class TransactionsService {
                 transaction.balance = transaction.amount - amount_paid;
             }
             transaction.status = 1;
+            transaction.lastChangedBy = updatedBy;
             await transaction.save();
             // find appointment
             const appointment = await getConnection().getRepository(Appointment).findOne({
