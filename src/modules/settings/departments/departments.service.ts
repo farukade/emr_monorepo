@@ -16,15 +16,22 @@ export class DepartmentsService {
         private staffRepository: StaffRepository,
     ) {}
     async getDepartments(): Promise<Department[]> {
-        return await this.departmentRepository.createQueryBuilder('q')
+        const results =  await this.departmentRepository.createQueryBuilder('q')
                     .leftJoin(User, 'creator', 'q.createdBy = creator.username')
-                    // .innerJoin(User, 'updator', 'q.lastChangedBy = updator.username')
+                    // .innerJoin(StaffDetails, 'hod', 'q.hod_id = hod.id')
                     .innerJoin(StaffDetails, 'staff1', 'staff1.user_id = creator.id')
                     // .innerJoin(StaffDetails, 'staff2', 'staff2.user_id = updator.id')
-                    .select('q.id, q.name, q.description')
+                    .select('q.id, q.name, q.description, q.hod_id')
                     .addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
-                    // .addSelect('CONCAT(staff2.first_name || \' \' || staff2.last_name) as updated_by, staff2.id as updated_by_id')
+                    // .addSelect('CONCAT(hod.first_name || \' \' || hod.last_name) as hod_name, hod.id as hod_staff_id')
                     .getRawMany();
+        for (const result of results) {
+            if (result.hod_id) {
+                const staff = await this.staffRepository.findOne(result.hod_id);
+                result.hod_name = staff.first_name + ' ' + staff.last_name;
+            }
+        }
+        return results;
     }
 
     async createDepartment(departmentDto: DepartmentDto, createdBy: string): Promise<Department> {

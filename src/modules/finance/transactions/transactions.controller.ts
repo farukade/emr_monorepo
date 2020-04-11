@@ -48,8 +48,9 @@ export class TransactionsController {
     @UsePipes(ValidationPipe)
     saveTransaction(
         @Body() transactionDto: TransactionDto,
+        @Request() req,
     ): Promise<any> {
-        return this.transactionsService.save(transactionDto);
+        return this.transactionsService.save(transactionDto, req.user.username);
     }
 
     @Patch('/:id/update')
@@ -57,8 +58,9 @@ export class TransactionsController {
     updateTransaction(
         @Param('id') id: string,
         @Body() transactionDto: TransactionDto,
+        @Request() req,
     ): Promise<any> {
-        return this.transactionsService.update(id, transactionDto);
+        return this.transactionsService.update(id, transactionDto, req.user.username);
     }
 
     @Patch('/:id/process')
@@ -66,8 +68,9 @@ export class TransactionsController {
     processTransaction(
         @Param('id') id: string,
         @Body() transactionDto: ProcessTransactionDto,
+        @Request() req,
     ): Promise<any> {
-        return this.transactionsService.processTransaction(id, transactionDto);
+        return this.transactionsService.processTransaction(id, transactionDto, req.user.username);
     }
 
     @Delete('/:id')
