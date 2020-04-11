@@ -442,7 +442,7 @@ export class PatientService {
                     const payment = await RequestPaymentHelper.imagingPayment(param.requestBody, patient, createdBy);
                     imaging = {...imaging, ...payment};
                 }
-                res = dentistry;
+                res = imaging;
                 break;
             case 'procedure':
                 let procedure = await PatientRequestHelper.handleProcedureRequest(param, patient, createdBy);
