@@ -6,7 +6,7 @@ import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 @EntityRepository(Department)
 export class DepartmentRepository extends Repository<Department> {
 
-    async saveDepartment(departmentDto: DepartmentDto, staff: StaffDetails, createdBy: string): Promise<Department> {
+    async saveDepartment(departmentDto: DepartmentDto, staff: StaffDetails, createdBy: string): Promise<any> {
         const { name, description }  = departmentDto;
         const department  = new Department();
         department.name         =  name;
@@ -16,6 +16,13 @@ export class DepartmentRepository extends Repository<Department> {
             department.staff = staff;
         }
         await department.save();
-        return department;
+        const data = {
+            id: department.id,
+            name: department.name,
+            description: department.description,
+            hod_id: (staff) ? staff.id : '',
+            hod_name: (staff) ? staff.first_name + ' ' + staff.last_name : '',
+        };
+        return data;
     }
 }

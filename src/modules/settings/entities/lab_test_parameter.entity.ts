@@ -20,7 +20,7 @@ export class LabTestParameter extends CustomBaseEntity {
     @JoinColumn({ name: 'lab_test_id' })
     public labTest!: LabTest;
 
-    @ManyToOne(type => LabTest, {eager: true})
+    @ManyToOne(type => LabTest)
     @JoinColumn({ name: 'sub_test_id' })
     public subTest!: LabTest;
 
