@@ -35,17 +35,17 @@ export class RolesService {
     return found;
   }
 
-  async createRole(createRoleDto: CreateRoleDto, userId: string): Promise<Role> {
-    return this.roleRepository.createRole(createRoleDto, userId);
+  async createRole(createRoleDto: CreateRoleDto, username: string): Promise<Role> {
+    return this.roleRepository.createRole(createRoleDto, username);
   }
 
-  async updateRole(id: string, createRoleDto: CreateRoleDto, userId: string): Promise<Role> {
+  async updateRole(id: string, createRoleDto: CreateRoleDto, username: string): Promise<Role> {
     const { name, description } = createRoleDto;
     const role = await this.getRoleById(id);
     role.name = name;
     role.slug = this.slugify(name);
     role.description = description;
-    role.lastChangedBy = userId;
+    role.lastChangedBy = username;
     await role.save();
     return role;
   }

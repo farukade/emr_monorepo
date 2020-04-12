@@ -32,7 +32,7 @@ export class RolesController {
     @Body() createRoleDto: CreateRoleDto,
     @Request() req,
   ): Promise<Role> {
-    return this.roleService.createRole(createRoleDto, req.user.usernam);
+    return this.roleService.createRole(createRoleDto, req.user.username);
   }
 
   @Patch('/:id/update')

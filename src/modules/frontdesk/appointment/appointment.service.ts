@@ -50,6 +50,15 @@ export class AppointmentService {
         return results;
     }
 
+    async getAppointment(id: string): Promise<Appointment> {
+        const result = await this.appointmentRepository.findOne({
+            where: {id},
+            relations: ['department', 'patient', 'specialization', 'consultingRoom'],
+        });
+
+        return result;
+    }
+
     async saveNewAppointment(appointmentDto: AppointmentDto): Promise<any> {
         try {
             const { patient_id, department_id, specialization_id, consulting_room_id, sendToQueue, serviceType, serviceCategory, amount} = appointmentDto;
