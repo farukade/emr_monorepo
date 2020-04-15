@@ -2,25 +2,22 @@ import { CustomBaseEntity } from '../../../../common/entities/custom-base.entity
 import { Entity, Column, ManyToOne } from 'typeorm';
 import { Admission } from './admission.entity';
 
-@Entity({ name: 'admissions'})
+@Entity({ name: 'admission_clinical_tasks'})
 export class AdmissionClinicalTask extends CustomBaseEntity {
     @Column()
     task: string;
 
-    @Column()
+    @Column({nullable: true})
     interval: number;
 
-    @Column()
+    @Column({nullable: true})
     intervalType: string;
 
-    @Column()
+    @Column({nullable: true})
     taskCount: number;
 
-    @Column({
-        type: Date,
-        nullable: true,
-    })
-    startTime: Date | null;
+    @Column({nullable: true})
+    startTime: string;
 
     @ManyToOne(() => Admission)
     admission: Admission;

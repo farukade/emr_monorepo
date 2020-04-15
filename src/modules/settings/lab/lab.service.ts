@@ -9,6 +9,8 @@ import { LabCategoryDto } from './dto/lab.category.dto';
 import { Parameter } from '../entities/parameters.entity';
 import { ParameterDto } from './dto/parameter.dto';
 import { LabTestDto } from './dto/lab_test.dto';
+import { getConnection } from 'typeorm';
+import { LabTestParameter } from '../entities/lab_test_parameter.entity';
 
 @Injectable()
 export class LabService {
@@ -45,6 +47,14 @@ export class LabService {
     }
 
     async deleteLabTest(id: string): Promise<void> {
+        // delete previous parameters
+        await getConnection()
+        .createQueryBuilder()
+        .delete()
+        .from(LabTestParameter)
+        .where('lab_test_parameters.lab_test_id = :id', {id})
+        .execute();
+        
         const result = await this.labTestRepository.delete(id);
 
         if (result.affected === 0) {

@@ -6,6 +6,7 @@ import { AdmissionsRepository } from './repositories/admissions.repository';
 import { AdmissionClinicalTaskRepository } from './repositories/admission-clinical-tasks.repository';
 import { PatientRepository } from '../repositories/patient.repository';
 import { StaffRepository } from '../../hr/staff/staff.repository';
+import { RoomRepository } from '../../settings/room/room.repository';
 
 @Module({
   imports: [TypeOrmModule.forFeature([
@@ -13,6 +14,7 @@ import { StaffRepository } from '../../hr/staff/staff.repository';
     AdmissionClinicalTaskRepository,
     PatientRepository,
     StaffRepository,
+    RoomRepository,
   ])],
   controllers: [AdmissionsController],
   providers: [AdmissionsService],

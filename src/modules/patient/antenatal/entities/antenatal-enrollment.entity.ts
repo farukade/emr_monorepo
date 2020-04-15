@@ -26,7 +26,7 @@ export class AntenatalEnrollment extends CustomBaseEntity {
     @Column('simple-json')
     fathersInfo: {name: string, phone_number: string, blood_group: string };
 
-    @Column()
+    @Column('jsonb')
     obstericsHistory: string;
 
     @Column('simple-json')
