@@ -5,6 +5,7 @@ import { EnrollmentDto } from './dto/enrollment.dto';
 import { PatientRepository } from '../repositories/patient.repository';
 import { PatientAntenatal } from '../entities/patient_antenatal.entity';
 import * as moment from 'moment';
+import { Patient } from '../entities/patient.entity';
 
 @Injectable()
 export class AntenatalService {
@@ -34,7 +35,9 @@ export class AntenatalService {
         const {startDate, endDate} = urlParams;
 
         const query = this.enrollmentRepository.createQueryBuilder('e')
-                            .select('e.*');
+                            .innerJoinAndSelect('e.patient', 'patient')
+                            .select('e.*')
+                            .addSelect('patient.surname, patient.other_names');
         if (startDate && startDate !== '') {
             const start = moment(startDate).endOf('day').toISOString();
             query.where(`e.createdAt >= '${start}'`);
