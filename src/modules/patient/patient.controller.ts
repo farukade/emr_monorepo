@@ -121,37 +121,37 @@ export class PatientController {
         return this.patientService.deleteVital(vitalId);
     }
 
-    @Get(':id/antenatals')
-    getAntenatals(
-        @Param('id') id: string,
-        @Query() urlParams,
-    ): Promise <PatientAntenatal[]> {
-        return this.patientService.getAntenatals(id, urlParams);
-    }
+    // @Get(':id/antenatals')
+    // getAntenatals(
+    //     @Param('id') id: string,
+    //     @Query() urlParams,
+    // ): Promise <PatientAntenatal[]> {
+    //     return this.patientService.getAntenatals(id, urlParams);
+    // }
 
-    @Post('save-antenatal')
-    saveAntenatal(
-        @Body() param: PatientAntenatalDto,
-        @Request() req,
-    ) {
-        return this.patientService.doSaveAntenatal(param, req.user.username);
-    }
+    // @Post('save-antenatal')
+    // saveAntenatal(
+    //     @Body() param: PatientAntenatalDto,
+    //     @Request() req,
+    // ) {
+    //     return this.patientService.doSaveAntenatal(param, req.user.username);
+    // }
 
-    @Patch(':antenatalId/update-antenatal')
-    updateAntenatal(
-        @Param('antenatalId') antenatalId: string,
-        @Body() param: PatientAntenatalDto,
-        @Request() req,
-    ) {
-        return this.patientService.doUpdateAntenatal(antenatalId, param, req.user.username);
-    }
+    // @Patch(':antenatalId/update-antenatal')
+    // updateAntenatal(
+    //     @Param('antenatalId') antenatalId: string,
+    //     @Body() param: PatientAntenatalDto,
+    //     @Request() req,
+    // ) {
+    //     return this.patientService.doUpdateAntenatal(antenatalId, param, req.user.username);
+    // }
 
-    @Delete(':antenatalId/delete-antenatal')
-    deletePatientAntenatal(
-        @Param('antenatalId') antenatalId: string,
-    ) {
-        return this.patientService.deleteAntenatal(antenatalId);
-    }
+    // @Delete(':antenatalId/delete-antenatal')
+    // deletePatientAntenatal(
+    //     @Param('antenatalId') antenatalId: string,
+    // ) {
+    //     return this.patientService.deleteAntenatal(antenatalId);
+    // }
 
     @Get(':id/allergies')
     getAllergies(

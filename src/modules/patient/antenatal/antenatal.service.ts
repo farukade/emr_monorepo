@@ -6,6 +6,10 @@ import { PatientRepository } from '../repositories/patient.repository';
 import { PatientAntenatal } from '../entities/patient_antenatal.entity';
 import * as moment from 'moment';
 import { Patient } from '../entities/patient.entity';
+import { AntenatalVisitDto } from './dto/antenatal-visits.dto';
+import { PatientRequestHelper } from '../../../common/utils/PatientRequestHelper';
+import { RequestPaymentHelper } from '../../../common/utils/RequestPaymentHelper';
+import { AntenatalVisits } from './entities/antenatal-visits.entity';
 
 @Injectable()
 export class AntenatalService {
@@ -48,5 +52,49 @@ export class AntenatalService {
         }
 
         return await query.getRawMany();
+    }
+
+    async saveAntenatalVisits(antenatalVisitDto: AntenatalVisitDto, createdBy) {
+        const { labRequest, radiologyRequest, pharmacyRequest } = antenatalVisitDto;
+        const patient = await this.patientRepository.findOne(antenatalVisitDto.patient_id);
+        try {
+            const visit = new AntenatalVisits();
+            visit.heightOfFunds = antenatalVisitDto.heightOfFunds;
+            visit.fetalHeartRate = antenatalVisitDto.fetalHeartRate;
+            visit.fetalLie = antenatalVisitDto.fetalLie;
+            visit.positionOfFetus = antenatalVisitDto.positionOfFetus;
+            visit.relationshipToBrim = antenatalVisitDto.relationshipToBrim;
+            visit.comment = antenatalVisitDto.comment;
+            // save request
+            if (labRequest.requestBody) {
+                const labRequestRes = await PatientRequestHelper.handleLabRequest(labRequest, patient, createdBy);
+                if (labRequestRes.success) {
+                    // save transaction
+                    await RequestPaymentHelper.clinicalLabPayment(labRequest.requestBody, patient, createdBy);
+                    visit.labRequest = labRequestRes.data;
+                }
+            }
+
+            if (pharmacyRequest.requestBody) {
+                const pharmacyReqRes = await PatientRequestHelper.handlePharmacyRequest(pharmacyRequest, patient, createdBy);
+                if (pharmacyReqRes.success) {
+                    // save transaction
+                    await RequestPaymentHelper.pharmacyPayment(pharmacyRequest.requestBody, patient, createdBy);
+                    visit.pharmacyRequest = pharmacyReqRes.data;
+                }
+            }
+
+            if (radiologyRequest.requestBody) {
+                const radiologyRes = await PatientRequestHelper.handleImagingRequest(radiologyRequest, patient, createdBy);
+                if (radiologyRes.success) {
+                    // save transaction
+                    const payment = await RequestPaymentHelper.imagingPayment(radiologyRequest.requestBody, patient, createdBy);
+                    visit.radiologyRequest = radiologyRes.data;
+                }
+            }
+            return {success: true, visit};
+        } catch (err) {
+            return {success: false, message: err.message};
+        }
     }
 }

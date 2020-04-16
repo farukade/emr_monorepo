@@ -2,6 +2,7 @@ import { Controller, Post, Body, Param, Request, UseGuards, Get, Query } from '@
 import { AntenatalService } from './antenatal.service';
 import { EnrollmentDto } from './dto/enrollment.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { AntenatalVisitDto } from './dto/antenatal-visits.dto';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('patient/antenatal')
@@ -23,5 +24,13 @@ export class AntenatalController {
         @Query() urlParams,
     ) {
         return this.antenatalService.getAntenatals(urlParams);
+    }
+
+    @Post('visits')
+    saveVisits(
+        @Body() antenatalVisitDto: AntenatalVisitDto,
+        @Request() req,
+    ) {
+        return this.antenatalService.saveAntenatalVisits(antenatalVisitDto, req.user.username);
     }
 }

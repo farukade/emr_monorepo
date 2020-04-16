@@ -27,8 +27,8 @@ export class AntenatalVisits extends CustomBaseEntity {
     @Column()
     comment: string;
 
-    @Column({type: Date})
-    nextAppointment: Date;
+    @Column()
+    nextAppointment: string;
 
     @OneToOne(() => PatientRequest)
     @JoinColumn({name: 'lab_request'})

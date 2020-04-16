@@ -263,65 +263,6 @@ export class PatientService {
         return {success: true};
     }
 
-    async doSaveAntenatal(param: PatientAntenatalDto, createdBy): Promise<any> {
-        const { patient_id } = param;
-        try {
-            const patient = await this.patientRepository.findOne(patient_id);
-            param.patient = patient;
-            const antenatal = await this.patientAntenatalRepository.save(param);
-            antenatal.createdBy = createdBy;
-            antenatal.save();
-            return {success: true, antenatal };
-        } catch (error) {
-            return {success: false, message: error.message };
-        }
-    }
-
-    async getAntenatals(id, urlParams): Promise<PatientAntenatal[]> {
-        const {startDate, endDate} = urlParams;
-
-        const query = this.patientAntenatalRepository.createQueryBuilder('q')
-                        .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
-                        .where('q.patient_id = :id', {id});
-        if (startDate && startDate !== '') {
-            const start = moment(startDate).endOf('day').toISOString();
-            query.andWhere(`q.createdAt >= '${start}'`);
-        }
-        if (endDate && endDate !== '') {
-            const end = moment(endDate).endOf('day').toISOString();
-            query.andWhere(`q.createdAt <= '${end}'`);
-        }
-        const antenatals = query.getMany();
-
-        return antenatals;
-    }
-
-    async doUpdateAntenatal(antenatalId, param: PatientAntenatalDto, updatedBy): Promise<any> {
-        try {
-            const antenatal = await this.patientAntenatalRepository.findOne(antenatalId);
-            antenatal.fetalHeartRate = param.fetalHeartRate;
-            antenatal.fetalLie = param.fetalLie;
-            antenatal.positionOfFetus = param.positionOfFetus;
-            antenatal.heightOfFunds = param.heightOfFunds;
-            antenatal.relationshipToBrim = param.relationshipToBrim;
-            antenatal.lastChangedBy = updatedBy;
-            await antenatal.save();
-
-            return {success: true, antenatal };
-        } catch (error) {
-            return {success: false, message: error.message };
-        }
-    }
-
-    async deleteAntenatal(id: string) {
-        const result = await this.patientAntenatalRepository.delete(id);
-
-        if (result.affected === 0) {
-            throw new NotFoundException(`Patient antenatal with ID '${id}' not found`);
-        }
-        return {success: true};
-    }
-
     async doSaveAllergies(param: PatientAllergyDto, createdBy): Promise<any> {
         const { patient_id } = param;
         try {

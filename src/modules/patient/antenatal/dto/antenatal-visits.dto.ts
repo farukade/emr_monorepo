@@ -3,18 +3,19 @@ import { IPreviousPregnancyInterface } from '../interfaces/previous-pregnancy.in
 import { IsNotEmpty } from 'class-validator';
 import { Patient } from '../../entities/patient.entity';
 
-export class EnrollmentDto {
+export class AntenatalVisitDto {
 
     @IsNotEmpty()
-    bookingPeriod: string;
-    requiredCare: string[];
-    l_m_p: string;
-    lmpSource: string;
-    e_o_d: string;
-    fathersInfo: IFathersInfoInterface;
-    obstericsHistory: string;
-    previousPregnancy: IPreviousPregnancyInterface;
-    abortion: string;
-    patient: Patient;
-    createdBy: string;
+    heightOfFunds: string;
+    @IsNotEmpty()
+    patient_id: string;
+    fetalHeartRate: string;
+    positionOfFetus: string;
+    fetalLie: string;
+    relationshipToBrim: string;
+    comment: string;
+    nextAppointment: string;
+    labRequest: any;
+    radiologyRequest: any;
+    pharmacyRequest: any;
 }
