@@ -3,5 +3,5 @@ interface ITasksInterface {
     interval: number;
     intervalType: string;
     taskCount: number;
-    startTime: Date;
+    startTime: string;
 }

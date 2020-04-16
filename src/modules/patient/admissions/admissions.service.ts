@@ -24,6 +24,8 @@ export class AdmissionsService {
         private patientRepository: PatientRepository,
         @InjectRepository(StaffRepository)
         private staffRepository: StaffRepository,
+        @InjectRepository(RoomRepository)
+        private roomRepository: RoomRepository,
     ) {}
 
     async getAdmissions(options: PaginationOptionsInterface, {startDate, endDate, patient_id}) {
@@ -58,7 +60,7 @@ export class AdmissionsService {
         // find patient info
         const patient = await this.patientRepository.findOne(id);
         // find room
-        const room = await getConnection().getRepository(RoomRepository).findOne(room_id);
+        const room = await this.roomRepository.findOne(room_id);
         try {
             // save admission info
             const admission = await this.admissionRepository.save({
