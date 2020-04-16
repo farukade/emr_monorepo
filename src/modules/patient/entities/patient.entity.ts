@@ -65,4 +65,7 @@ export class Patient extends CustomBaseEntity {
 
     @ManyToOne(() => Hmo, {nullable: true})
     hmo: Hmo;
+
+    @Column({ default: false })
+    isAdmitted: boolean;
 }
