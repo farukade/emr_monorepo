@@ -22,8 +22,11 @@ export class AntenatalController {
     @Get('/list')
     getEnrollments(
         @Query() urlParams,
+        @Request() request,
     ) {
-        return this.antenatalService.getAntenatals(urlParams);
+        const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 2;
+        const page = request.query.hasOwnProperty('page') ? request.query.page : 0;
+        return this.antenatalService.getAntenatals({page, limit}, urlParams);
     }
 
     @Post('visits')
@@ -32,5 +35,15 @@ export class AntenatalController {
         @Request() req,
     ) {
         return this.antenatalService.saveAntenatalVisits(antenatalVisitDto, req.user.username);
+    }
+
+    @Get('visits')
+    getAntenatalVisits(
+        @Query() urlParams,
+        @Request() request,
+    ) {
+        const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 2;
+        const page = request.query.hasOwnProperty('page') ? request.query.page : 0;
+        return this.antenatalService.getPatientAntenatalVisits({page, limit}, urlParams);
     }
 }

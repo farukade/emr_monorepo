@@ -10,6 +10,8 @@ import { AntenatalVisitDto } from './dto/antenatal-visits.dto';
 import { PatientRequestHelper } from '../../../common/utils/PatientRequestHelper';
 import { RequestPaymentHelper } from '../../../common/utils/RequestPaymentHelper';
 import { AntenatalVisits } from './entities/antenatal-visits.entity';
+import { PaginationOptionsInterface } from '../../../common/paginate';
+import { AntenatalVisitRepository } from './antenatal-visits.repository';
 
 @Injectable()
 export class AntenatalService {
@@ -18,6 +20,8 @@ export class AntenatalService {
         private enrollmentRepository: EnrollmentRepository,
         @InjectRepository(PatientRepository)
         private patientRepository: PatientRepository,
+        @InjectRepository(AntenatalVisitRepository)
+        private antenatalVisitRepository: AntenatalVisitRepository,
     ) {
 
     }
@@ -35,7 +39,7 @@ export class AntenatalService {
         }
     }
 
-    async getAntenatals(urlParams): Promise<PatientAntenatal[]> {
+    async getAntenatals(options: PaginationOptionsInterface, urlParams): Promise<PatientAntenatal[]> {
         const {startDate, endDate} = urlParams;
 
         const query = this.enrollmentRepository.createQueryBuilder('e')
@@ -51,7 +55,7 @@ export class AntenatalService {
             query.andWhere(`e.createdAt <= '${end}'`);
         }
 
-        return await query.getRawMany();
+        return await query.take(options.limit).skip(options.page * options.limit).getRawMany();
     }
 
     async saveAntenatalVisits(antenatalVisitDto: AntenatalVisitDto, createdBy) {
@@ -65,6 +69,7 @@ export class AntenatalService {
             visit.positionOfFetus = antenatalVisitDto.positionOfFetus;
             visit.relationshipToBrim = antenatalVisitDto.relationshipToBrim;
             visit.comment = antenatalVisitDto.comment;
+            visit.patient = patient;
             // save request
             if (labRequest.requestBody) {
                 const labRequestRes = await PatientRequestHelper.handleLabRequest(labRequest, patient, createdBy);
@@ -95,6 +100,28 @@ export class AntenatalService {
             return {success: true, visit};
         } catch (err) {
             return {success: false, message: err.message};
+        }
+    }
+
+    getPatientAntenatalVisits(options: PaginationOptionsInterface, {patient_id, startDate, endDate}) {
+        const query = this.antenatalVisitRepository.createQueryBuilder('q');
+
+        if (startDate && startDate !== '') {
+            const start = moment(startDate).endOf('day').toISOString();
+            query.where(`q.createdAt >= '${start}'`);
+        }
+
+        if (endDate && endDate !== '') {
+            const end = moment(endDate).endOf('day').toISOString();
+            query.andWhere(`q.createdAt <= '${end}'`);
+        }
+
+        if (patient_id && patient_id !== '') {
+            query.andWhere('q.patientId = :patient_id', {patient_id});
+        }
+
+        if (status) {
+            query.andWhere('q.status = :status', {status});
         }
     }
 }
