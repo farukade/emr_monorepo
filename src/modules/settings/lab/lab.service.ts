@@ -10,7 +10,6 @@ import { Parameter } from '../entities/parameters.entity';
 import { ParameterDto } from './dto/parameter.dto';
 import { LabTestDto } from './dto/lab_test.dto';
 import { getConnection } from 'typeorm';
-import { LabTestParameter } from '../entities/lab_test_parameter.entity';
 
 @Injectable()
 export class LabService {
@@ -28,7 +27,7 @@ export class LabService {
     */
 
     async getTests(): Promise<LabTest[]> {
-        return this.labTestRepository.find({relations: ['category', 'parameters', 'parameters.subTest']});
+        return this.labTestRepository.find({relations: ['category']});
     }
 
     async createLabTest(labTestDto: LabTestDto, createdBy: string): Promise<LabTest> {
@@ -47,14 +46,14 @@ export class LabService {
     }
 
     async deleteLabTest(id: string): Promise<void> {
-        // delete previous parameters
-        await getConnection()
-        .createQueryBuilder()
-        .delete()
-        .from(LabTestParameter)
-        .where('lab_test_parameters.lab_test_id = :id', {id})
-        .execute();
-        
+        // // delete previous parameters
+        // await getConnection()
+        //     .createQueryBuilder()
+        //     .delete()
+        //     .from(LabTestParameter)
+        //     .where('lab_test_parameters.lab_test_id = :id', {id})
+        //     .execute();
+
         const result = await this.labTestRepository.delete(id);
 
         if (result.affected === 0) {
