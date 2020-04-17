@@ -12,23 +12,23 @@ export class AntenatalVisits extends CustomBaseEntity {
     @Column()
     heightOfFunds: string;
 
-    @Column()
+    @Column({nullable: true})
     fetalHeartRate: string;
 
-    @Column()
+    @Column({nullable: true})
     positionOfFetus: string;
 
-    @Column()
+    @Column({nullable: true})
     fetalLie: string;
 
-    @Column()
+    @Column({nullable: true})
     relationshipToBrim: string;
 
-    @Column()
+    @Column({nullable: true})
     comment: string;
 
-    @Column({type: Date})
-    nextAppointment: Date;
+    @Column({nullable: true})
+    nextAppointment: string;
 
     @OneToOne(() => PatientRequest)
     @JoinColumn({name: 'lab_request'})

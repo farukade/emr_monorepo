@@ -28,13 +28,18 @@ export class AdmissionsService {
         private roomRepository: RoomRepository,
     ) {}
 
-    async getAdmissions(options: PaginationOptionsInterface, {startDate, endDate, patient_id}) {
-        const query = this.admissionRepository.createQueryBuilder('q');
+    async getAdmissions(options: PaginationOptionsInterface, {startDate, endDate, patient_id, status}) {
+        const query = this.admissionRepository.createQueryBuilder('q')
+                            .innerJoinAndSelect('q.room', 'room')
+                            .leftJoin('room.category', 'category')
+                            .select('q.*')
+                            .addSelect('room.name as room_no, category.name as room_type');
 
         if (startDate && startDate !== '') {
             const start = moment(startDate).endOf('day').toISOString();
             query.andWhere(`q.createdAt >= '${start}'`);
         }
+
         if (endDate && endDate !== '') {
             const end = moment(endDate).endOf('day').toISOString();
             query.andWhere(`q.createdAt <= '${end}'`);
@@ -73,6 +78,8 @@ export class AdmissionsService {
             await this.saveCareGivers(admission, care_givers);
             // save tasks
             await this.saveClinicalTasks(admission, tasks);
+            // update patient admission status
+            patient.isAdmitted = true;
 
             return {succes: true, admission};
         } catch (err) {

@@ -1,11 +1,10 @@
 import { Type } from 'class-transformer';
 import { Column, Entity, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
-import { LabTestParameter } from './lab_test_parameter.entity';
 import { LabTestCategory } from './lab_test_category.entity';
 
 @Entity({ name: 'lab_tests' })
-export class LabTest extends CustomBaseEntity {
+export class  LabTest extends CustomBaseEntity {
   @Column({ type: 'varchar', length: 300, unique: true })
   name: string;
 
@@ -22,10 +21,10 @@ export class LabTest extends CustomBaseEntity {
   @JoinColumn({ name: 'lab_test_category_id' })
   public category!: LabTestCategory;
 
-  @OneToMany(
-    () => LabTestParameter,
-    labTestParameter => labTestParameter.labTest,
-    { eager: true, onDelete: 'CASCADE' },
-  )
-  parameters: LabTestParameter[];
+  @Column({ type: 'jsonb', nullable: true})
+  parameters: string;
+
+  @Column({ type: 'jsonb', nullable: true})
+  subTests: string;
+
 }
