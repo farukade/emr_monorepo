@@ -407,6 +407,7 @@ export class HmoService {
             // find appointment
             const appointment = await getConnection().getRepository(Appointment).findOne({
                 where: {patient: transaction.patient, status: 'Pending HMO Approval'},
+                relations: ['patient'],
             });
             appointment.status = 'Pending Paypoint Approval';
             appointment.save();
