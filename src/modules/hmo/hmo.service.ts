@@ -342,12 +342,12 @@ export class HmoService {
                             .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, hmo.name as hmo_name, hmo.id as hmo_id');
 
         if (startDate && startDate !== '') {
-            const start = moment(startDate).endOf('day').toISOString();
-            query.andWhere(`q.createdAt >= '${start}'`);
+            const start = moment(startDate).startOf('day').toISOString();
+            query.andWhere(`q.createdAt >= ${start}`);
         }
         if (endDate && endDate !== '') {
             const end = moment(endDate).endOf('day').toISOString();
-            query.andWhere(`q.createdAt <= '${end}'`);
+            query.andWhere(`q.createdAt <= ${end}`);
         }
         if (hmo_id && hmo_id !== '') {
             query.andWhere('hmo.id = :hmo_id', {hmo_id});
@@ -377,7 +377,7 @@ export class HmoService {
                         .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, hmo.name as hmo_name, hmo.id as hmo_id');
 
         if (startDate && startDate !== '') {
-            const start = moment(startDate).endOf('day').toISOString();
+            const start = moment(startDate).startOf('day').toISOString();
             query.andWhere(`q.createdAt >= '${start}'`);
         }
         if (endDate && endDate !== '') {

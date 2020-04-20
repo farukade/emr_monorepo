@@ -42,10 +42,11 @@ export class TransactionsService {
         const {startDate, endDate, patient_id, staff_id, status, payment_type, transaction_type} = params;
 
         const query = this.transactionsRepository.createQueryBuilder('q')
+        .select('q.*')
         .where('q.transaction_type = :type', {type: transaction_type});
 
         if (startDate && startDate !== '') {
-            const start = moment(startDate).endOf('day').toISOString();
+            const start = moment(startDate).startOf('day').toISOString();
             query.andWhere(`q.createdAt >= '${start}'`);
         }
         if (endDate && endDate !== '') {
@@ -70,23 +71,23 @@ export class TransactionsService {
         const transactions = await query.take(options.limit).skip(options.page * options.limit).getRawMany();
 
         for (const transaction of transactions) {
-            if (transaction.q_department_id) {
-                const department = await this.departmentRepository.findOne(transaction.q_department_id);
+            if (transaction.department_id) {
+                const department = await this.departmentRepository.findOne(transaction.department_id);
                 transaction.department = department;
             }
 
-            if (transaction.q_staff_id) {
-                const staff = await this.staffRepository.findOne(transaction.q_staff_id);
+            if (transaction.staff_id) {
+                const staff = await this.staffRepository.findOne(transaction.staff_id);
                 transaction.staff = staff;
             }
 
-            if (transaction.q_patient_id) {
-                const patient = await this.patientRepository.findOne(transaction.q_patient_id);
+            if (transaction.patient_id) {
+                const patient = await this.patientRepository.findOne(transaction.patient_id);
                 transaction.patient = patient;
             }
 
-            if (transaction.q_service_id) {
-                const service = await this.serviceRepository.findOne(transaction.q_service_id);
+            if (transaction.service_id) {
+                const service = await this.serviceRepository.findOne(transaction.service_id);
                 transaction.service = service;
             }
         }
