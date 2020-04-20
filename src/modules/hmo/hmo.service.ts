@@ -398,6 +398,9 @@ export class HmoService {
         try {
 
             const transaction = await this.transactionsRepository.findOne(id, {relations: ['patient']});
+            if (!transaction) {
+                throw new NotFoundException(`Transaction was not found`);
+            }
             if (action === 1) {
                 transaction.hmo_approval_status = 2;
             } else {
