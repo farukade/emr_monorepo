@@ -343,11 +343,11 @@ export class HmoService {
 
         if (startDate && startDate !== '') {
             const start = moment(startDate).startOf('day').toISOString();
-            query.andWhere(`q.createdAt >= ${start}`);
+            query.andWhere(`q.createdAt >= '${start}'`);
         }
         if (endDate && endDate !== '') {
             const end = moment(endDate).endOf('day').toISOString();
-            query.andWhere(`q.createdAt <= ${end}`);
+            query.andWhere(`q.createdAt <= '${end}'`);
         }
         if (hmo_id && hmo_id !== '') {
             query.andWhere('hmo.id = :hmo_id', {hmo_id});
