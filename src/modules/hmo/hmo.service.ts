@@ -412,14 +412,15 @@ export class HmoService {
                 where: {patient: transaction.patient, status: 'Pending HMO Approval'},
                 relations: ['patient'],
             });
+            let queue = {};
             if (appointment) {
                 appointment.status = 'Pending Paypoint Approval';
                 appointment.save();
+                // get paypoint department
+                const paypoint = await getConnection().getRepository(Department).findOne({where: {name: 'Paypoint'}});
+                // create new queue
+                queue = await this.queueSystemRepository.saveQueue(appointment, paypoint);
             }
-            // get paypoint department
-            const paypoint = await getConnection().getRepository(Department).findOne({where: {name: 'Paypoint'}});
-            // create new queue
-            const queue = await this.queueSystemRepository.saveQueue(appointment, paypoint);
             return {success: true, transaction, queue};
         } catch (error) {
             return {success: false, message: error.message};
