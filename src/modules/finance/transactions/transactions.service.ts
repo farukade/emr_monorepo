@@ -161,25 +161,25 @@ export class TransactionsService {
                 result = await query.getRawMany();
                 break;
             case 'total-unpaid':
-                result = await query.andWhere('transaction.status = :status', {status: 0}).getRawMany();
+                result = await query.where('transaction.status = :status', {status: 0}).getRawMany();
                 break;
             case 'total-cash':
-                result = await query.andWhere('transaction.status = :status', {status: 1})
+                result = await query.where('transaction.status = :status', {status: 1})
                                     .andWhere('transaction.payment_type = :type', {type: 'Cash'})
                                     .getRawMany();
                 break;
             case 'total-pos':
-                result = await query.andWhere('transaction.status = :status', {status: 1})
+                result = await query.where('transaction.status = :status', {status: 1})
                                     .andWhere('transaction.payment_type = :type', {type: 'POS'})
                                     .getRawMany();
                 break;
             case 'total-cheque':
-                result = await query.andWhere('transaction.status = :status', {status: 1})
+                result = await query.where('transaction.status = :status', {status: 1})
                                     .andWhere('transaction.payment_type = :type', {type: 'Cheque'})
                                     .getRawMany();
                 break;
             case 'total-outstanding':
-                result = await query.andWhere('transaction.status = :status', {status: 1})
+                result = await query.where('transaction.status = :status', {status: 1})
                                     .andWhere('transaction.balance > :balance', {balance: 0})
                                     .getRawMany();
                 break;
