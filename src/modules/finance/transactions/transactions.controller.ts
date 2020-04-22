@@ -1,9 +1,11 @@
-import { Controller, Get, Query, Post, UsePipes, ValidationPipe, Body, Patch, Param, Delete, Request } from '@nestjs/common';
+import { Controller, Get, Query, Post, UsePipes, ValidationPipe, Body, Patch, Param, Delete, Request, UseGuards } from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
 import { Transactions } from './transaction.entity';
 import { TransactionDto } from './dto/transaction.dto';
 import { ProcessTransactionDto } from './dto/process-transaction.dto';
+import { AuthGuard } from '@nestjs/passport';
 
+@UseGuards(AuthGuard('jwt'))
 @Controller('transactions')
 export class TransactionsController {
     constructor(private transactionsService: TransactionsService) {}

@@ -342,7 +342,7 @@ export class HmoService {
                             .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, hmo.name as hmo_name, hmo.id as hmo_id');
 
         if (startDate && startDate !== '') {
-            const start = moment(startDate).endOf('day').toISOString();
+            const start = moment(startDate).startOf('day').toISOString();
             query.andWhere(`q.createdAt >= '${start}'`);
         }
         if (endDate && endDate !== '') {
@@ -377,7 +377,7 @@ export class HmoService {
                         .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, hmo.name as hmo_name, hmo.id as hmo_id');
 
         if (startDate && startDate !== '') {
-            const start = moment(startDate).endOf('day').toISOString();
+            const start = moment(startDate).startOf('day').toISOString();
             query.andWhere(`q.createdAt >= '${start}'`);
         }
         if (endDate && endDate !== '') {
@@ -398,6 +398,9 @@ export class HmoService {
         try {
 
             const transaction = await this.transactionsRepository.findOne(id, {relations: ['patient']});
+            if (!transaction) {
+                throw new NotFoundException(`Transaction was not found`);
+            }
             if (action === 1) {
                 transaction.hmo_approval_status = 2;
             } else {
@@ -407,13 +410,17 @@ export class HmoService {
             // find appointment
             const appointment = await getConnection().getRepository(Appointment).findOne({
                 where: {patient: transaction.patient, status: 'Pending HMO Approval'},
+                relations: ['patient'],
             });
-            appointment.status = 'Pending Paypoint Approval';
-            appointment.save();
-            // get paypoint department
-            const paypoint = await getConnection().getRepository(Department).findOne({where: {name: 'Paypoint'}});
-            // create new queue
-            const queue = await this.queueSystemRepository.saveQueue(appointment, paypoint);
+            let queue = {};
+            if (appointment) {
+                appointment.status = 'Pending Paypoint Approval';
+                appointment.save();
+                // get paypoint department
+                const paypoint = await getConnection().getRepository(Department).findOne({where: {name: 'Paypoint'}});
+                // create new queue
+                queue = await this.queueSystemRepository.saveQueue(appointment, paypoint);
+            }
             return {success: true, transaction, queue};
         } catch (error) {
             return {success: false, message: error.message};
