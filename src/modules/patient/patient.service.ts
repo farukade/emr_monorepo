@@ -27,6 +27,9 @@ import { PatientDocumentRepository } from './repositories/patient_document.repos
 import { User } from '../hr/entities/user.entity';
 import { StaffDetails } from '../hr/staff/entities/staff_details.entity';
 import { RequestPaymentHelper } from '../../common/utils/RequestPaymentHelper';
+import { ImmunizationDto } from './dto/immunization.dto';
+import { ImmunizationRepository } from './repositories/immunization.repository';
+import { Immunization } from './entities/immunization.entity';
 
 @Injectable()
 export class PatientService {
@@ -51,6 +54,8 @@ export class PatientService {
         private voucherRepository: VoucherRepository,
         @InjectRepository(PatientDocumentRepository)
         private patientDocumentRepository: PatientDocumentRepository,
+        @InjectRepository(ImmunizationRepository)
+        private immunizationRepository: ImmunizationRepository,
         private connection: Connection,
     ) {}
 
@@ -318,6 +323,65 @@ export class PatientService {
 
         if (result.affected === 0) {
             throw new NotFoundException(`Patient allergy with ID '${id}' not found`);
+        }
+        return {success: true};
+    }
+
+    async saveNewImmunization(param: ImmunizationDto, createdBy): Promise<any> {
+        const { patient_id } = param;
+        try {
+            const patient = await this.patientRepository.findOne(patient_id);
+            param.patient = patient;
+            const immunization = await this.immunizationRepository.save(param);
+            immunization.createdBy = createdBy;
+            immunization.save();
+            return {success: true, immunization };
+        } catch (error) {
+            return {success: false, message: error.message };
+        }
+    }
+
+    async doUpdateImmunization(immunization_id, param: ImmunizationDto, updatedBy): Promise<any> {
+        try {
+            const immunization = await this.immunizationRepository.findOne(immunization_id);
+            immunization.typeOfVaccine = param.typeOfVaccine;
+            immunization.dateOfAdministration = param.dateOfAdministration;
+            immunization.vaccineBatchNo = param.vaccineBatchNo;
+            immunization.prescription = param.prescription;
+            immunization.nextVisitDate = param.nextVisitDate;
+            immunization.lastChangedBy = updatedBy;
+            immunization.save();
+
+            return {success: true, immunization };
+        } catch (error) {
+            return {success: false, message: error.message };
+        }
+    }
+
+    async getImmunizations(id, urlParams): Promise<Immunization[]> {
+        const {startDate, endDate} = urlParams;
+
+        const query = this.immunizationRepository.createQueryBuilder('q')
+                        .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
+                        .where('q.patient_id = :id', {id});
+        if (startDate && startDate !== '') {
+            const start = moment(startDate).startOf('day').toISOString();
+            query.andWhere(`q.createdAt >= '${start}'`);
+        }
+        if (endDate && endDate !== '') {
+            const end = moment(endDate).endOf('day').toISOString();
+            query.andWhere(`q.createdAt <= '${end}'`);
+        }
+        const immunizations = query.getMany();
+
+        return immunizations;
+    }
+
+    async deleteImmunization(id: string) {
+        const result = await this.immunizationRepository.delete(id);
+
+        if (result.affected === 0) {
+            throw new NotFoundException(`Patient immunization with ID '${id}' not found`);
         }
         return {success: true};
     }
