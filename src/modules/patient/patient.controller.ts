@@ -16,6 +16,8 @@ import fs = require('fs');
 import { PatientDocument } from './entities/patient_documents.entity';
 import { PatientRequestDocument } from './entities/patient_request_documents.entity';
 import { AuthGuard } from '@nestjs/passport';
+import { Immunization } from './entities/immunization.entity';
+import { ImmunizationDto } from './dto/immunization.dto';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('patient')
@@ -263,6 +265,38 @@ export class PatientController {
     ) {
         // const file = fs.readFile(`uploads/${filename}`)
         return response.sendFile(join(__dirname, '../../../uploads/') + filename  );
+    }
+
+    @Get(':id/immunizations')
+    getImmunizations(
+        @Param('id') id: string,
+        @Query() urlParams,
+    ): Promise <Immunization[]> {
+        return this.patientService.getImmunizations(id, urlParams);
+    }
+
+    @Post('/immunizations')
+    saveImmunizations(
+        @Body() param: ImmunizationDto,
+        @Request() req,
+    ) {
+        return this.patientService.saveNewImmunization(param, req.user.username);
+    }
+
+    @Patch(':immunizationId/immunizations')
+    updateImmunization(
+        @Param('immunizationId') id: string,
+        @Body() param: ImmunizationDto,
+        @Request() req,
+    ) {
+        return this.patientService.doUpdateImmunization(id, param, req.user.username);
+    }
+
+    @Delete(':immunizationId/immunizations')
+    deleteImmunization(
+        @Param('immunizationId') immunizationId: string,
+    ) {
+        return this.patientService.deleteImmunization(immunizationId);
     }
 
 }

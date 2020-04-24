@@ -14,6 +14,7 @@ import { VoucherRepository } from '../finance/vouchers/voucher.repository';
 import { PatientDocumentRepository } from './repositories/patient_document.repository';
 import { AntenatalModule } from './antenatal/antenatal.module';
 import { AdmissionsModule } from './admissions/admissions.module';
+import { ImmunizationRepository } from './repositories/immunization.repository';
 
 @Module({
   imports: [TypeOrmModule.forFeature([
@@ -26,6 +27,7 @@ import { AdmissionsModule } from './admissions/admissions.module';
     PatientAllergyRepository,
     HmoRepository,
     ServiceRepository,
+    ImmunizationRepository,
     VoucherRepository,
   ]), AntenatalModule, AdmissionsModule],
   controllers: [PatientController],
