@@ -333,9 +333,9 @@ export class PatientService {
             // find patin
             const patient = await this.patientRepository.findOne(patient_id);
             param.patient = patient;
+            param.createdBy = createdBy;
+            param.lastChangedBy = createdBy;
             const immunization = await this.immunizationRepository.save(param);
-            immunization.createdBy = createdBy;
-            immunization.save();
             return {success: true, immunization };
         } catch (error) {
             return {success: false, message: error.message };

@@ -10,7 +10,7 @@ export class ImmunizationDto {
     @IsNotEmpty()
     vaccineBatchNo: string;
 
-    prescription: string;
+    prescription: any;
 
     nextVisitDate: string;
     @IsNotEmpty()
@@ -20,4 +20,7 @@ export class ImmunizationDto {
 
     @IsNotEmpty()
     administeredBy: any;
+
+    createdBy: any;
+    lastChangedBy: any;
 }

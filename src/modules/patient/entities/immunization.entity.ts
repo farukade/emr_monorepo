@@ -15,7 +15,7 @@ export class Immunization extends CustomBaseEntity {
     @Column()
     vaccineBatchNo: string;
 
-    @Column()
+    @Column('jsonb', {nullable: true})
     prescription: string;
 
     @Column()
