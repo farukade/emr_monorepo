@@ -111,16 +111,21 @@ export class AppointmentService {
 
     async listAppointments(params) {
         const {startDate, endDate} = params;
-        const query = this.queueSystemRepository.createQueryBuilder('q');
+        const query = this.appointmentRepository.createQueryBuilder('q')
+            .leftJoinAndSelect('q.department', 'department')
+            .leftJoinAndSelect('q.patient', 'patient')
+            .leftJoinAndSelect('q.specialization', 'specialization')
+            .leftJoinAndSelect('q.consultingRoom', 'consultingRoom');
+
         if (startDate && startDate !== '') {
-            const start = moment(startDate).endOf('day').toISOString();
+            const start = moment(startDate).startOf('day').toISOString();
             query.where(`q.createdAt >= '${start}'`);
         }
         if (endDate && endDate !== '') {
             const end = moment(endDate).endOf('day').toISOString();
-            query.where(`q.createdAt <= '${end}'`);
+            query.andWhere(`q.createdAt <= '${end}'`);
         }
-        const result = await query.getRawMany();
+        const result = await query.getMany();
 
         return result;
     }

@@ -9,9 +9,11 @@ import { DepartmentRepository } from '../../settings/departments/department.repo
 import { VoucherRepository } from '../vouchers/voucher.repository';
 import { StaffRepository } from '../../hr/staff/staff.repository';
 import { QueueSystemRepository } from '../../frontdesk/queue-system/queue-system.repository';
+import { AppointmentRepository } from '../../frontdesk/appointment/appointment.repository';
 
 @Module({
     imports: [TypeOrmModule.forFeature([
+        AppointmentRepository,
         TransactionsRepository,
         PatientRepository,
         DepartmentRepository,

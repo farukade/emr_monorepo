@@ -1,6 +1,7 @@
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
-import { Entity, Column, ManyToOne } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { Patient } from './patient.entity';
+import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 
 @Entity({name: 'immunizations'})
 export class Immunization extends CustomBaseEntity {
@@ -14,7 +15,7 @@ export class Immunization extends CustomBaseEntity {
     @Column()
     vaccineBatchNo: string;
 
-    @Column()
+    @Column('jsonb', {nullable: true})
     prescription: string;
 
     @Column()
@@ -22,4 +23,8 @@ export class Immunization extends CustomBaseEntity {
 
     @ManyToOne(type => Patient)
     patient: Patient;
+
+    @ManyToOne(type => StaffDetails)
+    @JoinColumn({name: 'administeredBy'})
+    administeredBy: StaffDetails;
 }

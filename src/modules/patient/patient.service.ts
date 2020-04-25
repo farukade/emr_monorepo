@@ -330,11 +330,12 @@ export class PatientService {
     async saveNewImmunization(param: ImmunizationDto, createdBy): Promise<any> {
         const { patient_id } = param;
         try {
+            // find patin
             const patient = await this.patientRepository.findOne(patient_id);
             param.patient = patient;
+            param.createdBy = createdBy;
+            param.lastChangedBy = createdBy;
             const immunization = await this.immunizationRepository.save(param);
-            immunization.createdBy = createdBy;
-            immunization.save();
             return {success: true, immunization };
         } catch (error) {
             return {success: false, message: error.message };
@@ -358,11 +359,18 @@ export class PatientService {
         }
     }
 
-    async getImmunizations(id, urlParams): Promise<Immunization[]> {
+    async getPatientImmunizations(id, urlParams): Promise<Immunization[]> {
         const {startDate, endDate} = urlParams;
 
         const query = this.immunizationRepository.createQueryBuilder('q')
                         .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
+                        .leftJoin(User, 'creator', 'q.createdBy = creator.username')
+                        .innerJoin(StaffDetails, 'staff', 'staff.user_id = creator.id')
+                        .leftJoin(StaffDetails, 'administer', 'q.administeredBy = administer.id')
+                        .select('q.*')
+                        .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id, patient.fileNumber')
+                        .addSelect('CONCAT(staff.first_name || \' \' || staff.last_name) as created_by, staff.id as created_by_id')
+                        .addSelect('CONCAT(administer.first_name || \' \' || administer.last_name) as administeredByName')
                         .where('q.patient_id = :id', {id});
         if (startDate && startDate !== '') {
             const start = moment(startDate).startOf('day').toISOString();
@@ -372,7 +380,36 @@ export class PatientService {
             const end = moment(endDate).endOf('day').toISOString();
             query.andWhere(`q.createdAt <= '${end}'`);
         }
-        const immunizations = query.getMany();
+        const immunizations = query.getRawMany();
+
+        return immunizations;
+    }
+
+    async getImmunizations(urlParams): Promise<Immunization[]> {
+        const {startDate, patient_id, endDate} = urlParams;
+
+        const query = this.immunizationRepository.createQueryBuilder('q')
+                        .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
+                        .leftJoin(StaffDetails, 'administer', 'q.administeredBy = administer.id')
+                        .leftJoin(User, 'creator', 'q.createdBy = creator.username')
+                        .innerJoin(StaffDetails, 'staff', 'staff.user_id = creator.id')
+                        .select('q.*')
+                        .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id, patient.fileNumber')
+                        .addSelect('CONCAT(staff.first_name || \' \' || staff.last_name) as created_by, staff.id as created_by_id')
+                        .addSelect('CONCAT(administer.first_name || \' \' || administer.last_name) as administeredByName');
+
+        if (startDate && startDate !== '') {
+            const start = moment(startDate).startOf('day').toISOString();
+            query.andWhere(`q.createdAt >= '${start}'`);
+        }
+        if (endDate && endDate !== '') {
+            const end = moment(endDate).endOf('day').toISOString();
+            query.andWhere(`q.createdAt <= '${end}'`);
+        }
+        if (patient_id && patient_id !== '') {
+            query.andWhere('q.patient_id = :patient_id', {patient_id});
+        }
+        const immunizations = query.getRawMany();
 
         return immunizations;
     }
@@ -474,7 +511,7 @@ export class PatientService {
                         .innerJoin(StaffDetails, 'staff1', 'staff1.user_id = creator.id')
                         .select('q.id, q.requestType, q.requestBody, q.createdAt')
                         .addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
-                        .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id')
+                        .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id, patient.fileNumber')
                         .where('q.patient_id = :patient_id', {patient_id})
                         .andWhere('q.requestType = :requestType', {requestType});
 
@@ -500,7 +537,7 @@ export class PatientService {
                         .innerJoin(StaffDetails, 'staff1', 'staff1.user_id = creator.id')
                         .select('patient_request.id, patient_request.requestType, patient_request.requestBody, patient_request.createdAt')
                         .addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
-                        .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id')
+                        .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id, patient.fileNumber')
                         .andWhere('patient_request.requestType = :requestType', {requestType});
 
         if (startDate && startDate !== '') {
