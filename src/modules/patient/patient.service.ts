@@ -366,7 +366,7 @@ export class PatientService {
                         .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
                         .leftJoin(User, 'creator', 'q.createdBy = creator.username')
                         .innerJoin(StaffDetails, 'staff', 'staff.user_id = creator.id')
-                        .leftJoin(StaffDetails, 'administer', 'q.administeredBy = staff.id')
+                        .leftJoin(StaffDetails, 'administer', 'q.administeredBy = administer.id')
                         .select('q.*')
                         .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id, patient.fileNumber')
                         .addSelect('CONCAT(staff.first_name || \' \' || staff.last_name) as created_by, staff.id as created_by_id')
@@ -390,7 +390,7 @@ export class PatientService {
 
         const query = this.immunizationRepository.createQueryBuilder('q')
                         .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
-                        .leftJoin(StaffDetails, 'administer', 'q.administeredBy = staff.id')
+                        .leftJoin(StaffDetails, 'administer', 'q.administeredBy = administer.id')
                         .leftJoin(User, 'creator', 'q.createdBy = creator.username')
                         .innerJoin(StaffDetails, 'staff', 'staff.user_id = creator.id')
                         .select('q.*')
