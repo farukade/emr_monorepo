@@ -358,7 +358,7 @@ export class PatientService {
         }
     }
 
-    async getImmunizations(id, urlParams): Promise<Immunization[]> {
+    async getPatientImmunizations(id, urlParams): Promise<Immunization[]> {
         const {startDate, endDate} = urlParams;
 
         const query = this.immunizationRepository.createQueryBuilder('q')
@@ -376,6 +376,33 @@ export class PatientService {
         if (endDate && endDate !== '') {
             const end = moment(endDate).endOf('day').toISOString();
             query.andWhere(`q.createdAt <= '${end}'`);
+        }
+        const immunizations = query.getMany();
+
+        return immunizations;
+    }
+
+    async getImmunizations(urlParams): Promise<Immunization[]> {
+        const {startDate, patient_id, endDate} = urlParams;
+
+        const query = this.immunizationRepository.createQueryBuilder('q')
+                        .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
+                        .leftJoin(User, 'creator', 'q.createdBy = creator.username')
+                        .innerJoin(StaffDetails, 'staff', 'staff.user_id = creator.id')
+                        .select('q.*')
+                        .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id, patient.fileNumber')
+                        .addSelect('CONCAT(staff.first_name || \' \' || staff.last_name) as created_by, staff.id as created_by_id');
+
+        if (startDate && startDate !== '') {
+            const start = moment(startDate).startOf('day').toISOString();
+            query.andWhere(`q.createdAt >= '${start}'`);
+        }
+        if (endDate && endDate !== '') {
+            const end = moment(endDate).endOf('day').toISOString();
+            query.andWhere(`q.createdAt <= '${end}'`);
+        }
+        if (patient_id && patient_id !== '') {
+            query.andWhere('q.patient_id = :patient_id', {patient_id});
         }
         const immunizations = query.getMany();
 

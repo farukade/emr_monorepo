@@ -47,7 +47,7 @@ export class AppointmentService {
             .leftJoinAndSelect('q.patient', 'patient')
             .leftJoinAndSelect('q.specialization', 'specialization')
             .select('q.*, department.name as dept_name, specialization.name as specialization')
-            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name')
+            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.fileNumber')
             .where(`q.appointment_date = '${today}'`)
             .getRawMany();
 
@@ -120,7 +120,7 @@ export class AppointmentService {
             .leftJoinAndSelect('q.patient', 'patient')
             .leftJoinAndSelect('q.specialization', 'specialization')
             .select('q.*, department.name as dept_name, specialization.name as specialization')
-            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name');
+            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.fileNumber');
         if (startDate && startDate !== '') {
             const start = moment(startDate).startOf('day').toISOString();
             query.where(`q.createdAt >= '${start}'`);

@@ -268,11 +268,19 @@ export class PatientController {
     }
 
     @Get(':id/immunizations')
+    getPatientImmunizations(
+        @Param('id') id: string,
+        @Query() urlParams,
+    ): Promise <Immunization[]> {
+        return this.patientService.getPatientImmunizations(id, urlParams);
+    }
+
+    @Get('/immunizations')
     getImmunizations(
         @Param('id') id: string,
         @Query() urlParams,
     ): Promise <Immunization[]> {
-        return this.patientService.getImmunizations(id, urlParams);
+        return this.patientService.getImmunizations(urlParams);
     }
 
     @Post('/immunizations')
