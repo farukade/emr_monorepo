@@ -42,14 +42,10 @@ export class AppointmentService {
 
     async todaysAppointments(): Promise<Appointment[]> {
         const today = moment().format('YYYY-MM-DD');
-        const results = this.appointmentRepository.createQueryBuilder('q')
-            .leftJoinAndSelect('q.department', 'department')
-            .leftJoinAndSelect('q.patient', 'patient')
-            .leftJoinAndSelect('q.specialization', 'specialization')
-            .select('q.*, department.name as dept_name, specialization.name as specialization')
-            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.fileNumber')
-            .where(`q.appointment_date = '${today}'`)
-            .getRawMany();
+        const results = await this.appointmentRepository.find({
+            where: {appointment_date: today},
+            relations: ['department', 'patient', 'specialization', 'consultingRoom'],
+        });
 
         return results;
     }
@@ -119,8 +115,8 @@ export class AppointmentService {
             .leftJoinAndSelect('q.department', 'department')
             .leftJoinAndSelect('q.patient', 'patient')
             .leftJoinAndSelect('q.specialization', 'specialization')
-            .select('q.*, department.name as dept_name, specialization.name as specialization')
-            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.fileNumber');
+            .leftJoinAndSelect('q.consultingRoom', 'consultingRoom');
+
         if (startDate && startDate !== '') {
             const start = moment(startDate).startOf('day').toISOString();
             query.where(`q.createdAt >= '${start}'`);
@@ -129,7 +125,7 @@ export class AppointmentService {
             const end = moment(endDate).endOf('day').toISOString();
             query.andWhere(`q.createdAt <= '${end}'`);
         }
-        const result = await query.getRawMany();
+        const result = await query.getMany();
 
         return result;
     }
