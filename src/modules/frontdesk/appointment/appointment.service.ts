@@ -42,10 +42,14 @@ export class AppointmentService {
 
     async todaysAppointments(): Promise<Appointment[]> {
         const today = moment().format('YYYY-MM-DD');
-        const results = await this.appointmentRepository.find({
-            where: {appointment_date: today},
-            relations: ['department', 'patient', 'specialization', 'consultingRoom'],
-        });
+        const results = this.appointmentRepository.createQueryBuilder('q')
+            .leftJoinAndSelect('q.department', 'department')
+            .leftJoinAndSelect('q.patient', 'patient')
+            .leftJoinAndSelect('q.specialization', 'specialization')
+            .select('q.*, department.name as dept_name, specialization.name as specialization')
+            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name')
+            .where(`q.appointment_date = '${today}'`)
+            .getRawMany();
 
         return results;
     }
