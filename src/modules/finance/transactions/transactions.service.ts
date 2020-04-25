@@ -17,11 +17,14 @@ import { Pagination, PaginationOptionsInterface } from '../../../common/paginate
 import { getConnection } from 'typeorm-seeding';
 import { Appointment } from '../../frontdesk/appointment/appointment.entity';
 import { QueueSystemRepository } from '../../frontdesk/queue-system/queue-system.repository';
+import { AppointmentRepository } from '../../frontdesk/appointment/appointment.repository';
 
 @Injectable()
 export class TransactionsService {
 
     constructor(
+        @InjectRepository(AppointmentRepository)
+        private appointmentRepository: AppointmentRepository,
         @InjectRepository(TransactionsRepository)
         private transactionsRepository: TransactionsRepository,
         @InjectRepository(PatientRepository)
@@ -274,7 +277,7 @@ export class TransactionsService {
             transaction.lastChangedBy = updatedBy;
             await transaction.save();
             // find appointment
-            const appointment = await getConnection().getRepository(Appointment).findOne({
+            const appointment = await this.appointmentRepository.findOne({
                 where: {patient: transaction.patient, status: 'Pending Paypoint Approval'},
             });
             let queue;
