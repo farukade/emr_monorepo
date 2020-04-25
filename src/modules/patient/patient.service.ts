@@ -378,7 +378,7 @@ export class PatientService {
             const end = moment(endDate).endOf('day').toISOString();
             query.andWhere(`q.createdAt <= '${end}'`);
         }
-        const immunizations = query.getMany();
+        const immunizations = query.getRawMany();
 
         return immunizations;
     }
@@ -405,7 +405,7 @@ export class PatientService {
         if (patient_id && patient_id !== '') {
             query.andWhere('q.patient_id = :patient_id', {patient_id});
         }
-        const immunizations = query.getMany();
+        const immunizations = query.getRawMany();
 
         return immunizations;
     }
