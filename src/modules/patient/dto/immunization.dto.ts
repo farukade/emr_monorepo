@@ -17,4 +17,7 @@ export class ImmunizationDto {
     patient_id: string;
 
     patient: Patient;
+
+    @IsNotEmpty()
+    administeredBy: any;
 }

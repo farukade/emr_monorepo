@@ -330,6 +330,7 @@ export class PatientService {
     async saveNewImmunization(param: ImmunizationDto, createdBy): Promise<any> {
         const { patient_id } = param;
         try {
+            // find patin
             const patient = await this.patientRepository.findOne(patient_id);
             param.patient = patient;
             const immunization = await this.immunizationRepository.save(param);
