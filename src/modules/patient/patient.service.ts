@@ -366,9 +366,11 @@ export class PatientService {
                         .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
                         .leftJoin(User, 'creator', 'q.createdBy = creator.username')
                         .innerJoin(StaffDetails, 'staff', 'staff.user_id = creator.id')
+                        .leftJoin(StaffDetails, 'administer', 'q.administeredBy = staff.id')
                         .select('q.*')
                         .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id, patient.fileNumber')
                         .addSelect('CONCAT(staff.first_name || \' \' || staff.last_name) as created_by, staff.id as created_by_id')
+                        .addSelect('CONCAT(administer.first_name || \' \' || administer.last_name) as administeredByName')
                         .where('q.patient_id = :id', {id});
         if (startDate && startDate !== '') {
             const start = moment(startDate).startOf('day').toISOString();
@@ -388,11 +390,13 @@ export class PatientService {
 
         const query = this.immunizationRepository.createQueryBuilder('q')
                         .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
+                        .leftJoin(StaffDetails, 'administer', 'q.administeredBy = staff.id')
                         .leftJoin(User, 'creator', 'q.createdBy = creator.username')
                         .innerJoin(StaffDetails, 'staff', 'staff.user_id = creator.id')
                         .select('q.*')
                         .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id, patient.fileNumber')
-                        .addSelect('CONCAT(staff.first_name || \' \' || staff.last_name) as created_by, staff.id as created_by_id');
+                        .addSelect('CONCAT(staff.first_name || \' \' || staff.last_name) as created_by, staff.id as created_by_id')
+                        .addSelect('CONCAT(administer.first_name || \' \' || administer.last_name) as administeredByName');
 
         if (startDate && startDate !== '') {
             const start = moment(startDate).startOf('day').toISOString();
