@@ -11,6 +11,7 @@ import { StockRepository } from './stock.repository';
 import { Stock } from './entities/stock.entity';
 import { StockQtyDto } from './dto/stock.qty.dto';
 import { StockUploadDto } from './dto/stock.upload.dto';
+import { PaginationOptionsInterface } from '../../common/paginate';
 
 @Injectable()
 export class InventoryService {
@@ -27,8 +28,12 @@ export class InventoryService {
         INVENTORY
     */
 
-    async getAllStocks(): Promise<Stock[]> {
-        return await this.stockRepository.find({relations: ['subCategory', 'category']});
+    async getAllStocks(options: PaginationOptionsInterface): Promise<Stock[]> {
+        return await this.stockRepository.find({
+            relations: ['subCategory', 'category'],
+            take: options.limit,
+            skip: (options.page * options.limit)
+        });
     }
 
     async getStockById(id): Promise<Stock> {
@@ -175,10 +180,20 @@ export class InventoryService {
 
                     if (subCategory) {
                         if (item.name !== '') {
-                            item.subCategory = subCategory;
-                            item.category = category;
-                            // save stock
-                            await this.stockRepository.save(item);
+                            // check if name exist
+                            const stock = await this.stockRepository.findOne({where: {name: item.name}});
+                            if (!stock) {
+                                item.subCategory = subCategory;
+                                item.category = category;
+                                // save stock
+                                await this.stockRepository.save(item);
+                            } else {
+                                stock.sales_price = item.sales_price;
+                                stock.quantity = item.quantity;
+                                stock.category = category;
+                                stock.subCategory = subCategory;
+                                stock.save();
+                            }
                         }
                     }
                 }
