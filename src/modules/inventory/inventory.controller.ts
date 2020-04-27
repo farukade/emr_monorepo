@@ -1,4 +1,4 @@
-import { Controller, Body, ValidationPipe, UsePipes, Post, Get, Patch, Param, Delete, UseInterceptors, UploadedFile, Header, Res } from '@nestjs/common';
+import { Controller, Body, ValidationPipe, UsePipes, Post, Get, Patch, Param, Delete, UseInterceptors, UploadedFile, Header, Res, Request } from '@nestjs/common';
 import { InventoryService } from './inventory.service';
 import { InventoryCategory } from './entities/inventory.category.entity';
 import { InventoryCategoryDto } from './dto/inventory.category.dto';
@@ -20,8 +20,12 @@ export class InventoryController {
      * INVENTORY CATEGORIES
      */
     @Get('/stocks')
-    getAllStocks(): Promise<Stock[]> {
-        return this.inventoryService.getAllStocks();
+    getAllStocks(
+        @Request() request,
+    ): Promise<Stock[]> {
+        const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 30;
+        const page = request.query.hasOwnProperty('page') ? request.query.page : 0;
+        return this.inventoryService.getAllStocks({page, limit});
     }
 
     @Get('/stocks-by-category/:id')
@@ -90,7 +94,7 @@ export class InventoryController {
     uploadStock(
         @Body() stockUploadDto: StockUploadDto,
         @UploadedFile() file) {
-        return this.inventoryService.doUploadStock(stockUploadDto,file);
+        return this.inventoryService.doUploadStock(stockUploadDto, file);
     }
     /**
      * INVENTORY CATEGORIES
