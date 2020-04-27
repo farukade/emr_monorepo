@@ -453,6 +453,7 @@ export class PatientService {
             case 'physiotherapy':
                 let physio = await PatientRequestHelper.handlePhysiotherapyRequest(param, patient, createdBy);
                 if (physio.success) {
+                    console.log('physio success')
                     // save transaction
                     const payment = await RequestPaymentHelper.physiotherapyPayment(param.requestBody, patient, createdBy);
                     physio = {...physio, ...payment};
