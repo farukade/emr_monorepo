@@ -16,6 +16,6 @@ export class AntenatalVisitDto {
     comment: string;
     nextAppointment: string;
     labRequest: any;
-    radiologyRequest: any;
+    imagingRequest: any;
     pharmacyRequest: any;
 }
