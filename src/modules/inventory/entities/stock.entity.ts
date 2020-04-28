@@ -9,6 +9,9 @@ export class Stock extends CustomBaseEntity {
   @Column({ type: 'varchar', length: 300, unique: true })
   name: string;
 
+  @Column({ type: 'varchar', length: 300, nullable: true })
+  generic_name: string;
+
   @Column({ type: 'varchar', nullable: true})
   stock_code: string;
 

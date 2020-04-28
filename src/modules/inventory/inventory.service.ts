@@ -100,7 +100,7 @@ export class InventoryService {
                             category: (stock.subCategory) ? stock.subCategory.name : '',
                             code: stock.stock_code,
                             name: stock.name,
-                            generic_name: '',
+                            generic_name: stock.generic_name,
                             quantity: stock.quantity,
                             sales_price: stock.sales_price,
                         },
@@ -160,6 +160,7 @@ export class InventoryService {
                 const data = {
                     category: row['DRUG CLASS'],
                     name: row['BRAND NAME'],
+                    generic_name: row['GENERIC NAME'],
                     quantity: row['QUANTITY ON HAND'],
                     sales_price: row['SALES PRICE'].replace(',', ''),
                     stock_code: 'STU-' + Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5),
@@ -188,6 +189,8 @@ export class InventoryService {
                                 // save stock
                                 await this.stockRepository.save(item);
                             } else {
+                                stock.name = item.name;
+                                stock.generic_name = item.generic_name;
                                 stock.sales_price = item.sales_price;
                                 stock.quantity = item.quantity;
                                 stock.category = category;

@@ -202,7 +202,7 @@ export class PatientService {
             }
             query.andWhere('q.isActive = :status', {status: stat});
         }
-        const vouchers = await query.getMany();
+        const vouchers = await query.orderBy('q.createdAt', 'DESC').getMany();
 
         return vouchers;
     }
@@ -224,7 +224,7 @@ export class PatientService {
         if (documentType && documentType !== '') {
             query.andWhere('q.document_type = :document_type', {document_type: documentType});
         }
-        const documents = await query.getMany();
+        const documents = await query.orderBy('q.createdAt', 'DESC').getMany();
 
         return documents;
     }
@@ -254,7 +254,7 @@ export class PatientService {
             const end = moment(endDate).endOf('day').toISOString();
             query.andWhere(`q.createdAt <= '${end}'`);
         }
-        const vitals = query.getMany();
+        const vitals = query.orderBy('q.createdAt', 'DESC').getMany();
 
         return vitals;
     }
@@ -313,7 +313,7 @@ export class PatientService {
             const end = moment(endDate).endOf('day').toISOString();
             query.andWhere(`q.createdAt <= '${end}'`);
         }
-        const allergies = query.getMany();
+        const allergies = query.orderBy('q.createdAt', 'DESC').getMany();
 
         return allergies;
     }
@@ -380,7 +380,7 @@ export class PatientService {
             const end = moment(endDate).endOf('day').toISOString();
             query.andWhere(`q.createdAt <= '${end}'`);
         }
-        const immunizations = query.getRawMany();
+        const immunizations = query.orderBy('q.createdAt', 'DESC').getRawMany();
 
         return immunizations;
     }
@@ -409,7 +409,7 @@ export class PatientService {
         if (patient_id && patient_id !== '') {
             query.andWhere('q.patient_id = :patient_id', {patient_id});
         }
-        const immunizations = query.getRawMany();
+        const immunizations = query.orderBy('q.createdAt', 'DESC').getRawMany();
 
         return immunizations;
     }
@@ -523,7 +523,7 @@ export class PatientService {
             const end = moment(endDate).endOf('day').toISOString();
             query.andWhere(`q.createdAt <= '${end}'`);
         }
-        const allergies = query.getRawMany();
+        const allergies = query.orderBy('q.createdAt', 'DESC').getRawMany();
 
         return allergies;
     }
@@ -550,7 +550,7 @@ export class PatientService {
             query.andWhere(`patient_request.createdAt <= '${end}'`);
         }
 
-        const requests = query.getRawMany();
+        const requests = query.orderBy('q.createdAt', 'DESC').getRawMany();
 
         return requests;
     }
