@@ -71,7 +71,10 @@ export class TransactionsService {
             query.andWhere('q.status = :status', {status});
         }
 
-        const transactions = await query.take(options.limit).skip(options.page * options.limit).getRawMany();
+        const transactions = await query.take(options.limit)
+            .skip(options.page * options.limit)
+            .orderBy('q.createdAt', 'DESC')
+            .getRawMany();
 
         for (const transaction of transactions) {
             if (transaction.department_id) {

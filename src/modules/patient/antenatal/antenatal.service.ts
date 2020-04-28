@@ -59,7 +59,7 @@ export class AntenatalService {
     }
 
     async saveAntenatalVisits(antenatalVisitDto: AntenatalVisitDto, createdBy) {
-        const { labRequest, radiologyRequest, pharmacyRequest } = antenatalVisitDto;
+        const { labRequest, imagingRequest, pharmacyRequest } = antenatalVisitDto;
         const patient = await this.patientRepository.findOne(antenatalVisitDto.patient_id);
         try {
             const visit = new AntenatalVisits();
@@ -71,7 +71,7 @@ export class AntenatalService {
             visit.comment = antenatalVisitDto.comment;
             visit.patient = patient;
             // save request
-            if (labRequest.requestBody) {
+            if (labRequest && labRequest.requestBody) {
                 const labRequestRes = await PatientRequestHelper.handleLabRequest(labRequest, patient, createdBy);
                 if (labRequestRes.success) {
                     // save transaction
@@ -80,7 +80,7 @@ export class AntenatalService {
                 }
             }
 
-            if (pharmacyRequest.requestBody) {
+            if (pharmacyRequest && pharmacyRequest.requestBody) {
                 const pharmacyReqRes = await PatientRequestHelper.handlePharmacyRequest(pharmacyRequest, patient, createdBy);
                 if (pharmacyReqRes.success) {
                     // save transaction
@@ -89,14 +89,15 @@ export class AntenatalService {
                 }
             }
 
-            if (radiologyRequest.requestBody) {
-                const radiologyRes = await PatientRequestHelper.handleImagingRequest(radiologyRequest, patient, createdBy);
+            if (imagingRequest && imagingRequest.requestBody) {
+                const radiologyRes = await PatientRequestHelper.handleImagingRequest(imagingRequest, patient, createdBy);
                 if (radiologyRes.success) {
                     // save transaction
-                    const payment = await RequestPaymentHelper.imagingPayment(radiologyRequest.requestBody, patient, createdBy);
+                    const payment = await RequestPaymentHelper.imagingPayment(imagingRequest.requestBody, patient, createdBy);
                     visit.radiologyRequest = radiologyRes.data;
                 }
             }
+            
             return {success: true, visit};
         } catch (err) {
             return {success: false, message: err.message};
