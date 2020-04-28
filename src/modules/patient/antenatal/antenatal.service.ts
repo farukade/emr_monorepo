@@ -12,6 +12,7 @@ import { RequestPaymentHelper } from '../../../common/utils/RequestPaymentHelper
 import { AntenatalVisits } from './entities/antenatal-visits.entity';
 import { PaginationOptionsInterface } from '../../../common/paginate';
 import { AntenatalVisitRepository } from './antenatal-visits.repository';
+import { PatientRequestRepository } from '../repositories/patient_request.repository';
 
 @Injectable()
 export class AntenatalService {
@@ -22,6 +23,8 @@ export class AntenatalService {
         private patientRepository: PatientRepository,
         @InjectRepository(AntenatalVisitRepository)
         private antenatalVisitRepository: AntenatalVisitRepository,
+        @InjectRepository(PatientRequestRepository)
+        private patientRequestRepository: PatientRequestRepository,
     ) {
 
     }
@@ -55,7 +58,10 @@ export class AntenatalService {
             query.andWhere(`e.createdAt <= '${end}'`);
         }
 
-        return await query.take(options.limit).skip(options.page * options.limit).getRawMany();
+        return await query.take(options.limit)
+                            .skip(options.page * options.limit)
+                            .orderBy('e.createdAt', 'DESC')
+                            .getRawMany();
     }
 
     async saveAntenatalVisits(antenatalVisitDto: AntenatalVisitDto, createdBy) {
@@ -97,14 +103,14 @@ export class AntenatalService {
                     visit.radiologyRequest = radiologyRes.data;
                 }
             }
-            
+            await visit.save();
             return {success: true, visit};
         } catch (err) {
             return {success: false, message: err.message};
         }
     }
 
-    getPatientAntenatalVisits(options: PaginationOptionsInterface, {patient_id, startDate, endDate}) {
+    async getPatientAntenatalVisits(options: PaginationOptionsInterface, {patient_id, startDate, endDate}) {
         const query = this.antenatalVisitRepository.createQueryBuilder('q');
 
         if (startDate && startDate !== '') {
@@ -121,8 +127,25 @@ export class AntenatalService {
             query.andWhere('q.patientId = :patient_id', {patient_id});
         }
 
-        if (status) {
-            query.andWhere('q.status = :status', {status});
+        const results = await query.take(options.limit)
+                            .skip(options.page * options.limit)
+                            .orderBy('q.createdAt', 'DESC')
+                            .getRawMany();
+
+        for (const result of results) {
+            if (result.lab_request) {
+                result.labRequest = await this.patientRequestRepository.findOne(result.lab_request);
+            }
+
+            if (result.radiology_request) {
+                result.radiologyRequest = await this.patientRequestRepository.findOne(result.radiology_request);
+            }
+
+            if (result.pharmacy_request) {
+                result.pharmacyRequest = await this.patientRequestRepository.findOne(result.pharmacy_request);
+            }
         }
+        return results;
+
     }
 }
