@@ -76,6 +76,7 @@ export class AntenatalService {
             visit.relationshipToBrim = antenatalVisitDto.relationshipToBrim;
             visit.comment = antenatalVisitDto.comment;
             visit.patient = patient;
+            visit.nextAppointment = antenatalVisitDto.nextAppointment;
             // save request
             if (labRequest && labRequest.requestBody) {
                 const labRequestRes = await PatientRequestHelper.handleLabRequest(labRequest, patient, createdBy);
@@ -111,7 +112,8 @@ export class AntenatalService {
     }
 
     async getPatientAntenatalVisits(options: PaginationOptionsInterface, {patient_id, startDate, endDate}) {
-        const query = this.antenatalVisitRepository.createQueryBuilder('q');
+        const query = this.antenatalVisitRepository.createQueryBuilder('q')
+                            .select('q.*');
 
         if (startDate && startDate !== '') {
             const start = moment(startDate).endOf('day').toISOString();

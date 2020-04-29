@@ -1,0 +1,130 @@
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { EncounterRepository } from './encounter.repository';
+import { EncounterDto } from './dto/encounter.dto';
+import { Encounter } from './encouter.entity';
+import { PatientRepository } from '../repositories/patient.repository';
+import { PatientAllergyRepository } from '../repositories/patient_allergy.repository';
+import { PatientRequestHelper } from '../../../common/utils/PatientRequestHelper';
+import { RequestPaymentHelper } from '../../../common/utils/RequestPaymentHelper';
+import { PaginationOptionsInterface } from '../../../common/paginate';
+import * as moment from 'moment';
+
+@Injectable()
+export class ConsultationService {
+    constructor(
+        @InjectRepository(EncounterRepository)
+        private allergyRepository: PatientAllergyRepository,
+        @InjectRepository(EncounterRepository)
+        private encounterRepository: EncounterRepository,
+        @InjectRepository(PatientRepository)
+        private patientRepository: PatientRepository,
+    ) {}
+
+    async getEncounters(options: PaginationOptionsInterface, urlParams): Promise<Encounter[]> {
+        const {startDate, endDate, patient_id} = urlParams;
+
+        const query = this.encounterRepository.createQueryBuilder('e');
+        
+        if (startDate && startDate !== '') {
+            const start = moment(startDate).endOf('day').toISOString();
+            query.where(`e.createdAt >= '${start}'`);
+        }
+        if (endDate && endDate !== '') {
+            const end = moment(endDate).endOf('day').toISOString();
+            query.andWhere(`e.createdAt <= '${end}'`);
+        }
+
+        if (patient_id && patient_id !== '') {
+            query.andWhere('q.patientId = :patient_id', {patient_id});
+        }
+
+
+        return await query.take(options.limit)
+                            .skip(options.page * options.limit)
+                            .orderBy('e.createdAt', 'DESC')
+                            .getRawMany();
+    }
+
+    async saveEncounter(patient_id: string, param: EncounterDto, createdBy) {
+        const { investigations, plan, consumable } = param;
+        try {
+            const patient = await this.patientRepository.findOne(patient_id);
+
+            const encounter = new Encounter();
+            encounter.complaints = param.complaints;
+            encounter.reviewOfSystem = param.reviewOfSystem;
+            encounter.patientHistory = param.patientHistory;
+            encounter.medicalHistory = param.medicalHistory;
+            encounter.patient        = patient;
+            // save allergy if any
+            if (param.allergies.length) {
+                encounter.allergies = param.allergies;
+                for (const allergy of param.allergies) {
+                    const data = {
+                        category: allergy.category,
+                        allergen: allergy.allergen,
+                        severity: allergy.severity,
+                        reaction: allergy.reaction,
+                        patient,
+                    };
+                    this.allergyRepository.save(data);
+                }
+            }
+            encounter.physicalExamination = param.physicalExamination;
+            encounter.physicalExaminationSummary = param.physicalExaminationSummary;
+            encounter.diagnosis = param.diagnosis;
+            const labRequest    = param.investigations.labRequest;
+            const imagingRequest = param.investigations.imagingRequest;
+            const pharmacyRequest = param.plan.pharmacyRequests;
+            const procedureRequest = param.plan.procedureRequest;
+            // save request
+            if (labRequest && labRequest.requestBody) {
+                const labRequestRes = await PatientRequestHelper.handleLabRequest(labRequest, patient, createdBy);
+                if (labRequestRes.success) {
+                    // save transaction
+                    await RequestPaymentHelper.clinicalLabPayment(labRequest.requestBody, patient, createdBy);
+                    encounter.investigations.labRequest = labRequest.requestBody;
+                }
+            }
+
+            if (pharmacyRequest && pharmacyRequest.requestBody) {
+                const pharmacyReqRes = await PatientRequestHelper.handlePharmacyRequest(pharmacyRequest, patient, createdBy);
+                if (pharmacyReqRes.success) {
+                    // save transaction
+                    await RequestPaymentHelper.pharmacyPayment(pharmacyRequest.requestBody, patient, createdBy);
+                    encounter.plan.pharmacyRequest = pharmacyRequest.requestBody;
+                }
+            }
+
+            if (imagingRequest && imagingRequest.requestBody) {
+                const radiologyRes = await PatientRequestHelper.handleImagingRequest(imagingRequest, patient, createdBy);
+                if (radiologyRes.success) {
+                    // save transaction
+                    const payment = await RequestPaymentHelper.imagingPayment(imagingRequest.requestBody, patient, createdBy);
+                    encounter.investigations.imagingRequest = imagingRequest.requestBody;
+                }
+            }
+
+            if (procedureRequest && procedureRequest.requestBody) {
+                const procedure = await PatientRequestHelper.handleImagingRequest(procedureRequest, patient, createdBy);
+                if (procedure.success) {
+                    // save transaction
+                    const payment = await RequestPaymentHelper.imagingPayment(procedureRequest.requestBody, patient, createdBy);
+                    encounter.procedure = procedureRequest.requestBody;
+                }
+            }
+
+            if (param.consumable.items && param.consumable.items.length) {
+                encounter.consumable = param.consumable.items;
+            }
+            encounter.note = param.consumable.note;
+            encounter.instructions = param.consumable.instruction;
+
+            await encounter.save();
+            return {success: true, encounter};
+        } catch (err) {
+            return {success: false, message: err.message};
+        }
+    }
+}
