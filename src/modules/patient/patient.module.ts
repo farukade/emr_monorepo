@@ -15,6 +15,7 @@ import { PatientDocumentRepository } from './repositories/patient_document.repos
 import { AntenatalModule } from './antenatal/antenatal.module';
 import { AdmissionsModule } from './admissions/admissions.module';
 import { ImmunizationRepository } from './repositories/immunization.repository';
+import { ConsultationModule } from './consultation/consultation.module';
 
 @Module({
   imports: [TypeOrmModule.forFeature([
@@ -29,7 +30,7 @@ import { ImmunizationRepository } from './repositories/immunization.repository';
     ServiceRepository,
     ImmunizationRepository,
     VoucherRepository,
-  ]), AntenatalModule, AdmissionsModule],
+  ]), AntenatalModule, AdmissionsModule, ConsultationModule],
   controllers: [PatientController],
   providers: [PatientService],
 })
