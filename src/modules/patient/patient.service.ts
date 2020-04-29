@@ -550,7 +550,7 @@ export class PatientService {
             query.andWhere(`patient_request.createdAt <= '${end}'`);
         }
 
-        const requests = query.orderBy('q.createdAt', 'DESC').getRawMany();
+        const requests = query.orderBy('patient_request.createdAt', 'DESC').getRawMany();
 
         return requests;
     }
