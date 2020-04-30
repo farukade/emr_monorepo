@@ -24,6 +24,11 @@ export class AppraisalController {
         return this.appraisalService.updateAppraisal(id, updateAppraisalDto);
     }
 
+    @Get('list-periods')
+    getAppraisalPeriods() {
+        return this.appraisalService.getPerformancePeriod();
+    }
+
     @Post('save-period')
     @UsePipes(ValidationPipe)
     saveAppraisalPeriod(

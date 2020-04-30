@@ -14,6 +14,7 @@ import { PerformanceCommentRepository } from './repositories/performance_comment
 import { PerformanceComment } from './entities/performance_comments.entity';
 import { PerformanceIndicatorReportRepository } from './repositories/performance_indicator_report.repository';
 import { SupervisorEvaluation } from './entities/supervisor.evaluation.entity';
+import { PerformanceAppraisalPeriod } from './entities/performance_appraisal_period.entity';
 
 @Injectable()
 export class AppraisalService {
@@ -66,6 +67,11 @@ export class AppraisalService {
         } catch (error) {
             return {success: false, message: error.message};
         }
+    }
+
+    async getPerformancePeriod(): Promise<PerformanceAppraisalPeriod[]> {
+        const periods = await this.performanceAppraisalPeriodRepository.find();
+        return periods;
     }
 
     async updatePerformancePeriod(createAppriasalPeriodDto: CreateAppriasalPeriodDto) {

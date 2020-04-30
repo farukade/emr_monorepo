@@ -76,6 +76,8 @@ export class AntenatalService {
             visit.relationshipToBrim = antenatalVisitDto.relationshipToBrim;
             visit.comment = antenatalVisitDto.comment;
             visit.patient = patient;
+            visit.createdBy = createdBy;
+            visit.lastChangedBy = createdBy;
             visit.nextAppointment = antenatalVisitDto.nextAppointment;
             // save request
             if (labRequest && labRequest.requestBody) {
@@ -83,8 +85,9 @@ export class AntenatalService {
                 if (labRequestRes.success) {
                     // save transaction
                     await RequestPaymentHelper.clinicalLabPayment(labRequest.requestBody, patient, createdBy);
-                    visit.labRequest = labRequestRes.data;
                 }
+                console.log(labRequestRes);
+                visit.labRequest = labRequestRes.data.raw[0];
             }
 
             if (pharmacyRequest && pharmacyRequest.requestBody) {
@@ -92,8 +95,10 @@ export class AntenatalService {
                 if (pharmacyReqRes.success) {
                     // save transaction
                     await RequestPaymentHelper.pharmacyPayment(pharmacyRequest.requestBody, patient, createdBy);
-                    visit.pharmacyRequest = pharmacyReqRes.data;
                 }
+                // console.log(pharmacyReqRes);
+
+                visit.pharmacyRequest = pharmacyReqRes.data.raw[0];
             }
 
             if (imagingRequest && imagingRequest.requestBody) {
@@ -101,8 +106,8 @@ export class AntenatalService {
                 if (radiologyRes.success) {
                     // save transaction
                     const payment = await RequestPaymentHelper.imagingPayment(imagingRequest.requestBody, patient, createdBy);
-                    visit.radiologyRequest = radiologyRes.data;
                 }
+                visit.radiologyRequest = radiologyRes.data.raw[0];
             }
             await visit.save();
             return {success: true, visit};
