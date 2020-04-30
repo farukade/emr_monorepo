@@ -7,9 +7,9 @@ export class PatientRequestHelper {
     }
 
     static async handleLabRequest(param, patient, createdBy) {
-        const {requestType, requestBody, id} = param;
+        const {requestBody, id} = param;
         const data = {
-            requestType,
+            requestType: 'lab',
             requestBody,
             patient,
             createdBy : '',
@@ -33,7 +33,7 @@ export class PatientRequestHelper {
     static async handlePharmacyRequest(param, patient, createdBy) {
         const {requestType, requestBody, id} = param;
         const data = {
-            requestType,
+            requestType: 'pharmacy',
             requestBody,
             patient,
             createdBy: '',
@@ -58,7 +58,7 @@ export class PatientRequestHelper {
     static async handlePhysiotherapyRequest(param, patient, createdBy) {
         const {requestType, requestBody, id} = param;
         const data = {
-            requestType,
+            requestType: 'physiotherapy',
             requestBody,
             patient,
             createdBy: '',
@@ -83,7 +83,7 @@ export class PatientRequestHelper {
     static async handleOpthalmolgyRequest(param, patient, createdBy) {
         const {requestType, requestBody, id} = param;
         const data = {
-            requestType,
+            requestType: 'opthalmology',
             requestBody,
             patient,
             createdBy: '',
@@ -108,7 +108,7 @@ export class PatientRequestHelper {
     static async handleDentistryRequest(param, patient, createdBy) {
         const {requestType, requestBody, id} = param;
         const data = {
-            requestType,
+            requestType: 'dentistry',
             requestBody,
             patient,
             createdBy: '',
@@ -133,7 +133,7 @@ export class PatientRequestHelper {
     static async handleImagingRequest(param, patient, createdBy) {
         const {requestType, requestBody, id} = param;
         const data = {
-            requestType,
+            requestType: 'imaging',
             requestBody,
             patient,
             createdBy: '',
@@ -158,7 +158,7 @@ export class PatientRequestHelper {
     static async handleProcedureRequest(param, patient, createdBy) {
         const {requestType, requestBody, id} = param;
         const data = {
-            requestType,
+            requestType: 'procedure',
             requestBody,
             patient,
             createdBy: '',
@@ -180,17 +180,18 @@ export class PatientRequestHelper {
         }
     }
 
-    static async save(data) {
-        await getConnection()
+    static async save(data): Promise<any> {
+        return await getConnection()
             .createQueryBuilder()
             .insert()
             .into(PatientRequest)
             .values(data)
+            .returning('*')
             .execute();
     }
 
-    static async update(data, id) {
-        await getConnection()
+    static async update(data, id): Promise<any> {
+        return await getConnection()
             .createQueryBuilder()
             .update(PatientRequest)
             .set(data)

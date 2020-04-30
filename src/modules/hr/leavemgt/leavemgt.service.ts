@@ -22,7 +22,7 @@ export class LeavemgtService {
         return applications;
     }
 
-    async saveLeaveApplication(leaveApplicationDto: LeaveApplicationDto): Promise<LeaveApplication> {
+    async saveLeaveApplication(leaveApplicationDto: LeaveApplicationDto): Promise<any> {
         // find staff
         const staff = await this.staffRepository.findOne(leaveApplicationDto.staff_id);
         // find leave category
@@ -42,9 +42,9 @@ export class LeavemgtService {
             leaveData.appliedBy = appliedBy;
         }
 
-        const data = await this.leaveRepository.save(leaveData);
+        await this.leaveRepository.save(leaveData);
 
-        return data;
+        return leaveData;
     }
 
     async updateLeaveApplication(id: string, leaveApplicationDto: LeaveApplicationDto): Promise<LeaveApplication> {
