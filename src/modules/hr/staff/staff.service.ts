@@ -94,7 +94,7 @@ export class StaffService {
         staff.monthly_salary = staffDto.monthly_salary;
         staff.is_consultant = staffDto.is_consultant;
         staff.emp_code = 'DEDA-' + Math.floor(Math.random() * 4),
-
+        
         await staff.save();
 
         return staff;
