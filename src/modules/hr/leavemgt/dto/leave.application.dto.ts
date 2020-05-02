@@ -17,4 +17,5 @@ export class LeaveApplicationDto {
     leave_category_id: string;
 
     appliedBy: string;
+
 }

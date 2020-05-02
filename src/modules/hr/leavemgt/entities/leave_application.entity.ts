@@ -31,6 +31,9 @@ export class LeaveApplication extends CustomBaseEntity {
     @Column({ default: 0 })
     status: number;
 
+    @Column({ default: 'leave' })
+    leaveType: string;
+
     @ManyToOne(type => StaffDetails, { nullable: true})
     @JoinColumn({ name: 'applied_by' })
     appliedBy!: StaffDetails;

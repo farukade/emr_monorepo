@@ -131,7 +131,7 @@ export class AntenatalService {
         }
 
         if (patient_id && patient_id !== '') {
-            query.andWhere('q.patientId = :patient_id', {patient_id});
+            query.andWhere('"q"."patientId" = :patient_id', {patient_id});
         }
 
         const results = await query.take(options.limit)

@@ -516,7 +516,7 @@ export class PatientService {
                         .andWhere('q.requestType = :requestType', {requestType});
 
         if (startDate && startDate !== '') {
-            const start = moment(startDate).endOf('day').toISOString();
+            const start = moment(startDate).startOf('day').toISOString();
             query.andWhere(`q.createdAt >= '${start}'`);
         }
         if (endDate && endDate !== '') {
