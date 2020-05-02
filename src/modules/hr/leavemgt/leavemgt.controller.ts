@@ -1,4 +1,4 @@
-import { Controller, Get, Body, Post, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Body, Post, Patch, Param, Delete, Query } from '@nestjs/common';
 import { LeavemgtService } from './leavemgt.service';
 import { LeaveApplicationDto } from './dto/leave.application.dto';
 import { LeaveApplication } from './entities/leave_application.entity';
@@ -8,8 +8,17 @@ export class LeavemgtController {
     constructor(private leaveService: LeavemgtService) {}
 
     @Get()
-    getAllLeaves(): Promise<LeaveApplication[]> {
-        return this.leaveService.listApplications();
+    getAllLeaves(
+        @Query() urlParams,
+    ): Promise<LeaveApplication[]> {
+        return this.leaveService.listApplications(urlParams);
+    }
+
+    @Get('/excuse-duty')
+    getExcuseDuty(
+        @Query() urlParams,
+    ): Promise<LeaveApplication[]> {
+        return this.leaveService.listExcuseDuty(urlParams);
     }
 
     @Post()

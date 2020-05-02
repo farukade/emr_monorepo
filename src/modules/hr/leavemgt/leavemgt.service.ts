@@ -8,6 +8,7 @@ import { LeaveApplication } from './entities/leave_application.entity';
 
 @Injectable()
 export class LeavemgtService {
+    private limit = 20;
     constructor(
         @InjectRepository(LeaveApplicationRepository)
         private leaveRepository: LeaveApplicationRepository,
@@ -17,8 +18,25 @@ export class LeavemgtService {
         private leaveCategoryRepository: LeaveCategoryRepository,
     ) {}
 
-    async listApplications(): Promise<LeaveApplication[]> {
-        const applications = await this.leaveRepository.find({relations: ['staff', 'category']});
+    async listApplications(urlParams): Promise<LeaveApplication[]> {
+        const {page} = urlParams;
+        const applications = await this.leaveRepository.find({
+            relations: ['staff', 'category'],
+            skip: (page * this.limit) - this.limit,
+            take: this.limit,
+        });
+        return applications;
+    }
+
+    async listExcuseDuty(urlParams): Promise<LeaveApplication[]> {
+        const {page} = urlParams;
+        const applications = await this.leaveRepository.find({where: {
+                                leaveType: 'excuse_duty',
+                            },
+                            relations: ['staff', 'category'],
+                            skip: (page * this.limit) - this.limit,
+                            take: this.limit,
+                        });
         return applications;
     }
 
@@ -35,11 +53,13 @@ export class LeavemgtService {
             end_date: leaveApplicationDto.end_date,
             application: leaveApplicationDto.application,
             appliedBy: null,
+            leaveType: 'leave',
         };
 
         if (leaveApplicationDto.appliedBy) {
             const appliedBy = await this.staffRepository.findOne(leaveApplicationDto.appliedBy);
             leaveData.appliedBy = appliedBy;
+            leaveData.leaveType = 'excuse_duty';
         }
 
         await this.leaveRepository.save(leaveData);
