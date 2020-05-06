@@ -29,7 +29,7 @@ export class StaffController {
     updateStaffDetails(
         @Param('id') id: string,
         @Body() staffDto: StaffDto,
-    ): Promise <StaffDetails> {
+    ): Promise <any> {
         return this.staffService.updateStaffDetails(id, staffDto);
     }
 
