@@ -29,8 +29,13 @@ export class InventoryController {
     }
 
     @Get('/stocks-by-category/:id')
-    getStocksByCategory(@Param('id') category_id: string): Promise<Stock[]> {
-        return this.inventoryService.getStocksByCategory(category_id);
+    listStocksByCategory(@Param('id') category_id: string): Promise<Stock[]> {
+        return this.inventoryService.getStocksByCategoryId(category_id);
+    }
+
+    @Get('/stocks-by-category-name/:name')
+    listStocksByCategoryName(@Param('name') name: string): Promise<Stock[]> {
+        return this.inventoryService.getStocksByCategoryName(name);
     }
 
     @Get('/stocks-by-sub-category/:id')
