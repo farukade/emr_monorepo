@@ -40,12 +40,23 @@ export class InventoryService {
         return await this.stockRepository.findOne(id);
     }
 
-    async getStocksByCategory(category_id: string): Promise<Stock[]> {
-        return this.stockRepository.find({ where: {category_id}});
+    async getStocksByCategoryId(category_id: string): Promise<Stock[]> {
+        // find category
+        const category = await this.inventoryCategoryRepository.findOne(category_id);
+
+        return this.stockRepository.find({where: {category}});
+    }
+
+    async getStocksByCategoryName(name: string): Promise<Stock[]> {
+        // find sub category
+        const subCategory = await this.inventorySubCategoryRepository.findOne({where: {name}});
+
+        return this.stockRepository.find({where: {subCategory}});
     }
 
     async getStocksBySubCategory(sub_category_id: string): Promise<Stock[]> {
-        return this.stockRepository.find({ where: {sub_category_id}});
+        const subCategory = await this.inventorySubCategoryRepository.findOne(sub_category_id);
+        return this.stockRepository.find({ where: {subCategory}});
     }
 
     async createStock(stockDto: StockDto): Promise<Stock> {

@@ -62,9 +62,9 @@ export class LeavemgtService {
             leaveData.leaveType = 'excuse_duty';
         }
 
-        await this.leaveRepository.save(leaveData);
+        const data = await this.leaveRepository.save(leaveData);
 
-        return leaveData;
+        return data;
     }
 
     async updateLeaveApplication(id: string, leaveApplicationDto: LeaveApplicationDto): Promise<LeaveApplication> {
