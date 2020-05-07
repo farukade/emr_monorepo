@@ -43,9 +43,11 @@ export class LeavemgtService {
     async saveLeaveApplication(leaveApplicationDto: LeaveApplicationDto): Promise<any> {
         // find staff
         const staff = await this.staffRepository.findOne(leaveApplicationDto.staff_id);
+        if (!staff) return {success: false, message: 'Staff not found'};
         // find leave category
         const category = await this.leaveCategoryRepository.findOne(leaveApplicationDto.leave_category_id);
-
+        if (!category) return {success: false, message: 'Invalid category selected or category does not exist'};
+        
         const leaveData = {
             staff,
             category,
@@ -58,6 +60,7 @@ export class LeavemgtService {
 
         if (leaveApplicationDto.appliedBy) {
             const appliedBy = await this.staffRepository.findOne(leaveApplicationDto.appliedBy);
+            if (!appliedBy) return {success: false, message: 'please make sure a valid user is submitting this request'};            
             leaveData.appliedBy = appliedBy;
             leaveData.leaveType = 'excuse_duty';
         }
