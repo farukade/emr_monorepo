@@ -14,6 +14,9 @@ import { StaffRepository } from '../../hr/staff/staff.repository';
 import { LabourVitalDto } from './dto/labour-vital.dto';
 import { LabourRistAssesmentDto } from './dto/labour-risk-assessment.dto';
 import { LabourDeliveryRecordDto } from './dto/labour-delivery.dto';
+import { LabourMeasurement } from './entities/labour_measurement.entity';
+import { LabourVital } from './entities/labour_vital.entity';
+import { LabourRiskAssessment } from './entities/labour_risk_assessment.entity';
 
 @Injectable()
 export class LabourManagementService {
@@ -119,5 +122,29 @@ export class LabourManagementService {
         } catch (err) {
             return {success: false, message: err.message};
         }
+    }
+
+    async fetchMeasurement(id: string): Promise<LabourMeasurement> {
+        const enrollment = await this.labourEnrollmentRepository.findOne(id);
+        const measurement = await this.labourMeasurementRepo.findOne({where: {enrollment}});
+        return measurement;
+    }
+
+    async fetchVital(id: string): Promise<LabourVital> {
+        const enrollment = await this.labourEnrollmentRepository.findOne(id);
+        const vital = await this.labourVitalRepo.findOne({where: {enrollment}});
+        return vital;
+    }
+
+    async fetchRiskAssessment(id: string): Promise<LabourRiskAssessment> {
+        const enrollment = await this.labourEnrollmentRepository.findOne(id);
+        const result = await this.labourRiskAssessmentRepo.findOne({where: {enrollment}});
+        return result;
+    }
+
+    async fetchDeliveryRecord(id: string): Promise<LabourDeliveryRecord> {
+        const enrollment = await this.labourEnrollmentRepository.findOne(id);
+        const result = await this.labourDeliveryRepo.findOne({where: {enrollment}});
+        return result;
     }
 }
