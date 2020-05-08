@@ -17,6 +17,7 @@ import { LabourDeliveryRecordDto } from './dto/labour-delivery.dto';
 import { LabourMeasurement } from './entities/labour_measurement.entity';
 import { LabourVital } from './entities/labour_vital.entity';
 import { LabourRiskAssessment } from './entities/labour_risk_assessment.entity';
+import { LabourDeliveryRecord } from './entities/labour_delivery_record.entity';
 
 @Injectable()
 export class LabourManagementService {
