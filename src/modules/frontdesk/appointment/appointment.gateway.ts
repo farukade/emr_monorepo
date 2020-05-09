@@ -5,6 +5,8 @@ import {
     WebSocketServer,
     OnGatewayConnection,
     OnGatewayDisconnect,
+    MessageBody,
+    ConnectedSocket,
    } from '@nestjs/websockets';
 import { Logger } from '@nestjs/common';
 import { Socket, Server } from 'socket.io';
@@ -20,7 +22,9 @@ export class AppointmentGateway implements OnGatewayInit, OnGatewayConnection, O
     constructor(private appointmentService: AppointmentService) {}
 
     @SubscribeMessage('saveAppointment')
-    async handleMessage(client: Socket, payload: AppointmentDto): Promise<void> {
+    async handleMessage(
+        @ConnectedSocket() client: Socket,
+        @MessageBody() payload: AppointmentDto): Promise<void> {
         const res = await this.appointmentService.saveNewAppointment(payload);
         this.server.emit('appointmentSaved', res);
     }

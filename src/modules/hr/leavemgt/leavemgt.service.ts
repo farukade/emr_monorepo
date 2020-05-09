@@ -5,6 +5,7 @@ import { StaffRepository } from '../staff/staff.repository';
 import { LeaveCategoryRepository } from '../../settings/leave-category/leave.category.repository';
 import { LeaveApplicationDto } from './dto/leave.application.dto';
 import { LeaveApplication } from './entities/leave_application.entity';
+import { DiagnosisRepository } from '../../settings/diagnosis/diagnosis.repository';
 
 @Injectable()
 export class LeavemgtService {
@@ -16,6 +17,8 @@ export class LeavemgtService {
         private staffRepository: StaffRepository,
         @InjectRepository(LeaveCategoryRepository)
         private leaveCategoryRepository: LeaveCategoryRepository,
+        @InjectRepository(DiagnosisRepository)
+        private diagnosisRepository: DiagnosisRepository,
     ) {}
 
     async listApplications(urlParams): Promise<LeaveApplication[]> {
@@ -55,6 +58,7 @@ export class LeavemgtService {
             end_date: leaveApplicationDto.end_date,
             application: leaveApplicationDto.application,
             appliedBy: null,
+            diagnosis: null,
             leaveType: 'leave',
         };
 
@@ -63,6 +67,11 @@ export class LeavemgtService {
             if (!appliedBy) return {success: false, message: 'please make sure a valid user is submitting this request'};            
             leaveData.appliedBy = appliedBy;
             leaveData.leaveType = 'excuse_duty';
+        }
+
+        if (leaveApplicationDto.diagnosis_id) {
+            const diagnosis = await this.diagnosisRepository.findOne(leaveApplicationDto.diagnosis_id);
+            leaveData.diagnosis = diagnosis;
         }
 
         const data = await this.leaveRepository.save(leaveData);
@@ -84,6 +93,10 @@ export class LeavemgtService {
         leaveData.application = leaveApplicationDto.application;
         if (leaveApplicationDto.appliedBy) {
             leaveData.appliedBy = await this.staffRepository.findOne(leaveApplicationDto.appliedBy);
+        }
+        if (leaveApplicationDto.diagnosis_id) {
+            const diagnosis = await this.diagnosisRepository.findOne(leaveApplicationDto.diagnosis_id);
+            leaveData.diagnosis = diagnosis;
         }
 
         await leaveData.save();

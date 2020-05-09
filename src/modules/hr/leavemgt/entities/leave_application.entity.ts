@@ -3,6 +3,7 @@ import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { CustomBaseEntity } from '../../../../common/entities/custom-base.entity';
 import { StaffDetails } from '../../staff/entities/staff_details.entity';
 import { LeaveCategory } from '../../../settings/entities/leave.category.entity';
+import { Diagnosis } from '../../../settings/entities/diagnosis.entity';
 
 @Entity({ name: 'leave_applications' })
 export class LeaveApplication extends CustomBaseEntity {
@@ -37,6 +38,10 @@ export class LeaveApplication extends CustomBaseEntity {
     @ManyToOne(type => StaffDetails, { nullable: true})
     @JoinColumn({ name: 'applied_by' })
     appliedBy!: StaffDetails;
+
+    @ManyToOne(type => Diagnosis, { nullable: true})
+    @JoinColumn({ name: 'diagnosis_id' })
+    diagnosis!: Diagnosis;
 
     @ManyToOne(type => StaffDetails, { nullable: true})
     @JoinColumn({name: 'updated_by' })
