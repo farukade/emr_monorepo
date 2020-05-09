@@ -18,4 +18,6 @@ export class LeaveApplicationDto {
 
     appliedBy: string;
 
+    diagnosis_id: string;
+
 }
