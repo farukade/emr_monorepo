@@ -125,27 +125,27 @@ export class LabourManagementService {
         }
     }
 
-    async fetchMeasurement(id: string): Promise<LabourMeasurement> {
+    async fetchMeasurement(id: string): Promise<LabourMeasurement[]> {
         const enrollment = await this.labourEnrollmentRepository.findOne(id);
-        const measurement = await this.labourMeasurementRepo.findOne({where: {enrollment}});
-        return measurement;
+        const results = await this.labourMeasurementRepo.find({where: {enrollment}});
+        return results;
     }
 
-    async fetchVital(id: string): Promise<LabourVital> {
+    async fetchVital(id: string): Promise<LabourVital[]> {
         const enrollment = await this.labourEnrollmentRepository.findOne(id);
-        const vital = await this.labourVitalRepo.findOne({where: {enrollment}});
-        return vital;
+        const results = await this.labourVitalRepo.find({where: {enrollment}});
+        return results;
     }
 
-    async fetchRiskAssessment(id: string): Promise<LabourRiskAssessment> {
+    async fetchRiskAssessment(id: string): Promise<LabourRiskAssessment[]> {
         const enrollment = await this.labourEnrollmentRepository.findOne(id);
-        const result = await this.labourRiskAssessmentRepo.findOne({where: {enrollment}});
-        return result;
+        const results = await this.labourRiskAssessmentRepo.find({where: {enrollment}});
+        return results;
     }
 
-    async fetchDeliveryRecord(id: string): Promise<LabourDeliveryRecord> {
+    async fetchDeliveryRecord(id: string): Promise<LabourDeliveryRecord[]> {
         const enrollment = await this.labourEnrollmentRepository.findOne(id);
-        const result = await this.labourDeliveryRepo.findOne({where: {enrollment}});
-        return result;
+        const results = await this.labourDeliveryRepo.find({where: {enrollment}});
+        return results;
     }
 }

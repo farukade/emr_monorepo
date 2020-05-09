@@ -42,7 +42,7 @@ export class LabourManagementController {
     }
 
     @Get(':enrollementId/measurement')
-    getMeasurement(@Param('enrollementId') id: string): Promise<LabourMeasurement> {
+    getMeasurement(@Param('enrollementId') id: string): Promise<LabourMeasurement[]> {
         return this.labourManagementService.fetchMeasurement(id);
     }
 
@@ -56,7 +56,7 @@ export class LabourManagementController {
     }
 
     @Get(':enrollementId/vitals')
-    getVitals(@Param('enrollementId') id: string): Promise<LabourVital> {
+    getVitals(@Param('enrollementId') id: string): Promise<LabourVital[]> {
         return this.labourManagementService.fetchVital(id);
     }
 
@@ -70,7 +70,7 @@ export class LabourManagementController {
     }
 
     @Get(':enrollementId/risk-assessment')
-    getRiskAssessment(@Param('enrollementId') id: string): Promise<LabourRiskAssessment> {
+    getRiskAssessment(@Param('enrollementId') id: string): Promise<LabourRiskAssessment[]> {
         return this.labourManagementService.fetchRiskAssessment(id);
     }
 
@@ -84,7 +84,7 @@ export class LabourManagementController {
     }
 
     @Get(':enrollementId/delivery-record')
-    getDeliveryRecord(@Param('enrollementId') id: string): Promise<LabourDeliveryRecord> {
+    getDeliveryRecord(@Param('enrollementId') id: string): Promise<LabourDeliveryRecord[]> {
         return this.labourManagementService.fetchDeliveryRecord(id);
     }
 }
