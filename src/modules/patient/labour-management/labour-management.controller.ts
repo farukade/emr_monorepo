@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Request, UseGuards, Param, Get, Query } from '@nestjs/common';
+import { Controller, Post, Body, Request, UseGuards, Param, Get, Query, UsePipes, ValidationPipe } from '@nestjs/common';
 import { LabourManagementService } from './labour-management.service';
 import { LabourEnrollmentDto } from './dto/labour-enrollement.dto';
 import { AuthGuard } from '@nestjs/passport';
@@ -24,6 +24,7 @@ export class LabourManagementController {
     }
 
     @Post('enrollment/:id/save')
+    @UsePipes(ValidationPipe)
     saveEnrollement(
         @Body() param: LabourEnrollmentDto,
         @Request() req,
@@ -33,6 +34,7 @@ export class LabourManagementController {
     }
 
     @Post('measurement/:id/save')
+    @UsePipes(ValidationPipe)
     saveMeasurement(
         @Body() param: LabourMeasurementDto,
         @Request() req,
@@ -47,6 +49,7 @@ export class LabourManagementController {
     }
 
     @Post('vital/:id/save')
+    @UsePipes(ValidationPipe)
     saveVitals(
         @Body() param: LabourVitalDto,
         @Request() req,
@@ -61,6 +64,7 @@ export class LabourManagementController {
     }
 
     @Post('risk-assessment/:id/save')
+    @UsePipes(ValidationPipe)
     saveRiskAssessment(
         @Body() param: LabourRistAssesmentDto,
         @Request() req,
@@ -75,6 +79,7 @@ export class LabourManagementController {
     }
 
     @Post('delivery-record/:id/save')
+    @UsePipes(ValidationPipe)
     saveDelivery(
         @Body() param: LabourDeliveryRecordDto,
         @Request() req,

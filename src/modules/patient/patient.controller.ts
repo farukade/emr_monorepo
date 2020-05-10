@@ -36,7 +36,9 @@ export class PatientController {
         return this.patientService.findPatient(q);
     }
 
+
     @Post('save')
+    @UsePipes(ValidationPipe)
     saveNewPatient(
         @Body() patientDto: PatientDto,
         @Request() req,
@@ -45,6 +47,7 @@ export class PatientController {
     }
 
     @Patch(':id/update')
+    @UsePipes(ValidationPipe)
     updatePatient(
         @Param('id') id: string,
         @Body() patientDto: PatientDto,
@@ -164,6 +167,7 @@ export class PatientController {
     }
 
     @Post('save-allergies')
+    @UsePipes(ValidationPipe)
     saveAllergies(
         @Body() param: PatientAllergyDto,
         @Request() req,
@@ -172,6 +176,7 @@ export class PatientController {
     }
 
     @Patch(':allergyId/update-allergy')
+    @UsePipes(ValidationPipe)
     updateAllergy(
         @Param('allergyId') allergyId: string,
         @Body() param: PatientAllergyDto,
@@ -284,6 +289,7 @@ export class PatientController {
     }
 
     @Post('/immunizations')
+    @UsePipes(ValidationPipe)
     saveImmunizations(
         @Body() param: ImmunizationDto,
         @Request() req,
@@ -292,6 +298,7 @@ export class PatientController {
     }
 
     @Patch(':immunizationId/immunizations')
+    @UsePipes(ValidationPipe)
     updateImmunization(
         @Param('immunizationId') id: string,
         @Body() param: ImmunizationDto,

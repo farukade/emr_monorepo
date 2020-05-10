@@ -81,7 +81,7 @@ export class LabourManagementService {
             dto.lastChangedBy = createdBy;
             dto.enrollment = await this.labourEnrollmentRepository.findOne(id);
             dto.examiner = await this.staffRepository.findOne(dto.examiner_id);
-            const measurement = await this.labourEnrollmentRepository.save(dto);
+            const measurement = await this.labourMeasurementRepo.save(dto);
             return {success: true, data: measurement};
         } catch (err) {
             return {success: false, message: err.message};
