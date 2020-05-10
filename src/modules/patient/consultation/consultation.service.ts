@@ -76,15 +76,15 @@ export class ConsultationService {
             encounter.diagnosis = param.diagnosis;
             const labRequest    = param.investigations.labRequest;
             const imagingRequest = param.investigations.imagingRequest;
-            const pharmacyRequest = param.plan.pharmacyRequests;
-            const procedureRequest = param.plan.procedureRequest;
+            const pharmacyRequest = plan.pharmacyRequests;
+            const procedureRequest = plan.procedureRequest;
             // save request
             if (labRequest && labRequest.requestBody) {
                 const labRequestRes = await PatientRequestHelper.handleLabRequest(labRequest, patient, createdBy);
                 if (labRequestRes.success) {
                     // save transaction
                     await RequestPaymentHelper.clinicalLabPayment(labRequest.requestBody, patient, createdBy);
-                    encounter.investigations.labRequest = labRequest.requestBody;
+                    encounter.labRequest = labRequestRes.data.raw[0];
                 }
             }
 
@@ -93,7 +93,7 @@ export class ConsultationService {
                 if (pharmacyReqRes.success) {
                     // save transaction
                     await RequestPaymentHelper.pharmacyPayment(pharmacyRequest.requestBody, patient, createdBy);
-                    encounter.plan.pharmacyRequest = pharmacyRequest.requestBody;
+                    encounter.pharmacyRequest = pharmacyReqRes.data.raw[0];
                 }
             }
 
@@ -102,7 +102,7 @@ export class ConsultationService {
                 if (radiologyRes.success) {
                     // save transaction
                     const payment = await RequestPaymentHelper.imagingPayment(imagingRequest.requestBody, patient, createdBy);
-                    encounter.investigations.imagingRequest = imagingRequest.requestBody;
+                    encounter.imagingRequest = radiologyRes.data.raw[0];
                 }
             }
 
@@ -111,7 +111,7 @@ export class ConsultationService {
                 if (procedure.success) {
                     // save transaction
                     const payment = await RequestPaymentHelper.imagingPayment(procedureRequest.requestBody, patient, createdBy);
-                    encounter.procedure = procedureRequest.requestBody;
+                    encounter.procedure = procedure.data.raw[0];
                 }
             }
 
@@ -120,6 +120,8 @@ export class ConsultationService {
             }
             encounter.note = param.consumable.note;
             encounter.instructions = param.consumable.instruction;
+            encounter.plan = plan.treatmentPlan;
+            encounter.nextAppointment = plan.nextAppointment;
 
             await encounter.save();
             return {success: true, encounter};
