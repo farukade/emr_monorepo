@@ -1,4 +1,4 @@
-import { Controller, UseGuards, Post, Param, Body, Get, Request, Query } from '@nestjs/common';
+import { Controller, UseGuards, Post, Param, Body, Get, Request, Query, UsePipes, ValidationPipe } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AdmissionsService } from './admissions.service';
 import { CreateAdmissionDto } from './dto/create-admission.dto';
@@ -21,6 +21,7 @@ export class AdmissionsController {
     }
 
     @Post(':id/save')
+    @UsePipes(ValidationPipe)
     saveNewAdmission(
         @Param('id') id: string,
         @Body() createDto: CreateAdmissionDto,

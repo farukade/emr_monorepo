@@ -1,4 +1,4 @@
-import { Controller, Get, Body, Post, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Body, Post, Patch, Param, Delete, Query, UsePipes, ValidationPipe } from '@nestjs/common';
 import { LeavemgtService } from './leavemgt.service';
 import { LeaveApplicationDto } from './dto/leave.application.dto';
 import { LeaveApplication } from './entities/leave_application.entity';
@@ -22,6 +22,7 @@ export class LeavemgtController {
     }
 
     @Post()
+    @UsePipes(ValidationPipe)
     createLeaveApplication(
         @Body() leaveApplicationDto: LeaveApplicationDto,
     ): Promise<LeaveApplication> {
@@ -29,6 +30,7 @@ export class LeavemgtController {
     }
 
     @Patch(':id/update')
+    @UsePipes(ValidationPipe)
     updateLeaveApplication(
         @Param('id') id: string,
         @Body() leaveApplicationDto: LeaveApplicationDto,

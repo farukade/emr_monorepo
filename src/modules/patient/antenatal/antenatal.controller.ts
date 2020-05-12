@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Param, Request, UseGuards, Get, Query } from '@nestjs/common';
+import { Controller, Post, Body, Param, Request, UseGuards, Get, Query, UsePipes, ValidationPipe } from '@nestjs/common';
 import { AntenatalService } from './antenatal.service';
 import { EnrollmentDto } from './dto/enrollment.dto';
 import { AuthGuard } from '@nestjs/passport';
@@ -12,6 +12,7 @@ export class AntenatalController {
     ) {}
 
     @Post('/save')
+    @UsePipes(ValidationPipe)
     saveNewEnrollment(
         @Body() createDto: EnrollmentDto,
         @Request() req,
@@ -30,6 +31,7 @@ export class AntenatalController {
     }
 
     @Post('visits')
+    @UsePipes(ValidationPipe)
     saveVisits(
         @Body() antenatalVisitDto: AntenatalVisitDto,
         @Request() req,

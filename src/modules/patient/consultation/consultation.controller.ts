@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Request, Param, UseGuards, Get, Query } from '@nestjs/common';
+import { Controller, Post, Body, Request, Param, UseGuards, Get, Query, UsePipes, ValidationPipe } from '@nestjs/common';
 import { ConsultationService } from './consultation.service';
 import { EncounterDto } from './dto/encounter.dto';
 import { AuthGuard } from '@nestjs/passport';
@@ -9,6 +9,7 @@ export class ConsultationController {
     constructor(private consultationService: ConsultationService) {}
 
     @Post(':patient_id/save')
+    @UsePipes(ValidationPipe)
     saveEncounter(
         @Param('patient_id') patient_id: string,
         @Body() param: EncounterDto,

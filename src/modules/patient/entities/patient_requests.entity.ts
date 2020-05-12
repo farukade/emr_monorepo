@@ -11,6 +11,9 @@ export class PatientRequest extends CustomBaseEntity {
     @Column({ type: 'jsonb'})
     requestBody: string;
 
+    @Column({ nullable: true })
+    requestNote: string;
+
     @ManyToOne(type => Patient)
     @JoinColumn({name: 'patient_id'})
     patient: Patient;

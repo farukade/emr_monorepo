@@ -1,5 +1,6 @@
 import { IAllergyInterface } from '../interfaces/allergy.interface';
 import { IDiagnosisInterface } from '../interfaces/diagnosis.interface';
+import { IInvestigationInterface } from '../interfaces/investigations.interface';
 
 export class EncounterDto {
     complaints: string;
@@ -10,10 +11,7 @@ export class EncounterDto {
     physicalExamination: string[];
     physicalExaminationSummary: string;
     diagnosis: IDiagnosisInterface[];
-    investigations: {
-        labRequest: any;
-        imagingRequest: any;
-    };
+    investigations: IInvestigationInterface;
     plan: {
         treatmentPlan: string;
         pharmacyRequests: any;

@@ -36,7 +36,7 @@ export class LeavemgtService {
         const applications = await this.leaveRepository.find({where: {
                                 leaveType: 'excuse_duty',
                             },
-                            relations: ['staff', 'category', 'appliedBy'],
+                            relations: ['staff', 'category', 'appliedBy', 'diagnosis'],
                             skip: (page * this.limit) - this.limit,
                             take: this.limit,
                         });
