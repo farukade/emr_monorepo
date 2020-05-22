@@ -286,7 +286,7 @@ export class AppraisalService {
     async doUpload(file: any, createAppraisalDto: CreateAppriasalDto) {
         const { staffId, lineManagerId, departmentId } = createAppraisalDto;
         // find staff
-        const staff = await this.staffRepository.findOne(staffId);
+        const staff = await this.staffRepository.findOne(staffId, {relations: ['department']});
         // check if staff appraisal already exists
         let appraisal = await this.performanceAppraisalRepository.findOne({where: {staff}});
         if (!appraisal) {
