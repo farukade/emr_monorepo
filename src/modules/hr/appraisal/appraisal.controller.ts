@@ -1,8 +1,11 @@
-import { Controller, Post, UsePipes, ValidationPipe, Body, Param, Patch, Delete, Get } from '@nestjs/common';
+import { Controller, Post, UsePipes, ValidationPipe, Body, Param, Patch, Delete, Get, Header, Res, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { CreateAppriasalDto } from './dto/create-appraisal.dto';
 import { AppraisalService } from './appraisal.service';
 import { UpdateAppraisalDto } from './dto/update-appraisal.dto';
 import { CreateAppriasalPeriodDto } from './dto/create-appraisal-period.dto';
+import { extname, join } from 'path';
+import { diskStorage } from 'multer';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('hr/appraisal')
 export class AppraisalController {
@@ -99,5 +102,32 @@ export class AppraisalController {
         @Body() param,
     ) {
         return this.appraisalService.saveEvaluation(param);
+    }
+
+    @Get('download-sample')
+    @Header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    @Header('Content-Disposition', 'attachment; filename=sample-performace-appraisal.csv')
+    async downloadRoaster(@Res() res) {
+        const resp = await this.appraisalService.downloadAppraisalSample();
+        if (resp.message === 'Completed') {
+            res.sendFile(join(__dirname, '../../../../') + '/sample-performance-appraisal.csv');
+        }
+    }
+
+    @Post('/upload')
+    // @UsePipes(ValidationPipe)
+    @UseInterceptors(FileInterceptor('file', {
+        storage: diskStorage({
+            filename: (req, file, cb) => {
+                const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('');
+                return cb(null, `${randomName}${extname(file.originalname)}`);
+            },
+        }),
+    }))
+    uploadPerformanceAppraisal(
+        @UploadedFile() file,
+        @Body() createAppraisalDto: CreateAppriasalDto,
+    ) {
+        return this.appraisalService.doUpload(file, createAppraisalDto);
     }
 }

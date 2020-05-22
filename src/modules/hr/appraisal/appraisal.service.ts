@@ -251,4 +251,87 @@ export class AppraisalService {
         evaluation.items = items;
         evaluation.save();
     }
+
+    async downloadAppraisalSample() {
+
+        const fs = require('fs');
+        const createCsvWriter = require('csv-writer').createObjectCsvWriter;
+        const csvWriter = createCsvWriter({
+            path: 'sample-performance-appraisal.csv',
+            header: [
+                {id: 'key_focus', title: 'KEY FOCUS'},
+                {id: 'objective', title: 'OBJECTIVE'},
+                {id: 'kpis', title: 'KPIs'},
+                {id: 'weight', title: 'WEIGHT'},
+            ],
+        });
+
+        const data = [
+            {
+                key_focus: '',
+                objective: '',
+                kpis: '',
+                weight: '',
+            },
+        ];
+        await csvWriter.writeRecords({data});
+        return {message: 'Completed'};
+    }
+
+    async doUpload(file: any, createAppraisalDto: CreateAppriasalDto) {
+        const { staffId, lineManagerId, departmentId } = createAppraisalDto;
+        // find staff
+        const staff = await this.staffRepository.findOne(staffId);
+        // find line manager
+        const lineManager = await this.staffRepository.findOne(lineManagerId);
+        const appraisal = new PerformanceAppraisal();
+        appraisal.staff             = staff;
+        appraisal.lineManager       = lineManager;
+        if (departmentId) {
+            const department = await this.departmentRepository.findOne(departmentId);
+            appraisal.department = department;
+        }
+        await appraisal.save();
+
+        const csv = require('csv-parser');
+        const fs = require('fs');
+        const indicators = [];
+        try {
+            // read uploaded file
+            fs.createReadStream(file.path)
+            .pipe(csv())
+            .on('data', (row) => {
+                const data = {
+                    keyFocus: row['KEY FOCUS'],
+                    objective: row.OBJECTIVE,
+                    kpis: row.KPIs,
+                    weight: row.WEIGHT,
+                };
+
+                indicators.push(data);
+            })
+            .on('end', async () => {
+                const data = [];
+                let index = -1;
+                for (const indicator of indicators) {
+                    if (indicator.keyFocus !== '') {
+                        data.push({
+                            keyFocus: indicator.keyFocus,
+                            objective: indicator.objective,
+                            kpis: [indicator.kpis],
+                            weight: indicator.weight,
+                        });
+                        index++;
+                    } else {
+                        data[index].kpis.push(indicator.kpis);
+                    }
+                }
+                // save indicators
+                this.saveIndicators(appraisal, data);
+            });
+            return {success: true};
+        } catch (err) {
+            return {success: false, message: err.message};
+        }
+    }
 }
