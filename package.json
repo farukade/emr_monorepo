@@ -52,7 +52,8 @@
     "rimraf": "^3.0.0",
     "rxjs": "^6.5.3",
     "typeorm": "^0.2.22",
-    "typeorm-seeding": "^1.2.0"
+    "typeorm-seeding": "^1.2.0",
+    "xlsx": "^0.16.0"
   },
   "devDependencies": {
     "@nestjs/cli": "^6.9.0",

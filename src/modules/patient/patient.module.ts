@@ -17,6 +17,10 @@ import { AdmissionsModule } from './admissions/admissions.module';
 import { ImmunizationRepository } from './repositories/immunization.repository';
 import { ConsultationModule } from './consultation/consultation.module';
 import { LabourManagementModule } from './labour-management/labour-management.module';
+import { IvfController } from './ivf/ivf.controller';
+import { IvfService } from './ivf/ivf.service';
+import { IvfEnrollmentRepository } from './ivf/ivf_enrollment.repository';
+import { StaffRepository } from '../hr/staff/staff.repository';
 
 @Module({
   imports: [TypeOrmModule.forFeature([
@@ -31,8 +35,10 @@ import { LabourManagementModule } from './labour-management/labour-management.mo
     ServiceRepository,
     ImmunizationRepository,
     VoucherRepository,
+    IvfEnrollmentRepository,
+    StaffRepository,
   ]), AntenatalModule, AdmissionsModule, ConsultationModule, LabourManagementModule],
-  controllers: [PatientController],
-  providers: [PatientService],
+  controllers: [PatientController, IvfController],
+  providers: [PatientService, IvfService],
 })
 export class PatientModule {}
