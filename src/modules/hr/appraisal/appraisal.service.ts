@@ -15,6 +15,7 @@ import { PerformanceComment } from './entities/performance_comments.entity';
 import { PerformanceIndicatorReportRepository } from './repositories/performance_indicator_report.repository';
 import { SupervisorEvaluation } from './entities/supervisor.evaluation.entity';
 import { PerformanceAppraisalPeriod } from './entities/performance_appraisal_period.entity';
+import { getConnection } from 'typeorm';
 
 @Injectable()
 export class AppraisalService {
@@ -39,17 +40,20 @@ export class AppraisalService {
         const { staffId, lineManagerId, indicators, departmentId } = createAppraisalDto;
         // find staff
         const staff = await this.staffRepository.findOne(staffId);
-        // find line manager
-        const lineManager = await this.staffRepository.findOne(lineManagerId);
+        // check if staff appraisal already exists
+        const hasAppraisal = await this.performanceAppraisalRepository.findOne({where: {staff}});
+        if (hasAppraisal) {
+            throw new NotFoundException(`Appraisal already exists for this staff`);
+        }
 
         try {
-            const appraisal = new PerformanceAppraisal();
-            appraisal.staff             = staff;
-            appraisal.lineManager       = lineManager;
-            if (departmentId) {
-                const department = await this.departmentRepository.findOne(departmentId);
-                appraisal.department = department;
-            }
+            // find department
+            const department = await this.departmentRepository.findOne(staff.department.id, {relations: ['staff']});
+            // save appraisal details
+            const appraisal     = new PerformanceAppraisal();
+            appraisal.staff         = staff;
+            appraisal.lineManager   = department.staff;
+            appraisal.department    = department;
             await appraisal.save();
             // save indicators
             this.saveIndicators(appraisal, indicators);
@@ -214,12 +218,13 @@ export class AppraisalService {
         try {
             // find appraisal
             const appraisal = await this.performanceAppraisalRepository.findOne(id);
-            appraisal.staff             = staff;
-            appraisal.lineManager       = lineManager;
-            if (departmentId) {
-                const department = await this.departmentRepository.findOne(departmentId);
-                appraisal.department = department;
-            }
+            // find department
+            const department = await this.departmentRepository.findOne(staff.department.id, {relations: ['staff']});
+            // save appraisal details
+            appraisal.staff         = staff;
+            appraisal.lineManager   = department.staff;
+            appraisal.department    = department;
+            await appraisal.save();
             // save indicator score
             for (const item of indicators) {
                 const indicator = await this.performanceIndicatorRepository.findOne(item.id);
@@ -282,16 +287,18 @@ export class AppraisalService {
         const { staffId, lineManagerId, departmentId } = createAppraisalDto;
         // find staff
         const staff = await this.staffRepository.findOne(staffId);
-        // find line manager
-        const lineManager = await this.staffRepository.findOne(lineManagerId);
-        const appraisal = new PerformanceAppraisal();
-        appraisal.staff             = staff;
-        appraisal.lineManager       = lineManager;
-        if (departmentId) {
-            const department = await this.departmentRepository.findOne(departmentId);
-            appraisal.department = department;
+        // check if staff appraisal already exists
+        let appraisal = await this.performanceAppraisalRepository.findOne({where: {staff}});
+        if (!appraisal) {
+            // find department
+            const department = await this.departmentRepository.findOne(staff.department.id, {relations: ['staff']});
+            // save appraisal details
+            appraisal     = new PerformanceAppraisal();
+            appraisal.staff         = staff;
+            appraisal.lineManager   = department.staff;
+            appraisal.department    = department;
+            await appraisal.save();
         }
-        await appraisal.save();
 
         const csv = require('csv-parser');
         const fs = require('fs');
@@ -311,6 +318,14 @@ export class AppraisalService {
                 indicators.push(data);
             })
             .on('end', async () => {
+                // delete previous indicators
+                await getConnection()
+                    .createQueryBuilder()
+                    .delete()
+                    .from('performance_indicators')
+                    .where('"appraisalId" = :id', {id: appraisal.id})
+                    .execute();
+
                 const data = [];
                 let index = -1;
                 for (const indicator of indicators) {
