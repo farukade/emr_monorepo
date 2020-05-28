@@ -3,8 +3,7 @@ import { getConnection } from 'typeorm';
 import { PatientRequest } from '../../modules/patient/entities/patient_requests.entity';
 
 export class PatientRequestHelper {
-    constructor(private patientRequestRepo: PatientRequestRepository) {
-    }
+    constructor(private patientRequestRepo: PatientRequestRepository) { }
 
     static async handleLabRequest(param, patient, createdBy) {
         const {requestBody, id, request_note} = param;

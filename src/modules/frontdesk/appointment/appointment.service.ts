@@ -16,6 +16,7 @@ import { Patient } from '../../patient/entities/patient.entity';
 import { Department } from '../../settings/entities/department.entity';
 import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
 import { ServiceCategoryRepository } from '../../settings/services/service.category.repository';
+import { AppGateway } from '../../../app.gateway';
 
 @Injectable()
 export class AppointmentService {
@@ -38,6 +39,7 @@ export class AppointmentService {
         private serviceCategoryRepository: ServiceCategoryRepository,
         @InjectRepository(TransactionsRepository)
         private transactionsRepository: TransactionsRepository,
+        private readonly appGateway: AppGateway,
     ) {}
 
     async todaysAppointments(): Promise<Appointment[]> {
@@ -91,6 +93,9 @@ export class AppointmentService {
                     // update appointment status
                     appointment.status = 'Pending HMO Approval';
                     await appointment.save();
+                    // send alert to hmo
+                    this.appGateway.server.emit('new-hmo-appointment', appointment);
+
                 } else {
                     const paypoint = await this.departmentRepository.findOne({where: {name: 'Paypoint'}});
 
@@ -103,7 +108,10 @@ export class AppointmentService {
             // save payment
             const payment = await this.saveTransaction(patient, service, amount, paymentType, hmoApprovalStatus);
 
-            return { success: true, appointment, queue, payment };
+            const resp = { success: true, appointment, queue, payment };
+
+            this.appGateway.server.emit('new-appointment', resp);
+            return resp;
         } catch (error) {
             return { success: false, message: error.message };
         }
