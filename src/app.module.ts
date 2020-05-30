@@ -16,6 +16,7 @@ import fs = require('fs');
 import * as PostgressConnectionStringParser from 'pg-connection-string';
 import { AuthModule } from './modules/auth/auth.module';
 import { JwtStrategy } from './common/utils/jwt.strategy';
+import { AppGateway } from './app.gateway';
 
 fs.writeFileSync(
   './ormconfig.json',
@@ -37,6 +38,6 @@ fs.writeFileSync(
     UtilityModule,
   ],
   controllers: [AppController],
-  providers: [JwtStrategy],
+  providers: [AppGateway, JwtStrategy],
 })
 export class AppModule {}

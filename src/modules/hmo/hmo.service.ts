@@ -18,6 +18,7 @@ import { Queue } from '../frontdesk/queue-system/queue.entity';
 import { Department } from '../settings/entities/department.entity';
 import { QueueSystemRepository } from '../frontdesk/queue-system/queue-system.repository';
 import { PaginationOptionsInterface } from '../../common/paginate';
+import { AppGateway } from '../../app.gateway';
 
 @Injectable()
 export class HmoService {
@@ -34,6 +35,7 @@ export class HmoService {
         private transactionsRepository: TransactionsRepository,
         @InjectRepository(QueueSystemRepository)
         private queueSystemRepository: QueueSystemRepository,
+        private readonly appGateway: AppGateway,
     ) {}
 
     async getHmos(urlParams): Promise<Hmo[]> {
@@ -421,6 +423,8 @@ export class HmoService {
                 // create new queue
                 queue = await this.queueSystemRepository.saveQueue(appointment, paypoint);
             }
+            this.appGateway.server.emit('hmo-patient-processed', transaction, appointment);
+
             return {success: true, transaction, queue};
         } catch (error) {
             return {success: false, message: error.message};

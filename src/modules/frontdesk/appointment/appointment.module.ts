@@ -7,11 +7,11 @@ import { DepartmentRepository } from '../../settings/departments/department.repo
 import { SpecializationRepository } from '../../settings/specialization/specialization.repository';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConsultingRoomRepository } from '../../settings/consulting-room/consulting-room.repository';
-import { AppointmentGateway } from './appointment.gateway';
 import { QueueSystemRepository } from '../queue-system/queue-system.repository';
 import { ServiceRepository } from '../../settings/services/service.repository';
 import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
 import { ServiceCategoryRepository } from '../../settings/services/service.category.repository';
+import { AppGateway } from '../../../app.gateway';
 
 @Module({
   imports: [TypeOrmModule.forFeature([
@@ -26,6 +26,6 @@ import { ServiceCategoryRepository } from '../../settings/services/service.categ
     TransactionsRepository,
   ])],
   controllers: [AppointmentController],
-  providers: [AppointmentGateway, AppointmentService],
+  providers: [AppGateway  , AppointmentService],
 })
 export class AppointmentModule {}

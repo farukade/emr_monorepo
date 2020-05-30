@@ -10,24 +10,12 @@ import {
    } from '@nestjs/websockets';
 import { Logger } from '@nestjs/common';
 import { Socket, Server } from 'socket.io';
-import { AppointmentService } from './appointment.service';
-import { AppointmentDto } from './dto/appointment.dto';
 
 @WebSocketGateway()
-export class AppointmentGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
 
     @WebSocketServer() server: Server;
-    private logger: Logger = new Logger('AppointmentGateway');
-
-    constructor(private appointmentService: AppointmentService) {}
-
-    @SubscribeMessage('saveAppointment')
-    async handleMessage(
-        @ConnectedSocket() client: Socket,
-        @MessageBody() payload: AppointmentDto): Promise<void> {
-        const res = await this.appointmentService.saveNewAppointment(payload);
-        this.server.emit('appointmentSaved', res);
-    }
+    private logger: Logger = new Logger('AppGateway');
 
     afterInit(server: Server) {
         this.logger.log('Init');

@@ -10,10 +10,10 @@ export class AppointmentController {
 
     constructor(private appointmentService: AppointmentService) {}
 
-    // @Post('new')
-    // createNewAppointment(@Body() appointmentDto: AppointmentDto) {
-    //     return this.appointmentService.saveNewAppointment(appointmentDto);
-    // }
+    @Post('new')
+    createNewAppointment(@Body() appointmentDto: AppointmentDto) {
+        return this.appointmentService.saveNewAppointment(appointmentDto);
+    }
 
     @Get('today')
     getTodayAppointment(): Promise<Appointment[]> {

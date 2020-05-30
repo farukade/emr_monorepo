@@ -8,6 +8,7 @@ import { StockRepository } from '../inventory/stock.repository';
 import { HmoRateRepository } from './hmo-rate.repository';
 import { TransactionsRepository } from '../finance/transactions/transactions.repository';
 import { QueueSystemRepository } from '../frontdesk/queue-system/queue-system.repository';
+import { AppGateway } from '../../app.gateway';
 
 @Module({
   imports: [TypeOrmModule.forFeature([
@@ -19,6 +20,6 @@ import { QueueSystemRepository } from '../frontdesk/queue-system/queue-system.re
     QueueSystemRepository,
   ])],
   controllers: [HmoController],
-  providers: [HmoService],
+  providers: [AppGateway, HmoService],
 })
 export class HmoModule {}
