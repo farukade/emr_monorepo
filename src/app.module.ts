@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
+  import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { appService } from './app.service';
 import { HmoModule } from './modules/hmo/hmo.module';

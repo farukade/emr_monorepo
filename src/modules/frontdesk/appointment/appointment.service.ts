@@ -46,7 +46,7 @@ export class AppointmentService {
         const today = moment().format('YYYY-MM-DD');
         const results = await this.appointmentRepository.find({
             where: {appointment_date: today},
-            relations: ['department', 'patient', 'specialization', 'consultingRoom'],
+            relations: ['department', 'patient', 'specialization', 'consultingRoom', 'encounter'],
         });
 
         return results;
@@ -55,7 +55,7 @@ export class AppointmentService {
     async getAppointment(id: string): Promise<Appointment> {
         const result = await this.appointmentRepository.findOne({
             where: {id},
-            relations: ['department', 'patient', 'specialization', 'consultingRoom'],
+            relations: ['department', 'patient', 'specialization', 'consultingRoom', 'encounter'],
         });
 
         return result;
@@ -123,7 +123,8 @@ export class AppointmentService {
             .leftJoinAndSelect('q.department', 'department')
             .leftJoinAndSelect('q.patient', 'patient')
             .leftJoinAndSelect('q.specialization', 'specialization')
-            .leftJoinAndSelect('q.consultingRoom', 'consultingRoom');
+            .leftJoinAndSelect('q.consultingRoom', 'consultingRoom')
+            .leftJoinAndSelect('q.encounter', 'encounter');
 
         if (startDate && startDate !== '') {
             const start = moment(startDate).startOf('day').toISOString();

@@ -1,11 +1,12 @@
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
-import { Entity, ManyToOne, JoinColumn, Column } from 'typeorm';
+import {Entity, ManyToOne, JoinColumn, Column, OneToOne} from 'typeorm';
 import { Patient } from '../../patient/entities/patient.entity';
 import { Department } from '../../settings/entities/department.entity';
 import { Specialization } from '../../settings/entities/specialization.entity';
 import { ConsultingRoom } from '../../settings/entities/consulting-room.entity';
 import { Service } from '../../settings/entities/service.entity';
 import { ServiceCategory } from '../../settings/entities/service_category.entity';
+import {Encounter} from "../../patient/consultation/encouter.entity";
 
 @Entity({ name: 'appointments'})
 export class Appointment extends CustomBaseEntity {
@@ -54,4 +55,7 @@ export class Appointment extends CustomBaseEntity {
 
     @Column({type: 'varchar', default: 'Pending'})
     status: string;
+
+    @OneToOne(type => Encounter)
+    encounter: Encounter;
 }

@@ -4,6 +4,7 @@ import { IDiagnosisInterface } from './interfaces/diagnosis.interface';
 import { IAllergyInterface } from './interfaces/allergy.interface';
 import { Patient } from '../entities/patient.entity';
 import { PatientRequest } from '../entities/patient_requests.entity';
+import {Appointment} from '../../frontdesk/appointment/appointment.entity';
 
 @Entity({name: 'encounters'})
 export class Encounter extends CustomBaseEntity {
@@ -33,6 +34,8 @@ export class Encounter extends CustomBaseEntity {
     note: string;
     @Column('text', {nullable: true})
     instructions: string;
+    @OneToOne(type => Appointment)
+    appoint: Appointment;
     @ManyToOne(type => Patient)
     patient: Patient;
     @OneToOne(() => PatientRequest)
