@@ -27,4 +27,19 @@ export class ConsultationController {
         const page = request.query.hasOwnProperty('page') ? request.query.page : 0;
         return this.consultationService.getEncounters({page, limit}, urlParams);
     }
+    
+    @Get(':id')
+    getEncounter(
+        @Param('id') id: string,
+    ) {
+        return this.consultationService.getEncounter(id);
+    }
+
+    @Get('appointment/:appointment_id')
+    getEncounterByAppointment(
+        @Param('appointment_id') appointment_id: string,
+    ) {
+        return this.consultationService.getEncounterByAppointment(appointment_id);
+    }
+
 }

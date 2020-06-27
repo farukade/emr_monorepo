@@ -35,7 +35,7 @@ export class Encounter extends CustomBaseEntity {
     @Column('text', {nullable: true})
     instructions: string;
     @OneToOne(type => Appointment)
-    appoint: Appointment;
+    appointment: Appointment;
     @ManyToOne(type => Patient)
     patient: Patient;
     @OneToOne(() => PatientRequest)

@@ -24,4 +24,5 @@ export class EncounterDto {
         note: string;
         instruction: string;
     };
+    appointment_id: string;
 }

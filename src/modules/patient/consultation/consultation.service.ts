@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { EncounterRepository } from './encounter.repository';
 import { EncounterDto } from './dto/encounter.dto';
 import { Encounter } from './encouter.entity';
+import { AppointmentRepository } from '../../frontdesk/appointment/repositories/appointment.repository';
 import { PatientRepository } from '../repositories/patient.repository';
 import { PatientAllergyRepository } from '../repositories/patient_allergy.repository';
 import { PatientRequestHelper } from '../../../common/utils/PatientRequestHelper';
@@ -19,6 +20,8 @@ export class ConsultationService {
         private encounterRepository: EncounterRepository,
         @InjectRepository(PatientRepository)
         private patientRepository: PatientRepository,
+        @InjectRepository(AppointmentRepository)
+        private appointmentRepository: AppointmentRepository,
     ) {}
 
     async getEncounters(options: PaginationOptionsInterface, urlParams): Promise<Encounter[]> {
@@ -47,9 +50,11 @@ export class ConsultationService {
     }
 
     async saveEncounter(patient_id: string, param: EncounterDto, createdBy) {
-        const { investigations, plan, consumable } = param;
+        const { investigations, plan, consumable, appointment_id } = param;
         try {
             const patient = await this.patientRepository.findOne(patient_id);
+            
+            const appointment = await this.appointmentRepository.findOne(appointment_id);
 
             const encounter = new Encounter();
             encounter.complaints = param.complaints;
@@ -57,6 +62,7 @@ export class ConsultationService {
             encounter.patientHistory = param.patientHistory;
             encounter.medicalHistory = param.medicalHistory;
             encounter.patient        = patient;
+            encounter.appointment    = appointment;
             // save allergy if any
             if (param.allergies.length) {
                 encounter.allergies = param.allergies;
@@ -128,5 +134,16 @@ export class ConsultationService {
         } catch (err) {
             return {success: false, message: err.message};
         }
+    }
+
+    async getEncounter(id: string) {
+
+        return await this.encounterRepository.findOne(id);
+    }
+
+    async getEncounterByAppointment(appointment_id: string) {
+        const appointment = await this.appointmentRepository.findOne(appointment_id);
+
+        return await this.encounterRepository.findOne({where: {appointment}});
     }
 }
