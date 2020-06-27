@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { EncounterRepository } from './encounter.repository';
 import { EncounterDto } from './dto/encounter.dto';
 import { Encounter } from './encouter.entity';
-import { AppointmentRepository } from '../../frontdesk/appointment/repositories/appointment.repository';
+import { AppointmentRepository } from '../../frontdesk/appointment/appointment.repository';
 import { PatientRepository } from '../repositories/patient.repository';
 import { PatientAllergyRepository } from '../repositories/patient_allergy.repository';
 import { PatientRequestHelper } from '../../../common/utils/PatientRequestHelper';

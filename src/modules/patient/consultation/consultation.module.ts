@@ -5,7 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { EncounterRepository } from './encounter.repository';
 import { PatientAllergyRepository } from '../repositories/patient_allergy.repository';
 import { PatientRepository } from '../repositories/patient.repository';
-import { AppointmentRepository } from '../../frontdesk/appointment/repositories/appointment.repository';
+import { AppointmentRepository } from '../../frontdesk/appointment/appointment.repository';
 
 @Module({
     imports: [TypeOrmModule.forFeature([
