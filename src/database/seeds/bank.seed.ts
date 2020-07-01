@@ -8,11 +8,17 @@ export default class CreateBanks implements Seeder {
     const banks = JSON.parse(
       fs.readFileSync('src/database/seeds/dumbs/banks.json', 'utf8'),
     );
-    await connection
-      .createQueryBuilder()
-      .insert()
-      .into(Bank)
-      .values(banks)
-      .execute();
+    // tslint:disable-next-line:forin
+    for (const i in banks) {
+      try {
+        const s = banks[i];
+        const bank = new Bank();
+        bank.id = s.id;
+        bank.name = s.name;
+        bank.save();
+      } catch (error) {
+        continue;
+      }
+    }
   }
 }

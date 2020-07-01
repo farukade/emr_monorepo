@@ -1,5 +1,4 @@
 import * as bcrypt from 'bcrypt';
-import fs = require('fs');
 import { Connection } from 'typeorm';
 import { Factory, Seeder } from 'typeorm-seeding';
 import { User } from '../../modules/hr/entities/user.entity';

@@ -8,16 +8,14 @@ import { TransactionDto } from './dto/transaction.dto';
 import { DepartmentRepository } from '../../settings/departments/department.repository';
 import { ServiceRepository } from '../../settings/services/service.repository';
 import { Patient } from '../../patient/entities/patient.entity';
-import { Service } from '../../settings/entities/service.entity';
 import { Department } from '../../settings/entities/department.entity';
 import { ProcessTransactionDto } from './dto/process-transaction.dto';
 import { VoucherRepository } from '../vouchers/voucher.repository';
 import { StaffRepository } from '../../hr/staff/staff.repository';
 import { Pagination, PaginationOptionsInterface } from '../../../common/paginate';
-import { getConnection } from 'typeorm-seeding';
-import { Appointment } from '../../frontdesk/appointment/appointment.entity';
 import { QueueSystemRepository } from '../../frontdesk/queue-system/queue-system.repository';
 import { AppointmentRepository } from '../../frontdesk/appointment/appointment.repository';
+import {getConnection} from "typeorm";
 
 @Injectable()
 export class TransactionsService {
