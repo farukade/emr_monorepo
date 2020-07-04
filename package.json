@@ -22,8 +22,7 @@
     "typeorm:migration:generate": "yarn typeorm -- migration:generate -n",
     "typeorm:migration:create": "yarn typeorm -- migration:create -n",
     "typeorm:migration:run": "yarn typeorm -- migration:run",
-    "seed:config": "ts-node ./node_modules/typeorm-seeding/dist/cli.js config",
-    "seed:run": "ts-node ./node_modules/typeorm-seeding/dist/cli.js seed"
+    "typeorm:seed": "ts-node ./node_modules/typeorm-seeding/dist/cli.js seed --config=ormconfig.json"
   },
   "dependencies": {
     "@nestjs/common": "^6.7.2",
@@ -52,8 +51,8 @@
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.0",
     "rxjs": "^6.5.3",
-    "typeorm": "^0.2.22",
-    "typeorm-seeding": "^1.2.0",
+    "typeorm": "0.2.22",
+    "typeorm-seeding": "1.2.0",
     "xlsx": "^0.16.0"
   },
   "devDependencies": {
