@@ -57,5 +57,6 @@ export class Appointment extends CustomBaseEntity {
     status: string;
 
     @OneToOne(type => Encounter)
+    @JoinColumn()
     encounter: Encounter;
 }
