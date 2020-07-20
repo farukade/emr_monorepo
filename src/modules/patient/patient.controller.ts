@@ -199,6 +199,15 @@ export class PatientController {
     ) {
         return this.patientService.doSaveRequest(param, req.user.username);
     }
+
+    @Post('fill-request')
+    fillRequest(
+        @Body() param,
+        @Request() req,
+    ) {
+        return this.patientService.doFillRequest(param, req.user.username);
+    }
+
     @Get('/requests/:requestType')
     getRequests(
         @Param('requestType') requestType: string,

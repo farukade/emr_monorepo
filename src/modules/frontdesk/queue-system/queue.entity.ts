@@ -35,7 +35,7 @@ export class Queue extends BaseEntity {
   @Column({type: 'smallint', default: 0})
   status: number;
 
-  @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  createdAt: Date;
+  @Column()
+  createdAt: string;
 
 }

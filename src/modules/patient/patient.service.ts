@@ -60,19 +60,15 @@ export class PatientService {
     ) {}
 
     async listAllPatients(): Promise<Patient[]> {
-        const found = this.patientRepository.find();
-
-        return found;
+        return await this.patientRepository.find();
     }
 
     async findPatient(param: string): Promise<Patient[]> {
-        const found = this.patientRepository.find({where: [
+        return await this.patientRepository.find({where: [
             {surname: Like(`%${param.toLocaleLowerCase()}%`)},
             {other_names: Like(`%${param.toLocaleLowerCase()}%`)},
             {fileNumber: Like(`%${param}%`)},
         ], relations: ['nextOfKin']});
-
-        return found;
     }
 
     async saveNewPatient(patientDto: PatientDto, createdBy: string): Promise<any> {
@@ -120,8 +116,7 @@ export class PatientService {
             patient.nextOfKin.maritalStatus       = patientDto.nok_maritalStatus;
             patient.nextOfKin.ethnicity           = patientDto.nok_ethnicity;
             if (patientDto.hmoId && patientDto.hmoId !== '') {
-                const hmo = await this.hmoRepository.findOne(patientDto.hmoId);
-                patient.hmo = hmo;
+                patient.hmo = await this.hmoRepository.findOne(patientDto.hmoId);;
             }
             patient.save();
 
@@ -202,9 +197,7 @@ export class PatientService {
             }
             query.andWhere('q.isActive = :status', {status: stat});
         }
-        const vouchers = await query.orderBy('q.createdAt', 'DESC').getMany();
-
-        return vouchers;
+        return await query.orderBy('q.createdAt', 'DESC').getMany();
     }
 
     async getDocuments(id, urlParams): Promise<PatientDocument[]> {
@@ -224,20 +217,17 @@ export class PatientService {
         if (documentType && documentType !== '') {
             query.andWhere('q.document_type = :document_type', {document_type: documentType});
         }
-        const documents = await query.orderBy('q.createdAt', 'DESC').getMany();
-
-        return documents;
+        return await query.orderBy('q.createdAt', 'DESC').getMany();
     }
 
     async getRequestDocuments(id, urlParams): Promise<PatientRequestDocument[]> {
         const {startDate, endDate, documentType} = urlParams;
 
-        const documents = await this.connection.getRepository(PatientRequestDocument).createQueryBuilder('d')
+        return await this.connection.getRepository(PatientRequestDocument).createQueryBuilder('d')
                         .select(['document_name'])
                         .where('d.id = :id', {id})
                         .getMany();
 
-        return documents;
     }
 
     async getVitals(id, urlParams): Promise<PatientVital[]> {
@@ -254,9 +244,7 @@ export class PatientService {
             const end = moment(endDate).endOf('day').toISOString();
             query.andWhere(`q.createdAt <= '${end}'`);
         }
-        const vitals = query.orderBy('q.createdAt', 'DESC').getMany();
-
-        return vitals;
+        return await query.orderBy('q.createdAt', 'DESC').getMany();
     }
 
     async deleteVital(id: string) {
@@ -271,8 +259,7 @@ export class PatientService {
     async doSaveAllergies(param: PatientAllergyDto, createdBy): Promise<any> {
         const { patient_id } = param;
         try {
-            const patient = await this.patientRepository.findOne(patient_id);
-            param.patient = patient;
+            param.patient = await this.patientRepository.findOne(patient_id);
             const allergy = await this.patientAllergyRepository.save(param);
             allergy.createdBy = createdBy;
             allergy.save();
@@ -290,7 +277,7 @@ export class PatientService {
             allergy.severity = param.severity;
             allergy.reaction = param.reaction;
             allergy.lastChangedBy = updatedBy;
-            allergy.save();
+            await allergy.save();
 
             return {success: true, allergy };
 
@@ -313,9 +300,7 @@ export class PatientService {
             const end = moment(endDate).endOf('day').toISOString();
             query.andWhere(`q.createdAt <= '${end}'`);
         }
-        const allergies = query.orderBy('q.createdAt', 'DESC').getMany();
-
-        return allergies;
+        return await query.orderBy('q.createdAt', 'DESC').getMany();
     }
 
     async deleteAllergy(id: string) {
@@ -330,9 +315,7 @@ export class PatientService {
     async saveNewImmunization(param: ImmunizationDto, createdBy): Promise<any> {
         const { patient_id } = param;
         try {
-            // find patin
-            const patient = await this.patientRepository.findOne(patient_id);
-            param.patient = patient;
+            param.patient = await this.patientRepository.findOne(patient_id);
             param.createdBy = createdBy;
             param.lastChangedBy = createdBy;
             const immunization = await this.immunizationRepository.save(param);
@@ -351,7 +334,7 @@ export class PatientService {
             immunization.prescription = param.prescription;
             immunization.nextVisitDate = param.nextVisitDate;
             immunization.lastChangedBy = updatedBy;
-            immunization.save();
+            await immunization.save();
 
             return {success: true, immunization };
         } catch (error) {
@@ -380,9 +363,7 @@ export class PatientService {
             const end = moment(endDate).endOf('day').toISOString();
             query.andWhere(`q.createdAt <= '${end}'`);
         }
-        const immunizations = query.orderBy('q.createdAt', 'DESC').getRawMany();
-
-        return immunizations;
+        return await query.orderBy('q.createdAt', 'DESC').getRawMany();
     }
 
     async getImmunizations(urlParams): Promise<Immunization[]> {
@@ -409,9 +390,7 @@ export class PatientService {
         if (patient_id && patient_id !== '') {
             query.andWhere('q.patient_id = :patient_id', {patient_id});
         }
-        const immunizations = query.orderBy('q.createdAt', 'DESC').getRawMany();
-
-        return immunizations;
+        return await query.orderBy('q.createdAt', 'DESC').getRawMany();
     }
 
     async deleteImmunization(id: string) {
@@ -502,8 +481,22 @@ export class PatientService {
         return res;
     }
 
+    async doFillRequest(param, updatedBy) {
+        const {request_id, requestBody } = param;
+        try {
+            const request = await this.patientRequestRepository.findOne(request_id);
+            request.requestBody = requestBody;
+            request.isFilled = true;
+            await request.save();
+            return {success: true};
+        } catch (e) {
+            // console.log(e.message)
+            return {success: false, message: e.message };
+        }
+    }
+
     async doListRequest(requestType, patient_id, urlParams): Promise<PatientRequest[]> {
-        const {startDate, endDate} = urlParams;
+        const {startDate, endDate, filled} = urlParams;
 
         const query = this.patientRequestRepository.createQueryBuilder('q')
                         .leftJoin('q.patient', 'patient')
@@ -523,9 +516,10 @@ export class PatientService {
             const end = moment(endDate).endOf('day').toISOString();
             query.andWhere(`q.createdAt <= '${end}'`);
         }
-        const allergies = query.orderBy('q.createdAt', 'DESC').getRawMany();
-
-        return allergies;
+        if (filled) {
+            query.andWhere(`q.isFilled = '${true}'`);
+        }
+        return await query.orderBy('q.createdAt', 'DESC').getRawMany();
     }
 
     async listRequests(requestType, urlParams): Promise<PatientRequest[]> {
@@ -550,9 +544,8 @@ export class PatientService {
             query.andWhere(`patient_request.createdAt <= '${end}'`);
         }
 
-        const requests = query.orderBy('patient_request.createdAt', 'DESC').getRawMany();
+        return await query.orderBy('patient_request.createdAt', 'DESC').getRawMany();
 
-        return requests;
     }
 
     async deleteRequest(id: string) {

@@ -15,12 +15,12 @@ export class RolesService {
 
   async getAllRole(): Promise<Role[]> {
     return await this.roleRepository.createQueryBuilder('role')
-          .leftJoin(User, 'creator', 'role.createdBy = creator.username')
+          // .leftJoin(User, 'creator', 'role.createdBy = creator.username')
           // .innerJoin(User, 'updator', 'role.lastChangedBy = updator.username')
-          .innerJoin(StaffDetails, 'staff1', 'staff1.user_id = creator.id')
+          // .innerJoin(StaffDetails, 'staff1', 'staff1.user_id = creator.id')
           // .innerJoin(StaffDetails, 'staff2', 'staff2.user_id = updator.id')
           .select('role.id, role.name, role.description')
-          .addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
+          // .addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
           // .addSelect('CONCAT(staff2.first_name || \' \' || staff2.last_name) as updated_by, staff2.id as updated_by_id')
           .getRawMany();
   }

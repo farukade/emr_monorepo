@@ -1,5 +1,5 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
-import * as PostgressConnectionStringParser from "pg-connection-string";
+import * as PostgressConnectionStringParser from 'pg-connection-string';
 
 require('dotenv').config();
 
@@ -33,12 +33,12 @@ class AppService {
     let typeOrmConfig;
     const mode = this.getValue('MODE', false);
     
-    if(mode === 'DEV'){
+    if (mode === 'DEV') {
       typeOrmConfig = {
         type: 'postgres',
 
         host: this.getValue('POSTGRES_HOST'),
-        port: parseInt(this.getValue('POSTGRES_PORT')),
+        port: parseInt(this.getValue('POSTGRES_PORT'), 10),
         username: this.getValue('POSTGRES_USER'),
         password: this.getValue('POSTGRES_PASSWORD'),
         database: this.getValue('POSTGRES_DATABASE'),
@@ -64,7 +64,7 @@ class AppService {
       const connectionOptions = PostgressConnectionStringParser.parse(databaseUrl);
       
       typeOrmConfig = {
-          type: "postgres",
+          type: 'postgres',
           // name: connectionOptions.user,
           host: connectionOptions.host,
           port: connectionOptions.port,
@@ -80,8 +80,8 @@ class AppService {
             migrationsDir: 'src/database/migration',
           },
           extra: {
-              ssl: true
-          }
+              ssl: true,
+          },
       };
     }
     return typeOrmConfig;

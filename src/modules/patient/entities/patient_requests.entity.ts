@@ -14,6 +14,9 @@ export class PatientRequest extends CustomBaseEntity {
     @Column({ nullable: true })
     requestNote: string;
 
+    @Column({ type: 'boolean', default: false })
+    isFilled: boolean;
+
     @ManyToOne(type => Patient)
     @JoinColumn({name: 'patient_id'})
     patient: Patient;

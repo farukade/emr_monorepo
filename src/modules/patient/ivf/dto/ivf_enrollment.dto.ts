@@ -2,7 +2,7 @@ import { IWifeLabDetails } from '../interfaces/wifeLabDetails.interface';
 import { IHusbandLabDetails } from '../interfaces/husbandLabDetails.interface';
 import { Patient } from '../../entities/patient.entity';
 
-export class IvfEnrollementDto {
+export class IvfEnrollmentDto {
 
     wifeLabDetails: IWifeLabDetails;
 

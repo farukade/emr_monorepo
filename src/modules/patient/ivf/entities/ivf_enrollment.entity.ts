@@ -1,8 +1,8 @@
-import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
+import { CustomBaseEntity } from '../../../../common/entities/custom-base.entity';
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { IWifeLabDetails } from './interfaces/wifeLabDetails.interface';
-import { IHusbandLabDetails } from './interfaces/husbandLabDetails.interface';
-import { Patient } from '../entities/patient.entity';
+import { IWifeLabDetails } from '../interfaces/wifeLabDetails.interface';
+import { IHusbandLabDetails } from '../interfaces/husbandLabDetails.interface';
+import { Patient } from '../../entities/patient.entity';
 
 @Entity({name: 'ivf_enrollments'})
 export class IvfEnrollment extends CustomBaseEntity {

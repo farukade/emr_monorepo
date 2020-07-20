@@ -103,12 +103,15 @@ export class AppointmentService {
                     // update appointment status
                     appointment.status = 'Pending Paypoint Approval';
                     await appointment.save();
+                    // send new queue message
+                    this.appGateway.server.emit('new-queue', queue);
+
                 }
             }
             // save payment
             const payment = await this.saveTransaction(patient, service, amount, paymentType, hmoApprovalStatus);
 
-            const resp = { success: true, appointment, queue, payment };
+            const resp = { success: true, appointment, payment };
 
             this.appGateway.server.emit('new-appointment', resp);
             return resp;
