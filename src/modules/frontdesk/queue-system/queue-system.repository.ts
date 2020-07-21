@@ -12,7 +12,7 @@ export class QueueSystemRepository extends Repository<Queue> {
             let queueNumber;
             const today = moment().format('YYYY-MM-DD');
             const lastQueueRes = await this.find({
-                where: {createdAt: today},
+                where: {createdAt: today, department},
                 take: 1,
                 order: {queueNumber: 'DESC'},
             });
