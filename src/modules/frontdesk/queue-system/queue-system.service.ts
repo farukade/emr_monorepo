@@ -16,7 +16,7 @@ export class QueueSystemService {
 
         return await this.queueSystemRepository.find({
             where: {createdAt: today, status: 1},
-            relations: ['appointment', 'appointment.patient'],
+            relations: ['appointment', 'appointment.patient', 'department'],
             take: 10,
             order: {
                 queueNumber: 'ASC',

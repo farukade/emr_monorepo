@@ -517,7 +517,7 @@ export class PatientService {
             query.andWhere(`q.createdAt <= '${end}'`);
         }
         if (filled) {
-            query.andWhere(`q.isFilled = '${true}'`);
+            query.andWhere(`q.isFilled = ${true}`);
         }
         return await query.orderBy('q.createdAt', 'DESC').getRawMany();
     }
