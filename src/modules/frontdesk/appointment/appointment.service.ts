@@ -44,21 +44,19 @@ export class AppointmentService {
 
     async todaysAppointments(): Promise<Appointment[]> {
         const today = moment().format('YYYY-MM-DD');
-        const results = await this.appointmentRepository.find({
+        return await this.appointmentRepository.find({
             where: {appointment_date: today},
             relations: ['department', 'patient', 'specialization', 'consultingRoom', 'encounter'],
         });
 
-        return results;
     }
 
     async getAppointment(id: string): Promise<Appointment> {
-        const result = await this.appointmentRepository.findOne({
+        return await this.appointmentRepository.findOne({
             where: {id},
             relations: ['department', 'patient', 'specialization', 'consultingRoom', 'encounter'],
         });
 
-        return result;
     }
 
     async saveNewAppointment(appointmentDto: AppointmentDto): Promise<any> {
@@ -97,11 +95,11 @@ export class AppointmentService {
                     this.appGateway.server.emit('new-hmo-appointment', appointment);
 
                 } else {
-                    const paypoint = await this.departmentRepository.findOne({where: {name: 'Paypoint'}});
+                    const paypoint = await this.departmentRepository.findOne({where: {name: 'Accounts'}});
 
                     queue = await this.queueSystemRepository.saveQueue(appointment, paypoint);
                     // update appointment status
-                    appointment.status = 'Pending Paypoint Approval';
+                    appointment.status = 'Pending Account Approval';
                     await appointment.save();
                     // send new queue message
                     this.appGateway.server.emit('new-queue', queue);
@@ -142,6 +140,15 @@ export class AppointmentService {
         return result;
     }
 
+    async getActivePatientAppointment(patient_id) {
+        return await this.appointmentRepository
+            .createQueryBuilder('appointment')
+            .leftJoinAndSelect('appointment.patient', 'patient')
+            .where('appointment.patient_id = :patient_id', {patient_id})
+            .andWhere('appointment.isActive = :status', {status: true})
+            .getOne();
+    }
+
     async checkAppointmentStatus(params) {
         const {patient_id, service_id} = params;
         // find service
@@ -163,6 +170,16 @@ export class AppointmentService {
         } else {
             return {isPaying: true, amount: parseInt(service.tariff, 10)};
         }
+    }
+
+    async closeAppointment(id) {
+        //find appointment
+        const appointment = await this.appointmentRepository.findOne(id);
+        // update status
+        appointment.isActive = false;
+        await appointment.save();
+        // remove from queue
+        await this.queueSystemRepository.delete( {appointment});
     }
 
     private async saveTransaction(patient: Patient, service: Service, amount, paymentType, hmoApprovalStatus) {

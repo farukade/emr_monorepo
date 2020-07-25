@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import {Body, Controller, Get, Post} from '@nestjs/common';
 import { QueueSystemService } from './queue-system.service';
 import { Queue } from './queue.entity';
 
@@ -11,6 +11,10 @@ export class QueueSystemController {
         return this.queueSystemService.fetchQueueList();
     }
 
-    @Get('update-list')
-    updateQueueList() {}
+    @Post('add')
+    addToQueue(
+        @Body() params,
+    ) {
+        return this.queueSystemService.addToQueue(params);
+    }
 }

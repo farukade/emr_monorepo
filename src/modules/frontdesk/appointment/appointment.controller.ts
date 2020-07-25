@@ -34,10 +34,24 @@ export class AppointmentController {
         return this.appointmentService.getAppointment(id);
     }
 
+    @Get('/:patient_id/active')
+    getActiveAppointment(
+        @Param('patient_id') patient_id: string,
+    ) {
+        return this.appointmentService.getActivePatientAppointment(patient_id);
+    }
+
     @Get('validate')
     validateNewAppointment(
         @Query() params: string,
     ) {
         return this.appointmentService.checkAppointmentStatus(params);
+    }
+
+    @Get(':id/close')
+    closeAppointment(
+        @Param('id') id: string,
+    ) {
+        return this.appointmentService.closeAppointment(id);
     }
 }

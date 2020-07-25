@@ -52,9 +52,7 @@ export class StaffService {
         });
 
         // save staff
-        const staff = await this.staffRepository.saveDetails(staffDto, department, user);
-
-        return staff;
+        return await this.staffRepository.saveDetails(staffDto, department, user);
     }
 
     async updateStaffDetails(id: string, staffDto: StaffDto): Promise<any> {

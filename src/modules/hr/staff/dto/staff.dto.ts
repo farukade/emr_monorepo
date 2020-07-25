@@ -9,7 +9,7 @@ export class StaffDto {
 
     other_names: string;
 
-    address: string
+    address: string;
 
     phone_number: string;
 
