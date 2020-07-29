@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-  import { TypeOrmModule } from '@nestjs/typeorm';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { appService } from './app.service';
 import { HmoModule } from './modules/hmo/hmo.module';
@@ -13,7 +13,6 @@ import { FrontdeskModule } from './modules/frontdesk/frontdesk.module';
 import { UtilityModule } from './modules/utility/utility.module';
 
 import fs = require('fs');
-import * as PostgressConnectionStringParser from 'pg-connection-string';
 import { AuthModule } from './modules/auth/auth.module';
 import { JwtStrategy } from './common/utils/jwt.strategy';
 import { AppGateway } from './app.gateway';

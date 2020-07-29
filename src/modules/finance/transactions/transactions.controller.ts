@@ -15,8 +15,8 @@ export class TransactionsController {
         @Query() urlParams,
         @Request() request,
     ) {
-        const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 20;
-        const page = request.query.hasOwnProperty('page') ? request.query.page : 0;
+        const limit = 50;
+        const page = request.query.hasOwnProperty('page') ? request.query.page : 1;
         return this.transactionsService.fetchList({page, limit}, urlParams);
     }
 

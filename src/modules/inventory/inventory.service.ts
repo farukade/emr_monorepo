@@ -173,8 +173,8 @@ export class InventoryService {
                     name: row['BRAND NAME'],
                     generic_name: row['GENERIC NAME'],
                     quantity: row['QUANTITY ON HAND'],
-                    sales_price: row['SALES PRICE'].replace(',', ''),
-                    stock_code: 'STU-' + Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5),
+                    sales_price: row['SALES PRICE'],
+                    stock_code: 'STU-' + (Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5)).toUpperCase(),
                 };
                 content.push(data);
             })
@@ -202,7 +202,7 @@ export class InventoryService {
                             } else {
                                 stock.name = item.name;
                                 stock.generic_name = item.generic_name;
-                                stock.sales_price = item.sales_price;
+                                stock.sales_price = item.sales_price.replace(',', '');
                                 stock.quantity = item.quantity;
                                 stock.category = category;
                                 stock.subCategory = subCategory;
@@ -211,6 +211,7 @@ export class InventoryService {
                         }
                     }
                 }
+                console.log(content);
             });
             return {success: true};
         } catch (err) {

@@ -2,17 +2,14 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UsePipes, Val
 import { PatientService } from './patient.service';
 import { Patient } from './entities/patient.entity';
 import { PatientDto } from './dto/patient.dto';
-import { PatientAntenatalDto } from './dto/patient.antenatal.dto';
 import { PatientAllergyDto } from './dto/patient.allergy.dto';
 import { PatientVital } from './entities/patient_vitals.entity';
-import { PatientAntenatal } from './entities/patient_antenatal.entity';
 import { PatientAllergy } from './entities/patient_allergies.entity';
 import { PatientRequest } from './entities/patient_requests.entity';
 import { Voucher } from '../finance/vouchers/voucher.entity';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
-import fs = require('fs');
 import { PatientDocument } from './entities/patient_documents.entity';
 import { PatientRequestDocument } from './entities/patient_request_documents.entity';
 import { AuthGuard } from '@nestjs/passport';

@@ -523,8 +523,8 @@ export class PatientService {
     }
 
     async listRequests(requestType, urlParams): Promise<PatientRequest[]> {
-        const {startDate, endDate} = urlParams;
-
+        const {startDate, endDate, filled} = urlParams;
+        console.log(urlParams);
         const query = this.patientRequestRepository.createQueryBuilder('patient_request')
                         .leftJoin('patient_request.patient', 'patient')
                         .leftJoin(User, 'creator', 'patient_request.createdBy = creator.username')
@@ -542,6 +542,11 @@ export class PatientService {
         if (endDate && endDate !== '') {
             const end = moment(endDate).endOf('day').toISOString();
             query.andWhere(`patient_request.createdAt <= '${end}'`);
+        }
+
+        if (filled) {
+            console.log(filled)
+            query.andWhere('patient_request.isFilled = :filled', {filled: true});
         }
 
         return await query.orderBy('patient_request.createdAt', 'DESC').getRawMany();

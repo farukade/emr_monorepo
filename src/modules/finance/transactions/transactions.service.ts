@@ -69,30 +69,26 @@ export class TransactionsService {
             query.andWhere('q.status = :status', {status});
         }
 
-        const transactions = await query.take(options.limit)
-            .skip(options.page * options.limit)
+        const transactions = await query.skip((options.page * options.limit) - options.page)
+            .limit(options.limit)
             .orderBy('q.createdAt', 'DESC')
             .getRawMany();
 
         for (const transaction of transactions) {
             if (transaction.department_id) {
-                const department = await this.departmentRepository.findOne(transaction.department_id);
-                transaction.department = department;
+                transaction.department = await this.departmentRepository.findOne(transaction.department_id);
             }
 
             if (transaction.staff_id) {
-                const staff = await this.staffRepository.findOne(transaction.staff_id);
-                transaction.staff = staff;
+                transaction.staff = await this.staffRepository.findOne(transaction.staff_id);
             }
 
             if (transaction.patient_id) {
-                const patient = await this.patientRepository.findOne(transaction.patient_id);
-                transaction.patient = patient;
+                transaction.patient = await this.patientRepository.findOne(transaction.patient_id);
             }
 
             if (transaction.service_id) {
-                const service = await this.serviceRepository.findOne(transaction.service_id);
-                transaction.service = service;
+                transaction.service = await this.serviceRepository.findOne(transaction.service_id);
             }
         }
 
