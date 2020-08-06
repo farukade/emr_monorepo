@@ -7,6 +7,7 @@ import { ConsultingRoom } from '../../settings/entities/consulting-room.entity';
 import { Service } from '../../settings/entities/service.entity';
 import { ServiceCategory } from '../../settings/entities/service_category.entity';
 import {Encounter} from "../../patient/consultation/encouter.entity";
+import {StaffDetails} from "../../hr/staff/entities/staff_details.entity";
 
 @Entity({ name: 'appointments'})
 export class Appointment extends CustomBaseEntity {
@@ -18,13 +19,13 @@ export class Appointment extends CustomBaseEntity {
     @JoinColumn({name: 'patient_id'})
     patient!: Patient;
 
-    @ManyToOne(type => Department)
-    @JoinColumn({ name: 'department_id'})
-    department: Department;
+    // @ManyToOne(type => Department)
+    // @JoinColumn({ name: 'department_id'})
+    // department: Department;
 
-    @ManyToOne(type => Specialization)
-    @JoinColumn({ name: 'specialization_id'})
-    specialization: Specialization;
+    @ManyToOne(type => StaffDetails)
+    @JoinColumn({ name: 'doctor_id'})
+    whomToSee: StaffDetails;
 
     @ManyToOne(type => ConsultingRoom, {nullable: true})
     @JoinColumn({ name: 'consulting_room_id'})
@@ -55,6 +56,9 @@ export class Appointment extends CustomBaseEntity {
 
     @Column({type: 'varchar', default: 'Pending'})
     status: string;
+
+    @Column({type: 'float4', default: 0})
+    amountToPay: string;
 
     @OneToOne(type => Encounter)
     @JoinColumn()

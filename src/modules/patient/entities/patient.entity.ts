@@ -23,7 +23,7 @@ export class Patient extends CustomBaseEntity {
     @Column({ type: 'varchar', nullable: true})
     occupation: string;
 
-    @Column({ type: 'varchar'})
+    @Column({ type: 'varchar', nullable: true})
     address: string;
 
     @Column({ type: 'varchar', nullable: true})
@@ -38,7 +38,7 @@ export class Patient extends CustomBaseEntity {
     @Column({ type: 'varchar', nullable: true})
     maritalStatus: string;
 
-    @Column({ type: 'varchar'})
+    @Column({ type: 'varchar', nullable: true})
     insurranceStatus: string;
 
     @Column({ type: 'varchar', nullable: true})
@@ -47,9 +47,12 @@ export class Patient extends CustomBaseEntity {
     @Column({ type: 'varchar', nullable: true})
     referredBy: string;
 
+    @Column({ type: 'varchar', nullable: true, default: 'in-patient'})
+    patientType: string;
+
     @OneToOne(type => PatientNOK, { cascade: true })
     @JoinColumn()
-    nextOfKin: PatientNOK;
+    nextOfKin?: PatientNOK;
 
     @Column({ nullable: true })
     lastAppointmentDate: string;
@@ -58,13 +61,13 @@ export class Patient extends CustomBaseEntity {
     noOfVisits: number;
 
     @OneToMany(type => Appointment, appointment => appointment.patient)
-    appointments!: Appointment;
+    appointments: Appointment;
 
     @OneToMany(type => Transactions, transaction => transaction.patient)
-    transactions!: Transactions;
+    transactions: Transactions;
 
     @ManyToOne(() => Hmo, {nullable: true})
-    hmo: Hmo;
+    hmo?: Hmo;
 
     @Column({ default: false })
     isAdmitted: boolean;

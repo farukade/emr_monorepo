@@ -21,6 +21,7 @@ import { IvfController } from './ivf/ivf.controller';
 import { IvfService } from './ivf/ivf.service';
 import { IvfEnrollmentRepository } from './ivf/ivf_enrollment.repository';
 import { StaffRepository } from '../hr/staff/staff.repository';
+import {AppGateway} from "../../app.gateway";
 
 @Module({
   imports: [TypeOrmModule.forFeature([
@@ -39,6 +40,6 @@ import { StaffRepository } from '../hr/staff/staff.repository';
     StaffRepository,
   ]), AntenatalModule, AdmissionsModule, ConsultationModule, LabourManagementModule],
   controllers: [PatientController, IvfController],
-  providers: [PatientService, IvfService],
+  providers: [AppGateway, PatientService, IvfService],
 })
 export class PatientModule {}

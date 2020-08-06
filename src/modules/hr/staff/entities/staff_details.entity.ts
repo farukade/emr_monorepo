@@ -4,6 +4,8 @@ import { CustomBaseEntity } from '../../../../common/entities/custom-base.entity
 import { Department } from '../../../settings/entities/department.entity';
 import { User } from '../../entities/user.entity';
 import { Transactions } from '../../../finance/transactions/transaction.entity';
+import {Specialization} from "../../../settings/entities/specialization.entity";
+import {ConsultingRoom} from "../../../settings/entities/consulting-room.entity";
 
 @Entity({ name: 'staff_details' })
 export class StaffDetails extends CustomBaseEntity {
@@ -101,6 +103,14 @@ export class StaffDetails extends CustomBaseEntity {
   @ManyToOne(type => Department)
   @JoinColumn({name: 'department_id'})
   department: Department;
+
+  @ManyToOne(type => Specialization)
+  @JoinColumn({name: 'specialization_id'})
+  specialization?: Specialization;
+
+  @ManyToOne(type => ConsultingRoom)
+  @JoinColumn({name: 'consulting_room_id'})
+  room?: ConsultingRoom;
 
   @OneToOne(type => User)
   @JoinColumn({ name: 'user_id' })

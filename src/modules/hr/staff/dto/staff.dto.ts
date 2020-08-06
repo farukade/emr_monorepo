@@ -19,7 +19,7 @@ export class StaffDto {
 
     lga: string;
 
-    profile_pic: string;
+    avatar: string;
 
     bank_name: string;
 
@@ -68,4 +68,6 @@ export class StaffDto {
     monthly_salary: string;
 
     is_consultant: boolean;
+
+    specialization_id: string;
 }

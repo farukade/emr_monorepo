@@ -297,10 +297,8 @@ export class TransactionsService {
             });
             let queue;
             if (appointment) {
-                // get paypoint department
-                const department = await getConnection().getRepository(Department).findOne({where: {name: transaction.department.name}});
                 // create new queue
-                queue = await this.queueSystemRepository.saveQueue(appointment, department);
+                queue = await this.queueSystemRepository.saveQueue(appointment, 'vitals');
             }
             return {success: true, transaction, queue};
         } catch (error) {

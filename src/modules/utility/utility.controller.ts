@@ -2,6 +2,7 @@ import { Controller, Get } from '@nestjs/common';
 import { UtilityService } from './utility.service';
 import { Country } from '../../common/entities/country.entity';
 import { Bank } from '../../common/entities/bank.entity';
+import {StaffDetails} from '../hr/staff/entities/staff_details.entity';
 
 @Controller('utility')
 export class UtilityController {
@@ -15,5 +16,10 @@ export class UtilityController {
     @Get('banks')
     listBanks(): Promise<Bank[]> {
         return this.utilityService.getBanks();
+    }
+
+    @Get('active-doctors')
+    fetchActiveDoctors(): Promise<StaffDetails[]> {
+        return this.utilityService.getActiveDoctors();
     }
 }

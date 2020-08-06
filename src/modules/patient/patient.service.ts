@@ -30,6 +30,8 @@ import { RequestPaymentHelper } from '../../common/utils/RequestPaymentHelper';
 import { ImmunizationDto } from './dto/immunization.dto';
 import { ImmunizationRepository } from './repositories/immunization.repository';
 import { Immunization } from './entities/immunization.entity';
+import {OpdPatientDto} from "./dto/opd-patient.dto";
+import {AppGateway} from "../../app.gateway";
 
 @Injectable()
 export class PatientService {
@@ -57,6 +59,7 @@ export class PatientService {
         @InjectRepository(ImmunizationRepository)
         private immunizationRepository: ImmunizationRepository,
         private connection: Connection,
+        private readonly appGateway: AppGateway,
     ) {}
 
     async listAllPatients(): Promise<Patient[]> {
@@ -82,6 +85,27 @@ export class PatientService {
 
             const patient = await this.patientRepository.savePatient(patientDto, nok, hmo, createdBy);
 
+            return {success: true, patient};
+        } catch (err) {
+            return {success: false, message: err.message};
+        }
+    }
+
+    async saveNewOpdPatient(patientDto: OpdPatientDto, createdBy: string): Promise<any> {
+        try {
+            const patient = new Patient();
+            patient.fileNumber          =  'DEDA-' + Math.floor(Math.random() * 90000);
+            patient.surname             = patientDto.surname.toLocaleLowerCase();
+            patient.other_names         = patientDto.other_names.toLocaleLowerCase();
+            patient.address             = patientDto.address.toLocaleLowerCase();
+            patient.date_of_birth       = patientDto.date_of_birth;
+            patient.gender              = patientDto.gender;
+            patient.email               = patientDto.email;
+            patient.phoneNumber         = patientDto.phoneNumber;
+            patient.createdBy           = createdBy;
+            await patient.save();
+            // send new opd socket message
+            this.appGateway.server.emit('new-queue', patient);
             return {success: true, patient};
         } catch (err) {
             return {success: false, message: err.message};

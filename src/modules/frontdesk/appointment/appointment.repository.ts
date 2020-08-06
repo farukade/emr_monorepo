@@ -8,28 +8,29 @@ import { ConsultingRoom } from '../../settings/entities/consulting-room.entity';
 import * as moment from 'moment';
 import { Service } from '../../settings/entities/service.entity';
 import { ServiceCategory } from '../../settings/entities/service_category.entity';
+import {StaffDetails} from "../../hr/staff/entities/staff_details.entity";
 
 @EntityRepository(Appointment)
 export class AppointmentRepository extends Repository<Appointment> {
 
-    async saveAppointment(
+    async  saveAppointment(
         appointmentDto: AppointmentDto,
         patient: Patient,
-        specialization: Specialization,
-        department: Department,
         consultingRoom: ConsultingRoom,
+        doctor: StaffDetails,
+        amount,
         service: Service,
         category: ServiceCategory,
     ) {
         const appointment_date = moment(appointmentDto.appointment_date).format('YYYY-MM-DD');
         const appointment = new Appointment();
         appointment.patient = patient;
-        appointment.department = department;
-        appointment.specialization = specialization;
+        appointment.whomToSee = doctor;
         appointment.consultingRoom = consultingRoom;
         appointment.appointment_date = appointment_date;
         appointment.serviceCategory = category;
         appointment.serviceType = service;
+        appointment.amountToPay = amount;
         appointment.duration = appointmentDto.duration;
         appointment.description = appointmentDto.description;
         appointment.referredBy = appointmentDto.referredBy;

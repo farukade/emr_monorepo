@@ -5,6 +5,8 @@ import { CountryRepository } from '../../common/repositories/country.repository'
 import { StateRepository } from '../../common/repositories/state.repository';
 import { Country } from '../../common/entities/country.entity';
 import { Bank } from '../../common/entities/bank.entity';
+import {StaffDetails} from "../hr/staff/entities/staff_details.entity";
+import {getRepository, IsNull, Not} from "typeorm";
 
 @Injectable()
 export class UtilityService {
@@ -18,14 +20,21 @@ export class UtilityService {
     ) {}
 
     async getCountries(): Promise<Country[]> {
-        const countries = await this.countryRepository.find();
-
-        return countries;
+        return await this.countryRepository.find();
     }
 
     async getBanks(): Promise<Bank[]> {
-        const banks = await this.bankRepository.find();
+        return await this.bankRepository.find();
+    }
 
-        return banks;
+    async getActiveDoctors(): Promise<StaffDetails[]> {
+        return await getRepository(StaffDetails)
+            .find({
+                select: ['id', 'first_name', 'last_name', 'room'],
+                where: {
+                    room: Not(IsNull()),
+                },
+                relations: ['room'],
+            });
     }
 }

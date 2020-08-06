@@ -1,0 +1,590 @@
+DRUG CLASS,STOCK CODE,BRAND NAME,GENERIC NAME,QUANTITY ON HAND,SALES PRICE
+ANAESTHTIC,,artopine sulphate inj (amp),,0,500
+ANAESTHTIC,,Atropine 1mg (amp),,19,500
+ANAESTHTIC,,cervix set (x12) (pack),,0,89100.00
+ANAESTHTIC,,ephedrine 50mg (amp),,18,3750.00
+ANAESTHTIC,,fentanyl 100mcg (amp),,18,3800.00
+ANAESTHTIC,,isoflurane (bott),,0,37500.00
+ANAESTHTIC,,Ketamine (vail),,5,3000.00
+ANAESTHTIC,,lignocaine inj (bott),,0,1200.00
+ANAESTHTIC,,magnesium sulphate inj (amp),,23,3200.00
+ANAESTHTIC,,marcaine-heavy 0.5mg (amp),,122,2700.00
+ANAESTHTIC,,Neostigmin inj (amp),,15,2500.00
+ANAESTHTIC,,pancuronium inj 4mg (amp),,14,3000.00
+ANAESTHTIC,,Plain Marcain (vial),,18,1500.00
+ANAESTHTIC,,potassium chloride inj (amp),,23,2500.00
+ANAESTHTIC,,propofol inj (amp),,117,3500.00
+ANAESTHTIC,,suxamethonium inj 100mg (amp),,6,1500.00
+ANALGESIC,,Arthrotec 75/200mcg (Card),,14,1200.00
+ANALGESIC,,Aspirin Cardio (card),,85,800
+ANALGESIC,,cafergot (card),,1,2000.00
+ANALGESIC,,cataflam(diclofenac 50mg ) (card),,32,1500.00
+ANALGESIC,,Celebrex 200mg (Pack),,0,4000.00
+ANALGESIC,,Chymoral (Card),,12,400
+ANALGESIC,,clofenac-SR (card),,0,400
+ANALGESIC,,CLOPIDROGEL (card),,14,800
+ANALGESIC,,cocodamol 30/500mg (card),,0,1000.00
+ANALGESIC,,cocodamol tab 8/500 (card),,213,700
+ANALGESIC,,DF118 (CARD),,17,1200.00
+ANALGESIC,,Diclo Supp. 100mg (piles),,57,1000.00
+ANALGESIC,,Diclo Supp. 50mg (SUPP),,63,800
+ANALGESIC,,Diclo Suppository 12.5mg (Pile),,60,800
+ANALGESIC,,diclofenac injection (amp),,43,500
+ANALGESIC,,Diclofenac Mistoprostol (card),,0,2000.00
+ANALGESIC,,dolo-meta B (card),,5,600
+ANALGESIC,,Emcap Suspension (bott),,17,500
+ANALGESIC,,Ibuprofen 200MG (Card),,10,400
+ANALGESIC,,Ibuprofen 400MG (pack),,27,600
+ANALGESIC,,Ibuprofen syurp (bott),,26,600
+ANALGESIC,,infacol (bott),,4,4700.00
+ANALGESIC,,ketovail-200mg (card),,21,1000.00
+ANALGESIC,,Morphine (tab),,-5,700
+ANALGESIC,,morphine inj (vail),,12,5500.00
+ANALGESIC,,Naproxen 500mg (Card),,7,2000.00
+ANALGESIC,,neurogesic cream small (tube),,15,1000.00
+ANALGESIC,,Norflex (card),,-2,1500.00
+ANALGESIC,,panadol (card),,26,300
+ANALGESIC,,panadol syrup (bott),,0,400
+ANALGESIC,,Panda Drop (bott),,22,500
+ANALGESIC,,panda syrup (bott),,0,300
+ANALGESIC,,Paracetamol infusion (bott),,0,2000.00
+ANALGESIC,,paracetamol inj 300 mg (amp),,170,500
+ANALGESIC,,paracetamol suppository 150mg (supp.),,12,300
+ANALGESIC,,pentazocin inj (amp),,132,1200.00
+ANALGESIC,,pethidine inj 100mg (amp),,52,5800.00
+ANALGESIC,,pethidine inj 50mg (amp),,0,1500.00
+ANALGESIC,,tramadol cap 1 (capsule),,76,400
+ANALGESIC,,Tramadol inj (Ampoule),,29,1500.00
+ANALGESIC,,Vasoprin 75mg (Card),,77,300
+ANALGESIC,,voltren oiltment (tube),,0,3000.00
+ANALGESIC,,ANALGESIC - Other,,2,0
+ANTI-BIOTICS,,Amoksiklav 1.2g inj (Vial),,32,3500.00
+ANTI-BIOTICS,,amoksiklav 600mg inj (vail),,0,2000.00
+ANTI-BIOTICS,,amoksiklav 625 (pack),,0,1600.00
+ANTI-BIOTICS,,Amoxicillin 500mg (card),,22,900
+ANTI-BIOTICS,,ampiflux susp (pack),,4,3500.00
+ANTI-BIOTICS,,augmentin 1g (pack),,3,5000.00
+ANTI-BIOTICS,,augmentin 375mg (pack),,0,4200.00
+ANTI-BIOTICS,,augmentin 625mg (pack),,21,4500.00
+ANTI-BIOTICS,,Augmentin infant drop 62.5 mg (Bottle),,8,2000.00
+ANTI-BIOTICS,,augmentin suspension (bott),,1,3500.00
+ANTI-BIOTICS,,bactroban oiltment (tube),,2,3500.00
+ANTI-BIOTICS,,Cefdinir (pack),,0,3500.00
+ANTI-BIOTICS,,Cefdoxim (Pack),,4,2800.00
+ANTI-BIOTICS,,Cefdoxime Suspension (Pack),,18,2500.00
+ANTI-BIOTICS,,Cefixime 400mg (Pack),,4,3000.00
+ANTI-BIOTICS,,Cefixime suspension (bott),,11,2100.00
+ANTI-BIOTICS,,Cefpodoxime Susp. (Bott),,0,3000.00
+ANTI-BIOTICS,,Ceftriaxone GSK (Pack),,25,2500.00
+ANTI-BIOTICS,,ceftriazone inj 1g (pack),,-34,1700.00
+ANTI-BIOTICS,,cefuroxime inj 750mg (vail),,0,1500.00
+ANTI-BIOTICS,,Cefuroxime Suspension (Bott),,2,3000.00
+ANTI-BIOTICS,,CEPHAROX (PACK),,0,1500.00
+ANTI-BIOTICS,,Chloramphenicol susp (bott),,1,800
+ANTI-BIOTICS,,cipro-IV 200mg (pack),,11,1000.00
+ANTI-BIOTICS,,ciprofloxacin 500mg (pack),,49,1500.00
+ANTI-BIOTICS,,Ciprotab-TN (pack),,12,2100.00
+ANTI-BIOTICS,,Clarithromycin (pack),,4,3000.00
+ANTI-BIOTICS,,clavulin 1g) (pack),,0,3500.00
+ANTI-BIOTICS,,clavulin 625mg (pack),,0,2800.00
+ANTI-BIOTICS,,Clavulin Susp 228mg (Bott),,4,2000.00
+ANTI-BIOTICS,,Clindamycin 300mg (card),,5,5000.00
+ANTI-BIOTICS,,clrithrmax (pack),,0,1500.00
+ANTI-BIOTICS,,Cotrimoxazole suspension (bott),,0,600
+ANTI-BIOTICS,,Cotrimoxazole tab (card),,11,500
+ANTI-BIOTICS,,Crystalline Penicillin (Vial),,10,500
+ANTI-BIOTICS,,dafraclav (augmentin) 625mg (pack),,0,2000.00
+ANTI-BIOTICS,,Dalacin C inj 300mg (Pack),,7,5500.00
+ANTI-BIOTICS,,dalacin c susp (pack),,0,4700.00
+ANTI-BIOTICS,,dermazin oiltment (tube),,14,1000.00
+ANTI-BIOTICS,,dermovate cream (tube),,0,1500.00
+ANTI-BIOTICS,,doxycycline capsule (card),,80,1000.00
+ANTI-BIOTICS,,erythromycin susp (bott),,14,1200.00
+ANTI-BIOTICS,,erythromycin500mg (card),,4,2000.00
+ANTI-BIOTICS,,Fleming 228 Suspension (Pack),,18,1800.00
+ANTI-BIOTICS,,Fleming 625mg (Pack),,13,3000.00
+ANTI-BIOTICS,,Flucamed 50mg (pack),,0,1500.00
+ANTI-BIOTICS,,fortum inj 1g (vail),,1,4500.00
+ANTI-BIOTICS,,furoxetil (cefuroxime) 250mg (pack),,0,2000.00
+ANTI-BIOTICS,,furoxetil 500mg (pack),,3,2800.00
+ANTI-BIOTICS,,gentamycin inj (amp),,34,600
+ANTI-BIOTICS,,gyno-travogen (pack),,0,3000.00
+ANTI-BIOTICS,,Levofloxacin inj (pack),,13,1050.00
+ANTI-BIOTICS,,Levofloxacine 500mg (pack),,12,1500.00
+ANTI-BIOTICS,,linex (pack),,0,1000.00
+ANTI-BIOTICS,,MERONEM 500mg (VAIL),,0,10500.00
+ANTI-BIOTICS,,meronem inj 1g (vail),,16,19000.00
+ANTI-BIOTICS,,metronidazole 400mg (card),,66,500
+ANTI-BIOTICS,,metronidazole inj 500mg (pack),,36,700
+ANTI-BIOTICS,,metronidazole syrup (bottle),,0,800
+ANTI-BIOTICS,,mycoten -v cream (pack),,0,1200.00
+ANTI-BIOTICS,,mycoten cream (tube),,16,1100.00
+ANTI-BIOTICS,,neo-penotran (Pack),,-1,6500.00
+ANTI-BIOTICS,,Neoclav Tablet 625mg (Pack),,0,3000.00
+ANTI-BIOTICS,,Nitrofurantoin 100mg (Pack),,11,800
+ANTI-BIOTICS,,Nuronem 1g (pack),,0,10500.00
+ANTI-BIOTICS,,Orelox  Tablet 100mg (pack),,0,4000.00
+ANTI-BIOTICS,,orelox 200mg (pack),,11,4500.00
+ANTI-BIOTICS,,orelox suspension (bott),,6,4000.00
+ANTI-BIOTICS,,oxavid(ofloxacin) 200mg (pack),,0,1000.00
+ANTI-BIOTICS,,Penicillin ointment (tube),,4,600
+ANTI-BIOTICS,,Procaine Penicillin (Vial),,20,1000.00
+ANTI-BIOTICS,,rocephin inj 1g (pack),,13,5000.00
+ANTI-BIOTICS,,Secnidazole Tablet 500mg (pack),,27,1000.00
+ANTI-BIOTICS,,steri-tin (pack),,0,2500.00
+ANTI-BIOTICS,,Suitrox Suspension (Pack),,8,3500.00
+ANTI-BIOTICS,,thalazole tab (tab),,228,50
+ANTI-BIOTICS,,tribotan (baby) cream (tube),,9,1000.00
+ANTI-BIOTICS,,Unasyn (vail),,5,2800.00
+ANTI-BIOTICS,,zinnat 250mg (pack),,0,3550.00
+ANTI-BIOTICS,,zinnat 500mg (pack),,18,4500.00
+ANTI-BIOTICS,,Zinnat Injection (PACK),,2,1600.00
+ANTI-BIOTICS,,ZINNAT SUSP 100ml (BOTT),,0,5000.00
+ANTI-BIOTICS,,Zinnat susp 50mls (btt),,15,3800.00
+ANTI-BIOTICS,,zithromax  suspension (bott),,16,4000.00
+ANTI-BIOTICS,,Zithromax capsule (pack),,6,5200.00
+ANTI-BIOTICS,,ZITHROMAX COUNTING TABLET (tablet),,"1,493.00",300
+ANTI-BIOTICS,,Zmax (adult) (bott),,0,5000.00
+ANTI-BIOTICS,,Zocef(cefuroxime)inj (PACK),,13,1500.00
+ANTI-BIOTICS,,ANTI-BIOTICS - Other,,-1,0
+ANTI-CHOLINERGIC,,atropine inj 600 mic (amp),,0,500
+ANTI-CHOLINERGIC,,buscopan (card),,0,500
+ANTI-CHOLINERGIC,,Hyoscine inj (amp),,13,300
+ANTI-CHOLINERGIC,,mist.pot.cit (bott),,0,600
+ANTI-COAGULANT,,clexane inj 40mg (syringe),,-5,5000.00
+ANTI-COAGULANT,,Human Albumin 100mls (PACK),,0,85000.00
+ANTI-COAGULANT,,Human Albumin 50mls (Pack),,1,40000.00
+ANTI-COAGULANT,,ANTI-COAGULANT - Other,,0,0
+ANTI-CONVULSANTS,,Pregabalin (card),,7,2000.00
+ANTI-DEPRESSANT,,Amitriptyline 25mg (Card),,1,2000.00
+ANTI-DEPRESSANT,,Chlorpromazine Inj (ampoule),,8,300
+ANTI-DEPRESSANT,,Haloperidol 5mg (Tab),,0,50
+ANTI-DEPRESSANT,,PHENYTOIN INJ (VIAL),,0,2000.00
+ANTI-DEPRESSANT,,Sertraline 50mg (Card),,0,4000.00
+ANTI-DEPRESSANT,,ANTI-DEPRESSANT - Other,,0,0
+ANTI-DIABETIC,,Benimet (per card),,0,600
+ANTI-DIABETIC,,contour ts glucometer (pack),,0,6000.00
+ANTI-DIABETIC,,Contour ts strips (pack),,0,7000.00
+ANTI-DIABETIC,,DAONIL (CARD),,0,200
+ANTI-DIABETIC,,diamet(metfomin)500mg (card),,104,500
+ANTI-DIABETIC,,diatab(glibenclamide)5mg (card),,0,300
+ANTI-DIABETIC,,Galvsmet 50/850 (pack),,0,16600.00
+ANTI-DIABETIC,,galvus Met 50/1000mg (Card),,4,2700.00
+ANTI-DIABETIC,,Glanil (satchet),,0,200
+ANTI-DIABETIC,,gliclazide 80mg (pack),,0,1000.00
+ANTI-DIABETIC,,Glimepiride2mg (card),,13,1000.00
+ANTI-DIABETIC,,glucometer (pack),,0,6500.00
+ANTI-DIABETIC,,HUMULIN 70/30 (PACK),,0,6000.00
+ANTI-DIABETIC,,Humulin R inj (Pack),,0,9000.00
+ANTI-DIABETIC,,Lancet (pack),,0,1700.00
+ANTI-DIABETIC,,Lantus insulin (Unit),,1,8000.00
+ANTI-DIABETIC,,mixtard insulin (pack),,1,6000.00
+ANTI-DIABETIC,,soluble insulin (pack),,1,12400.00
+ANTI-DIABETIC,,test stripe (pack),,-1,4500.00
+ANTI-DIABETIC,,ANTI-DIABETIC - Other,,0,0
+ANTI-DIURETIC,,Vasopressin injection (Amp),,-1,2500.00
+ANTI-EMETIC,,Domperidone (tab),,15,120
+ANTI-EMETIC,,Nausea Bands (pack),,10,5000.00
+ANTI-EMETIC,,ondansetron inj 8mg (amp),,24,550
+ANTI-EMETIC,,ondansterone 8mg (tab),,0,300
+ANTI-EMETIC,,ondansterone tab (tab),,0,300
+ANTI-EMETIC,,plasil inj (amp),,31,400
+ANTI-EMETIC,,Plasil tab (Card),,71,300
+ANTI-EMETIC,,promethazine inj (amp),,77,400
+ANTI-EMETIC,,promethazine tab (tab),,191,25
+ANTI-EMETIC,,stugeron (cinaricina)25mg (card),,4,550
+ANTI-EPILETIC,,Biopentin &methylcobalamin 300m (card),,4,1700.00
+ANTI-EPILETIC,,gabapentine 100mg (card),,0,500
+ANTI-FUNGAL,,candid-v 1 (pack),,0,1500.00
+ANTI-FUNGAL,,candid-v 6 (pack),,52,1400.00
+ANTI-FUNGAL,,Fluconazole (pack),,26,1300.00
+ANTI-FUNGAL,,fluconazole suspension (bott),,23,1800.00
+ANTI-FUNGAL,,Gynecological Gel (Pack),,0,18000.00
+ANTI-FUNGAL,,nystatin suspension (bott),,0,1100.00
+ANTI-FUNGAL,,Zinc oxide cream (Pack),,0,800
+ANTI-HELMENTICS,,combantrin tab (pack),,0,400
+ANTI-HELMENTICS,,Ivermectine 3mg (Card),,0,5000.00
+ANTI-HELMENTICS,,Pyrantrin Suspension (Pack),,0,800
+ANTI-HELMENTICS,,retrax tablet (pack),,0,300
+ANTI-HELMENTICS,,zentel suspension (bott),,16,500
+ANTI-HELMENTICS,,zentel tablet (pack),,32,700
+ANTI-HISTAMINE,,actifed tablet (pack),,0,500
+ANTI-HISTAMINE,,Benzyl Benzoate Cream (Bottle),,1,3500.00
+ANTI-HISTAMINE,,CETRIZINE syrup (BOTT),,0,1500.00
+ANTI-HISTAMINE,,chlorpheniramine inj 10mg (amp),,0,300
+ANTI-HISTAMINE,,Eurax cream (pack),,0,1500.00
+ANTI-HISTAMINE,,Levocetrizine syrup (Bott),,8,1500.00
+ANTI-HISTAMINE,,Loratadine Syrup (Pack),,10,800
+ANTI-HISTAMINE,,loratyn-10 (card),,24,400
+ANTI-HISTAMINE,,MONTILUKAST (CARD),,0,1500.00
+ANTI-HISTAMINE,,Navidoxine (Card),,28,500
+ANTI-HISTAMINE,,otrivin adult (pack),,2,2500.00
+ANTI-HISTAMINE,,otrivine child (pack),,9,2000.00
+ANTI-HISTAMINE,,piriton tab 1 (card),,46,100
+ANTI-HISTAMINE,,prednisolone (card),,71,500
+ANTI-HISTAMINE,,Rhinathiol  from 2years (bott),,6,2000.00
+ANTI-HISTAMINE,,Rhinathiol expe. adult(blue) (bott),,7,2000.00
+ANTI-HISTAMINE,,Sinufed Syrup (Bottle),,8,1000.00
+ANTI-HYPERTENSIVE,,aldactone tab 25mg (card),,-2,1500.00
+ANTI-HYPERTENSIVE,,Amlodipine 10mg(Teva) (card),,48,1000.00
+ANTI-HYPERTENSIVE,,Asomex 2.5mg (card),,0,1100.00
+ANTI-HYPERTENSIVE,,Asomex 5mg (Card),,71,1700.00
+ANTI-HYPERTENSIVE,,Bisoprolol 10mg (card),,0,500
+ANTI-HYPERTENSIVE,,Bisoprolol 5mg (Card),,14,500
+ANTI-HYPERTENSIVE,,Co-Micardis (pack),,5,12000.00
+ANTI-HYPERTENSIVE,,Co-Micardis 40/12.5mg (Pack),,1,10500.00
+ANTI-HYPERTENSIVE,,CoQ10 30mg (Bott),,21,5500.00
+ANTI-HYPERTENSIVE,,Coveram 10/10MG (Pack),,0,10500.00
+ANTI-HYPERTENSIVE,,Digoxin (card),,-1,1000.00
+ANTI-HYPERTENSIVE,,Diovan 80MG (pack),,4,9000.00
+ANTI-HYPERTENSIVE,,Exforge 10/160 (pack),,2,13500.00
+ANTI-HYPERTENSIVE,,Exforge 5/160mg (pack),,2,12600.00
+ANTI-HYPERTENSIVE,,exforge hct (Pack),,0,8900.00
+ANTI-HYPERTENSIVE,,Exforge HCT 10/160/12.5MG (pack),,5,12800.00
+ANTI-HYPERTENSIVE,,hydralazine inj 20mg (amp),,26,600
+ANTI-HYPERTENSIVE,,Hydraline tab 25mg (Tab),,0,200
+ANTI-HYPERTENSIVE,,Hydrochlorothiazide 25MG (Card),,25,400
+ANTI-HYPERTENSIVE,,labetalol 200mg (card),,29,3000.00
+ANTI-HYPERTENSIVE,,labetalol inj 50mg (amp),,9,1700.00
+ANTI-HYPERTENSIVE,,labetalol100mg (card),,0,200
+ANTI-HYPERTENSIVE,,Lisinopril (CARD),,10,500
+ANTI-HYPERTENSIVE,,Losartan 100mg (Card),,0,2000.00
+ANTI-HYPERTENSIVE,,Losartan 50mg (card),,12,1250.00
+ANTI-HYPERTENSIVE,,Methyldopa 250mg (card),,183,700
+ANTI-HYPERTENSIVE,,Metoprolo 25mg (pack),,0,2000.00
+ANTI-HYPERTENSIVE,,Metoprolol 50mg (Card),,11,1700.00
+ANTI-HYPERTENSIVE,,Nifecard XL 30mg (Card),,19,900
+ANTI-HYPERTENSIVE,,nifedipin20mg (card),,46,600
+ANTI-HYPERTENSIVE,,Normoretic (card),,12,600
+ANTI-HYPERTENSIVE,,norvasc 5mg (CARD),,0,1500.00
+ANTI-HYPERTENSIVE,,norvasc10mg (card),,26,3000.00
+ANTI-HYPERTENSIVE,,Propanolol Tab 40mg (Card),,6,2000.00
+ANTI-HYPERTENSIVE,,RANOPRIL (PACK),,0,1200.00
+ANTI-HYPERTENSIVE,,Spironolactone 25mg (Card),,4,2200.00
+ANTI-HYPERTENSIVE,,Telmisartan 80mg (Card),,11,2500.00
+ANTI-HYPERTENSIVE,,valvas 5/160mg (pack),,4,8500.00
+ANTI-INFLAMMATORY,,kotase (card),,0,200
+Anti-Leukaemia,,Hydroxyurea 500mg (Pack),,-1,3000.00
+ANTI-MALARIA,,Abeeta 150mg (Amp),,42,800
+ANTI-MALARIA,,amatem-forte soft gel (pack),,36,2100.00
+ANTI-MALARIA,,artequin (pack),,0,3000.00
+ANTI-MALARIA,,Artesunat syrup (bottle),,1,1200.00
+ANTI-MALARIA,,artesunat tablet (pack),,0,1500.00
+ANTI-MALARIA,,Artesunate inj (pack),,36,1800.00
+ANTI-MALARIA,,Artesunate inj120mg (pack),,16,2200.00
+ANTI-MALARIA,,Camoquine syrup (bott),,7,2000.00
+ANTI-MALARIA,,camosunate 1-6 years (pack),,32,1100.00
+ANTI-MALARIA,,camosunate below 1 year (pack),,0,1000.00
+ANTI-MALARIA,,coartem-dispersible (card),,43,800
+ANTI-MALARIA,,coartem norvatis (pack),,0,1000.00
+ANTI-MALARIA,,Combisunate 80/480mg (Pack),,0,1200.00
+ANTI-MALARIA,,D-Artepp 20/160 Dispersible (Pack),,0,1200.00
+ANTI-MALARIA,,D-Artepp 40/320 Dispersible (Pack),,8,1600.00
+ANTI-MALARIA,,D-Artepp Adult (Pack),,20,2000.00
+ANTI-MALARIA,,DUP lonart-DS (pack),,0,1600.00
+ANTI-MALARIA,,Emal (child) 75mg (AMP),,77,1200.00
+ANTI-MALARIA,,emal inj (amp),,48,1500.00
+ANTI-MALARIA,,fansider inj (amp),,0,1000.00
+ANTI-MALARIA,,Liquid Quinine (Bottle),,0,1500.00
+ANTI-MALARIA,,Lonart-DS (pack),,27,2100.00
+ANTI-MALARIA,,Lonart Suspension (Bottle),,7,1500.00
+ANTI-MALARIA,,Lumapil Forte (Pack),,7,1500.00
+ANTI-MALARIA,,Lumartem Tablet (Pack),,0,500
+ANTI-MALARIA,,mosquito net (pack),,-2,3000.00
+ANTI-MALARIA,,paludrine tab 100mg (card),,13,2000.00
+ANTI-MALARIA,,quinine inj 600mg (amp),,32,600
+ANTI-MALARIA,,Quinine Sulphate 300mg Tab (Card),,8,800
+ANTI-MALARIA,,Quinine suspension (bott),,0,2000.00
+ANTI-MALARIA,,reludrine tab 100mg (card),,0,1300.00
+ANTI-MALARIA,,swider tablet (pack),,14,1150.00
+ANTI-NEOPLASTIC,,LEUCOVORIN CALCIUM(FOLINIC ACID (VIAL),,0,3000.00
+ANTI-NEOPLASTIC,,Methotrexate (VIAL),,0,2500.00
+ANTI-NEOPLASTIC,,Tamoxifen Tablet 20mg (Pack),,3,5500.00
+ANTI-OESTROGEN,,clomid (pack),,20,4500.00
+ANTI-OESTROGEN,,Letrozole Tablet (Tab),,73,500
+ANTI-PROLACTINS,,Cabergoline (PACK),,15,9000.00
+ANTI-PROLACTINS,,"dostinex 0,5mg (pack)",,0,30000.00
+ANTI-SEPTICS,,HAND SANITIZER (bott),,0,1500.00
+ANTI-SEPTICS,,Hand Sanitizer Small (bott),,0,1000.00
+ANTI-SPASMODIC,,loperaminde 2mg (Card),,20,500
+ANTI-TUSSIVE,,Ascorex Expectorant (bott),,0,800
+ANTI-TUSSIVE,,benylin expectorant (bott),,0,400
+ANTI-TUSSIVE,,Emzolyn adult (bott),,17,1000.00
+ANTI-TUSSIVE,,emzolyn child (bott),,29,700
+ANTI-TUSSIVE,,Menthodex Syrup (Bottle),,8,1500.00
+ANTI-TUSSIVE,,piriton expectorant (bott),,20,1700.00
+ANTI-TUSSIVE,,piriton syurp (bott),,27,1000.00
+ANTI-TUSSIVE,,promethazine syurp (bott),,3,825
+ANTI-TUSSIVE,,Rhinathiol Promethazine(yellow) (bott),,6,2000.00
+ANTI-TUSSIVE,,Tuxil-D Adult (bott),,24,900
+ANTI-TUSSIVE,,Tuxil-D children (btt),,24,700
+ANTI-TUSSIVE,,tuxil R/N enfants (bott),,0,300
+ANTI-ULCER,,antacid tab (tab),,0,5
+ANTI-ULCER,,Bicarbonate Soda Granules,,0,800
+ANTI-ULCER,,cimetidin tablet (Park),,0,200
+ANTI-ULCER,,cimetidine inj 200mg (amp),,0,200
+ANTI-ULCER,,cytotec 200mg (tab),,218,500
+ANTI-ULCER,,Danacid (card),,58,100
+ANTI-ULCER,,Elicorid (Pack),,5,11500.00
+ANTI-ULCER,,Esomeprazole 20mg (Card),,3,1300.00
+ANTI-ULCER,,gascol suspension (bott),,25,900
+ANTI-ULCER,,GAVISCON (BOTT),,17,3200.00
+ANTI-ULCER,,gelusil tab (tab),,0,5
+ANTI-ULCER,,gestid suspensoin (bott),,0,800
+ANTI-ULCER,,Meprasil (Omeprazole 20 mg) (pack),,0,1400.00
+ANTI-ULCER,,MISOCLEAR TABS (tab),,0,500
+ANTI-ULCER,,Omeprazole capsule (Pack),,26,1500.00
+ANTI-ULCER,,omeprazole inj (ampoule),,18,1000.00
+ANTI-ULCER,,polyfort suspensoin (bott),,0,500
+ANTI-ULCER,,Rabeprazole 20mg (Card),,2,1500.00
+ANTI-ULCER,,ranitidine 150mg tab (card),,0,500
+ANTI-ULCER,,RANITIDINE 300MG (PACK),,0,2500.00
+ANTI-ULCER,,ranitidine inj 50mg (amp),,27,600
+ANTI-ULCER,,sodium bicarbonate (vail),,8,800
+ANTI-ULCER,,Sodium bicarbonate tab (card),,5,499.90387
+ANTI-ULCER,,ulsakit (pack),,2,4850.00
+ANTI-VIRAL,,Acyclovir Cream (Tube),,0,2500.00
+ANTI-VIRAL,,Acyclovir inj (Vial),,0,5000.00
+ANTI-VIRAL,,Nevirapine Suspension (Pack),,0,7000.00
+ANTI-VIRAL,,temozolomide 100mg (  tab),,0,28000.00
+ANTI-VIRAL,,valtrex 500mg (pack),,6,6500.00
+ANTI-VIRAL,,Valtrex 500mg x42 (Card),,1,3900.00
+ANTI-VIRAL,,VIREST (CARD),,0,800
+Antifibrinolytic,,Tranexamic acid inj (ampoule),,19,2500.00
+Antifibrinolytic,,Tranexamic acid tab (card),,11,2300.00
+ASTHMATICS,,aminophylline inj (amp),,11,1000.00
+ASTHMATICS,,Ipratropium Bromide 0.25mg (Nebules),,9,600
+ASTHMATICS,,Montelukast 10mg tab,,12,1600.00
+ASTHMATICS,,Montelukast 4mg tab,,0,1400.00
+ASTHMATICS,,Pulmicort 0.5mg (Nebules),,9,800
+ASTHMATICS,,Salbutamol 2mg (Card),,-5,300
+ASTHMATICS,,salbutamol 2mg counting (tab),,"1,623.00",15
+ASTHMATICS,,salbutamol inj 0.5mg (amp),,26,600
+ASTHMATICS,,salbutamol syrup (bott),,10,1000.00
+ASTHMATICS,,Seretide 50/250mcg (Pack),,1,7700.00
+ASTHMATICS,,Ventolin Inhaler (Pack),,2,2400.00
+ASTHMATICS,,ventolin nebules 2.5mg (vail),,22,800
+ASTHMATICS,,ventolin nebules 5mg (vail),,0,600
+ASTHMATICS,,Viscof (bott),,-1,1500.00
+BI-POLAR DISORDER,,carbamazepin (card),,10,1500.00
+BI-POLAR DISORDER,,Phenobarbitone tab 30mg (Tab),,801,50
+BI-POLAR DISORDER,,Sodium Valproate syrup (Pack),,0,6800.00
+BI-POLAR DISORDER,,Sodium Valproate tab (Card),,10,1900.00
+BI-POLAR DISORDER,,Tegretol suspension (Pack),,0,5000.00
+BROCHODILATOR,,Surfactrant (pack),,-1,250000.00
+Consumable,,Calamine Lotion (Pack),,4,600
+Consumable,,comfit pad (pack),,33,800
+Consumable,,Disposable pants (pack),,22,720
+Consumable,,Ice Bag (Bag),,13,4500.00
+Consumable,,Podophyllin (Pack),,0,5000.00
+Consumable,,SITZ  BATH BOWL (bowl),,10,5500.00
+Consumable,,soluset (pack),,21,3500.00
+Consumable,,Syringes (Piece),,-20,150
+Consumable,,Theatre Gown (Pack),,43,3000.00
+CONTRACEPTIVES,,combination-3 (card),,16,500
+CONTRACEPTIVES,,depo-provera inj (pack),,3,1500.00
+CONTRACEPTIVES,,Implanon (pack),,4,50000.00
+CONTRACEPTIVES,,iucd (Piece),,18,2000.00
+CONTRACEPTIVES,,Mirena IUCD (Pack),,0,80000.00
+CONTRACEPTIVES,,noristerat inj (pack),,0,1500.00
+CONTRACEPTIVES,,unique condoms (Pack),,77,1500.00
+CORTICOSTEROIDS,,AVAMYS NASAL SPRAY (Pack),,2,3350.00
+CORTICOSTEROIDS,,Bethametasone cream,,0,600
+CORTICOSTEROIDS,,dexametazone injection (amp),,58,200
+CORTICOSTEROIDS,,hydrocortisone cream (tube),,13,1600.00
+CORTICOSTEROIDS,,hydrocortizone inj (vail),,18,800
+CORTICOSTEROIDS,,Vecuten Cream (Pack),,13,1200.00
+DECONGESTANT,,Eucalyptus Oil (Pack),,3,1800.00
+DECONGESTANT,,Saline Nasal Drop (Pack),,6,1100.00
+DECONGESTANT,,Xylo Acino 1% (Pack),,2,2700.00
+DISINFECTANT,,chlorxy-4% gel (pack),,12,600
+DISINFECTANT,,eusol solution a&b (pack),,4,500
+DISINFECTANT,,hydrogen peroxide (bott),,0,200
+DISINFECTANT,,iodine (bott),,0,200
+DISINFECTANT,,metholated spirit (bott),,0,300
+DISINFECTANT,,SUGIDONE (BOTT),,0,11000.00
+DIURETICS,,Furosemide inj 20mg (amp),,23,400
+DIURETICS,,Furosemide tabs (card),,8,800
+DIURETICS,,Torsemide Inj (amp),,5,1600.00
+EAR DROPS,,CERUMOL (Pack),,0,1850.00
+ENDOCRINE-DRUGS,,Bromocriptin 2.5mg (tab),,99,200
+ERECTILE DYSFUNCTION,,viagra 100mg (tab),,0,2000.00
+ERECTILE DYSFUNCTION,,viagra 100mg-1 (pack),,0,2000.00
+ERECTILE DYSFUNCTION,,VIAGRA 50mg (TAB),,16,1500.00
+FERTILITY SUPPLEMENT,,count boost-formen (bott),,0,12000.00
+FERTILITY SUPPLEMENT,,Fertil Aid for men (bott),,0,14000.00
+FERTILITY SUPPLEMENT,,Fertil Aid for women (bott),,0,13000.00
+FERTILITY SUPPLEMENT,,MedFertil for men (Pack),,25,8000.00
+FERTILITY SUPPLEMENT,,motility boost-for men (bott),,9,12000.00
+FERTILITY SUPPLEMENT,,Ovofolic (Pack),,33,10000.00
+Folic Acid Analog,,Folinic Acid (Pack),,0,70000.00
+INFUSIONS,,1/2 strenght darrowrs (500ml),,61,1000.00
+INFUSIONS,,dextrose 10% (500ml),,50,1200.00
+INFUSIONS,,dextrose 50% (100ml),,24,1000.00
+INFUSIONS,,dextrose water 5% (500ml),,23,1100.00
+INFUSIONS,,dextrose+saline 1000ml (1000ml),,0,1000.00
+INFUSIONS,,dextrose+saline 4.3% (500ml),,74,900
+INFUSIONS,,dextrose+saline 500ml (500ml),,180,900
+INFUSIONS,,dextrose+saline(peadiatrics) 8% (500ml),,0,1000.00
+INFUSIONS,,full strenght darrows (500mls),,22,1000.00
+INFUSIONS,,gelofusine 4% w/v (bott),,0,3500.00
+INFUSIONS,,glycine (5000mls),,0,39500.00
+INFUSIONS,,Haemaccel (Pack),,1,10800.00
+INFUSIONS,,Intra lipid (bag),,0,17000.00
+INFUSIONS,,Manitol (bag),,11,1600.00
+INFUSIONS,,normal saline 1000 ml (1000ml),,93,2200.00
+INFUSIONS,,normal+saline 500ml (500ml),,225,1100.00
+INFUSIONS,,ringer's lactate 500ml (500ml),,22,1800.00
+INFUSIONS,,Total Parenteral Nutrition(TPN) (Bag),,1,42000.00
+INFUSIONS,,water for injection 10ml (bott),,-5,200
+INFANT FORMULA,,Aptamil (tin),,4,7000.00
+INFANT FORMULA,,Peak Baby (Tin),,2,3000.00
+INFANT FORMULA,,PreNan (tin),,2,3600.00
+IVF-DRUGS,,brevactid inj 5000ui (amp),,0,15200.00
+IVF-DRUGS,,Cetrotide 0.25mg (Pack),,0,20000.00
+IVF-DRUGS,,cyclogest 400mg (pack),,433,12600.00
+IVF-DRUGS,,Decapeptyl Injection 3.75mg (Pack),,0,51000.00
+IVF-DRUGS,,DICLAIR (AMPOULE...price changed ..cp),,0,4500.00
+IVF-DRUGS,,ferring menopur (vail),,0,6000.00
+IVF-DRUGS,,foligraf 150 mg (pack),,0,14000.00
+IVF-DRUGS,,foligraf 75 I.U (pack),,0,6000.00
+IVF-DRUGS,,geston injection (amp),,562,2500.00
+IVF-DRUGS,,Gonal-F 75i.u (Pack),,0,12000.00
+IVF-DRUGS,,Gonal-F Prefilled Pen 300i.u (pack),,8,56000.00
+IVF-DRUGS,,Gonal-F Prefilled Pen 450i.u (Pack),,8,72000.00
+IVF-DRUGS,,Gonal F Prefilled Pen 900iu (Pack),,38,144000.00
+IVF-DRUGS,,GRANERELIX (PARK),,5,12000.00
+IVF-DRUGS,,HCG Injection (vail),,21,8000.00
+IVF-DRUGS,,Humog 150iu (Vial),,6,12000.00
+IVF-DRUGS,,Humog75 (vial),,89,6500.00
+IVF-DRUGS,,Luprodex (pack),,8,38000.00
+IVF-DRUGS,,menogon (amp),,0,6200.00
+IVF-DRUGS,,menopur (amp),,562,9000.00
+IVF-DRUGS,,MERIONAL (vial),,0,6000.00
+IVF-DRUGS,,NOVERAL (PACK),,0,11000.00
+IVF-DRUGS,,ovitrelle inj (pack),,0,10000.00
+IVF-DRUGS,,Progynova  2mg (tab),,"10,509.00",150
+IVF-DRUGS,,suprecur inj (pack),,19,24000.00
+IVF-DRUGS,,ultrogestan (pack),,0,4000.00
+IVF-DRUGS,,zoladex 10.8mg (pack),,0,153000.00
+IVF-DRUGS,,zoladex 3.6mg (pack),,19,48000.00
+LAXATIVES,,anusol suppositories (piles),,72,800
+LAXATIVES,,Ducolax 5mg (Card),,-2,1289.36
+LAXATIVES,,Ducolax suppositories (piles),,13,500
+LAXATIVES,,Lactulose solution (Pack),,7,2000.00
+LOZENGES,,dequadin (card),,0,500
+LOZENGES,,strepsils (pack),,5,2400.00
+LUBRICANT LAXATIVE,,liquid paraffin (bott),,6,1200.00
+MULTI-VITAMINS,,abidec drop (bott),,36,2500.00
+MULTI-VITAMINS,,Abidec syrup (bott),,0,2000.00
+MULTI-VITAMINS,,Astyfer  Capsule (pack),,5,2500.00
+MULTI-VITAMINS,,Astyfer Syrup (bott),,9,2100.00
+MULTI-VITAMINS,,Astymin Capsule (Pack),,2,2500.00
+MULTI-VITAMINS,,Astymin Infusion (Bottle),,3,9500.00
+MULTI-VITAMINS,,Astymin syrup (bott),,9,2000.00
+MULTI-VITAMINS,,cac-1000 (pack),,0,1800.00
+MULTI-VITAMINS,,Calcimax syrup (Bott),,2,700
+MULTI-VITAMINS,,Calcium Dispersible 500mg (Tin),,3,1800.00
+MULTI-VITAMINS,,calcium gluconate inj (amp),,7,900
+MULTI-VITAMINS,,calcium tab (tab),,"1,272.00",10
+MULTI-VITAMINS,,DHA  EMULSION (BOTTLE),,2,4200.00
+MULTI-VITAMINS,,dynamogen (vail),,0,500
+MULTI-VITAMINS,,emvite syrup (bott),,8,500
+MULTI-VITAMINS,,erythropoietin (vail),,3,18000.00
+MULTI-VITAMINS,,ferobin-plus cap (pack),,12,900
+MULTI-VITAMINS,,ferobin-plus syrup (bott),,7,1200.00
+MULTI-VITAMINS,,ferrous sulphate 1 (tab),,"4,171.00",10
+MULTI-VITAMINS,,folic acid 1 (tab),,"7,851.00",10
+MULTI-VITAMINS,,folic acid syrup (bott),,0,500
+MULTI-VITAMINS,,Iron-dextran inj (amp),,0,500
+MULTI-VITAMINS,,multivite (tab),,"5,395.00",6
+MULTI-VITAMINS,,neurobion tablet (card),,0,2000.00
+MULTI-VITAMINS,,Nicotinic Acid (tab),,50,20
+MULTI-VITAMINS,,Nutravit (bott),,0,700
+MULTI-VITAMINS,,ors (pack),,25,400
+MULTI-VITAMINS,,ORS PEADIATRIC (PACK+TAB),,0,300
+MULTI-VITAMINS,,pregnacare (pack),,12,4500.00
+MULTI-VITAMINS,,pregnacare + omega-3 (pack),,0,2800.00
+MULTI-VITAMINS,,Pronatal tabs (pack),,24,3800.00
+MULTI-VITAMINS,,Pyridoxine 100mg (Tab),,60,100
+MULTI-VITAMINS,,Slow k counting (tabs),,92,150
+MULTI-VITAMINS,,Slow K tab (Card),,0,2500.00
+MULTI-VITAMINS,,Trophamine (vail),,1,12000.00
+MULTI-VITAMINS,,vitamin-A (cap),,74,300
+MULTI-VITAMINS,,vitamin-B complex capsules (bott),,0,2500.00
+MULTI-VITAMINS,,vitamin-B complex syrup (bott),,0,500
+MULTI-VITAMINS,,vitamin-b inj (vail),,16,800
+MULTI-VITAMINS,,VITAMIN-C INJ (Amp),,7,200
+MULTI-VITAMINS,,vitamin-c syrup (bott),,20,600
+MULTI-VITAMINS,,vitamin-c tab coloured (tab),,"6,053.00",10
+MULTI-VITAMINS,,vitamin-c tab white (tab),,"4,152.00",10
+MULTI-VITAMINS,,Vitamin A 25000 IU (Cap),,77,100
+MULTI-VITAMINS,,vitamin b tablets (tabs),,"1,645.00",10
+MULTI-VITAMINS,,Vitamin C Dispersible 180mg (Tin),,19,1500.00
+MULTI-VITAMINS,,vitamin E PACK (tabs),,0,50
+MULTI-VITAMINS,,vitamin K injection (amp),,18,600
+MULTI-VITAMINS,,vitaminE CAP (pack),,0,3000.00
+MULTI-VITAMINS,,zinc tablet (Card),,7,200
+MUSCLE RELAXANT,,Sirdalud 4mg (Card),,3,2200.00
+Opioid-Antagonist,,Naloxone 400mcg (Amp),,0,4000.00
+OPTHALMICS,,betadron-N eye drop (pack),,0,500
+OPTHALMICS,,chloramphenicol eye drop (pack),,8,1000.00
+OPTHALMICS,,chlorophenicol eye ointment (pack),,9,400
+OPTHALMICS,,Cipro Eyedrop (Pack  ),,16,2000.00
+OPTHALMICS,,gentamicin eye drop (pack),,15,900
+OPTHALMICS,,spersallerg eye drop (pack),,13,1500.00
+OXYTOCICS,,ergometrine inj 0.5mg (amp),,0,500
+OXYTOCICS,,METHYLERGOMETRINE (AMP),,36,800
+OXYTOCICS,,oxytocine 10ui (amp),,95,900
+OXYTOCICS,,Pabal (Vial),,9,15000.00
+OXYTOCICS,,tractotile (pack),,0,20000.00
+POISONS,,ACTIVATED CHARCOAL (TIN),,0,1500.00
+POISONS,,bromazepam 3mg (tab),,0,50
+POISONS,,bromazepam1.5 mg (tab),,329,100
+POISONS,,diazepam 5mg tab (tab),,50,100
+POISONS,,Diazepam inj 10mg (Amp),,46,2000.00
+POISONS,,DIAZEPAM TAB10MG,,0,200
+POISONS,,Flunitrazepam 1mg (Tab),,0,375
+POISONS,,Rohypnol (Flunitrazepam) 1mg (Tab),,0,950
+POISONS,,Zopiclone (Tab),,10,600
+POST PBW,,POST PARTUM BODY WRAP,,15,23500.00
+PROBIOTICS,,Enterogemina (Pack),,2,5000.00
+PROGESTOGENS,,DHEA  50mg 30tabs (bott),,8,6000.00
+PROGESTOGENS,,DHEA 50mg100tabs (bott),,6,9500.00
+PROGESTOGENS,,DHEA25mg (Bottle),,0,4500.00
+PROGESTOGENS,,Duphaston (pack),,26,4000.00
+PROGESTOGENS,,primolut- DEPOT (PACK),,10,4000.00
+PROGESTOGENS,,primolut-N tab (tab),,304,150
+PROGESTOGENS,,Provera 5mg (tab),,196,250
+SEDATIVE-HYPONTIC,,Phenobarbitone (bott),,0,1200.00
+SEDATIVE-HYPONTIC,,phenobarbitone inj (amp),,10,1500.00
+STATINS,,Rosuvastatin 20 (Card),,3.5,1800.00
+SYMPATHOMIMITICS,,adrenaline 1mg (amp),,24,500
+VACCINE,,ANTE-TETANUS (DOSE),,0,1000.00
+VACCINE,,bcg vaccine (bott),,8.5,5000.00
+VACCINE,,cervarix inj (pack),,5,12500.00
+VACCINE,,EMZOR VARICELLA VACCINE (PACK),,0,7900.00
+VACCINE,,hepatitis-b immunoglobulin (pack),,1,130000.00
+VACCINE,,Hepatitis A Vaccine (Dose),,12,7000.00
+VACCINE,,HEPATITIS B VACCINE children (pack),,0,2900.00
+VACCINE,,Hepatitise B (DOSE),,120,1000.00
+VACCINE,,Hepatitise b adult (pack),,0,3500.00
+VACCINE,,Hepitatis A&B (Pack),,0,10000.00
+VACCINE,,Hexaxim Vaccine (Pack),,9,14500.00
+VACCINE,,Ipv (Vial),,0,4000.00
+VACCINE,,Ipv Per Dose (Dose),,111,1000.00
+VACCINE,,measles (bott),,11,6500.00
+VACCINE,,Mennigitis (VIAL),,18,8500.00
+VACCINE,,opv vaccine (drops),,219,500
+VACCINE,,pentavalent (dose),,94,1500.00
+VACCINE,,prevenar -13 (pack),,0,14000.00
+VACCINE,,priorix-tetra (pack),,0,15000.00
+VACCINE,,priorix inj (pack),,12,5000.00
+VACCINE,,rhogam inj 1500iu (INJ(VAIL)),,2,30000.00
+VACCINE,,Rotarix Oral Vaccine (pack),,25,8000.00
+VACCINE,,synflorix inj (Dose),,14,6000.00
+VACCINE,,tetanus vaccine (amp),,18,500
+VACCINE,,tritanrix  inj (pack),,0,3500.00
+VACCINE,,Typhoid vaccine (pack),,8,7000.00
+VACCINE,,varilrix (pack),,120,20000.00
+VACCINE,,yellow fever (pack),,6,6000.00

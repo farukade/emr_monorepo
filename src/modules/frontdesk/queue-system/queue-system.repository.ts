@@ -7,12 +7,12 @@ import * as moment from 'moment';
 @EntityRepository(Queue)
 export class QueueSystemRepository extends Repository<Queue> {
 
-    async saveQueue(appointment: Appointment, department: Department): Promise<Queue> {
+    async saveQueue(appointment: Appointment, type: string): Promise<Queue> {
         try {
             let queueNumber;
             const today = moment().format('YYYY-MM-DD');
             const lastQueueRes = await this.find({
-                where: {createdAt: today, department},
+                where: {createdAt: today, queueType: type},
                 take: 1,
                 order: {queueNumber: 'DESC'},
             });
@@ -29,7 +29,7 @@ export class QueueSystemRepository extends Repository<Queue> {
             queue.appointment   = appointment;
             queue.status        = 1;
             queue.createdAt     = today;
-            queue.department    = department;
+            queue.queueType     = type;
             await queue.save();
 
             return queue;

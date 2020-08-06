@@ -418,12 +418,10 @@ export class HmoService {
             if (appointment) {
                 appointment.status = 'Pending Paypoint Approval';
                 appointment.save();
-                // get paypoint department
-                const paypoint = await getConnection().getRepository(Department).findOne({where: {name: 'Paypoint'}});
                 // create new queue
-                queue = await this.queueSystemRepository.saveQueue(appointment, paypoint);
+                queue = await this.queueSystemRepository.saveQueue(appointment, 'vitals');
             }
-            this.appGateway.server.emit('hmo-patient-processed', transaction, appointment);
+            this.appGateway.server.emit('new-queue', {queue});
 
             return {success: true, transaction, queue};
         } catch (error) {

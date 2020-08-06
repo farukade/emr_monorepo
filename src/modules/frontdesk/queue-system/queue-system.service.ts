@@ -4,7 +4,6 @@ import { QueueSystemRepository } from './queue-system.repository';
 import { Queue } from './queue.entity';
 import * as moment from 'moment';
 import {AppointmentRepository} from "../appointment/appointment.repository";
-import {getConnection, getRepository} from "typeorm";
 import {DepartmentRepository} from "../../settings/departments/department.repository";
 import {AppGateway} from "../../../app.gateway";
 
@@ -44,10 +43,8 @@ export class QueueSystemService {
                 .where('appointment.patient_id = :patient_id', {patient_id})
                 .andWhere('appointment.isActive = :status', {status: true})
                 .getOne();
-            // find department
-            const department = await this.departmentRepository.findOne(department_id);
             // save queue
-            const queue = await this.queueSystemRepository.saveQueue(appointment, department);
+            const queue = await this.queueSystemRepository.saveQueue(appointment, 'department');
             // send new queue message
             this.appGateway.server.emit('new-queue', queue);
 

@@ -17,6 +17,8 @@ import { Department } from '../../settings/entities/department.entity';
 import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
 import { ServiceCategoryRepository } from '../../settings/services/service.category.repository';
 import { AppGateway } from '../../../app.gateway';
+import {getRepository} from "typeorm";
+import {StaffDetails} from "../../hr/staff/entities/staff_details.entity";
 
 @Injectable()
 export class AppointmentService {
@@ -61,21 +63,19 @@ export class AppointmentService {
 
     async saveNewAppointment(appointmentDto: AppointmentDto): Promise<any> {
         try {
-            const { patient_id, department_id, specialization_id, consulting_room_id, sendToQueue, serviceType, serviceCategory, amount} = appointmentDto;
+            const { patient_id, consulting_room_id, doctor_id, sendToQueue, serviceType, serviceCategory, amount} = appointmentDto;
             // find patient details
             const patient = await this.patientRepository.findOne(patient_id);
-            // find department details
-            const department = await this.departmentRepository.findOne(department_id);
-            // find specialization
-            const specialization = await this.specializationRepository.findOne(specialization_id);
-            // find consulting room
+            // find doctor
+            const doctor = await getRepository(StaffDetails).findOne(doctor_id);
+             // find consulting room
             const consultingRoom = await this.consultingRoomRepository.findOne(consulting_room_id);
             // find service
             const service = await this.serviceRepository.findOne(serviceType);
             // find service category
             const category = await this.serviceCategoryRepository.findOne(serviceCategory);
 
-            const appointment = await this.appointmentRepository.saveAppointment(appointmentDto, patient, specialization, department, consultingRoom, service, category);
+            const appointment = await this.appointmentRepository.saveAppointment(appointmentDto, patient, consultingRoom, doctor, amount, service, category);
             // update patient appointment date
             patient.lastAppointmentDate = new Date().toString();
             await patient.save();
@@ -85,31 +85,32 @@ export class AppointmentService {
             let hmoApprovalStatus = 0;
             
             if (sendToQueue) {
-                if (patient.insurranceStatus === 'HMO') {
-                    paymentType  = 'HMO';
-                    hmoApprovalStatus = 1;
-                    // update appointment status
-                    appointment.status = 'Pending HMO Approval';
-                    await appointment.save();
-                    // send alert to hmo
-                    this.appGateway.server.emit('new-hmo-appointment', appointment);
-
+                if (amount) {
+                    if (patient.insurranceStatus === 'HMO') {
+                        paymentType = 'HMO';
+                        hmoApprovalStatus = 1;
+                        // update appointment status
+                        appointment.status = 'Pending HMO Approval';
+                        await appointment.save();
+                        // save HMO queue
+                        queue = await this.queueSystemRepository.saveQueue(appointment, 'hmo');
+                    } else {
+                        // update appointment status
+                        appointment.status = 'Pending Account Approval';
+                        await appointment.save();
+                        // save paypoint queue
+                        queue = await this.queueSystemRepository.saveQueue(appointment, 'paypoint');
+                    }
+                    // save payment
+                    const payment = await this.saveTransaction(patient, service, amount, paymentType, hmoApprovalStatus);
+                    // send queue message
+                    this.appGateway.server.emit('new-queue', {queue, payment});
                 } else {
-                    const paypoint = await this.departmentRepository.findOne({where: {name: 'Accounts'}});
-
-                    queue = await this.queueSystemRepository.saveQueue(appointment, paypoint);
-                    // update appointment status
-                    appointment.status = 'Pending Account Approval';
-                    await appointment.save();
-                    // send new queue message
-                    this.appGateway.server.emit('new-queue', queue);
-
+                    queue = await this.queueSystemRepository.saveQueue(appointment, 'vitals');
+                    this.appGateway.server.emit('new-queue', {queue});
                 }
             }
-            // save payment
-            const payment = await this.saveTransaction(patient, service, amount, paymentType, hmoApprovalStatus);
-
-            const resp = { success: true, appointment, payment };
+            const resp = { success: true, appointment};
 
             this.appGateway.server.emit('new-appointment', resp);
             return resp;
@@ -194,8 +195,7 @@ export class AppointmentService {
             payment_type: paymentType,
             hmo_approval_status: hmoApprovalStatus,
         };
-        const transaction = await this.transactionsRepository.save(data);
-        return transaction;
+        return await this.transactionsRepository.save(data);
     }
 
     private isWithinGracePeriod(lastVisit, gracePeriod) {

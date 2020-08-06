@@ -27,7 +27,7 @@ export class AuthService {
   }
 
   async getUserByUsername(username: string): Promise<User> {
-    return await this.authRepository.findOne({ where: {username}, relations: ['role']});
+    return await this.authRepository.findOne({ where: {username}, relations: ['role', 'role.permissions',]});
   }
 
   async loginUser(loginUserDto: LoginUserDto) {
@@ -42,10 +42,15 @@ export class AuthService {
           {username: user.username, userId: user.id},
         );
         const staff = await this.staffRepository.findOne({where: {user}, relations: ['department']});
+        if (staff.profile_pic) {
+          staff.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${staff.profile_pic}`;
+        }
         const newUser = JSON.parse(JSON.stringify(user));
         newUser.token = token;
         newUser.expires_in = expires_in;
         newUser.details = staff;
+        newUser.permissions = await this.setPermissions(newUser.role.permissions);
+        delete newUser.role.permissions;
         delete newUser.password;
         return newUser;
       }
@@ -82,4 +87,12 @@ export class AuthService {
   }
 
   static validateToken() {}
+
+  async setPermissions(permissions) {
+    const data = [];
+    for (const permission of permissions) {
+      await data.push(permission.name);
+    }
+    return data;
+  }
 }

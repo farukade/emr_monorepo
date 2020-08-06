@@ -28,9 +28,8 @@ export class Queue extends BaseEntity {
   @JoinColumn({name: 'appointment_id'})
   appointment: Appointment;
 
-  @ManyToOne(() => Department)
-  @JoinColumn({name: 'department_id'})
-  department: Department;
+  @Column({type: 'varchar', default: 0})
+  queueType: string;
 
   @Column({type: 'smallint', default: 0})
   status: number;

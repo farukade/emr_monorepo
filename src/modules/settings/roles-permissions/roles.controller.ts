@@ -22,7 +22,7 @@ export class RolesController {
   constructor(private roleService: RolesService) {}
 
   @Get()
-  getAllRolees(): Promise<Role[]> {
+  getAllRoles(): Promise<Role[]> {
     return this.roleService.getAllRole();
   }
 
@@ -43,6 +43,12 @@ export class RolesController {
     @Request() req,
   ): Promise<Role> {
     return this.roleService.updateRole(id, createRoleDto, req.user.username);
+  }
+
+  @Post('set-permissions')
+  @UsePipes(ValidationPipe)
+  saveRolePermissions(@Body() param): Promise<Role> {
+    return this.roleService.addPermissions(param);
   }
 
   @Delete('/:id')

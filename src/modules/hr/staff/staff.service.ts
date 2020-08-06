@@ -7,7 +7,9 @@ import { UserRepository } from '../user.repository';
 import { RoleRepository } from '../../settings/roles-permissions/role.repository';
 import { DepartmentRepository } from '../../settings/departments/department.repository';
 import * as bcrypt from 'bcrypt';
-import { Like } from 'typeorm';
+import {getRepository, Like} from 'typeorm';
+import {Specialization} from '../../settings/entities/specialization.entity';
+import {ConsultingRoom} from "../../settings/entities/consulting-room.entity";
 
 @Injectable()
 export class StaffService {
@@ -24,26 +26,34 @@ export class StaffService {
     ) {}
 
     async getStaffs(): Promise<StaffDetails[]> {
-        const staffs = await this.staffRepository.find({relations: ['department', 'user']});
+        const staffs = await this.staffRepository.find({relations: ['department', 'user', 'user.role', 'specialization']});
+        for (const staff of staffs) {
+            if (staff.profile_pic) {
+                staff.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${staff.profile_pic}`;
+            }
+        }
         return staffs;
     }
 
     async findStaffs(param): Promise<StaffDetails[]> {
         const { q } = param;
-        const found = this.staffRepository.find({where: [
+        return this.staffRepository.find({where: [
             {first_name: Like(`%${q.toLocaleLowerCase()}%`)},
             {last_name: Like(`%${q.toLocaleLowerCase()}%`)},
             {emp_code: Like(`%${q}%`)},
         ]});
-
-        return found;
     }
 
-    async addNewStaff(staffDto: StaffDto): Promise<StaffDetails> {
+    async addNewStaff(staffDto: StaffDto, pic): Promise<any> {
         // find role
         const role = await this.roleRepository.findOne(staffDto.role_id);
         // find department
         const department = await this.departmentRepository.findOne(staffDto.department_id);
+        // find specialization
+        let specialization;
+        if (staffDto.specialization_id) {
+            specialization = await getRepository(Specialization).findOne(staffDto.specialization_id);
+        }
         // save user
         const user = await this.userRepository.save({
             username: staffDto.username.toLocaleLowerCase(),
@@ -52,26 +62,41 @@ export class StaffService {
         });
 
         // save staff
-        return await this.staffRepository.saveDetails(staffDto, department, user);
+        return await this.staffRepository.saveDetails(staffDto, department, user, specialization, pic);
     }
 
-    async updateStaffDetails(id: string, staffDto: StaffDto): Promise<any> {
+    async updateStaffDetails(id: string, staffDto: StaffDto, pic): Promise<any> {
         try {
-
             // find role
             const role = await this.roleRepository.findOne(staffDto.role_id);
-            if (!role)
-            throw new NotFoundException(`Role not found`);
+            if (!role) {
+                throw new NotFoundException(`Role not found`);
+            }
             // find department
             const department = await this.departmentRepository.findOne(staffDto.department_id);
-            if (!department) 
-            throw new NotFoundException(`Department not found`);
+            if (!department) {
+                throw new NotFoundException(`Department not found`);
+            }
             // find staff
-            const staff = await this.staffRepository.findOne(id);
-            
+            const staff = await this.staffRepository.findOne(id, {relations: ['user', 'user.role']});
             if (!staff) {
                 throw new NotFoundException(`Staff with ID '${id}' not found`);
             }
+
+            // find specialization
+            let specialization;
+            if (staffDto.specialization_id) {
+                specialization = await getRepository(Specialization).findOne(staffDto.specialization_id);
+            }
+            // update user details
+            const user = await this.userRepository.findOne(staff.user.id);
+            user.role = role;
+            user.username = staffDto.username;
+            if (staffDto.password) {
+                user.password = await this.getHash(staffDto.password);
+            }
+            user.save();
+
             staff.first_name     = staffDto.first_name.toLocaleLowerCase();
             staff.last_name      = staffDto.last_name.toLocaleLowerCase();
             staff.other_names    = staffDto.other_names.toLocaleLowerCase();
@@ -101,9 +126,10 @@ export class StaffService {
             staff.monthly_salary = staffDto.monthly_salary;
             staff.is_consultant = staffDto.is_consultant;
             staff.department = department;
-            staff.emp_code = 'DEDA-' + Math.floor(Math.random() * 4),
-            staff.user.role = role;
-            
+            staff.specialization = specialization;
+            if (pic) {
+                staff.profile_pic = pic.filename;
+            }
             await staff.save();
 
             return {success: true, staff};
@@ -120,9 +146,32 @@ export class StaffService {
         }
     }
 
-    async changePassword() {}
+    async setConsultingRoom({userId, roomId}) {
+        try {
+            // find room
+            const room = await getRepository(ConsultingRoom).findOne(roomId);
+            // update staff detail
+            await this.staffRepository.createQueryBuilder()
+                .update(StaffDetails)
+                .set({ room })
+                .where('id = :id', { id: userId })
+                .execute();
+            return {success: true};
+        } catch (e) {
+            return {success: false, message: e.message};
+        }
+    }
 
-    async changeUserName() {}
+    async unSetConsultingRoom(staffId) {
+        try {
+            const staff = await this.staffRepository.findOne(staffId);
+            staff.room = null;
+            await staff.save();
+            return {success: true};
+        } catch (e) {
+            return {success: false, message: e.message};
+        }
+    }
 
     async getHash(password: string | undefined): Promise<string> {
         return bcrypt.hash(password, 10);

@@ -1,7 +1,6 @@
-import { Type } from 'class-transformer';
-import { Column, Entity, OneToMany } from 'typeorm';
+import {Column, Entity, JoinTable, ManyToMany, OneToMany} from 'typeorm';
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
-import { RolePermission } from './role_permission.entity';
+import {Permission} from './permission.entity';
 
 @Entity({ name: 'roles' })
 export class Role extends CustomBaseEntity {
@@ -14,10 +13,7 @@ export class Role extends CustomBaseEntity {
   @Column({ type: 'varchar', length: 300 })
   slug: string;
 
-  @OneToMany(
-    () => RolePermission,
-    rolePermission => rolePermission.role,
-    { onDelete: 'CASCADE' },
-  )
-  permissions: RolePermission[];
+  @ManyToMany(type => Permission)
+  @JoinTable()
+  permissions: Permission[];
 }

@@ -15,6 +15,7 @@ import { PatientRequestDocument } from './entities/patient_request_documents.ent
 import { AuthGuard } from '@nestjs/passport';
 import { Immunization } from './entities/immunization.entity';
 import { ImmunizationDto } from './dto/immunization.dto';
+import {OpdPatientDto} from "./dto/opd-patient.dto";
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('patient')
@@ -41,6 +42,15 @@ export class PatientController {
         @Request() req,
     ) {
         return this.patientService.saveNewPatient(patientDto, req.user.username);
+    }
+
+    @Post('opd')
+    @UsePipes(ValidationPipe)
+    saveOpdPatient(
+        @Body() opdPatientDto: OpdPatientDto,
+        @Request() req,
+    ) {
+        return this.patientService.saveNewOpdPatient(opdPatientDto, req.user.username);
     }
 
     @Patch(':id/update')

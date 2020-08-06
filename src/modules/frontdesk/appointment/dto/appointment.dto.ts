@@ -2,10 +2,10 @@ import { IsNotEmpty } from "class-validator";
 
 export class AppointmentDto {
     @IsNotEmpty()
-    patient_id: string
+    patient_id: string;
 
-    @IsNotEmpty()
-    department_id: string;
+    // @IsNotEmpty()
+    // department_id: string;
 
     @IsNotEmpty()
     serviceCategory: string;
@@ -16,7 +16,7 @@ export class AppointmentDto {
     appointment_date: string;
 
     @IsNotEmpty()
-    specialization_id: string;
+    doctor_id: string;
 
     @IsNotEmpty()
     consulting_room_id: string;
