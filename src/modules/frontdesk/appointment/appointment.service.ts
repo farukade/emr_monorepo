@@ -48,7 +48,7 @@ export class AppointmentService {
         const today = moment().format('YYYY-MM-DD');
         return await this.appointmentRepository.find({
             where: {appointment_date: today},
-            relations: ['department', 'patient', 'specialization', 'consultingRoom', 'encounter'],
+            relations: ['patient', 'whomToSee', 'consultingRoom', 'encounter'],
         });
 
     }
@@ -56,7 +56,7 @@ export class AppointmentService {
     async getAppointment(id: string): Promise<Appointment> {
         return await this.appointmentRepository.findOne({
             where: {id},
-            relations: ['department', 'patient', 'specialization', 'consultingRoom', 'encounter'],
+            relations: ['patient', 'whomToSee', 'consultingRoom', 'encounter'],
         });
 
     }
@@ -122,9 +122,8 @@ export class AppointmentService {
     async listAppointments(params) {
         const {startDate, endDate} = params;
         const query = this.appointmentRepository.createQueryBuilder('q')
-            .leftJoinAndSelect('q.department', 'department')
+            .leftJoinAndSelect('q.whomToSee', 'doctor')
             .leftJoinAndSelect('q.patient', 'patient')
-            .leftJoinAndSelect('q.specialization', 'specialization')
             .leftJoinAndSelect('q.consultingRoom', 'consultingRoom')
             .leftJoinAndSelect('q.encounter', 'encounter');
 
