@@ -1,17 +1,12 @@
-import { Type } from 'class-transformer';
 import {
   BaseEntity,
   Column,
   Entity,
-  PrimaryColumn,
-  OneToOne,
   JoinColumn,
-  CreateDateColumn,
   PrimaryGeneratedColumn,
   ManyToOne,
 } from 'typeorm';
 import { Appointment } from '../appointment/appointment.entity';
-import { Department } from '../../settings/entities/department.entity';
 
 @Entity({ name: 'queues' })
 export class Queue extends BaseEntity {
