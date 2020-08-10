@@ -20,6 +20,16 @@ export class TransactionsController {
         return this.transactionsService.fetchList({page, limit}, urlParams);
     }
 
+    @Get('list/pending')
+    getPendingTransactions(
+        @Query() urlParams,
+        @Request() request,
+    ) {
+        const limit = 50;
+        const page = request.query.hasOwnProperty('page') ? request.query.page : 1;
+        return this.transactionsService.fetchPending({page, limit}, urlParams);
+    }
+
     @Get('show/:id')
     getTransaction(
         @Param('id') id: string,

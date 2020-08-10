@@ -11,14 +11,12 @@ import * as moment from 'moment';
 import { QueueSystemRepository } from '../queue-system/queue-system.repository';
 import { Service } from '../../settings/entities/service.entity';
 import { ServiceRepository } from '../../settings/services/service.repository';
-import { Queue } from '../queue-system/queue.entity';
 import { Patient } from '../../patient/entities/patient.entity';
-import { Department } from '../../settings/entities/department.entity';
 import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
 import { ServiceCategoryRepository } from '../../settings/services/service.category.repository';
 import { AppGateway } from '../../../app.gateway';
-import {getRepository} from "typeorm";
-import {StaffDetails} from "../../hr/staff/entities/staff_details.entity";
+import { getRepository } from 'typeorm';
+import {StaffDetails} from '../../hr/staff/entities/staff_details.entity';
 
 @Injectable()
 export class AppointmentService {
@@ -173,7 +171,7 @@ export class AppointmentService {
     }
 
     async closeAppointment(id) {
-        //find appointment
+        // find appointment
         const appointment = await this.appointmentRepository.findOne(id);
         // update status
         appointment.isActive = false;
@@ -183,15 +181,15 @@ export class AppointmentService {
     }
 
     private async saveTransaction(patient: Patient, service: Service, amount, paymentType, hmoApprovalStatus) {
-        const department = await this.departmentRepository.findOne({where: {name: 'Vitals'}});
 
         const data = {
             patient,
             serviceType: service,
-            department,
+            next_location: 'vitals',
             amount,
             description: service.name,
             payment_type: paymentType,
+            transaction_type: 'billing',
             hmo_approval_status: hmoApprovalStatus,
         };
         return await this.transactionsRepository.save(data);

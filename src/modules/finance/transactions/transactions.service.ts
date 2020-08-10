@@ -8,14 +8,12 @@ import { TransactionDto } from './dto/transaction.dto';
 import { DepartmentRepository } from '../../settings/departments/department.repository';
 import { ServiceRepository } from '../../settings/services/service.repository';
 import { Patient } from '../../patient/entities/patient.entity';
-import { Department } from '../../settings/entities/department.entity';
 import { ProcessTransactionDto } from './dto/process-transaction.dto';
 import { VoucherRepository } from '../vouchers/voucher.repository';
 import { StaffRepository } from '../../hr/staff/staff.repository';
 import { Pagination, PaginationOptionsInterface } from '../../../common/paginate';
 import { QueueSystemRepository } from '../../frontdesk/queue-system/queue-system.repository';
 import { AppointmentRepository } from '../../frontdesk/appointment/appointment.repository';
-import {getConnection} from "typeorm";
 
 @Injectable()
 export class TransactionsService {
@@ -91,6 +89,12 @@ export class TransactionsService {
                 transaction.service = await this.serviceRepository.findOne(transaction.service_id);
             }
         }
+
+        return transactions;
+    }
+
+    async fetchPending(options: PaginationOptionsInterface, params) {
+        const transactions = await this.transactionsRepository.find({where: {status: 0}, relations: ['patient', 'serviceType']});
 
         return transactions;
     }

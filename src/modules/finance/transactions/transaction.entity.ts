@@ -29,10 +29,6 @@ export class Transactions extends CustomBaseEntity {
     @JoinColumn({ name: 'service_id'})
     serviceType: Service;
 
-    @ManyToOne(type => Department, {nullable: true})
-    @JoinColumn({ name: 'department_id'})
-    department: Department;
-
     @ManyToOne(type => Voucher, {nullable: true})
     @JoinColumn({ name: 'voucher_id'})
     voucher: Voucher;
@@ -57,6 +53,9 @@ export class Transactions extends CustomBaseEntity {
 
     @Column({nullable: true})
     transaction_type: string;
+
+    @Column({nullable: true})
+    next_location: string;
 
     @Column({type: 'smallint', default: 0})
     status: number;
