@@ -14,6 +14,7 @@ import { StaffRepository } from '../../hr/staff/staff.repository';
 import { Pagination, PaginationOptionsInterface } from '../../../common/paginate';
 import { QueueSystemRepository } from '../../frontdesk/queue-system/queue-system.repository';
 import { AppointmentRepository } from '../../frontdesk/appointment/appointment.repository';
+import {AppGateway} from "../../../app.gateway";
 
 @Injectable()
 export class TransactionsService {
@@ -35,6 +36,8 @@ export class TransactionsService {
         private staffRepository: StaffRepository,
         @InjectRepository(QueueSystemRepository)
         private queueSystemRepository: QueueSystemRepository,
+        private readonly appGateway: AppGateway,
+
     ) {}
 
     async fetchList(options: PaginationOptionsInterface, params): Promise<Transactions[]> {
@@ -94,9 +97,7 @@ export class TransactionsService {
     }
 
     async fetchPending(options: PaginationOptionsInterface, params) {
-        const transactions = await this.transactionsRepository.find({where: {status: 0}, relations: ['patient', 'serviceType']});
-
-        return transactions;
+        return await this.transactionsRepository.find({where: {status: 0}, relations: ['patient', 'serviceType']});
     }
 
     async fetchDashboardTransactions() {
@@ -243,7 +244,7 @@ export class TransactionsService {
     }
 
     async update(id: string, transactionDto: TransactionDto, createdBy): Promise<any> {
-        const {patient_id, department_id, serviceType, amount, description, payment_type} = transactionDto;
+        const {patient_id, serviceType, amount, description, payment_type} = transactionDto;
         // find patient record
         const patient = await this.patientRepository.findOne(patient_id);
         const items = [];
@@ -253,12 +254,9 @@ export class TransactionsService {
             items.push({name: service.name, amount: service.tariff});
 
         }
-        // find department record
-        const department = await this.departmentRepository.findOne(department_id);
         try {
             const transaction = await this.transactionsRepository.findOne(id);
             transaction.patient     = patient;
-            transaction.department  = department;
             transaction.amount      = amount;
             transaction.description = description;
             transaction.payment_type = payment_type;
@@ -295,14 +293,16 @@ export class TransactionsService {
             transaction.status = 1;
             transaction.lastChangedBy = updatedBy;
             await transaction.save();
-            // find appointment
-            const appointment = await this.appointmentRepository.findOne({
-                where: {patient: transaction.patient, status: 'Pending Paypoint Approval'},
-            });
+
             let queue;
-            if (appointment) {
+            if (transaction.next_location && transaction.next_location === 'vitals') {
+                // find appointment
+                const appointment = await this.appointmentRepository.findOne({
+                    where: {patient: transaction.patient, status: 'Pending Paypoint Approval'},
+                });
                 // create new queue
-                queue = await this.queueSystemRepository.saveQueue(appointment, 'vitals');
+                queue = await this.queueSystemRepository.saveQueue(appointment, transaction.next_location);
+                this.appGateway.server.emit('new-queue', {queue});
             }
             return {success: true, transaction, queue};
         } catch (error) {
