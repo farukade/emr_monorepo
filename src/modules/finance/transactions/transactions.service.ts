@@ -25,8 +25,6 @@ export class TransactionsService {
         private transactionsRepository: TransactionsRepository,
         @InjectRepository(PatientRepository)
         private patientRepository: PatientRepository,
-        @InjectRepository(DepartmentRepository)
-        private departmentRepository: DepartmentRepository,
         @InjectRepository(ServiceRepository)
         private serviceRepository: ServiceRepository,
         @InjectRepository(VoucherRepository)
