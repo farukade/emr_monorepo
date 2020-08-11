@@ -5,7 +5,6 @@ import * as moment from 'moment';
 import { PatientRepository } from '../../patient/repositories/patient.repository';
 import { Transactions } from './transaction.entity';
 import { TransactionDto } from './dto/transaction.dto';
-import { DepartmentRepository } from '../../settings/departments/department.repository';
 import { ServiceRepository } from '../../settings/services/service.repository';
 import { Patient } from '../../patient/entities/patient.entity';
 import { ProcessTransactionDto } from './dto/process-transaction.dto';
@@ -76,9 +75,6 @@ export class TransactionsService {
             .getRawMany();
 
         for (const transaction of transactions) {
-            if (transaction.department_id) {
-                transaction.department = await this.departmentRepository.findOne(transaction.department_id);
-            }
 
             if (transaction.staff_id) {
                 transaction.staff = await this.staffRepository.findOne(transaction.staff_id);
@@ -211,7 +207,7 @@ export class TransactionsService {
     }
 
     async save(transactionDto: TransactionDto, createdBy): Promise<any> {
-        const {patient_id, department_id, serviceType, amount, description, payment_type} = transactionDto;
+        const {patient_id, serviceType, amount, description, payment_type} = transactionDto;
         // find patient record
         const patient = await this.patientRepository.findOne(patient_id);
         const items = [];
@@ -221,12 +217,10 @@ export class TransactionsService {
             items.push({name: service.name, amount: service.tariff});
 
         }
-        // find department record
-        const department = await this.departmentRepository.findOne(department_id);
+
         try {
             const transaction = await this.transactionsRepository.save({
                 patient,
-                department,
                 amount,
                 description,
                 payment_type,
@@ -273,7 +267,7 @@ export class TransactionsService {
     async processTransaction(id: string, transactionDto: ProcessTransactionDto, updatedBy): Promise<any> {
         const {voucher_id, amount_paid, voucher_amount, payment_type} = transactionDto;
         try {
-            const transaction = await this.transactionsRepository.findOne(id, {relations: ['department']});
+            const transaction = await this.transactionsRepository.findOne(id);
             transaction.amount_paid = amount_paid;
             transaction.payment_type  = payment_type;
             if (payment_type === 'Voucher') {
