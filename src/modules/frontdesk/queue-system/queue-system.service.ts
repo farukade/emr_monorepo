@@ -43,7 +43,7 @@ export class QueueSystemService {
                 .andWhere('appointment.isActive = :status', {status: true})
                 .getOne();
             // save queue
-            const queue = await this.queueSystemRepository.saveQueue(appointment, 'department');
+            const queue = await this.queueSystemRepository.saveQueue(appointment, 'doctor');
             // send new queue message
             this.appGateway.server.emit('new-queue', queue);
 

@@ -94,7 +94,7 @@ export class AppointmentService {
                         queue = await this.queueSystemRepository.saveQueue(appointment, 'hmo');
                     } else {
                         // update appointment status
-                        appointment.status = 'Pending Account Approval';
+                        appointment.status = 'Pending Paypoint Approval';
                         await appointment.save();
                         // save paypoint queue
                         queue = await this.queueSystemRepository.saveQueue(appointment, 'paypoint');

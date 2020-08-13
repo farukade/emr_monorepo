@@ -213,7 +213,6 @@ export class TransactionsService {
             // find service record
             const service = await this.serviceRepository.findOne(serviceId);
             items.push({name: service.name, amount: service.tariff});
-
         }
 
         try {
@@ -265,7 +264,7 @@ export class TransactionsService {
     async processTransaction(id: string, transactionDto: ProcessTransactionDto, updatedBy): Promise<any> {
         const {voucher_id, amount_paid, voucher_amount, payment_type} = transactionDto;
         try {
-            const transaction = await this.transactionsRepository.findOne(id);
+            const transaction = await this.transactionsRepository.findOne(id, {relations: ['patient']});
             transaction.amount_paid = amount_paid;
             transaction.payment_type  = payment_type;
             if (payment_type === 'Voucher') {
@@ -282,20 +281,27 @@ export class TransactionsService {
             if (amount_paid < transaction.amount) {
                 transaction.balance = transaction.amount - amount_paid;
             }
-            transaction.status = 1;
-            transaction.lastChangedBy = updatedBy;
-            await transaction.save();
 
             let queue;
             if (transaction.next_location && transaction.next_location === 'vitals') {
                 // find appointment
                 const appointment = await this.appointmentRepository.findOne({
                     where: {patient: transaction.patient, status: 'Pending Paypoint Approval'},
+                    relations: ['patient', 'whomToSee', 'consultingRoom', 'serviceCategory', 'serviceType']
                 });
+                // console.log(appointment);
                 // create new queue
+                if (!appointment) {
+                    return {success: false, message: 'Cannot find appointment'};
+                }
                 queue = await this.queueSystemRepository.saveQueue(appointment, transaction.next_location);
                 this.appGateway.server.emit('new-queue', {queue});
             }
+            transaction.next_location = null;
+            transaction.status = 1;
+            transaction.lastChangedBy = updatedBy;
+            await transaction.save();
+
             return {success: true, transaction, queue};
         } catch (error) {
             return {success: false, message: error.message };
