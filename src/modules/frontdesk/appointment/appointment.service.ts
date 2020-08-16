@@ -180,6 +180,18 @@ export class AppointmentService {
         await this.queueSystemRepository.delete( {appointment});
     }
 
+    async updateDoctorStatus({appointmentId, action}, user) {
+        try {
+            const appointment = await this.getAppointment(appointmentId);
+            appointment.doctorStatus = action;
+            await appointment.save();
+            this.appGateway.server.emit('appointment-update', {appointment, action});
+            return {success: true};
+        } catch (e) {
+            return { success: false, message: e.message };
+        }
+    }
+
     private async saveTransaction(patient: Patient, service: Service, amount, paymentType, hmoApprovalStatus) {
 
         const data = {

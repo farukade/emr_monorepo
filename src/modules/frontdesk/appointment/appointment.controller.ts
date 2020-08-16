@@ -1,10 +1,11 @@
-import { Controller, Get, Post, Body, Query, Param } from '@nestjs/common';
+import {Controller, Get, Post, Body, Query, Param, Request, Patch, UseGuards} from '@nestjs/common';
 
-import { Logger } from '@nestjs/common';
 import { AppointmentService } from './appointment.service';
 import { AppointmentDto } from './dto/appointment.dto';
 import { Appointment } from './appointment.entity';
+import {AuthGuard} from "@nestjs/passport";
 
+@UseGuards(AuthGuard('jwt'))
 @Controller('front-desk/appointments')
 export class AppointmentController {
 
@@ -53,5 +54,13 @@ export class AppointmentController {
         @Param('id') id: string,
     ) {
         return this.appointmentService.closeAppointment(id);
+    }
+
+    @Patch('accept-decline')
+    acceptDeclineAppointment(
+        @Body() param,
+        @Request() req,
+    ) {
+        return this.appointmentService.updateDoctorStatus(param, req.user);
     }
 }

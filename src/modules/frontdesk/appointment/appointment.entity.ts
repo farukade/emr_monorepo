@@ -55,6 +55,9 @@ export class Appointment extends CustomBaseEntity {
     @Column({type: 'varchar', default: 'Pending'})
     status: string;
 
+    @Column({type: 'smallint', default: 0})
+    doctorStatus: number;
+
     @Column({type: 'float4', default: 0})
     amountToPay: string;
 
