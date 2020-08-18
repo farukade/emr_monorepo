@@ -130,6 +130,10 @@ export class ConsultationService {
             encounter.nextAppointment = plan.nextAppointment;
 
             await encounter.save();
+            // save appointment
+            appointment.encounter = encounter;
+            await appointment.save();
+
             return {success: true, encounter};
         } catch (err) {
             return {success: false, message: err.message};
