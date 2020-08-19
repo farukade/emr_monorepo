@@ -62,7 +62,7 @@ export class ConsultationService {
             encounter.patientHistory = param.patientHistory;
             encounter.medicalHistory = param.medicalHistory;
             encounter.patient        = patient;
-            encounter.appointment    = appointment;
+            // encounter.appointment    = appointment;
             // save allergy if any
             if (param.allergies.length) {
                 encounter.allergies = param.allergies;
@@ -131,8 +131,8 @@ export class ConsultationService {
 
             await encounter.save();
             // save appointment
-            appointment.encounter = encounter;
-            await appointment.save();
+            // appointment.encounter = encounter;
+            // await appointment.save();
 
             return {success: true, encounter};
         } catch (err) {
