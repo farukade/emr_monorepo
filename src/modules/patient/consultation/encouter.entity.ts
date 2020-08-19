@@ -28,8 +28,8 @@ export class Encounter extends CustomBaseEntity {
     plan: any;
     @Column('simple-json', {nullable: true})
     nextAppointment: object;
-    @Column('simple-array', {nullable: true})
-    consumable: string[];
+    @Column('simple-json', {nullable: true})
+    consumable: string;
     @Column('text', {nullable: true})
     note: string;
     @Column('text', {nullable: true})

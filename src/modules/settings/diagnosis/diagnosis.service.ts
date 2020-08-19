@@ -12,8 +12,8 @@ export class DiagnosisService {
         private diagnosisRepository: DiagnosisRepository,
     ) {}
 
-    async getAllDiagnosis(): Promise<Diagnosis[]> {
-        return this.diagnosisRepository.find();
+    async getAllDiagnosis({diagnosisType}): Promise<Diagnosis[]> {
+        return this.diagnosisRepository.find({where: {diagnosisType}});
     }
 
     async findDiagnosis(urlParam): Promise<Diagnosis[]> {
@@ -25,7 +25,7 @@ export class DiagnosisService {
         ]});
     }
 
-    async doUpload(file: any) {
+    async doUpload(file: any, {diagnosisType}) {
         const csv = require('csv-parser');
         const fs = require('fs');
         const content = [];
@@ -38,7 +38,7 @@ export class DiagnosisService {
                     procedureCode: row['PROCEDURE CODE'],
                     icd10Code: row['ICD10 CODE'],
                     description: row.DESCRIPTION,
-                    codeStatus: row['CODE STATUS'],
+                    diagnosisType,
                 };
                 content.push(data);
             })
@@ -59,12 +59,12 @@ export class DiagnosisService {
     }
 
     async updateDiagnosis(id: string, diagnosisUpdateDto: DiagnosisUpdateDto): Promise<Diagnosis> {
-        const { procedureCode, icd10Code, description, codeStatus } = diagnosisUpdateDto;
+        const { procedureCode, icd10Code, description, diagnosisType } = diagnosisUpdateDto;
         const procedure = await this.diagnosisRepository.findOne(id);
         procedure.procedureCode = procedureCode;
         procedure.icd10Code     = icd10Code;
         procedure.description   = description;
-        procedure.codeStatus    = codeStatus;
+        procedure.diagnosisType = diagnosisType;
         await procedure.save();
         return procedure;
     }

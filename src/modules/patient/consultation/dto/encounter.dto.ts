@@ -20,7 +20,7 @@ export class EncounterDto {
     };
 
     consumable: {
-        items: string[];
+        items: string;
         note: string;
         instruction: string;
     };

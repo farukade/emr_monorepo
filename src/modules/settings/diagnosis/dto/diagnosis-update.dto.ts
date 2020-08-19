@@ -9,6 +9,6 @@ export class DiagnosisUpdateDto {
 
   description: string;
 
-  codeStatus: string;
+  diagnosisType: string;
 
 }

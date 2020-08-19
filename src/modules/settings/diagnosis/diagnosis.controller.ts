@@ -11,8 +11,10 @@ export class DiagnosisController {
     constructor(private diagnosisService: DiagnosisService) {}
 
     @Get()
-    getDiagnosis(): Promise<Diagnosis[]> {
-        return this.diagnosisService.getAllDiagnosis();
+    getDiagnosis(
+        @Param() params,
+    ): Promise<Diagnosis[]> {
+        return this.diagnosisService.getAllDiagnosis(params);
     }
 
     @Get('search')
@@ -32,8 +34,10 @@ export class DiagnosisController {
         }),
     }))
     uploadDiagnosis(
-        @UploadedFile() file) {
-        return this.diagnosisService.doUpload(file);
+        @UploadedFile() file,
+        @Body() param,
+    ) {
+        return this.diagnosisService.doUpload(file, param);
     }
 
     @Patch(':id/update')
