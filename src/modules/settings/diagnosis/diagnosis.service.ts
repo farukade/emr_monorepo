@@ -17,11 +17,12 @@ export class DiagnosisService {
     }
 
     async findDiagnosis(urlParam): Promise<Diagnosis[]> {
-        const {q} = urlParam;
+        const {q, diagnosisType} = urlParam;
 
         return this.diagnosisRepository.find({where: [
             {procedureCode: Like(`%${q}%`)},
             {icd10Code: Like(`%${q}%`)},
+                {diagnosisType},
         ]});
     }
 
