@@ -42,10 +42,13 @@ export class AppointmentService {
         private readonly appGateway: AppGateway,
     ) {}
 
-    async todaysAppointments(): Promise<Appointment[]> {
+    async todaysAppointments({type}): Promise<Appointment[]> {
+        if (!type) {
+            type = 'in-patient';
+        }
         const today = moment().format('YYYY-MM-DD');
         return await this.appointmentRepository.find({
-            where: {appointment_date: today},
+            where: {appointment_date: today, appointmentType: type},
             relations: ['patient', 'whomToSee', 'consultingRoom', 'encounter'],
         });
 
@@ -119,15 +122,20 @@ export class AppointmentService {
 
     async listAppointments(params) {
         const {startDate, endDate} = params;
+        let type = params.type;
+        if (!type) {
+            type = 'in-patient';
+        }
         const query = this.appointmentRepository.createQueryBuilder('q')
             .leftJoinAndSelect('q.whomToSee', 'doctor')
             .leftJoinAndSelect('q.patient', 'patient')
             .leftJoinAndSelect('q.consultingRoom', 'consultingRoom')
-            .leftJoinAndSelect('q.encounter', 'encounter');
+            .leftJoinAndSelect('q.encounter', 'encounter')
+            .where('q.appointmentType = :type', {type});
 
         if (startDate && startDate !== '') {
             const start = moment(startDate).startOf('day').toISOString();
-            query.where(`q.createdAt >= '${start}'`);
+            query.andWhere(`q.createdAt >= '${start}'`);
         }
         if (endDate && endDate !== '') {
             const end = moment(endDate).endOf('day').toISOString();

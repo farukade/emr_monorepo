@@ -22,22 +22,24 @@ import { IvfService } from './ivf/ivf.service';
 import { IvfEnrollmentRepository } from './ivf/ivf_enrollment.repository';
 import { StaffRepository } from '../hr/staff/staff.repository';
 import {AppGateway} from "../../app.gateway";
+import {AppointmentRepository} from "../frontdesk/appointment/appointment.repository";
 
 @Module({
   imports: [TypeOrmModule.forFeature([
-    PatientRepository,
-    PatientDocumentRepository,
-    PatientNOKRepository,
-    PatientVitalRepository,
-    PatientAntenatalRepository,
-    PatientRequestRepository,
-    PatientAllergyRepository,
-    HmoRepository,
-    ServiceRepository,
-    ImmunizationRepository,
-    VoucherRepository,
-    IvfEnrollmentRepository,
-    StaffRepository,
+      PatientRepository,
+      PatientDocumentRepository,
+      PatientNOKRepository,
+      PatientVitalRepository,
+      PatientAntenatalRepository,
+      PatientRequestRepository,
+      PatientAllergyRepository,
+      HmoRepository,
+      ServiceRepository,
+      ImmunizationRepository,
+      VoucherRepository,
+      IvfEnrollmentRepository,
+      StaffRepository,
+      AppointmentRepository,
   ]), AntenatalModule, AdmissionsModule, ConsultationModule, LabourManagementModule],
   controllers: [PatientController, IvfController],
   providers: [AppGateway, PatientService, IvfService],

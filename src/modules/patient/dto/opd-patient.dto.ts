@@ -19,4 +19,6 @@ export class OpdPatientDto {
     phoneNumber: string;
 
     gender: string;
+
+    opdType: string;
 }

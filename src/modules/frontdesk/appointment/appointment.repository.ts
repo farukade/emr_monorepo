@@ -39,4 +39,15 @@ export class AppointmentRepository extends Repository<Appointment> {
 
         return appointment;
     }
+
+    async saveOPDAppointment(patient, opdType) {
+        const appointment = new Appointment();
+        appointment.patient = patient;
+        appointment.amountToPay = '0';
+        appointment.appointment_date = moment().format('YYYY-MM-DD');
+        appointment.appointmentType = opdType;
+        await appointment.save();
+
+        return appointment;
+    }
 }

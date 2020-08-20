@@ -17,8 +17,10 @@ export class AppointmentController {
     }
 
     @Get('today')
-    getTodayAppointment(): Promise<Appointment[]> {
-        return this.appointmentService.todaysAppointments();
+    getTodayAppointment(
+        @Param() params,
+    ): Promise<Appointment[]> {
+        return this.appointmentService.todaysAppointments(params);
     }
 
     @Get('')

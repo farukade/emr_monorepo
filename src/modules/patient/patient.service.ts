@@ -32,6 +32,7 @@ import { ImmunizationRepository } from './repositories/immunization.repository';
 import { Immunization } from './entities/immunization.entity';
 import {OpdPatientDto} from "./dto/opd-patient.dto";
 import {AppGateway} from "../../app.gateway";
+import {AppointmentRepository} from "../frontdesk/appointment/appointment.repository";
 
 @Injectable()
 export class PatientService {
@@ -58,6 +59,8 @@ export class PatientService {
         private patientDocumentRepository: PatientDocumentRepository,
         @InjectRepository(ImmunizationRepository)
         private immunizationRepository: ImmunizationRepository,
+        @InjectRepository(AppointmentRepository)
+        private appointmentRepository: AppointmentRepository,
         private connection: Connection,
         private readonly appGateway: AppGateway,
     ) {}
@@ -104,8 +107,11 @@ export class PatientService {
             patient.phoneNumber         = patientDto.phoneNumber;
             patient.createdBy           = createdBy;
             await patient.save();
+            // save appointment
+            const appointment = await this.appointmentRepository.saveOPDAppointment(patient, patientDto.opdType);
             // send new opd socket message
-            this.appGateway.server.emit('new-queue', patient);
+            this.appGateway.server.emit('new-opd-queue', appointment);
+
             return {success: true, patient};
         } catch (err) {
             return {success: false, message: err.message};
