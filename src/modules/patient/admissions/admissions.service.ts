@@ -28,12 +28,17 @@ export class AdmissionsService {
         private roomRepository: RoomRepository,
     ) {}
 
-    async getAdmissions(options: PaginationOptionsInterface, {startDate, endDate, patient_id, status}) {
+    async getAdmissions(options: PaginationOptionsInterface, {startDate, endDate, patient_id, status, type}) {
         const query = this.admissionRepository.createQueryBuilder('q')
-                            .innerJoinAndSelect('q.room', 'room')
-                            .leftJoin('room.category', 'category')
-                            .select('q.*')
-                            .addSelect('room.name as room_no, category.name as room_type');
+            .leftJoinAndSelect('q.patient', 'patient')
+            .select('q.createdAt as admission_date, q.createdBy as admitted_by, q.reason')
+            .addSelect('CONCAT(patient.surname , " ", patient.other_names) as patient_name, patient.id as patient_id');
+
+        if (type === 'in-admission') {
+            query.innerJoinAndSelect('q.room', 'room')
+                .leftJoin('room.category', 'category')
+                .addSelect('room.name as room_no, category.name as room_type');
+        }
 
         if (startDate && startDate !== '') {
             const start = moment(startDate).endOf('day').toISOString();
@@ -53,37 +58,52 @@ export class AdmissionsService {
             query.andWhere('q.status = :status', {status});
         }
 
-        const admissions = await query.take(options.limit).skip(options.page * options.limit).getRawMany();
+        return await query.take(options.limit).skip(options.page * options.limit).getRawMany();
 
-        return admissions;
     }
 
-    async saveAdmission(id: string, createDto: CreateAdmissionDto, createdBy): Promise<any> {
-        const {pcg, healthState, riskToFall, reason, room_id, discharge_date, care_givers, tasks} = createDto;
+    async saveAdmission(id: string, createDto: CreateAdmissionDto, createdById): Promise<any> {
+        const {healthState, riskToFall, reason, discharge_date} = createDto;
         // find primary care giver
-        const staff = await this.staffRepository.findOne(pcg);
+        const staff = await this.staffRepository.createQueryBuilder('staff')
+            .where('staff.user_id = :createdById', {createdById})
+            .getOne();
         // find patient info
         const patient = await this.patientRepository.findOne(id);
-        // find room
-        const room = await this.roomRepository.findOne(room_id);
+
         try {
             // save admission info
             const admission = await this.admissionRepository.save({
-                patient, healthState, riskToFall, reason, room,
+                patient, healthState, riskToFall, reason,
                 anticipatedDischargeDate: discharge_date,
-                careGiver: staff,
-                createdBy,
+                // careGiver: staff,
+                createdBy: staff.first_name + ' ' + staff.last_name,
             });
             // save care givers
-            await this.saveCareGivers(admission, care_givers);
+            // await this.saveCareGivers(admission, care_givers);
             // save tasks
-            await this.saveClinicalTasks(admission, tasks);
+            // await this.saveClinicalTasks(admission, tasks);
             // update patient admission status
             patient.isAdmitted = true;
 
-            return {succes: true, admission};
+            return {success: true, admission};
         } catch (err) {
             return {success: false, message: err.message};
+        }
+    }
+
+    async saveAssignBed({admission_id, room_id}) {
+        try {
+            // find room
+            const room = await this.roomRepository.findOne(room_id);
+            // find admission
+            const admission = await this.admissionRepository.findOne(admission_id);
+            admission.room = room;
+            await admission.save();
+
+            return {success: true};
+        } catch (e) {
+            return {success: false, message: e.message};
         }
     }
 
