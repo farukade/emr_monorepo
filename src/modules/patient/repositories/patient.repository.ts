@@ -2,7 +2,7 @@ import { EntityRepository, Repository } from 'typeorm';
 import { Patient } from '../entities/patient.entity';
 import { PatientDto } from '../dto/patient.dto';
 import { PatientNOK } from '../entities/patient-next-of-kin.entity';
-import { Hmo } from '../../hmo/hmo.entity';
+import { Hmo } from '../../hmo/entities/hmo.entity';
 
 @EntityRepository(Patient)
 export class PatientRepository extends Repository<Patient> {

@@ -10,4 +10,6 @@ export class HmoDto {
     phoneNumber: string;
 
     email: any;
+
+    percentage_coverage: string;
 }

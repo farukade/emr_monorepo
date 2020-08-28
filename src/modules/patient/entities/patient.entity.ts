@@ -2,7 +2,7 @@ import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 import { Entity, Column, OneToOne, JoinColumn, OneToMany, ManyToOne } from 'typeorm';
 import { PatientNOK } from './patient-next-of-kin.entity';
 import { Appointment } from '../../frontdesk/appointment/appointment.entity';
-import { Hmo } from '../../hmo/hmo.entity';
+import { Hmo } from '../../hmo/entities/hmo.entity';
 import { Transactions } from '../../finance/transactions/transaction.entity';
 
 @Entity({ name: 'patients' })

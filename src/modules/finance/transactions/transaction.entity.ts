@@ -63,6 +63,9 @@ export class Transactions extends CustomBaseEntity {
     @Column({type: 'smallint', default: 0})
     hmo_approval_status: number;
 
+    @Column({type: 'varchar', nullable: true})
+    hmo_approval_code: string;
+
     @Column({type: 'jsonb', nullable: true})
     transaction_details: any;
 }

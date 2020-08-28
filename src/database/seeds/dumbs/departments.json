@@ -1,0 +1,16 @@
+[
+  {"name": "Account"},
+  {"name": "Logistics"},
+  {"name": "IT"},
+  {"name": "Pharmacy" },
+  {"name": "Nurses" },
+  {"name": "Laundry"},
+  {"name": "Security"},
+  {"name": "Lab"},
+  {"name": "Administration"},
+  {"name": "Customer Service"},
+  {"name": "Cafeteria"},
+  {"name": "Housekeeping"},
+  {"name": "Medicals"},
+  {"name": "HMO"}
+]

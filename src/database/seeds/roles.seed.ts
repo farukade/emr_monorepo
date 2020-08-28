@@ -15,7 +15,6 @@ export default class CreateRole implements Seeder {
         {name: 'Lab Attendant', slug: 'lab-attendant'},
         {name: 'HR Manager', slug: 'hr-manager'},
         {name: 'HMO Officer', slug: 'hmo-officer'},
-        {name: 'HMO Officer', slug: 'hmo-officer'},
     ];
       // tslint:disable-next-line:forin
       for (const i in roles) {

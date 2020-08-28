@@ -1,6 +1,5 @@
-import { Type } from 'class-transformer';
 import { Column, Entity } from 'typeorm';
-import { CustomBaseEntity } from '../../common/entities/custom-base.entity';
+import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 
 @Entity({ name: 'hmos' })
 export class Hmo extends CustomBaseEntity {

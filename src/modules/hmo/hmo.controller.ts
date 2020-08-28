@@ -1,14 +1,33 @@
-import { Controller, Get, Post, UsePipes, ValidationPipe, Body, Patch, Param, Delete, UploadedFile, UseInterceptors, Header, Res, Query, Request } from '@nestjs/common';
+import {
+    Controller,
+    Get,
+    Post,
+    UsePipes,
+    ValidationPipe,
+    Body,
+    Patch,
+    Param,
+    Delete,
+    UploadedFile,
+    UseInterceptors,
+    Header,
+    Res,
+    Query,
+    Request,
+    UseGuards
+} from '@nestjs/common';
 import { HmoService } from './hmo.service';
-import { Hmo } from './hmo.entity';
+import { Hmo } from './entities/hmo.entity';
 import { HmoDto } from './dto/hmo.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import { HmoUploadRateDto } from './dto/hmo.upload-rate.dto';
-import { HmoRate } from './hmo-rate.entity';
+import { HmoRate } from './entities/hmo-rate.entity';
 import { Transactions } from '../finance/transactions/transaction.entity';
+import {AuthGuard} from "@nestjs/passport";
 
+@UseGuards(AuthGuard('jwt'))
 @Controller('hmos')
 export class HmoController {
     SERVER_URL: string  =  process.env.SERVER_URL;
@@ -143,11 +162,11 @@ export class HmoController {
         return this.hmoService.doUploadRate(uploadDto, file);
     }
 
-    @Get('transactions/:id/process')
+    @Post('transactions/process')
     processTransaction(
-        @Query() param,
-        @Param('id') id: string,
+        @Body() param,
+        @Request() req,
     ) {
-        return this.hmoService.processTransaction(param, id);
+        return this.hmoService.processTransaction(param, req.user);
     }
 }

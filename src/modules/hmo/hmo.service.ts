@@ -1,12 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { HmoRepository } from './hmo.repository';
-import { Hmo } from './hmo.entity';
+import { Hmo } from './entities/hmo.entity';
 import { HmoDto } from './dto/hmo.dto';
 import { HmoUploadRateDto } from './dto/hmo.upload-rate.dto';
 import { ServiceRepository } from '../settings/services/service.repository';
 import { StockRepository } from '../inventory/stock.repository';
-import { HmoRate } from './hmo-rate.entity';
+import { HmoRate } from './entities/hmo-rate.entity';
 import { HmoRateRepository } from './hmo-rate.repository';
 import { TransactionsRepository } from '../finance/transactions/transactions.repository';
 import * as moment from 'moment';
@@ -14,8 +14,6 @@ import { Transactions } from '../finance/transactions/transaction.entity';
 import { Patient } from '../patient/entities/patient.entity';
 import { getConnection, Like } from 'typeorm';
 import { Appointment } from '../frontdesk/appointment/appointment.entity';
-import { Queue } from '../frontdesk/queue-system/queue.entity';
-import { Department } from '../settings/entities/department.entity';
 import { QueueSystemRepository } from '../frontdesk/queue-system/queue-system.repository';
 import { PaginationOptionsInterface } from '../../common/paginate';
 import { AppGateway } from '../../app.gateway';
@@ -53,12 +51,16 @@ export class HmoService {
 
     async getHmoTariff(id, urlParams): Promise<HmoRate[]> {
         const {listType } = urlParams;
-        // find hmo record
-        const hmo = await this.hmoRepository.findOne(id);
         if  (listType === 'services') {
-            return await this.hmoRateRepository.find({where: {hmo}, relations: ['service']});
+            return await this.hmoRateRepository.createQueryBuilder('q')
+                .leftJoinAndSelect('q.service', 'service')
+                .select('q.rate, q.percentage, service.tariff, service.name, service.discount')
+                .where('q.hmo_id = :id', {id}).getRawMany();
         } else {
-            return await this.hmoRateRepository.find({where: {hmo}, relations: ['stock']});
+            return await this.hmoRateRepository.createQueryBuilder('q')
+                .leftJoinAndSelect('q.stock', 'stock')
+                .select('q.rate, q.percentage, stock.sales_price as tariff, stock.name')
+                .where('q.hmo_id = :id', {id}).getRawMany();
         }
     }
 
@@ -66,9 +68,12 @@ export class HmoService {
         return this.hmoRepository.saveHmo(hmoDto, logo);
     }
 
-    async updateHmo(id: string, hmoDto: HmoDto, logo): Promise<Hmo> {
+    async updateHmo(id: string, hmoDto: HmoDto, logo): Promise<any> {
         const { name, address, phoneNumber, email }  = hmoDto;
         const hmo = await this.hmoRepository.findOne(id);
+        if (!hmo) {
+            return { success: false, message: `HMO with ${id} was not found`};
+        }
         hmo.name        = name.toLocaleLowerCase();
         // hmo.logo        = logo;
         hmo.address     = address;
@@ -79,6 +84,13 @@ export class HmoService {
     }
 
     async deleteHmo(id: string): Promise<void> {
+        // delete hmo rates
+        await this.hmoRateRepository
+            .createQueryBuilder()
+            .delete()
+            .where('hmo_id = :id', { id })
+            .execute();
+        // delete hmo
         const result = await this.hmoRepository.delete(id);
 
         if (result.affected === 0) {
@@ -395,8 +407,8 @@ export class HmoService {
         return transactions;
     }
 
-    async processTransaction(urlParams, id) {
-        const { action } = urlParams;
+    async processTransaction(params, {userId}) {
+        const { action, id, approvalCode } = params;
         try {
 
             const transaction = await this.transactionsRepository.findOne(id, {relations: ['patient']});
@@ -405,6 +417,7 @@ export class HmoService {
             }
             if (action === '1') {
                 transaction.hmo_approval_status = 2;
+                transaction.hmo_approval_code = approvalCode;
             } else {
                 transaction.hmo_approval_status = 3;
             }

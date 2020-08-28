@@ -1,9 +1,8 @@
-import { Type } from 'class-transformer';
 import { Column, Entity, ManyToOne, JoinColumn } from 'typeorm';
-import { CustomBaseEntity } from '../../common/entities/custom-base.entity';
-import { Stock } from '../inventory/entities/stock.entity';
+import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
+import { Stock } from '../../inventory/entities/stock.entity';
 import { Hmo } from './hmo.entity';
-import { Service } from '../settings/entities/service.entity';
+import { Service } from '../../settings/entities/service.entity';
 
 @Entity({ name: 'hmo_rates' })
 export class HmoRate extends CustomBaseEntity {

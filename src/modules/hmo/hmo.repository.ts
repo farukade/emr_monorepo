@@ -1,6 +1,6 @@
 import { EntityRepository, Repository } from 'typeorm';
 import { HmoDto } from './dto/hmo.dto';
-import { Hmo } from './hmo.entity';
+import { Hmo } from './entities/hmo.entity';
 
 @EntityRepository(Hmo)
 export class HmoRepository extends Repository<Hmo> {
