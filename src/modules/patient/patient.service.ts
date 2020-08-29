@@ -27,12 +27,9 @@ import { PatientDocumentRepository } from './repositories/patient_document.repos
 import { User } from '../hr/entities/user.entity';
 import { StaffDetails } from '../hr/staff/entities/staff_details.entity';
 import { RequestPaymentHelper } from '../../common/utils/RequestPaymentHelper';
-import { ImmunizationDto } from './dto/immunization.dto';
-import { ImmunizationRepository } from './repositories/immunization.repository';
-import { Immunization } from './entities/immunization.entity';
-import {OpdPatientDto} from "./dto/opd-patient.dto";
-import {AppGateway} from "../../app.gateway";
-import {AppointmentRepository} from "../frontdesk/appointment/appointment.repository";
+import { OpdPatientDto } from './dto/opd-patient.dto';
+import { AppGateway } from '../../app.gateway';
+import { AppointmentRepository } from '../frontdesk/appointment/appointment.repository';
 
 @Injectable()
 export class PatientService {
@@ -57,8 +54,6 @@ export class PatientService {
         private voucherRepository: VoucherRepository,
         @InjectRepository(PatientDocumentRepository)
         private patientDocumentRepository: PatientDocumentRepository,
-        @InjectRepository(ImmunizationRepository)
-        private immunizationRepository: ImmunizationRepository,
         @InjectRepository(AppointmentRepository)
         private appointmentRepository: AppointmentRepository,
         private connection: Connection,
@@ -146,7 +141,7 @@ export class PatientService {
             patient.nextOfKin.maritalStatus       = patientDto.nok_maritalStatus;
             patient.nextOfKin.ethnicity           = patientDto.nok_ethnicity;
             if (patientDto.hmoId && patientDto.hmoId !== '') {
-                patient.hmo = await this.hmoRepository.findOne(patientDto.hmoId);;
+                patient.hmo = await this.hmoRepository.findOne(patientDto.hmoId);
             }
             patient.save();
 
@@ -338,96 +333,6 @@ export class PatientService {
 
         if (result.affected === 0) {
             throw new NotFoundException(`Patient allergy with ID '${id}' not found`);
-        }
-        return {success: true};
-    }
-
-    async saveNewImmunization(param: ImmunizationDto, createdBy): Promise<any> {
-        const { patient_id } = param;
-        try {
-            param.patient = await this.patientRepository.findOne(patient_id);
-            param.createdBy = createdBy;
-            param.lastChangedBy = createdBy;
-            const immunization = await this.immunizationRepository.save(param);
-            return {success: true, immunization };
-        } catch (error) {
-            return {success: false, message: error.message };
-        }
-    }
-
-    async doUpdateImmunization(immunization_id, param: ImmunizationDto, updatedBy): Promise<any> {
-        try {
-            const immunization = await this.immunizationRepository.findOne(immunization_id);
-            immunization.typeOfVaccine = param.typeOfVaccine;
-            immunization.dateOfAdministration = param.dateOfAdministration;
-            immunization.vaccineBatchNo = param.vaccineBatchNo;
-            immunization.prescription = param.prescription;
-            immunization.nextVisitDate = param.nextVisitDate;
-            immunization.lastChangedBy = updatedBy;
-            await immunization.save();
-
-            return {success: true, immunization };
-        } catch (error) {
-            return {success: false, message: error.message };
-        }
-    }
-
-    async getPatientImmunizations(id, urlParams): Promise<Immunization[]> {
-        const {startDate, endDate} = urlParams;
-
-        const query = this.immunizationRepository.createQueryBuilder('q')
-                        .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
-                        .leftJoin(User, 'creator', 'q.createdBy = creator.username')
-                        .innerJoin(StaffDetails, 'staff', 'staff.user_id = creator.id')
-                        .leftJoin(StaffDetails, 'administer', 'q.administeredBy = administer.id')
-                        .select('q.*')
-                        .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id, patient.fileNumber')
-                        .addSelect('CONCAT(staff.first_name || \' \' || staff.last_name) as created_by, staff.id as created_by_id')
-                        .addSelect('CONCAT(administer.first_name || \' \' || administer.last_name) as administeredByName')
-                        .where('q.patient_id = :id', {id});
-        if (startDate && startDate !== '') {
-            const start = moment(startDate).startOf('day').toISOString();
-            query.andWhere(`q.createdAt >= '${start}'`);
-        }
-        if (endDate && endDate !== '') {
-            const end = moment(endDate).endOf('day').toISOString();
-            query.andWhere(`q.createdAt <= '${end}'`);
-        }
-        return await query.orderBy('q.createdAt', 'DESC').getRawMany();
-    }
-
-    async getImmunizations(urlParams): Promise<Immunization[]> {
-        const {startDate, patient_id, endDate} = urlParams;
-
-        const query = this.immunizationRepository.createQueryBuilder('q')
-                        .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
-                        .leftJoin(StaffDetails, 'administer', 'q.administeredBy = administer.id')
-                        .leftJoin(User, 'creator', 'q.createdBy = creator.username')
-                        .innerJoin(StaffDetails, 'staff', 'staff.user_id = creator.id')
-                        .select('q.*')
-                        .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id, patient.fileNumber')
-                        .addSelect('CONCAT(staff.first_name || \' \' || staff.last_name) as created_by, staff.id as created_by_id')
-                        .addSelect('CONCAT(administer.first_name || \' \' || administer.last_name) as administeredByName');
-
-        if (startDate && startDate !== '') {
-            const start = moment(startDate).startOf('day').toISOString();
-            query.andWhere(`q.createdAt >= '${start}'`);
-        }
-        if (endDate && endDate !== '') {
-            const end = moment(endDate).endOf('day').toISOString();
-            query.andWhere(`q.createdAt <= '${end}'`);
-        }
-        if (patient_id && patient_id !== '') {
-            query.andWhere('q.patient_id = :patient_id', {patient_id});
-        }
-        return await query.orderBy('q.createdAt', 'DESC').getRawMany();
-    }
-
-    async deleteImmunization(id: string) {
-        const result = await this.immunizationRepository.delete(id);
-
-        if (result.affected === 0) {
-            throw new NotFoundException(`Patient immunization with ID '${id}' not found`);
         }
         return {success: true};
     }

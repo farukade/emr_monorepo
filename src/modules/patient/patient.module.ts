@@ -14,15 +14,15 @@ import { VoucherRepository } from '../finance/vouchers/voucher.repository';
 import { PatientDocumentRepository } from './repositories/patient_document.repository';
 import { AntenatalModule } from './antenatal/antenatal.module';
 import { AdmissionsModule } from './admissions/admissions.module';
-import { ImmunizationRepository } from './repositories/immunization.repository';
 import { ConsultationModule } from './consultation/consultation.module';
 import { LabourManagementModule } from './labour-management/labour-management.module';
 import { IvfController } from './ivf/ivf.controller';
 import { IvfService } from './ivf/ivf.service';
 import { IvfEnrollmentRepository } from './ivf/ivf_enrollment.repository';
 import { StaffRepository } from '../hr/staff/staff.repository';
-import {AppGateway} from "../../app.gateway";
-import {AppointmentRepository} from "../frontdesk/appointment/appointment.repository";
+import { AppGateway } from '../../app.gateway';
+import { AppointmentRepository } from '../frontdesk/appointment/appointment.repository';
+import { ImmunizationModule } from './immunization/immunization.module';
 
 @Module({
   imports: [TypeOrmModule.forFeature([
@@ -35,12 +35,11 @@ import {AppointmentRepository} from "../frontdesk/appointment/appointment.reposi
       PatientAllergyRepository,
       HmoRepository,
       ServiceRepository,
-      ImmunizationRepository,
       VoucherRepository,
       IvfEnrollmentRepository,
       StaffRepository,
       AppointmentRepository,
-  ]), AntenatalModule, AdmissionsModule, ConsultationModule, LabourManagementModule],
+  ]), AntenatalModule, AdmissionsModule, ConsultationModule, LabourManagementModule, ImmunizationModule],
   controllers: [PatientController, IvfController],
   providers: [AppGateway, PatientService, IvfService],
 })
