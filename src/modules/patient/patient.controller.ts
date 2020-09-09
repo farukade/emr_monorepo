@@ -229,6 +229,14 @@ export class PatientController {
         return this.patientService.doListRequest(requestType, id, urlParams);
     }
 
+    @Get('request/:requestId/approve-result')
+    approveResult(
+        @Param('requestId') requestId: string,
+        @Request() req,
+    ) {
+        return this.patientService.doApproveResult(requestId, req.user.username);
+    }
+
     @Delete(':requestId/delete-request')
     deletePatientRequest(
         @Param('requestId') requestId: string,

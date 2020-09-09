@@ -9,10 +9,8 @@ import { ServiceRepository } from '../settings/services/service.repository';
 import { PatientVitalRepository } from './repositories/patient_vitals.repository';
 import { PatientAntenatalRepository } from './repositories/patient_antenatal.repository';
 import { PatientAllergyRepository } from './repositories/patient_allergy.repository';
-import { PatientAntenatalDto } from './dto/patient.antenatal.dto';
 import { PatientAllergyDto } from './dto/patient.allergy.dto';
 import { PatientVital } from './entities/patient_vitals.entity';
-import { PatientAntenatal } from './entities/patient_antenatal.entity';
 import { PatientAllergy } from './entities/patient_allergies.entity';
 import { PatientRequestHelper } from '../../common/utils/PatientRequestHelper';
 import { PatientRequestRepository } from './repositories/patient_request.repository';
@@ -437,7 +435,7 @@ export class PatientService {
                         .leftJoin('q.patient', 'patient')
                         .leftJoin(User, 'creator', 'q.createdBy = creator.username')
                         .innerJoin(StaffDetails, 'staff1', 'staff1.user_id = creator.id')
-                        .select('q.id, q.requestType, q.requestBody, q.createdAt')
+                        .select('q.id, q.requestType, q.requestBody, q.createdAt, q.status, q.isFilled as filled_status')
                         .addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
                         .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id, patient.fileNumber')
                         .where('q.patient_id = :patient_id', {patient_id})
@@ -459,12 +457,11 @@ export class PatientService {
 
     async listRequests(requestType, urlParams): Promise<PatientRequest[]> {
         const {startDate, endDate, filled} = urlParams;
-        console.log(urlParams);
         const query = this.patientRequestRepository.createQueryBuilder('patient_request')
                         .leftJoin('patient_request.patient', 'patient')
                         .leftJoin(User, 'creator', 'patient_request.createdBy = creator.username')
                         .innerJoin(StaffDetails, 'staff1', 'staff1.user_id = creator.id')
-                        .select('patient_request.id, patient_request.requestType, patient_request.requestBody, patient_request.createdAt')
+                        .select('patient_request.id, patient_request.requestType, patient_request.requestBody, patient_request.createdAt, patient_request.status, patient_request.isFilled as filled_status')
                         .addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
                         .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id, patient.fileNumber')
                         .andWhere('patient_request.requestType = :requestType', {requestType});
@@ -480,12 +477,22 @@ export class PatientService {
         }
 
         if (filled) {
-            console.log(filled)
             query.andWhere('patient_request.isFilled = :filled', {filled: true});
         }
 
         return await query.orderBy('patient_request.createdAt', 'DESC').getRawMany();
 
+    }
+
+    async doApproveResult(id: string, username) {
+        try {
+            const result = await this.patientRequestRepository.findOne(id);
+            result.status = 1;
+            await result.save();
+            return {success: true};
+        } catch (e) {
+            return {success: false, message: e.message};
+        }
     }
 
     async deleteRequest(id: string) {
