@@ -55,7 +55,7 @@ export class RequestPaymentHelper {
         let totalAmount = 0;
         const items = [];
         for (const body of requestBody) {
-            const drug = await getConnection().getRepository(Stock).findOne(body.service_id);
+            const drug = await getConnection().getRepository(Stock).findOne(body.drug_id);
             totalAmount += parseFloat(drug.sales_price);
             items.push({name: drug.name, amount: drug.sales_price});
         }

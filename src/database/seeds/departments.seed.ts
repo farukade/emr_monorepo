@@ -14,6 +14,7 @@ export default class CreateBanks implements Seeder {
         const s = departments[i];
         const department = new Department();
         department.name = s.name;
+        department.createdBy = 'admin1';
         department.save();
       } catch (error) {
         continue;

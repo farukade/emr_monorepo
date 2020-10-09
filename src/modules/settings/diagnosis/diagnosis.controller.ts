@@ -5,6 +5,7 @@ import { extname } from 'path';
 import { diskStorage } from 'multer';
 import { DiagnosisUpdateDto } from './dto/diagnosis-update.dto';
 import { Diagnosis } from '../entities/diagnosis.entity';
+import { DiagnosisPaginationDto } from './dto/diagnosis-pagination.dto';
 
 @Controller('settings/diagnosis')
 export class DiagnosisController {
@@ -12,8 +13,8 @@ export class DiagnosisController {
 
     @Get()
     getDiagnosis(
-        @Param() params,
-    ): Promise<Diagnosis[]> {
+        @Query() params,
+    ): Promise<DiagnosisPaginationDto> {
         return this.diagnosisService.getAllDiagnosis(params);
     }
 

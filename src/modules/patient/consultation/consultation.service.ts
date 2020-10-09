@@ -28,7 +28,7 @@ export class ConsultationService {
         const {startDate, endDate, patient_id} = urlParams;
 
         const query = this.encounterRepository.createQueryBuilder('e');
-        
+
         if (startDate && startDate !== '') {
             const start = moment(startDate).endOf('day').toISOString();
             query.where(`e.createdAt >= '${start}'`);
@@ -42,7 +42,6 @@ export class ConsultationService {
             query.andWhere('q.patientId = :patient_id', {patient_id});
         }
 
-
         return await query.take(options.limit)
                             .skip(options.page * options.limit)
                             .orderBy('e.createdAt', 'DESC')
@@ -53,7 +52,7 @@ export class ConsultationService {
         const { investigations, plan, consumable, appointment_id } = param;
         try {
             const patient = await this.patientRepository.findOne(patient_id);
-            
+
             const appointment = await this.appointmentRepository.findOne(appointment_id);
 
             const encounter = new Encounter();

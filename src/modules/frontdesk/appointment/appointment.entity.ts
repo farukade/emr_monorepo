@@ -1,11 +1,12 @@
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
-import {Entity, ManyToOne, JoinColumn, Column, OneToOne} from 'typeorm';
+import { Entity, ManyToOne, JoinColumn, Column, OneToOne } from 'typeorm';
 import { Patient } from '../../patient/entities/patient.entity';
 import { ConsultingRoom } from '../../settings/entities/consulting-room.entity';
 import { Service } from '../../settings/entities/service.entity';
 import { ServiceCategory } from '../../settings/entities/service_category.entity';
-import {Encounter} from "../../patient/consultation/encouter.entity";
-import {StaffDetails} from "../../hr/staff/entities/staff_details.entity";
+import {Encounter} from '../../patient/consultation/encouter.entity';
+import {StaffDetails} from '../../hr/staff/entities/staff_details.entity';
+import {Transactions} from '../../finance/transactions/transaction.entity';
 
 @Entity({ name: 'appointments'})
 export class Appointment extends CustomBaseEntity {
@@ -61,10 +62,17 @@ export class Appointment extends CustomBaseEntity {
     @Column({type: 'smallint', default: 0})
     doctorStatus: number;
 
+    @Column({type: 'smallint', default: 0})
+    canSeeDoctor: number;
+
     @Column({type: 'float4', default: 0})
     amountToPay: string;
 
     @OneToOne(type => Encounter)
     @JoinColumn()
     encounter: Encounter;
+
+    @OneToOne(type => Transactions, { nullable: true })
+    @JoinColumn({name: 'transaction_id'})
+    transaction: Transactions;
 }

@@ -181,7 +181,7 @@ export class InventoryService {
             .on('end', async () => {
                 for (const item of content) {
                     // check if sub category exists
-                    if (item.category !== '') {
+                    if (item.category && item.category !== '') {
                         subCategory = await this.inventorySubCategoryRepository.findOne({
                             where: {name: item.category},
                         });
@@ -190,24 +190,24 @@ export class InventoryService {
                         }
                     }
 
-                    if (subCategory) {
-                        if (item.name !== '') {
-                            // check if name exist
-                            const stock = await this.stockRepository.findOne({where: {name: item.name}});
-                            if (!stock) {
-                                item.subCategory = subCategory;
-                                item.category = category;
-                                // save stock
-                                await this.stockRepository.save(item);
-                            } else {
-                                stock.name = item.name;
-                                stock.generic_name = item.generic_name;
-                                stock.sales_price = item.sales_price.replace(',', '');
-                                stock.quantity = item.quantity;
-                                stock.category = category;
-                                stock.subCategory = subCategory;
-                                stock.save();
-                            }
+                    if (item.name && item.name !== '') {
+                        // check if name exist
+                        const stock = await this.stockRepository.findOne({where: {name: item.name}});
+                        if (!stock) {
+                            item.subCategory = subCategory;
+                            item.category = category;
+                            // save stock
+                            await this.stockRepository.save(item);
+                            console.log('new stock');
+                        } else {
+                            stock.name = item.name;
+                            stock.generic_name = item.generic_name;
+                            stock.sales_price = item.sales_price.replace(',', '');
+                            stock.quantity = item.quantity;
+                            stock.category = category;
+                            stock.subCategory = subCategory;
+                            await stock.save();
+                            console.log('update stock');
                         }
                     }
                 }

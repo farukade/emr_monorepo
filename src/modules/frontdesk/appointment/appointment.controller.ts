@@ -3,7 +3,7 @@ import {Controller, Get, Post, Body, Query, Param, Request, Patch, UseGuards} fr
 import { AppointmentService } from './appointment.service';
 import { AppointmentDto } from './dto/appointment.dto';
 import { Appointment } from './appointment.entity';
-import {AuthGuard} from "@nestjs/passport";
+import {AuthGuard} from '@nestjs/passport';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('front-desk/appointments')

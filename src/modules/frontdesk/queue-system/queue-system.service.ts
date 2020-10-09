@@ -42,10 +42,14 @@ export class QueueSystemService {
                 .where('appointment.patient_id = :patient_id', {patient_id})
                 .andWhere('appointment.isActive = :status', {status: true})
                 .getOne();
+
+            appointment.canSeeDoctor = 1;
+            await appointment.save();
+
             // save queue
             const queue = await this.queueSystemRepository.saveQueue(appointment, 'doctor');
             // send new queue message
-            this.appGateway.server.emit('new-queue', queue);
+            this.appGateway.server.emit('consultation-queue', { success: true, queue });
 
             return {success: true, queue};
         } catch (e) {

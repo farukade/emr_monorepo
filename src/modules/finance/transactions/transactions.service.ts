@@ -286,8 +286,8 @@ export class TransactionsService {
             if (transaction.next_location && transaction.next_location === 'vitals') {
                 // find appointment
                 const appointment = await this.appointmentRepository.findOne({
-                    where: {patient: transaction.patient, status: 'Pending Paypoint Approval'},
-                    relations: ['patient', 'whomToSee', 'consultingRoom', 'serviceCategory', 'serviceType']
+                    where: {transaction_id: transaction.id},
+                    relations: ['patient', 'whomToSee', 'consultingRoom', 'serviceCategory', 'serviceType'],
                 });
                 // console.log(appointment);
                 // create new queue
@@ -295,7 +295,7 @@ export class TransactionsService {
                     return {success: false, message: 'Cannot find appointment'};
                 }
                 queue = await this.queueSystemRepository.saveQueue(appointment, transaction.next_location);
-                this.appGateway.server.emit('new-queue', {queue});
+                this.appGateway.server.emit('nursing-queue', {queue});
             }
             transaction.next_location = null;
             transaction.status = 1;
