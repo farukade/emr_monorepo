@@ -112,7 +112,7 @@ export class StaffDetails extends CustomBaseEntity {
   @JoinColumn({name: 'consulting_room_id'})
   room?: ConsultingRoom;
 
-  @OneToOne(type => User)
+  @OneToOne(type => User, { cascade: true, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user: User;
 

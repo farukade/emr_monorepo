@@ -23,6 +23,6 @@ export class User extends CustomBaseEntity {
   @Type(() => Role)
   role: Role;
 
-  @OneToOne(type => StaffDetails)
+  @OneToOne(type => StaffDetails, { cascade: true})
   details: StaffDetails;
 }
