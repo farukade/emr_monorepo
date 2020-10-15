@@ -23,6 +23,7 @@ import { StaffRepository } from '../hr/staff/staff.repository';
 import { AppGateway } from '../../app.gateway';
 import { AppointmentRepository } from '../frontdesk/appointment/appointment.repository';
 import { ImmunizationModule } from './immunization/immunization.module';
+import { NicuModule } from './nicu/nicu.module';
 
 @Module({
   imports: [TypeOrmModule.forFeature([
@@ -39,7 +40,7 @@ import { ImmunizationModule } from './immunization/immunization.module';
       IvfEnrollmentRepository,
       StaffRepository,
       AppointmentRepository,
-  ]), AntenatalModule, AdmissionsModule, ConsultationModule, LabourManagementModule, ImmunizationModule],
+  ]), AntenatalModule, AdmissionsModule, ConsultationModule, LabourManagementModule, ImmunizationModule, NicuModule],
   controllers: [PatientController, IvfController],
   providers: [AppGateway, PatientService, IvfService],
 })

@@ -71,4 +71,7 @@ export class Patient extends CustomBaseEntity {
 
     @Column({ default: false })
     isAdmitted: boolean;
+
+    @Column({ default: false })
+    isStaff: boolean;
 }

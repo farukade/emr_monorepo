@@ -90,7 +90,7 @@ export class PatientService {
     async saveNewOpdPatient(patientDto: OpdPatientDto, createdBy: string): Promise<any> {
         try {
             const patient = new Patient();
-            patient.fileNumber          =  'DEDA-' + Math.floor(Math.random() * 90000);
+            patient.fileNumber          =  'DH ' + Math.floor(Math.random() * 90000);
             patient.surname             = patientDto.surname.toLocaleLowerCase();
             patient.other_names         = patientDto.other_names.toLocaleLowerCase();
             patient.address             = patientDto.address.toLocaleLowerCase();
