@@ -11,6 +11,7 @@ import { Admission } from './entities/admission.entity';
 import { AdmissionCareGiver } from './entities/admission-care-giver.entity';
 import { AdmissionClinicalTask } from './entities/admission-clinical-task.entity';
 import * as moment from 'moment';
+import { AppGateway } from '../../../app.gateway';
 import { PaginationOptionsInterface } from '../../../common/paginate';
 
 @Injectable()
@@ -26,6 +27,7 @@ export class AdmissionsService {
         private staffRepository: StaffRepository,
         @InjectRepository(RoomRepository)
         private roomRepository: RoomRepository,
+        private readonly appGateway: AppGateway,
     ) {}
 
     async getAdmissions(options: PaginationOptionsInterface, {startDate, endDate, patient_id, status, type}) {
@@ -63,7 +65,7 @@ export class AdmissionsService {
     }
 
     async saveAdmission(id: string, createDto: CreateAdmissionDto, createdById): Promise<any> {
-        const {healthState, riskToFall, reason, discharge_date} = createDto;
+        const {healthState, riskToFall, reason, discharge_date, admiteTo} = createDto;
         // find primary care giver
         const staff = await this.staffRepository.createQueryBuilder('staff')
             .where('staff.user_id = :createdById', {createdById})
@@ -85,8 +87,12 @@ export class AdmissionsService {
             // await this.saveClinicalTasks(admission, tasks);
             // update patient admission status
             patient.isAdmitted = true;
+            await patient.save()
 
-            return {success: true, admission};
+            // return {success: true, admission};  
+
+             // send new opd socket message
+             this.appGateway.server.emit('new-admission', admission);
         } catch (err) {
             return {success: false, message: err.message};
         }
