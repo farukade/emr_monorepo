@@ -434,7 +434,7 @@ export class HmoService {
                 // create new queue
                 queue = await this.queueSystemRepository.saveQueue(appointment, 'vitals');
             }
-            this.appGateway.server.emit('new-queue', {queue});
+            this.appGateway.server.emit('paypoint-queue', {queue});
 
             return {success: true, transaction, queue};
         } catch (error) {

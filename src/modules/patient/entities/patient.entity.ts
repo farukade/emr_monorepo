@@ -4,6 +4,7 @@ import { PatientNOK } from './patient-next-of-kin.entity';
 import { Appointment } from '../../frontdesk/appointment/appointment.entity';
 import { Hmo } from '../../hmo/entities/hmo.entity';
 import { Transactions } from '../../finance/transactions/transaction.entity';
+import { Immunization } from '../immunization/entities/immunization.entity';
 
 @Entity({ name: 'patients' })
 export class Patient extends CustomBaseEntity {
@@ -65,6 +66,9 @@ export class Patient extends CustomBaseEntity {
 
     @OneToMany(type => Transactions, transaction => transaction.patient)
     transactions: Transactions;
+
+    @OneToMany(type => Immunization, immunization => immunization.patient)
+    immunization: Immunization;
 
     @ManyToOne(() => Hmo, {nullable: true})
     hmo?: Hmo;

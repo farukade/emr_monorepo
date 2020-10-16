@@ -204,12 +204,13 @@ export class PatientController {
         return this.patientService.doSaveRequest(param, req.user.username);
     }
 
-    @Post('fill-request')
+    @Post('fill-request/:id')
     fillRequest(
+        @Param('id') requestId: string,
         @Body() param,
         @Request() req,
     ) {
-        return this.patientService.doFillRequest(param, req.user.username);
+        return this.patientService.doFillRequest(param, requestId, req.user.username);
     }
 
     @Get('/requests/:requestType')

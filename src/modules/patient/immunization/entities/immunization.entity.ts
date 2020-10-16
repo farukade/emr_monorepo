@@ -15,8 +15,12 @@ export class Immunization extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(type => Patient)
-  @JoinColumn({ name: 'patient_id' })
+  @ManyToOne(
+    () => Patient,
+    patient => patient.immunization,
+    { nullable: true },
+  )
+  @JoinColumn({name: 'patient_id'})
   patient: Patient;
 
   @Column({ type: 'varchar' })
@@ -33,6 +37,9 @@ export class Immunization extends BaseEntity {
 
   @Column({ type: 'varchar' })
   period: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  appointment_date: string
 
   @Column({ type: 'varchar', nullable: true })
   date_administered: string;

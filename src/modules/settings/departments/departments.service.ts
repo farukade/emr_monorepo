@@ -44,20 +44,24 @@ export class DepartmentsService {
     }
 
     async updateDepartment(id: string, departmentDto: DepartmentDto, updatedBy): Promise<Department> {
-        const { name, description, hod_id } = departmentDto;
-        let staff;
-        if (hod_id) {
-            staff = await this.staffRepository.findOne(hod_id);
+        try {
+            const { name, description, hod_id } = departmentDto;
+            let staff;
+            if (hod_id) {
+                staff = await this.staffRepository.findOne(hod_id);
+            }
+            const department = await this.departmentRepository.findOne(id);
+            department.name = name;
+            department.description = description;
+            department.lastChangedBy = updatedBy;
+            if (staff) {
+                department.staff = staff;
+            }
+            await department.save();
+            return department;
+        } catch (e) {
+            throw new NotFoundException('error, ');
         }
-        const department = await this.departmentRepository.findOne(id);
-        department.name = name;
-        department.description = description;
-        department.lastChangedBy = updatedBy;
-        if (staff) {
-            department.staff = staff;
-        }
-        await department.save();
-        return department;
     }
 
     async deleteDepartment(id: string): Promise<void> {

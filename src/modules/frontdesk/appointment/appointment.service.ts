@@ -48,8 +48,8 @@ export class AppointmentService {
         }
         const today = moment().format('YYYY-MM-DD');
         return await this.appointmentRepository.find({
-            where: {appointment_date: today, appointmentType: type},
-            relations: ['patient', 'whomToSee', 'consultingRoom', 'encounter'],
+            where: {appointment_date: today, appointmentType: type, canSeeDoctor: 1},
+            relations: ['patient', 'whomToSee', 'consultingRoom', 'encounter', 'transaction'],
         });
 
     }
@@ -57,7 +57,7 @@ export class AppointmentService {
     async getAppointment(id: string): Promise<Appointment> {
         return await this.appointmentRepository.findOne({
             where: {id},
-            relations: ['patient', 'whomToSee', 'consultingRoom', 'encounter'],
+            relations: ['patient', 'whomToSee', 'consultingRoom', 'encounter', 'transaction'],
         });
 
     }
@@ -84,9 +84,13 @@ export class AppointmentService {
             let queue;
             let paymentType = '';
             let hmoApprovalStatus = 0;
-            
+
             if (sendToQueue) {
                 if (amount) {
+                    // save payment
+                    const payment = await this.saveTransaction(patient, service, amount, paymentType, hmoApprovalStatus);
+                    appointment.transaction = payment;
+
                     if (patient.insurranceStatus === 'HMO') {
                         paymentType = 'HMO';
                         hmoApprovalStatus = 1;
@@ -102,17 +106,19 @@ export class AppointmentService {
                         // save paypoint queue
                         queue = await this.queueSystemRepository.saveQueue(appointment, 'paypoint');
                     }
-                    // save payment
-                    const payment = await this.saveTransaction(patient, service, amount, paymentType, hmoApprovalStatus);
+
                     // send queue message
-                    this.appGateway.server.emit('new-queue', {queue, payment});
+                    this.appGateway.server.emit('paypoint-queue', {queue, payment});
                 } else {
                     queue = await this.queueSystemRepository.saveQueue(appointment, 'vitals');
-                    this.appGateway.server.emit('new-queue', {queue});
+                    this.appGateway.server.emit('nursing-queue', {queue});
                 }
+
+                this.appGateway.server.emit('all-queues', {queue});
             }
             const resp = { success: true, appointment};
 
+            // go to front desk
             this.appGateway.server.emit('new-appointment', resp);
             return resp;
         } catch (error) {
@@ -131,6 +137,7 @@ export class AppointmentService {
             .leftJoinAndSelect('q.patient', 'patient')
             .leftJoinAndSelect('q.consultingRoom', 'consultingRoom')
             .leftJoinAndSelect('q.encounter', 'encounter')
+            .leftJoinAndSelect('q.transaction', 'transaction')
             .where('q.appointmentType = :type', {type});
 
         if (startDate && startDate !== '') {
