@@ -7,6 +7,8 @@ import { ImmunizationRepository } from './repositories/immunization.repository';
 import { StaffRepository } from '../../hr/staff/staff.repository';
 import { Immunization } from './entities/immunization.entity';
 import { PatientRequestDocument } from '../entities/patient_request_documents.entity';
+import { Transactions } from '../../finance/transactions/transaction.entity';
+import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 
 @Injectable()
 export class ImmunizationService {
@@ -24,6 +26,8 @@ export class ImmunizationService {
     async fetch(id: string): Promise<Immunization[]> {
         return await this.immunizationRepository.createQueryBuilder('i')
             .where('i.patient_id = :id', { id })
+            // .innerJoin(StaffDetails, 'staff', 'i.administeredBy = staff.id')
+            // .addSelect('CONCAT(staff.first_name || \' \' || staff.last_name) as administered_by')
             .orderBy('i.id', 'ASC')
             .getMany();
     }

@@ -7,6 +7,6 @@ export class StockQtyDto {
   id: string;
 
   @IsNotEmpty()
-  quantity: string;
+  quantity: number;
 
 }
