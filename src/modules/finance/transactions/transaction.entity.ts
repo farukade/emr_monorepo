@@ -1,10 +1,11 @@
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
-import { Entity, ManyToOne, JoinColumn, Column, OneToMany } from 'typeorm';
+import { Entity, ManyToOne, JoinColumn, Column, OneToMany, OneToOne } from 'typeorm';
 import { Patient } from '../../patient/entities/patient.entity';
 import { Department } from '../../settings/entities/department.entity';
 import { Service } from '../../settings/entities/service.entity';
 import { Voucher } from '../vouchers/voucher.entity';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
+import { PatientRequest } from '../../patient/entities/patient_requests.entity';
 
 @Entity({ name: 'transactions'})
 export class Transactions extends CustomBaseEntity {
@@ -68,4 +69,8 @@ export class Transactions extends CustomBaseEntity {
 
     @Column({type: 'jsonb', nullable: true})
     transaction_details: any;
+
+    @OneToOne(type => PatientRequest, { nullable: true })
+    @JoinColumn({name: 'patient_request_id'})
+    patientRequest: PatientRequest;
 }
