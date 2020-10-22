@@ -135,6 +135,24 @@ export class HousekeepingService {
         return results;
     }
 
+    async singleRoaster(listRoasterDto: ListRoasterDto, userId): Promise<Roaster[]> {
+        const { department_id, period} = listRoasterDto;
+
+        const query = this.roasterRepository.createQueryBuilder('roaster')
+                        .leftJoin(Department, 'dept', 'roaster.department_id = dept.id')
+                        .innerJoin(StaffDetails, 'staff', 'roaster.staff_id = staff.id')
+                        .select(['period, roaster.id, schedule'])
+                        .addSelect('dept.name as deptName, staff.first_name, staff.last_name')
+                        .where('roaster.period = :period', { period })
+                        .where('roster.staff = :staff_id', userId);
+        if (department_id !== '') {
+            query.andWhere('roaster.department_id = :department_id', {department_id});
+        }
+        const results = await query.getRawMany();
+
+        return results;
+    }
+
     slugify(text) {
         return text
           .toString()

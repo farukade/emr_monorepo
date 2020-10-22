@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Res, Header, UseInterceptors, UploadedFile, Get, Query, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Controller, Post, Body, Res, Header, UseInterceptors, UploadedFile, Get, Query, UsePipes, ValidationPipe, Request } from '@nestjs/common';
 import { HousekeepingService } from './housekeeping.service';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
@@ -42,5 +42,11 @@ export class HousekeepingController {
     @UsePipes(ValidationPipe)
     listRoaster(@Body() listRoasterDto: ListRoasterDto): Promise<Roaster[]> {
         return this.housekeepingService.listRoaster(listRoasterDto);
+    }
+
+    @Get('list-roaster')
+    @UsePipes(ValidationPipe)
+    singleRoaster(@Body() listRoasterDto: ListRoasterDto, @Request() req ): Promise<Roaster[]> {
+        return this.housekeepingService.singleRoaster(listRoasterDto, req.user.userId);
     }
 }
