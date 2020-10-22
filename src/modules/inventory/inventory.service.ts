@@ -12,6 +12,9 @@ import { Stock } from './entities/stock.entity';
 import { StockQtyDto } from './dto/stock.qty.dto';
 import { StockUploadDto } from './dto/stock.upload.dto';
 import { PaginationOptionsInterface } from '../../common/paginate';
+import { VendorRepository } from './vendor/vendor.repository';
+import * as moment from 'moment';
+import { Pagination } from '../../common/paginate/paginate.interface';
 
 @Injectable()
 export class InventoryService {
@@ -22,18 +25,49 @@ export class InventoryService {
         private inventorySubCategoryRepository: InventorySubCategoryRepository,
         @InjectRepository(StockRepository)
         private stockRepository: StockRepository,
+        @InjectRepository(VendorRepository)
+        private vendorRepository: VendorRepository,
     ) {}
 
     /*
         INVENTORY
     */
 
-    async getAllStocks(options: PaginationOptionsInterface): Promise<Stock[]> {
-        return await this.stockRepository.find({
-            relations: ['subCategory', 'category'],
-            take: options.limit,
-            skip: (options.page * options.limit)
-        });
+    async getAllStocks(options: PaginationOptionsInterface, categoryId: string): Promise<Pagination> {
+        const category = await this.inventoryCategoryRepository.findOne(categoryId);
+
+        const page = options.page - 1;
+
+        let result;
+        let count;
+        if (categoryId && categoryId !== '' && category) {
+            result = await this.stockRepository.find({
+                where: {category},
+                relations: ['subCategory', 'category', 'vendor'],
+                take: options.limit,
+                skip: (page * options.limit),
+            });
+
+            count = await this.stockRepository.count({
+                where: {category},
+            });
+        } else {
+            result = await this.stockRepository.find({
+                relations: ['subCategory', 'category', 'vendor'],
+                take: options.limit,
+                skip: (page * options.limit),
+            });
+
+            count = await this.stockRepository.count();
+        }
+
+        return {
+            result,
+            lastPage: Math.ceil(count / options.limit),
+            itemsPerPage: options.limit,
+            totalPages: count,
+            currentPage: options.page,
+        };
     }
 
     async getStockById(id): Promise<Stock> {
@@ -44,7 +78,7 @@ export class InventoryService {
         // find category
         const category = await this.inventoryCategoryRepository.findOne(category_id);
 
-        return this.stockRepository.find({where: {category}});
+        return this.stockRepository.find({where: {category}, relations: ['vendor']});
     }
 
     async getStocksByCategoryName(name: string): Promise<Stock[]> {
@@ -60,13 +94,17 @@ export class InventoryService {
     }
 
     async createStock(stockDto: StockDto): Promise<Stock> {
-        const { category_id, sub_category_id } = stockDto;
+        const { category_id, sub_category_id, vendor_id } = stockDto;
         const category = await this.inventoryCategoryRepository.findOne(category_id);
         let subCategory;
         if (sub_category_id) {
             subCategory = await this.inventorySubCategoryRepository.findOne(sub_category_id);
         }
-        return this.stockRepository.saveStock(stockDto, category, subCategory);
+        let vendor;
+        if (vendor_id) {
+            vendor = await this.vendorRepository.findOne(vendor_id);
+        }
+        return this.stockRepository.saveStock(stockDto, category, subCategory, vendor);
     }
 
     async updateStock(id: string, stockDto: StockDto): Promise<Stock> {
@@ -86,6 +124,14 @@ export class InventoryService {
         return stock;
     }
 
+    async updateExpiryDate(id: string, param): Promise<Stock> {
+        const { expiry_date } = param;
+        const stock = await this.stockRepository.findOne(id);
+        stock.expiry_date    = expiry_date;
+        await stock.save();
+        return stock;
+    }
+
     async downloadStocks() {
         const fs = require('fs');
         const createCsvWriter = require('csv-writer').createObjectCsvWriter;
@@ -98,11 +144,13 @@ export class InventoryService {
                 {id: 'generic_name', title: 'GENERIC NAME'},
                 {id: 'quantity', title: 'QUANTITY ON HAND'},
                 {id: 'sales_price', title: 'SALES PRICE'},
+                {id: 'expiry_date', title: 'EXPIRY DATE'},
+                {id: 'vendor', title: 'VENDOR'},
             ],
         });
 
         try {
-            const stocks = await this.stockRepository.find({relations: ['subCategory']});
+            const stocks = await this.stockRepository.find({relations: ['subCategory', 'vendor']});
 
             if (stocks.length) {
                 for (const stock of stocks) {
@@ -114,6 +162,8 @@ export class InventoryService {
                             generic_name: stock.generic_name,
                             quantity: stock.quantity,
                             sales_price: stock.sales_price,
+                            expiry_date: stock.expiry_date,
+                            vendor: stock.vendor ? stock.vendor.name : '',
                         },
                     ];
 
@@ -128,6 +178,8 @@ export class InventoryService {
                         generic_name: '',
                         quantity: '',
                         sales_price: '',
+                        expiry_date: '',
+                        vendor: '',
                     },
                 ];
                 await csvWriter.writeRecords({data});
@@ -158,11 +210,17 @@ export class InventoryService {
     async doUploadStock(stockUploadDto: StockUploadDto, file: any) {
         const csv = require('csv-parser');
         const fs = require('fs');
-        const { category_id } = stockUploadDto;
+        const { category_id, vendor_id } = stockUploadDto;
         const content = [];
         // find category
         const category = await this.inventoryCategoryRepository.findOne(category_id);
         let subCategory;
+
+        let vendor = null;
+        if (vendor_id) {
+            vendor = await this.vendorRepository.findOne(vendor_id);
+        }
+
         try {
             // read uploaded file
             fs.createReadStream(file.path)
@@ -174,6 +232,7 @@ export class InventoryService {
                     generic_name: row['GENERIC NAME'],
                     quantity: row['QUANTITY ON HAND'],
                     sales_price: row['SALES PRICE'],
+                    expiry_date: row['EXPIRY DATE'],
                     stock_code: 'STU-' + (Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5)).toUpperCase(),
                 };
                 content.push(data);
@@ -192,26 +251,38 @@ export class InventoryService {
 
                     if (item.name && item.name !== '') {
                         // check if name exist
-                        const stock = await this.stockRepository.findOne({where: {name: item.name}});
+                        const stock = vendor ? await this.stockRepository.findOne({
+                            where: {
+                                name: item.name,
+                                vendor,
+                            },
+                        }) : await this.stockRepository.findOne({ where: { name: item.name } });
+
+                        const expiryDate = moment(item.expiry_date, 'M/D/YY').format('YYYY-MM-DD');
                         if (!stock) {
                             item.subCategory = subCategory;
                             item.category = category;
+                            item.vendor = vendor;
+                            item.sales_price = item.sales_price.replace(',', '');
+                            item.quantity = parseInt(item.quantity.replace(',', ''), 10);
+                            item.expiry_date = expiryDate;
                             // save stock
                             await this.stockRepository.save(item);
-                            console.log('new stock');
+                            // console.log('new stock');
                         } else {
                             stock.name = item.name;
                             stock.generic_name = item.generic_name;
                             stock.sales_price = item.sales_price.replace(',', '');
-                            stock.quantity = item.quantity;
+                            stock.quantity = parseInt(item.quantity.replace(',', ''), 10);
                             stock.category = category;
                             stock.subCategory = subCategory;
+                            stock.expiry_date = expiryDate;
                             await stock.save();
                             console.log('update stock');
                         }
                     }
                 }
-                console.log(content);
+                // console.log(content);
             });
             return {success: true};
         } catch (err) {

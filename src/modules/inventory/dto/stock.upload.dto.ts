@@ -9,4 +9,6 @@ export class StockUploadDto {
   @IsNotEmpty()
   file: string;
 
+  vendor_id: string;
+
 }

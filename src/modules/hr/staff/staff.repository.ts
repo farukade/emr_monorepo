@@ -48,7 +48,7 @@ export class StaffRepository extends Repository<StaffDetails> {
 
             return {success: true, staff};
         } catch (e) {
-            return {success: false, message: e.message()};
+            return {success: false, message: e.message};
         }
     }
 

@@ -29,6 +29,8 @@ import { OpdPatientDto } from './dto/opd-patient.dto';
 import { AppGateway } from '../../app.gateway';
 import { AppointmentRepository } from '../frontdesk/appointment/appointment.repository';
 import { Transactions } from '../finance/transactions/transaction.entity';
+import { Immunization } from './immunization/entities/immunization.entity';
+import { AuthRepository } from '../auth/auth.repository';
 
 @Injectable()
 export class PatientService {
@@ -55,6 +57,8 @@ export class PatientService {
         private patientDocumentRepository: PatientDocumentRepository,
         @InjectRepository(AppointmentRepository)
         private appointmentRepository: AppointmentRepository,
+        @InjectRepository(AuthRepository)
+        private authRepository: AuthRepository,
         private connection: Connection,
         private readonly appGateway: AppGateway,
     ) {
@@ -445,6 +449,7 @@ export class PatientService {
                 transaction_type: 'pharmacy',
                 transaction_details: requestBody,
                 createdBy: updatedBy,
+                patientRequest: res,
             };
 
             const payment = await getConnection()
@@ -454,7 +459,7 @@ export class PatientService {
                 .values(data)
                 .execute();
 
-            this.appGateway.server.emit('paypoint-queue', {payment});
+            this.appGateway.server.emit('paypoint-queue', { payment });
 
             return { success: true, data: { ...res, payment } };
         } catch (e) {
@@ -469,19 +474,21 @@ export class PatientService {
         const query = this.patientRequestRepository.createQueryBuilder('q')
             .leftJoin('q.patient', 'patient')
             .leftJoin(User, 'creator', 'q.createdBy = creator.username')
+            .innerJoin(Transactions, 'transaction', 'q.id = transaction.patient_request_id')
             .innerJoin(StaffDetails, 'staff1', 'staff1.user_id = creator.id')
             .select('q.id, q.requestType, q.requestBody, q.createdAt, q.status, q.isFilled')
             .addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
             .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id, patient.fileNumber')
+            .addSelect('transaction.status as payment_status')
             .where('q.patient_id = :patient_id', { patient_id })
             .andWhere('q.requestType = :requestType', { requestType });
 
         if (startDate && startDate !== '') {
-            const start = moment(startDate).startOf('day').toISOString();
+            const start = moment(startDate).startOf('day').format('YYYY-MM-DD HH:mm:ss');
             query.andWhere(`q.createdAt >= '${start}'`);
         }
         if (endDate && endDate !== '') {
-            const end = moment(endDate).endOf('day').toISOString();
+            const end = moment(endDate).endOf('day').format('YYYY-MM-DD HH:mm:ss');
             query.andWhere(`q.createdAt <= '${end}'`);
         }
         if (filled) {
@@ -495,10 +502,12 @@ export class PatientService {
         const query = this.patientRequestRepository.createQueryBuilder('patient_request')
             .leftJoin('patient_request.patient', 'patient')
             .leftJoin(User, 'creator', 'patient_request.createdBy = creator.username')
+            .innerJoin(Transactions, 'transaction', 'patient_request.id = transaction.patient_request_id')
             .innerJoin(StaffDetails, 'staff1', 'staff1.user_id = creator.id')
             .select('patient_request.id, patient_request.requestType, patient_request.requestBody, patient_request.createdAt, patient_request.status, patient_request.isFilled')
             .addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
             .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id, patient.fileNumber')
+            .addSelect('transaction.status as payment_status')
             .andWhere('patient_request.requestType = :requestType', { requestType });
 
         if (startDate && startDate !== '') {
@@ -521,10 +530,31 @@ export class PatientService {
 
     async doApproveResult(id: string, username) {
         try {
+            const user = await this.authRepository.findOne({ where: { username } });
+
+            const staff = await this.connection.getRepository(StaffDetails)
+                .createQueryBuilder('s').where('s.user_id = :id', {id: user.id}).getOne();
+
             const result = await this.patientRequestRepository.findOne(id);
+
+            for (const drug of result.requestBody) {
+                // @ts-ignore
+                const { vaccine } = drug;
+                if (vaccine) {
+                    // await getConnection()
+                    //     .createQueryBuilder()
+                    //     .update(Immunization)
+                    //     .set({ date_administered: moment().format('YYYY-MM-DD HH:mm:ss'), administeredBy: staff })
+                    //     .where('id = :id', { id: vaccine.id })
+                    //     .execute();
+
+                    // TODO: create clinical task for vaccines
+                }
+            }
+
             result.status = 1;
-            await result.save();
-            return { success: true };
+            const res = await result.save();
+            return { success: true, data: res };
         } catch (e) {
             return { success: false, message: e.message };
         }

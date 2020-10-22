@@ -11,16 +11,19 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { InventoryCategoryRepository } from './inventory.category.repository';
 import { InventorySubCategoryRepository } from './inventory.sub-category.repository';
 import { StockRepository } from './stock.repository';
+import { VendorModule } from './vendor/vendor.module';
+import { VendorRepository } from './vendor/vendor.repository';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([InventoryCategoryRepository, InventorySubCategoryRepository, StockRepository]),
+    TypeOrmModule.forFeature([InventoryCategoryRepository, InventorySubCategoryRepository, StockRepository, VendorRepository]),
     PharmacyModule,
     CafeteriaModule,
     StoreModule,
     ProcurementModule,
     ProcedureTheaterModule,
-    PosModule],
+    PosModule,
+    VendorModule],
   providers: [InventoryService],
   controllers: [InventoryController],
 })

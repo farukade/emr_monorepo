@@ -24,6 +24,7 @@ import { AppGateway } from '../../app.gateway';
 import { AppointmentRepository } from '../frontdesk/appointment/appointment.repository';
 import { ImmunizationModule } from './immunization/immunization.module';
 import { NicuModule } from './nicu/nicu.module';
+import { AuthRepository } from '../auth/auth.repository';
 
 @Module({
   imports: [TypeOrmModule.forFeature([
@@ -40,6 +41,7 @@ import { NicuModule } from './nicu/nicu.module';
       IvfEnrollmentRepository,
       StaffRepository,
       AppointmentRepository,
+      AuthRepository,
   ]), AntenatalModule, AdmissionsModule, ConsultationModule, LabourManagementModule, ImmunizationModule, NicuModule],
   controllers: [PatientController, IvfController],
   providers: [AppGateway, PatientService, IvfService],
