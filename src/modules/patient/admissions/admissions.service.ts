@@ -34,7 +34,7 @@ export class AdmissionsService {
         const query = this.admissionRepository.createQueryBuilder('q')
             .leftJoinAndSelect('q.patient', 'patient')
             .select('q.createdAt as admission_date, q.createdBy as admitted_by, q.reason')
-            .addSelect('CONCAT(patient.surname, patient.other_names) as patient_name, patient.id as patient_id');
+            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id, patient.fileName, patient.gender');
 
         if (type === 'in-admission') {
             query.innerJoinAndSelect('q.room', 'room')
