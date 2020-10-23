@@ -4,8 +4,8 @@ import { CustomBaseEntity } from '../../../../common/entities/custom-base.entity
 import { Department } from '../../../settings/entities/department.entity';
 import { User } from '../../entities/user.entity';
 import { Transactions } from '../../../finance/transactions/transaction.entity';
-import {Specialization} from "../../../settings/entities/specialization.entity";
-import {ConsultingRoom} from "../../../settings/entities/consulting-room.entity";
+import {Specialization} from '../../../settings/entities/specialization.entity';
+import {ConsultingRoom} from '../../../settings/entities/consulting-room.entity';
 
 @Entity({ name: 'staff_details' })
 export class StaffDetails extends CustomBaseEntity {
