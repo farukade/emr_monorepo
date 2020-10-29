@@ -42,7 +42,7 @@ export class AuthService {
           {username: user.username, userId: user.id},
         );
         const staff = await this.staffRepository.findOne({where: {user}, relations: ['department']});
-        if (staff.profile_pic) {
+        if (staff && staff.profile_pic) {
           staff.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${staff.profile_pic}`;
         }
         const newUser = JSON.parse(JSON.stringify(user));
