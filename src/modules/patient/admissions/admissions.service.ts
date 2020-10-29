@@ -30,11 +30,13 @@ export class AdmissionsService {
         private readonly appGateway: AppGateway,
     ) {}
 
-    async getAdmissions(options: PaginationOptionsInterface, {startDate, endDate, patient_id, status, type}) {
+    async getAdmissions(options: PaginationOptionsInterface, {startDate, endDate, patient_id, status, type, name}) {
         const query = this.admissionRepository.createQueryBuilder('q')
             .leftJoinAndSelect('q.patient', 'patient')
+            .leftJoinAndSelect('q.room', 'room')
             .select('q.createdAt as admission_date, q.createdBy as admitted_by, q.reason')
-            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id, patient.fileName, patient.gender');
+            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id, patient.fileNumber as patient_name, patient.gender as patient_gender')
+            .addSelect('room.name as suite, room.floor as floor');
 
         if (type === 'in-admission') {
             query.innerJoinAndSelect('q.room', 'room')
@@ -59,6 +61,12 @@ export class AdmissionsService {
         if (status) {
             query.andWhere('q.status = :status', {status});
         }
+
+        if(name){
+            query.where('q.patient_name like :name', { name:`%${name}%` });
+        }
+
+        
 
         return await query.take(options.limit).skip(options.page * options.limit).getRawMany();
 
