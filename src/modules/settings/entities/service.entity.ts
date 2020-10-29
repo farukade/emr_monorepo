@@ -1,5 +1,4 @@
-import { Type } from 'class-transformer';
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 import { ServiceSubCategory } from './service_sub_category.entity';
 import { ServiceCategory } from './service_category.entity';
@@ -24,8 +23,8 @@ export class Service extends CustomBaseEntity {
   @Column({ nullable: true })
   noOfVisits: number;
 
-  @Column({type: 'varchar', length: 20, default: 0})
-  code: string;
+  @Column({ type: 'varchar', nullable: true })
+  slug: string;
 
   @ManyToOne(type => ServiceSubCategory)
   @JoinColumn({ name: 'sub_category_id' })

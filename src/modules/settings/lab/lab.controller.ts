@@ -1,4 +1,4 @@
-import { Controller, Get, Post, UsePipes, ValidationPipe, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, UsePipes, ValidationPipe, Body, Patch, Param, Delete, UseGuards, Request, Query } from '@nestjs/common';
 import { LabService } from './lab.service';
 import { LabTestCategory } from '../entities/lab_test_category.entity';
 import { LabCategoryDto } from './dto/lab.category.dto';
@@ -7,6 +7,11 @@ import { ParameterDto } from './dto/parameter.dto';
 import { LabTest } from '../entities/lab_test.entity';
 import { LabTestDto } from './dto/lab_test.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { Specimen } from '../entities/specimen.entity';
+import { SpecimenDto } from './dto/specimen.dto';
+import { Group } from '../entities/group.entity';
+import { GroupDto } from './dto/group.dto';
+import { Pagination } from '../../../common/paginate/paginate.interface';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('lab-tests')
@@ -18,8 +23,14 @@ export class LabController {
      * LAB TESTs
      */
     @Get()
-    getLabTests(): Promise<LabTest[]> {
-        return this.labService.getTests();
+    getLabTests(
+        @Request() request,
+        @Query('q') q: string,
+    ): Promise<Pagination> {
+        const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 30;
+        const page = request.query.hasOwnProperty('page') ? request.query.page : 1;
+
+        return this.labService.getTests({ page, limit }, q);
     }
 
     @Post()
@@ -43,7 +54,7 @@ export class LabController {
     }
 
     @Delete(':id')
-    deleteLabTest(@Param('id') id: string): Promise<void> {
+    deleteLabTest(@Param('id') id: string): Promise<LabTest> {
         return this.labService.deleteLabTest(id);
     }
 
@@ -75,7 +86,7 @@ export class LabController {
     }
 
     @Delete('categories/:id')
-    deleteServiceCategory(@Param('id') id: string): Promise<void> {
+    deleteServiceCategory(@Param('id') id: string): Promise<LabTestCategory> {
         return this.labService.deleteCategory(id);
     }
 
@@ -105,5 +116,69 @@ export class LabController {
     @Delete('parameters/:id')
     deleteParameter(@Param('id') id: string): Promise<void> {
         return this.labService.deleteParameter(id);
+    }
+
+    /**
+     * LAB SPECIMEN
+     */
+    @Get('/specimens')
+    getSpecimens(): Promise<Specimen[]> {
+        return this.labService.getSpecimens();
+    }
+
+    @Post('/specimens')
+    @UsePipes(ValidationPipe)
+    createSpecimen(
+        @Body() specimenDto: SpecimenDto,
+        @Request() req,
+    ): Promise<Specimen> {
+        return this.labService.createSpecimen(specimenDto, req.user.username);
+    }
+
+    @Patch('/specimens/:id')
+    @UsePipes(ValidationPipe)
+    updateSpecimen(
+        @Param('id') id: string,
+        @Body() specimenDto: SpecimenDto,
+        @Request() req,
+    ): Promise<Specimen> {
+        return this.labService.updateSpecimen(id, specimenDto, req.user.username);
+    }
+
+    @Delete('/specimens/:id')
+    deleteSpecimen(@Param('id') id: string): Promise<Specimen> {
+        return this.labService.deleteSpecimen(id);
+    }
+
+    /**
+     * LAB TEST GROUP
+     */
+    @Get('/groups')
+    getGroups(): Promise<Group[]> {
+        return this.labService.getGroups();
+    }
+
+    @Post('/groups')
+    @UsePipes(ValidationPipe)
+    createGroup(
+        @Body() specimenDto: GroupDto,
+        @Request() req,
+    ): Promise<Group> {
+        return this.labService.createGroup(specimenDto, req.user.username);
+    }
+
+    @Patch('/groups/:id')
+    @UsePipes(ValidationPipe)
+    updateGroup(
+        @Param('id') id: string,
+        @Body() groupDto: GroupDto,
+        @Request() req,
+    ): Promise<Group> {
+        return this.labService.updateGroup(id, groupDto, req.user.username);
+    }
+
+    @Delete('/groups/:id')
+    deleteGroup(@Param('id') id: string): Promise<Group> {
+        return this.labService.deleteGroup(id);
     }
 }

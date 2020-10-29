@@ -2,7 +2,7 @@ import { EntityRepository, Repository, getRepository, getConnection } from 'type
 import { LabTest } from '../entities/lab_test.entity';
 import { LabTestDto } from './dto/lab_test.dto';
 import { LabTestCategory } from '../entities/lab_test_category.entity';
-import { Parameter } from '../entities/parameters.entity';
+import { slugify } from '../../../common/utils/utils';
 
 @EntityRepository(LabTest)
 export class LabTestRepository extends Repository<LabTest> {
@@ -18,6 +18,7 @@ export class LabTestRepository extends Repository<LabTest> {
         labTest.category    = category;
         labTest.parameters  = parameters;
         labTest.subTests    = sub_tests;
+        labTest.slug        = slugify(name);
         await this.manager.save(labTest);
         return labTest;
     }
@@ -25,6 +26,7 @@ export class LabTestRepository extends Repository<LabTest> {
     async updateLabTest(labTestDto: LabTestDto, labTest: LabTest, category: LabTestCategory, updatedBy: string): Promise<LabTest> {
         const { name, price, test_type, parameters, sub_tests, description  } = labTestDto;
         labTest.name            = name;
+        labTest.slug            = slugify(name);
         labTest.price           = price;
         labTest.test_type       = test_type;
         labTest.description     = description;
@@ -32,7 +34,7 @@ export class LabTestRepository extends Repository<LabTest> {
         labTest.lastChangedBy   = updatedBy;
         labTest.parameters      = parameters;
         labTest.subTests        = sub_tests;
-        await this.manager.save(labTest);
+        labTest = await this.manager.save(labTest);
 
         return labTest;
     }

@@ -9,6 +9,11 @@ import { ServiceSubCategoryRepository } from './service.sub.category.repository'
 import { ServiceRepository } from './service.repository';
 import { ServiceSubCategory } from '../entities/service_sub_category.entity';
 import { ServiceSubCategoryDto } from './dto/service.sub.category.dto';
+import { LabTestCategoryRepository } from '../lab/lab.category.repository';
+import { LabTestRepository } from '../lab/lab.test.repository';
+import { LabTestCategory } from '../entities/lab_test_category.entity';
+import { LabTestDto } from '../lab/dto/lab_test.dto';
+import { slugify } from '../../../common/utils/utils';
 
 @Injectable()
 export class ServicesService {
@@ -19,6 +24,10 @@ export class ServicesService {
         private serviceCategoryRepository: ServiceCategoryRepository,
         @InjectRepository(ServiceSubCategoryRepository)
         private serviceSubCategoryRepository: ServiceSubCategoryRepository,
+        @InjectRepository(LabTestCategoryRepository)
+        private labTestCategoryRepository: LabTestCategoryRepository,
+        @InjectRepository(LabTestRepository)
+        private labTestRepository: LabTestRepository,
     ) {}
 
     async getAllServices(): Promise<Service[]> {
@@ -88,10 +97,11 @@ export class ServicesService {
         }
     }
 
-    async doUploadServices(file: any) {
+    async doUploadServices(file: any, username: string) {
         const csv = require('csv-parser');
         const fs = require('fs');
         const content = [];
+        const labs = [];
         try {
             // read uploaded file
             fs.createReadStream(file.path)
@@ -103,13 +113,19 @@ export class ServicesService {
                     service: row.Service,
                     amount: row.Amount,
                 };
-                content.push(data);
+
+                if (data.category === 'Clinical Laboratory') {
+                    labs.push(data);
+                } else {
+                    content.push(data);
+                }
             })
             .on('end', async () => {
                 console.log('CSV file successfully processed');
                 for (const item of content) {
-                    let category, subCategory;
-                    // check if faculty exists
+                    let category;
+                    let subCategory;
+                    // check if category exists
                     category = await this.serviceCategoryRepository.findOne({where : {name: item.category.trim()}});
                     if (!category) {
                         category = await this.serviceCategoryRepository.save({name: item.category.trim()});
@@ -131,14 +147,43 @@ export class ServicesService {
                             });
                         }
                     }
-                    // save service
-                    await this.serviceRepository.save({
-                        name: item.service,
-                        code: 'DH' + Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 6).toUpperCase(),
-                        tariff: item.amount.replace(',', ''),
-                        category,
-                        subCategory: (subCategory) ? subCategory : null,
-                    });
+
+                    const service = await this.serviceRepository.findOne({where : {slug: slugify(item.service)}});
+                    if (!service) {
+                        // save service
+                        await this.serviceRepository.save({
+                            name: item.service,
+                            slug: slugify(item.service),
+                            tariff: item.amount.replace(',', ''),
+                            category,
+                            subCategory: (subCategory) ? subCategory : null,
+                        });
+                    }
+                }
+
+                for (const test of labs) {
+                    let category;
+
+                    category = await this.labTestCategoryRepository.findOne({where : {name: test.subCategory}});
+                    if (!category) {
+                        category = await this.labTestCategoryRepository.saveCategory({name: test.subCategory}, username);
+                    }
+
+                    const findTest = await this.labTestRepository.findOne({where : {slug: slugify(test.service)}});
+                    if (!findTest) {
+                        const labTest = {
+                            name: test.service,
+                            slug: slugify(test.service),
+                            price: test.amount.replace(',', ''),
+                            test_type: null,
+                            description: null,
+                            parameters: null,
+                            sub_tests: null,
+                            lab_category_id: category.id,
+                        };
+
+                        await this.labTestRepository.saveLabTest(labTest, category, username);
+                    }
                 }
             });
             return {success: true};
@@ -155,7 +200,7 @@ export class ServicesService {
             header: [
                 {id: 'category', title: 'Category'},
                 {id: 'sub_category', title: 'SubCategory'},
-                {id: 'code', title: 'Code'},
+                {id: 'slug', title: 'Slug'},
                 {id: 'name', title: 'Service'},
                 {id: 'amount', title: 'Amount'},
                 // {id: 'hmo_rate', title: 'HMO Rate'},
@@ -170,7 +215,7 @@ export class ServicesService {
                     {
                         category: service.category.name,
                         sub_category: (service.subCategory) ? service.subCategory.name : '',
-                        code: service.code,
+                        slug: service.slug,
                         name: service.name,
                         amount: service.tariff,
                         hmo_rate: '',

@@ -22,7 +22,8 @@
     "typeorm:migration:generate": "yarn typeorm -- migration:generate -n",
     "typeorm:migration:create": "yarn typeorm -- migration:create -n",
     "typeorm:migration:run": "yarn typeorm -- migration:run",
-    "typeorm:seed": "ts-node ./node_modules/typeorm-seeding/dist/cli.js seed --config=ormconfig.json"
+    "typeorm:seed": "ts-node ./node_modules/typeorm-seeding/dist/cli.js seed --config=ormconfig.json",
+    "migrate": "yarn typeorm:migration:run && yarn typeorm:seed"
   },
   "dependencies": {
     "@nestjs/common": "^6.7.2",
