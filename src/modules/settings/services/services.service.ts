@@ -134,7 +134,7 @@ export class ServicesService {
                     // save service
                     await this.serviceRepository.save({
                         name: item.service,
-                        code: 'DH' + Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 6).toUpperCase(),
+                        code: 'DH ' + Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 6).toUpperCase(),
                         tariff: item.amount.replace(',', ''),
                         category,
                         subCategory: (subCategory) ? subCategory : null,

@@ -42,7 +42,7 @@ export class StaffRepository extends Repository<StaffDetails> {
             staff.profile_pic = (pic) ? pic.filename : '';
             staff.specialization = specialization;
             staff.user = user;
-            staff.emp_code = 'DEDA-' + Math.floor(Math.random() * 90000),
+            staff.emp_code = 'DHS ' + Math.floor(Math.random() * 90000),
 
                 await staff.save();
 
