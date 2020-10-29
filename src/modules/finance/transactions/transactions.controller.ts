@@ -49,6 +49,11 @@ export class TransactionsController {
         return this.transactionsService.cafeteriaDailyTotal();
     }
 
+    @Get('personal-cafetaria-bill')
+    getPersonalCafeteriaBill( @Request() req,){
+        return this.transactionsService.personalCafeterialBill(req.user.username)
+    }
+
     @Get('dashboard-list')
     getDashboardTransactionList(
         @Query() urlParams,
