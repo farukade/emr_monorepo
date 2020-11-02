@@ -9,7 +9,7 @@ import { DepartmentRepository } from '../../settings/departments/department.repo
 import * as bcrypt from 'bcrypt';
 import {getRepository, Like} from 'typeorm';
 import {Specialization} from '../../settings/entities/specialization.entity';
-import {ConsultingRoom} from "../../settings/entities/consulting-room.entity";
+import {ConsultingRoom} from '../../settings/entities/consulting-room.entity';
 
 @Injectable()
 export class StaffService {
@@ -104,7 +104,7 @@ export class StaffService {
             staff.phone_number   = staffDto.phone_number;
             staff.email          = staffDto.email;
             staff.nationality    = staffDto.nationality;
-            staff.state_of_origin= staffDto.state_of_origin;
+            staff.state_of_origin = staffDto.state_of_origin;
             staff.lga            = staffDto.lga;
             staff.bank_name      = staffDto.bank_name;
             staff.account_number = staffDto.account_number;

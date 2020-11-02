@@ -17,6 +17,9 @@ export class PatientRequest extends CustomBaseEntity {
     @Column({ type: 'boolean', default: false })
     isFilled: boolean;
 
+    @Column({ type: 'boolean', default: false })
+    urgent: boolean;
+
     @ManyToOne(type => Patient)
     @JoinColumn({name: 'patient_id'})
     patient: Patient;

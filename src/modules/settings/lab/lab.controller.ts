@@ -62,8 +62,10 @@ export class LabController {
      * LAB CATEGORIES
      */
     @Get('/categories')
-    getCategories(): Promise<LabTestCategory[]> {
-        return this.labService.getCategories();
+    getCategories(
+        @Query('hasTest') hasTest: string,
+    ): Promise<any[]> {
+        return this.labService.getCategories(hasTest === '1');
     }
 
     @Post('/categories')

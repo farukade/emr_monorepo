@@ -10,7 +10,7 @@ export class PatientRequestHelper {
     }
 
     static async handleLabRequest(param, patient, createdBy) {
-        const { requestBody, id, request_note } = param;
+        const { requestBody, id, request_note, urgent } = param;
         const data = {
             requestType: 'lab',
             requestBody,
@@ -18,6 +18,7 @@ export class PatientRequestHelper {
             requestNote: request_note,
             createdBy: '',
             lastChangedBy: '',
+            urgent,
         };
         let res;
         try {
@@ -28,7 +29,7 @@ export class PatientRequestHelper {
                 data.createdBy = createdBy;
                 res = await this.save(data);
             }
-            return { success: true, data: res };
+            return { success: true, data: res.generatedMaps[0] };
         } catch (error) {
             return { success: false, message: error.message };
         }
@@ -54,7 +55,7 @@ export class PatientRequestHelper {
                 data.createdBy = createdBy;
                 res = await this.save(data);
             }
-            return { success: true, data: res };
+            return { success: true, data: res.generatedMaps[0] };
         } catch (error) {
             return { success: false, message: error.message };
         }
@@ -107,7 +108,7 @@ export class PatientRequestHelper {
         let res;
         try {
             res = await this.save(data);
-            return { success: true, data: res };
+            return { success: true, data: res.generatedMaps[0] };
         } catch (error) {
             return { success: false, message: error.message };
         }
@@ -133,7 +134,7 @@ export class PatientRequestHelper {
                 data.createdBy = createdBy;
                 res = await this.save(data);
             }
-            return { success: true, data: res };
+            return { success: true, data: res.generatedMaps[0] };
         } catch (error) {
             return { success: false, message: error.message };
         }
@@ -159,7 +160,7 @@ export class PatientRequestHelper {
                 data.createdBy = createdBy;
                 res = await this.save(data);
             }
-            return { success: true, data: res };
+            return { success: true, data: res.generatedMaps[0] };
         } catch (error) {
             return { success: false, message: error.message };
         }
@@ -185,7 +186,7 @@ export class PatientRequestHelper {
                 data.createdBy = createdBy;
                 res = await this.save(data);
             }
-            return { success: true, data: res };
+            return { success: true, data: res.generatedMaps[0] };
         } catch (error) {
             return { success: false, message: error.message };
         }
@@ -211,7 +212,7 @@ export class PatientRequestHelper {
                 data.createdBy = createdBy;
                 res = await this.save(data);
             }
-            return { success: true, data: res };
+            return { success: true, data: res.generatedMaps[0] };
         } catch (error) {
             return { success: false, message: error.message };
         }
@@ -237,7 +238,7 @@ export class PatientRequestHelper {
                 data.createdBy = createdBy;
                 res = await this.save(data);
             }
-            return { success: true, data: res };
+            return { success: true, data: res.generatedMaps[0] };
         } catch (error) {
             return { success: false, message: error.message };
         }

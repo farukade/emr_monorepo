@@ -359,10 +359,13 @@ export class PatientService {
                 let labRequest = await PatientRequestHelper.handleLabRequest(param, patient, createdBy);
                 if (labRequest.success) {
                     // save transaction
-                    const payment = await RequestPaymentHelper.clinicalLabPayment(param.requestBody, patient, createdBy);
+                    const payment = await RequestPaymentHelper.clinicalLabPayment(param.requestBody, labRequest.data, patient, createdBy);
                     labRequest = { ...labRequest, ...payment };
+
+                    this.appGateway.server.emit('paypoint-queue', { payment });
                 }
                 res = labRequest;
+
                 break;
             case 'pharmacy':
                 let pharmacyReq = await PatientRequestHelper.handlePharmacyRequest(param, patient, createdBy);
@@ -512,7 +515,7 @@ export class PatientService {
             .andWhere('patient_request.requestType = :requestType', { requestType });
 
         if (startDate && startDate !== '') {
-            const start = moment(startDate).endOf('day').toISOString();
+            const start = moment(startDate).startOf('day').toISOString();
             query.andWhere(`patient_request.createdAt >= '${start}'`);
         }
 

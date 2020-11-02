@@ -84,7 +84,7 @@ export class AntenatalService {
                 const labRequestRes = await PatientRequestHelper.handleLabRequest(labRequest, patient, createdBy);
                 if (labRequestRes.success) {
                     // save transaction
-                    await RequestPaymentHelper.clinicalLabPayment(labRequest.requestBody, patient, createdBy);
+                    await RequestPaymentHelper.clinicalLabPayment(labRequest.requestBody, labRequestRes.data, patient, createdBy);
                 }
                 console.log(labRequestRes);
                 visit.labRequest = labRequestRes.data.raw[0];

@@ -106,8 +106,24 @@ export class LabService {
         LAB TEST CATEGORIES
     */
 
-    async getCategories(): Promise<LabTestCategory[]> {
-        return this.labTestCategoryRepo.find();
+    async getCategories(hasTest: boolean): Promise<any[]> {
+        const categories = await this.labTestCategoryRepo.find();
+
+        if (!hasTest) {
+            return categories;
+        }
+
+        let results = [];
+        for (const category of categories) {
+            const tests = await this.labTestRepository.find({
+                where: { category },
+                order: {name: 'ASC'},
+            });
+
+            results = [...results, {...category, lab_tests: tests}];
+        }
+
+        return results;
     }
 
     async createCategory(labCategoryDto: LabCategoryDto, createdBy: string): Promise<LabTestCategory> {

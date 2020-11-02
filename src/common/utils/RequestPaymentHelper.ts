@@ -16,26 +16,14 @@ export class RequestPaymentHelper {
 
     constructor() {}
 
-    static async clinicalLabPayment(requestBody, patient: Patient, createdBy) {
+    static async clinicalLabPayment(requestBody, request, patient: Patient, createdBy) {
         let totalAmount = 0;
         const items = [];
-        // check if groups exist
-        if (requestBody.groups.length) {
-            for (const group of requestBody.groups) {
-                // get test
-                const test = await getConnection().getRepository(LabTest).findOne(group.service_id);
-                totalAmount += parseFloat(test.price);
-                items.push({name: test.name, amount: test.price});
-            }
-        }
-        // check if tests
-        if (requestBody.tests.length) {
-            for (const test of requestBody.tests) {
-                // get test
-                const labTest = await getConnection().getRepository(LabTest).findOne(test.service_id);
-                totalAmount += parseFloat(labTest.price);
-                items.push({name: test.name, amount: labTest.price});
-            }
+        for (const test of requestBody) {
+            // get test
+            const labTest = await getConnection().getRepository(LabTest).findOne(test.id);
+            totalAmount += parseFloat(labTest.price);
+            items.push(labTest);
         }
         const data = {
             patient,
@@ -43,8 +31,9 @@ export class RequestPaymentHelper {
             description: 'Payment for clinical lab',
             payment_type: (patient.hmo) ? 'HMO' : '',
             hmo_approval_status: (patient.hmo) ? 1 : 0,
-            transaction_type: 'billing',
+            transaction_type: 'lab',
             transaction_details: items,
+            patientRequest: request,
             createdBy,
         };
         const payment = await this.save(data);
