@@ -191,7 +191,7 @@ export class HmoService {
             header: [
                 {id: 'category', title: 'CATEGORY'},
                 {id: 'sub_category', title: 'SUB CATEGORY'},
-                {id: 'code', title: 'CODE'},
+                {id: 'slug', title: 'SLUG'},
                 {id: 'name', title: 'SERVICE'},
                 {id: 'amount', title: 'TARIFF'},
                 {id: 'hmo_rate', title: 'HMO TARIFF'},
@@ -208,7 +208,7 @@ export class HmoService {
                     {
                         category: service.category.name,
                         sub_category: (service.subCategory) ? service.subCategory.name : '',
-                        code: service.code,
+                        slug: service.slug,
                         name: service.name,
                         amount: service.tariff,
                         hmo_rate: '',
@@ -224,7 +224,7 @@ export class HmoService {
                 {
                     category: '',
                     sub_category: '',
-                    code: '',
+                    slug: '',
                     name: '',
                     amount: '',
                     hmo_rate: '',
@@ -325,7 +325,7 @@ export class HmoService {
                     let service;
                     let stock;
                     if (uploadType === 'services') {
-                        service = await this.serviceRepository.findOne({ where: {code: item.code}});
+                        service = await this.serviceRepository.findOne({ where: {slug: item.slug}});
                     } else {
                         stock = await this.stockRepository.findOne({ where: {stock_code: item.code }});
                     }

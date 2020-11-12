@@ -31,6 +31,7 @@ import { AppointmentRepository } from '../frontdesk/appointment/appointment.repo
 import { Transactions } from '../finance/transactions/transaction.entity';
 import { Immunization } from './immunization/entities/immunization.entity';
 import { AuthRepository } from '../auth/auth.repository';
+import { TransactionsRepository } from '../finance/transactions/transactions.repository';
 
 @Injectable()
 export class PatientService {
@@ -59,6 +60,8 @@ export class PatientService {
         private appointmentRepository: AppointmentRepository,
         @InjectRepository(AuthRepository)
         private authRepository: AuthRepository,
+        @InjectRepository(TransactionsRepository)
+        private transactionsRepository: TransactionsRepository,
         private connection: Connection,
         private readonly appGateway: AppGateway,
     ) {
@@ -497,17 +500,15 @@ export class PatientService {
         return await query.orderBy('q.createdAt', 'DESC').getRawMany();
     }
 
-    async listRequests(requestType, urlParams): Promise<PatientRequest[]> {
+    async listRequests(requestType, urlParams): Promise<any[]> {
         const { startDate, endDate, filled } = urlParams;
         const query = this.patientRequestRepository.createQueryBuilder('patient_request')
             .leftJoin('patient_request.patient', 'patient')
             .leftJoin(User, 'creator', 'patient_request.createdBy = creator.username')
-            .innerJoin(Transactions, 'transaction', 'patient_request.id = transaction.patient_request_id')
             .innerJoin(StaffDetails, 'staff1', 'staff1.user_id = creator.id')
             .select('patient_request.id, patient_request.requestType, patient_request.requestBody, patient_request.createdAt, patient_request.status, patient_request.isFilled')
             .addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
             .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id, patient.fileNumber')
-            .addSelect('transaction.status as payment_status')
             .andWhere('patient_request.requestType = :requestType', { requestType });
 
         if (startDate && startDate !== '') {
@@ -524,8 +525,15 @@ export class PatientService {
             query.andWhere('patient_request.isFilled = :filled', { filled: true });
         }
 
-        return await query.orderBy('patient_request.createdAt', 'DESC').getRawMany();
+        const result = await query.orderBy('patient_request.createdAt', 'DESC').getRawMany();
 
+        let results = [];
+        for (const item of result) {
+            const transaction = await this.transactionsRepository.findOne({where: {patient_request_id: item.id}});
+            results = [...results, { ...item, transaction }];
+        }
+
+        return results;
     }
 
     async doApproveResult(id: string, username) {

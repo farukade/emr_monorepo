@@ -11,8 +11,11 @@ export class  LabTest extends CustomBaseEntity {
   @Column({ type: 'varchar', length: 300})
   price: string;
 
-  @Column({ type: 'varchar'})
+  @Column({ type: 'varchar', nullable: true})
   test_type: string;
+
+  @Column({ type: 'varchar', nullable: true})
+  slug: string;
 
   @Column({type: 'varchar', nullable: true})
   description: string;

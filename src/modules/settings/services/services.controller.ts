@@ -1,4 +1,19 @@
-import { Controller, Get, Post, Patch, UsePipes, ValidationPipe, Body, Param, Delete, UseInterceptors, UploadedFile, Header, Res } from '@nestjs/common';
+import {
+    Controller,
+    Get,
+    Post,
+    Patch,
+    UsePipes,
+    ValidationPipe,
+    Body,
+    Param,
+    Delete,
+    UseInterceptors,
+    UploadedFile,
+    Header,
+    Res,
+    Request,
+} from '@nestjs/common';
 import { ServicesService } from './services.service';
 import { Service } from '../entities/service.entity';
 import { ServiceCategory } from '../entities/service_category.entity';
@@ -52,8 +67,10 @@ export class ServicesController {
         }),
     }))
     uploadServices(
-        @UploadedFile() file) {
-        return this.servicesService.doUploadServices(file);
+        @UploadedFile() file,
+        @Body('username') username: string,
+    ) {
+        return this.servicesService.doUploadServices(file, username);
     }
 
     @Get('download-services')

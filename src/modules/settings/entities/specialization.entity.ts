@@ -1,4 +1,3 @@
-import { Type } from 'class-transformer';
 import { Column, Entity } from 'typeorm';
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 

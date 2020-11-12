@@ -217,7 +217,7 @@ export class PatientController {
     getRequests(
         @Param('requestType') requestType: string,
         @Query() urlParams,
-    ): Promise <PatientRequest[]> {
+    ): Promise <any[]> {
         return this.patientService.listRequests(requestType, urlParams);
     }
 
