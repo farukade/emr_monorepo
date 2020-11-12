@@ -88,8 +88,8 @@ export class ConsultationService {
                 const labRequestRes = await PatientRequestHelper.handleLabRequest(labRequest, patient, createdBy);
                 if (labRequestRes.success) {
                     // save transaction
-                    await RequestPaymentHelper.clinicalLabPayment(labRequest.requestBody, labRequestRes.data, patient, createdBy);
-                    encounter.labRequest = labRequestRes.data.raw[0];
+                    await RequestPaymentHelper.clinicalLabPayment(labRequestRes.data, patient, createdBy);
+                    encounter.labRequest = labRequestRes.data;
                 }
             }
 
@@ -98,7 +98,7 @@ export class ConsultationService {
                 if (pharmacyReqRes.success) {
                     // save transaction
                     await RequestPaymentHelper.pharmacyPayment(pharmacyRequest.requestBody, patient, createdBy);
-                    encounter.pharmacyRequest = pharmacyReqRes.data.raw[0];
+                    encounter.pharmacyRequest = pharmacyReqRes.data;
                 }
             }
 
@@ -106,8 +106,8 @@ export class ConsultationService {
                 const radiologyRes = await PatientRequestHelper.handleImagingRequest(imagingRequest, patient, createdBy);
                 if (radiologyRes.success) {
                     // save transaction
-                    const payment = await RequestPaymentHelper.imagingPayment(imagingRequest.requestBody, patient, createdBy);
-                    encounter.imagingRequest = radiologyRes.data.raw[0];
+                    await RequestPaymentHelper.imagingPayment(imagingRequest.requestBody, patient, createdBy);
+                    encounter.imagingRequest = radiologyRes.data;
                 }
             }
 
@@ -115,8 +115,8 @@ export class ConsultationService {
                 const procedure = await PatientRequestHelper.handleImagingRequest(procedureRequest, patient, createdBy);
                 if (procedure.success) {
                     // save transaction
-                    const payment = await RequestPaymentHelper.imagingPayment(procedureRequest.requestBody, patient, createdBy);
-                    encounter.procedure = procedure.data.raw[0];
+                    await RequestPaymentHelper.imagingPayment(procedureRequest.requestBody, patient, createdBy);
+                    encounter.procedure = procedure.data;
                 }
             }
 

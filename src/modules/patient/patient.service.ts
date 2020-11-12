@@ -14,7 +14,6 @@ import { PatientVital } from './entities/patient_vitals.entity';
 import { PatientAllergy } from './entities/patient_allergies.entity';
 import { PatientRequestHelper } from '../../common/utils/PatientRequestHelper';
 import { PatientRequestRepository } from './repositories/patient_request.repository';
-import { PatientRequest } from './entities/patient_requests.entity';
 import * as moment from 'moment';
 import { HmoRepository } from '../hmo/hmo.repository';
 import { VoucherRepository } from '../finance/vouchers/voucher.repository';
@@ -29,9 +28,10 @@ import { OpdPatientDto } from './dto/opd-patient.dto';
 import { AppGateway } from '../../app.gateway';
 import { AppointmentRepository } from '../frontdesk/appointment/appointment.repository';
 import { Transactions } from '../finance/transactions/transaction.entity';
-import { Immunization } from './immunization/entities/immunization.entity';
 import { AuthRepository } from '../auth/auth.repository';
 import { TransactionsRepository } from '../finance/transactions/transactions.repository';
+import { generatePDF } from '../../common/utils/utils';
+import * as path from 'path';
 
 @Injectable()
 export class PatientService {
@@ -101,15 +101,15 @@ export class PatientService {
     async saveNewOpdPatient(patientDto: OpdPatientDto, createdBy: string): Promise<any> {
         try {
             const patient = new Patient();
-            patient.fileNumber          =  'DH ' + Math.floor(Math.random() * 90000);
-            patient.surname             = patientDto.surname.toLocaleLowerCase();
-            patient.other_names         = patientDto.other_names.toLocaleLowerCase();
-            patient.address             = patientDto.address.toLocaleLowerCase();
-            patient.date_of_birth       = patientDto.date_of_birth;
-            patient.gender              = patientDto.gender;
-            patient.email               = patientDto.email;
-            patient.phoneNumber         = patientDto.phoneNumber;
-            patient.createdBy           = createdBy;
+            patient.fileNumber = 'DH ' + Math.floor(Math.random() * 90000);
+            patient.surname = patientDto.surname.toLocaleLowerCase();
+            patient.other_names = patientDto.other_names.toLocaleLowerCase();
+            patient.address = patientDto.address.toLocaleLowerCase();
+            patient.date_of_birth = patientDto.date_of_birth;
+            patient.gender = patientDto.gender;
+            patient.email = patientDto.email;
+            patient.phoneNumber = patientDto.phoneNumber;
+            patient.createdBy = createdBy;
             await patient.save();
             // save appointment
             const appointment = await this.appointmentRepository.saveOPDAppointment(patient, patientDto.opdType);
@@ -359,10 +359,11 @@ export class PatientService {
                 let labRequest = await PatientRequestHelper.handleLabRequest(param, patient, createdBy);
                 if (labRequest.success) {
                     // save transaction
-                    const payment = await RequestPaymentHelper.clinicalLabPayment(param.requestBody, labRequest.data, patient, createdBy);
-                    labRequest = { ...labRequest, ...payment };
+                    const payment = await RequestPaymentHelper.clinicalLabPayment(labRequest.data, patient, createdBy);
+                    // @ts-ignore
+                    labRequest = { ...payment.labRequest };
 
-                    this.appGateway.server.emit('paypoint-queue', { payment });
+                    this.appGateway.server.emit('paypoint-queue', { payment: payment.transactions });
                 }
                 res = labRequest;
 
@@ -474,24 +475,31 @@ export class PatientService {
         }
     }
 
-    async doListRequest(requestType, patient_id, urlParams): Promise<PatientRequest[]> {
-        const { startDate, endDate, filled } = urlParams;
+    async listPatientRequests(requestType, patient_id, urlParams): Promise<any> {
+        const { startDate, endDate, filled, page, limit } = urlParams;
+
+        const queryLimit = limit ? parseInt(limit, 10) : 30;
+        const offset = (page ? parseInt(page, 10) : 1) - 1;
 
         const query = this.patientRequestRepository.createQueryBuilder('q')
             .leftJoin('q.patient', 'patient')
             .leftJoin(User, 'creator', 'q.createdBy = creator.username')
-            .innerJoin(Transactions, 'transaction', 'q.id = transaction.patient_request_id')
+            .leftJoin(Transactions, 'transaction', 'q.id = transaction.patient_request_id')
             .innerJoin(StaffDetails, 'staff1', 'staff1.user_id = creator.id')
-            .select('q.id, q.requestType, q.requestBody, q.createdAt, q.status, q.isFilled')
+            .select('q.id, q.requestType, q.code, q.requestBody, q.createdAt, q.status, q.isFilled, q.urgent, q.requestNote')
             .addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
             .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id, patient.fileNumber')
-            .addSelect('transaction.status as payment_status')
+            .addSelect('transaction.status as transaction_status')
             .where('q.patient_id = :patient_id', { patient_id })
             .andWhere('q.requestType = :requestType', { requestType });
 
         if (startDate && startDate !== '') {
-            const start = moment(startDate).startOf('day').format('YYYY-MM-DD HH:mm:ss');
-            query.andWhere(`q.createdAt >= '${start}'`);
+            if (endDate && endDate !== '') {
+                const start = moment(startDate).startOf('day').format('YYYY-MM-DD HH:mm:ss');
+                query.andWhere(`q.createdAt >= '${start}'`);
+            } else {
+                query.andWhere(`DATE(q.createdAt) = '${moment(startDate).format('YYYY-MM-DD')}'`);
+            }
         }
         if (endDate && endDate !== '') {
             const end = moment(endDate).endOf('day').format('YYYY-MM-DD HH:mm:ss');
@@ -500,27 +508,51 @@ export class PatientService {
         if (filled) {
             query.andWhere(`q.isFilled = ${true}`);
         }
-        return await query.orderBy('q.createdAt', 'DESC').getRawMany();
+
+        const count = await query.getCount();
+
+        const result = await query.orderBy({
+            'q.urgent': 'DESC',
+            'q.createdAt': 'DESC',
+        }).limit(queryLimit).offset(offset * queryLimit).getRawMany();
+
+        return {
+            result,
+            lastPage: Math.ceil(count / queryLimit),
+            itemsPerPage: queryLimit,
+            totalPages: count,
+            currentPage: page,
+        };
     }
 
-    async listRequests(requestType, urlParams): Promise<any[]> {
-        const { startDate, endDate, filled } = urlParams;
+    async listRequests(requestType, urlParams): Promise<any> {
+        const { startDate, endDate, filled, page, limit } = urlParams;
+
+        const queryLimit = limit ? parseInt(limit, 10) : 30;
+        const offset = (page ? parseInt(page, 10) : 1) - 1;
+
         const query = this.patientRequestRepository.createQueryBuilder('patient_request')
             .leftJoin('patient_request.patient', 'patient')
             .leftJoin(User, 'creator', 'patient_request.createdBy = creator.username')
+            .leftJoin(Transactions, 'transaction', 'patient_request.id = transaction.patient_request_id')
             .innerJoin(StaffDetails, 'staff1', 'staff1.user_id = creator.id')
-            .select('patient_request.id, patient_request.requestType, patient_request.requestBody, patient_request.createdAt, patient_request.status, patient_request.isFilled')
+            .select('patient_request.id, patient_request.requestType, patient_request.code, patient_request.requestBody, patient_request.createdAt, patient_request.status, patient_request.isFilled, patient_request.urgent, patient_request.requestNote')
             .addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
+            .addSelect('transaction.status as transaction_status')
             .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id, patient.fileNumber')
             .andWhere('patient_request.requestType = :requestType', { requestType });
 
         if (startDate && startDate !== '') {
-            const start = moment(startDate).startOf('day').toISOString();
-            query.andWhere(`patient_request.createdAt >= '${start}'`);
+            if (endDate && endDate !== '') {
+                const start = moment(startDate).startOf('day').format('YYYY-MM-DD HH:mm:ss');
+                query.andWhere(`patient_request.createdAt >= '${start}'`);
+            } else {
+                query.andWhere(`DATE(patient_request.createdAt) = '${moment(startDate).format('YYYY-MM-DD')}'`);
+            }
         }
 
         if (endDate && endDate !== '') {
-            const end = moment(endDate).endOf('day').toISOString();
+            const end = moment(endDate).endOf('day').format('YYYY-MM-DD HH:mm:ss');
             query.andWhere(`patient_request.createdAt <= '${end}'`);
         }
 
@@ -528,56 +560,215 @@ export class PatientService {
             query.andWhere('patient_request.isFilled = :filled', { filled: true });
         }
 
-        const result = await query.orderBy('patient_request.createdAt', 'DESC').getRawMany();
+        const count = await query.getCount();
 
-        let results = [];
-        for (const item of result) {
-            const transaction = await this.transactionsRepository.findOne({where: {patient_request_id: item.id}});
-            results = [...results, { ...item, transaction }];
-        }
+        const result = await query.orderBy({
+            'patient_request.urgent': 'DESC',
+            'patient_request.createdAt': 'DESC',
+        }).limit(queryLimit).offset(offset * queryLimit).getRawMany();
 
-        return results;
+        return {
+            result,
+            lastPage: Math.ceil(count / queryLimit),
+            itemsPerPage: queryLimit,
+            totalPages: count,
+            currentPage: page,
+        };
     }
 
-    async doApproveResult(id: string, username) {
-        try {
-            const user = await this.authRepository.findOne({ where: { username } });
+    async doApproveResult(id: string, params, username) {
+        const { type } = params;
 
-            const staff = await this.connection.getRepository(StaffDetails)
-                .createQueryBuilder('s').where('s.user_id = :id', {id: user.id}).getOne();
+        const result = await this.patientRequestRepository.findOne(id);
 
-            const result = await this.patientRequestRepository.findOne(id);
+        switch (type) {
+            case 'lab':
+                try {
+                    const body = Object.assign({}, result.requestBody);
+                    result.requestBody = {
+                        ...body,
+                        approvedAt: moment().format('YYYY-MM-DD HH:mm:ss'),
+                        approvedBy: username,
+                    };
+                    result.lastChangedBy = username;
+                    result.status = 1;
+                    const res = await result.save();
 
-            for (const drug of result.requestBody) {
-                // @ts-ignore
-                const { vaccine } = drug;
-                if (vaccine) {
-                    // await getConnection()
-                    //     .createQueryBuilder()
-                    //     .update(Immunization)
-                    //     .set({ date_administered: moment().format('YYYY-MM-DD HH:mm:ss'), administeredBy: staff })
-                    //     .where('id = :id', { id: vaccine.id })
-                    //     .execute();
-
-                    // TODO: create clinical task for vaccines
+                    return { success: true, data: res };
+                } catch (e) {
+                    return { success: false, message: e.message };
                 }
-            }
+            case 'pharmacy':
+            default:
+                try {
+                    const user = await this.authRepository.findOne({ where: { username } });
 
-            result.status = 1;
-            const res = await result.save();
+                    const staff = await this.connection.getRepository(StaffDetails)
+                        .createQueryBuilder('s')
+                        .where('s.user_id = :id', { id: user.id })
+                        .getOne();
+
+                    for (const drug of result.requestBody) {
+                        // @ts-ignore
+                        const { vaccine } = drug;
+                        if (vaccine) {
+                            // await getConnection()
+                            //     .createQueryBuilder()
+                            //     .update(Immunization)
+                            //     .set({ date_administered: moment().format('YYYY-MM-DD HH:mm:ss'), administeredBy: staff })
+                            //     .where('id = :id', { id: vaccine.id })
+                            //     .execute();
+
+                            // TODO: create clinical task for vaccines
+                        }
+                    }
+
+                    result.status = 1;
+                    result.lastChangedBy = username;
+                    const res = await result.save();
+
+                    return { success: true, data: res };
+                } catch (e) {
+                    return { success: false, message: e.message };
+                }
+        }
+    }
+
+    async receiveSpecimen(id: string, username: string) {
+        try {
+            const request = await this.patientRequestRepository.findOne(id);
+            const body = Object.assign({}, request.requestBody);
+            request.requestBody = {
+                ...body,
+                received: 1,
+                receivedAt: moment().format('YYYY-MM-DD HH:mm:ss'),
+                receivedBy: username,
+            };
+            request.lastChangedBy = username;
+            const res = await request.save();
+
             return { success: true, data: res };
         } catch (e) {
             return { success: false, message: e.message };
         }
     }
 
-    async deleteRequest(id: string) {
-        const result = await this.patientRequestRepository.delete(id);
+    async fillResult(id: string, param, username: string) {
+        try {
+            const { parameters, note, result } = param;
+            const request = await this.patientRequestRepository.findOne(id);
+            const body = Object.assign({}, request.requestBody);
+            request.requestBody = {
+                ...body,
+                filled: 1,
+                filledAt: moment().format('YYYY-MM-DD HH:mm:ss'),
+                filledBy: username,
+                parameters,
+                note,
+                result,
+            };
+            request.lastChangedBy = username;
+            const res = await request.save();
 
-        if (result.affected === 0) {
-            throw new NotFoundException(`Patient request with ID '${id}' not found`);
+            return { success: true, data: res };
+        } catch (e) {
+            return { success: false, message: e.message };
         }
-        return { success: true };
+    }
+
+    async rejectResult(id: string, username: string) {
+        try {
+            const request = await this.patientRequestRepository.findOne(id);
+            const body = Object.assign({}, request.requestBody);
+            request.requestBody = {
+                ...body,
+                filled: 0,
+                filledAt: null,
+                filledBy: null,
+                parameters: request.requestBody.parameters.map(p => ({
+                    ...p,
+                    inference: '',
+                    value: '',
+                })),
+            };
+            request.lastChangedBy = username;
+            const res = await request.save();
+
+            return { success: true, data: res };
+        } catch (e) {
+            return { success: false, message: e.message };
+        }
+    }
+
+    async deleteRequest(id: string, params, username: string) {
+        const { type } = params;
+        let res;
+        const request = await this.patientRequestRepository.findOne(id);
+        switch (type) {
+            case 'lab':
+                const body = Object.assign({}, request.requestBody);
+                request.requestBody = {
+                    ...body,
+                    cancelled: true,
+                    cancelledAt: moment().format('YYYY-MM-DD HH:mm:ss'),
+                    cancelledBy: username,
+                };
+                request.lastChangedBy = username;
+                res = await request.save();
+                break;
+            default:
+                const result = await this.patientRequestRepository.delete(id);
+
+                if (result.affected === 0) {
+                    throw new NotFoundException(`Patient request with ID '${id}' not found`);
+                }
+                break;
+        }
+
+        return { success: true, data: res };
+    }
+
+    async printResult(id: string, params) {
+        try {
+            const { print_group } = params;
+
+            const request = await this.patientRequestRepository.findOne({ where: { id }, relations: ['patient'] });
+
+            const patient = request.patient;
+
+            let results;
+            const printGroup = parseInt(print_group, 10);
+            if (printGroup === 1) {
+                results = await this.patientRequestRepository.find({ where: { code: request.code } });
+            } else {
+                results = [request];
+            }
+
+            const specimen = [...results.map(r => r.requestBody.specimens.map(s => s.label))];
+
+            const date = new Date();
+            const filename = 'LAB-' + date.getTime() + '.pdf';
+            const filepath = path.resolve(__dirname, `../../../public/result/${filename}`);
+
+            const dob = moment(patient.date_of_birth, 'YYYY-MM-DD HH:mm:ss').format('YYYY-MM-DD');
+
+            const data = {
+                patient,
+                lab_id: request.code,
+                specimen: specimen.join(', '),
+                date: moment(request.createdAt, 'YYYY-MM-DD HH:mm:ss').format('DD-MMM-YYYY'),
+                age: moment().diff(dob, 'years'),
+                filepath,
+                results,
+                logo: `${process.env.ENDPOINT}/public/images/logo.png`,
+            };
+
+            await generatePDF('lab-result', data);
+
+            return { success: true, file: `${process.env.ENDPOINT}/public/result/${filename}` };
+        } catch (error) {
+            return { success: false, message: error.message };
+        }
     }
 
     async doUploadDocument(id, param, fileName, createdBy) {

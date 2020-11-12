@@ -3,56 +3,72 @@ import { LabTest } from '../entities/lab_test.entity';
 import { LabTestDto } from './dto/lab_test.dto';
 import { LabTestCategory } from '../entities/lab_test_category.entity';
 import { slugify } from '../../../common/utils/utils';
+import { Parameter } from '../entities/parameters.entity';
 
 @EntityRepository(LabTest)
 export class LabTestRepository extends Repository<LabTest> {
 
     async saveLabTest(labTestDto: LabTestDto, category: LabTestCategory, createdBy: string): Promise<LabTest> {
-        const { name, price, test_type, description, parameters, sub_tests  } = labTestDto;
+        const { name, price, test_type, description, parameters, specimens, hasParameters } = labTestDto;
         const labTest = new LabTest();
-        labTest.name        = name;
-        labTest.price       = price;
-        labTest.test_type   = test_type;
+        labTest.name = name;
+        labTest.price = price;
+        labTest.test_type = test_type;
         labTest.description = description;
-        labTest.createdBy   = createdBy;
-        labTest.category    = category;
-        labTest.parameters  = parameters;
-        labTest.subTests    = sub_tests;
-        labTest.slug        = slugify(name);
+        labTest.createdBy = createdBy;
+        labTest.category = category;
+        labTest.parameters = parameters;
+        labTest.hasParameters = hasParameters;
+        labTest.specimens = specimens;
+        labTest.slug = slugify(name);
         await this.manager.save(labTest);
         return labTest;
     }
 
     async updateLabTest(labTestDto: LabTestDto, labTest: LabTest, category: LabTestCategory, updatedBy: string): Promise<LabTest> {
-        const { name, price, test_type, parameters, sub_tests, description  } = labTestDto;
-        labTest.name            = name;
-        labTest.slug            = slugify(name);
-        labTest.price           = price;
-        labTest.test_type       = test_type;
-        labTest.description     = description;
-        labTest.category        = category;
-        labTest.lastChangedBy   = updatedBy;
-        labTest.parameters      = parameters;
-        labTest.subTests        = sub_tests;
+        const { name, price, test_type, parameters, specimens, description, hasParameters } = labTestDto;
+        console.log(hasParameters);
+
+        const allParameters = await this.saveParameters(parameters, updatedBy);
+
+        labTest.name = name;
+        labTest.slug = slugify(name);
+        labTest.price = price;
+        labTest.test_type = test_type;
+        labTest.description = description;
+        labTest.category = category;
+        labTest.lastChangedBy = updatedBy;
+        labTest.parameters = allParameters;
+        labTest.hasParameters = hasParameters;
+        labTest.specimens = specimens;
         labTest = await this.manager.save(labTest);
 
         return labTest;
     }
 
-    // async saveParameters(labTest, parameters) {
-    //     for (const item of parameters) {
-    //         const parameter = await getRepository(Parameter)
-    //         .createQueryBuilder('parameters')
-    //         .where('parameters.id = :id', {id: item.parameter_id})
-    //         .getOne();
-    //         const labTestParameter = new LabTestParameter();
-    //         labTestParameter.parameter_type = 'parameter';
-    //         labTestParameter.referenceRange = item.referenceRange;
-    //         labTestParameter.labTest = labTest;
-    //         labTestParameter.parameter = parameter;
-    //         await labTestParameter.save();
-    //     }
-    // }
+    async saveParameters(items, updatedBy) {
+        let parameters = [];
+        for (const item of items) {
+            let parameter;
+            if (item.id) {
+                parameter = await getRepository(Parameter)
+                    .createQueryBuilder('parameters')
+                    .where('parameters.id = :id', { id: item.id })
+                    .getOne();
+
+            } else {
+                const labParameter = new Parameter();
+                labParameter.name = item.name;
+                labParameter.reference = item.reference;
+                labParameter.createdBy = updatedBy;
+                parameter = await labParameter.save();
+            }
+
+            parameters = [...parameters, parameter];
+        }
+
+        return parameters;
+    }
 
     // async saveSubTests(labTest, subTests) {
     //     for (const item of subTests) {

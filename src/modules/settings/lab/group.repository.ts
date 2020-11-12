@@ -6,13 +6,12 @@ import { slugify } from '../../../common/utils/utils';
 @EntityRepository(Group)
 export class GroupRepository extends Repository<Group> {
 
-    async saveGroup(groupDto: GroupDto, createdBy: string): Promise<Group> {
-        const { name, lab_tests, price, description } = groupDto;
+    async saveGroup(groupDto: GroupDto, createdBy: string): Promise<any> {
+        const { name, lab_tests, description } = groupDto;
         const group = new Group();
         group.name = name;
         group.slug = slugify(name);
         group.lab_tests = lab_tests;
-        group.price = price;
         group.description = description;
         group.createdBy = createdBy;
         await group.save();

@@ -10,40 +10,58 @@ import {Appointment} from '../../frontdesk/appointment/appointment.entity';
 export class Encounter extends CustomBaseEntity {
     @Column({type: 'text'})
     complaints: string;
+
     @Column('simple-array', {nullable: true})
     reviewOfSystem: string[];
+
     @Column('simple-json', {nullable: true})
     patientHistory: string[];
+
     @Column('simple-json', {nullable: true})
     medicalHistory: string[];
+
     @Column('simple-json', {nullable: true})
     allergies: IAllergyInterface[];
+
     @Column('json', {nullable: true})
     physicalExamination: string[];
+
     @Column({nullable: true})
     physicalExaminationSummary: string;
+
     @Column('simple-json', {nullable: true})
     diagnosis: IDiagnosisInterface[];
+
     @Column('simple-json', {nullable: true})
     plan: any;
+
     @Column('simple-json', {nullable: true})
     nextAppointment: object;
+
     @Column('simple-json', {nullable: true})
     consumable: string;
+
     @Column('text', {nullable: true})
     note: string;
+
     @Column('text', {nullable: true})
     instructions: string;
+
     @OneToOne(type => Appointment)
     appointment: Appointment;
+
     @ManyToOne(type => Patient)
     patient: Patient;
+
+    @Column({type: 'jsonb', nullable: true})
+    labRequest?: any;
+
     @OneToOne(() => PatientRequest)
     procedure?: PatientRequest;
-    @OneToOne(() => PatientRequest)
-    labRequest?: PatientRequest;
+
     @OneToOne(() => PatientRequest)
     imagingRequest?: PatientRequest;
+
     @OneToOne(() => PatientRequest)
     pharmacyRequest?: PatientRequest;
 }

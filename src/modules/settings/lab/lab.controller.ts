@@ -25,12 +25,12 @@ export class LabController {
     @Get()
     getLabTests(
         @Request() request,
-        @Query('q') q: string,
+        @Query() urlParams,
     ): Promise<Pagination> {
         const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 30;
         const page = request.query.hasOwnProperty('page') ? request.query.page : 1;
 
-        return this.labService.getTests({ page, limit }, q);
+        return this.labService.getTests({ page, limit }, urlParams);
     }
 
     @Post()
@@ -96,8 +96,10 @@ export class LabController {
      * LAB PARAMETERS
      */
     @Get('/parameters')
-    getParameters(): Promise<LabTestCategory[]> {
-        return this.labService.getParameters();
+    getParameters(
+        @Query('q') q: string,
+    ): Promise<LabTestCategory[]> {
+        return this.labService.getParameters(q);
     }
 
     @Post('/parameters')
@@ -156,7 +158,7 @@ export class LabController {
      * LAB TEST GROUP
      */
     @Get('/groups')
-    getGroups(): Promise<Group[]> {
+    getGroups(): Promise<any[]> {
         return this.labService.getGroups();
     }
 
@@ -165,7 +167,7 @@ export class LabController {
     createGroup(
         @Body() specimenDto: GroupDto,
         @Request() req,
-    ): Promise<Group> {
+    ): Promise<any> {
         return this.labService.createGroup(specimenDto, req.user.username);
     }
 
@@ -175,7 +177,7 @@ export class LabController {
         @Param('id') id: string,
         @Body() groupDto: GroupDto,
         @Request() req,
-    ): Promise<Group> {
+    ): Promise<any> {
         return this.labService.updateGroup(id, groupDto, req.user.username);
     }
 

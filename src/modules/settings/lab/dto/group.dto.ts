@@ -6,8 +6,5 @@ export class GroupDto {
 
     lab_tests: any;
 
-    @IsNotEmpty()
-    price: string;
-
     description;
 }

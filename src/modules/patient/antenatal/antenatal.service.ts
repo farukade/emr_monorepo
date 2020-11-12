@@ -84,10 +84,10 @@ export class AntenatalService {
                 const labRequestRes = await PatientRequestHelper.handleLabRequest(labRequest, patient, createdBy);
                 if (labRequestRes.success) {
                     // save transaction
-                    await RequestPaymentHelper.clinicalLabPayment(labRequest.requestBody, labRequestRes.data, patient, createdBy);
+                    await RequestPaymentHelper.clinicalLabPayment(labRequestRes.data, patient, createdBy);
                 }
-                console.log(labRequestRes);
-                visit.labRequest = labRequestRes.data.raw[0];
+
+                visit.labRequest = labRequestRes.data;
             }
 
             if (pharmacyRequest && pharmacyRequest.requestBody) {
@@ -96,18 +96,17 @@ export class AntenatalService {
                     // save transaction
                     await RequestPaymentHelper.pharmacyPayment(pharmacyRequest.requestBody, patient, createdBy);
                 }
-                // console.log(pharmacyReqRes);
 
-                visit.pharmacyRequest = pharmacyReqRes.data.raw[0];
+                visit.pharmacyRequest = pharmacyReqRes.data;
             }
 
             if (imagingRequest && imagingRequest.requestBody) {
                 const radiologyRes = await PatientRequestHelper.handleImagingRequest(imagingRequest, patient, createdBy);
                 if (radiologyRes.success) {
                     // save transaction
-                    const payment = await RequestPaymentHelper.imagingPayment(imagingRequest.requestBody, patient, createdBy);
+                    await RequestPaymentHelper.imagingPayment(imagingRequest.requestBody, patient, createdBy);
                 }
-                visit.radiologyRequest = radiologyRes.data.raw[0];
+                visit.radiologyRequest = radiologyRes.data;
             }
             await visit.save();
             return {success: true, visit};
@@ -140,9 +139,10 @@ export class AntenatalService {
                             .getRawMany();
 
         for (const result of results) {
-            if (result.lab_request) {
-                result.labRequest = await this.patientRequestRepository.findOne(result.lab_request);
-            }
+            // TODO: fix lab
+            // if (result.lab_request) {
+            //     result.labRequest = await this.patientRequestRepository.findOne(result.lab_request);
+            // }
 
             if (result.radiology_request) {
                 result.radiologyRequest = await this.patientRequestRepository.findOne(result.radiology_request);

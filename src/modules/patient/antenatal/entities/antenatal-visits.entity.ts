@@ -30,9 +30,8 @@ export class AntenatalVisits extends CustomBaseEntity {
     @Column({nullable: true})
     nextAppointment: string;
 
-    @OneToOne(() => PatientRequest)
-    @JoinColumn({name: 'lab_request'})
-    labRequest: PatientRequest;
+    @Column({name: 'lab_request', type: 'jsonb', nullable: true})
+    labRequest: any;
 
     @OneToOne(() => PatientRequest)
     @JoinColumn({name: 'radiology_request'})

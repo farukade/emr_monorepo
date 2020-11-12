@@ -5,11 +5,14 @@ import { Patient } from './patient.entity';
 @Entity({name: 'patient_requests'})
 export class PatientRequest extends CustomBaseEntity {
 
+    @Column({ nullable: true })
+    code: string;
+
     @Column()
     requestType: string;
 
     @Column({ type: 'jsonb'})
-    requestBody: string;
+    requestBody: any;
 
     @Column({ nullable: true })
     requestNote: string;

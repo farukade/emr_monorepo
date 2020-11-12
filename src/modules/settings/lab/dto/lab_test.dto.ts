@@ -15,7 +15,9 @@ export class LabTestDto {
 
     parameters: any;
 
-    sub_tests: any;
+    specimens: any;
 
     description: string;
+
+    hasParameters: boolean;
 }

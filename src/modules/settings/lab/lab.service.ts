@@ -33,31 +33,42 @@ export class LabService {
         private specimenRepository: SpecimenRepository,
         @InjectRepository(GroupRepository)
         private groupRepository: GroupRepository,
-    ) {}
+    ) {
+    }
 
     /*
         LAB TESTS
     */
 
-    async getTests(options: PaginationOptionsInterface, searchTerm: string): Promise<Pagination> {
-        if (searchTerm && searchTerm.length > 0) {
-            const rs = await this.labTestRepository.find({ relations: ['category'], where: [
-                    { name: Like(`%${searchTerm}%`) },
-                ] });
-
-            return { currentPage: 0, itemsPerPage: 0, lastPage: 0, totalPages: 0, result: rs};
-        }
+    async getTests(options: PaginationOptionsInterface, params): Promise<Pagination> {
+        const { q } = params;
 
         const page = options.page - 1;
 
-        const result = await this.labTestRepository.find({
-            relations: ['category'],
-            order: {name: 'ASC'},
-            take: options.limit,
-            skip: (page * options.limit),
-        });
+        let result;
+        let count = 0;
+        if (q && q.length > 0) {
+            result = await this.labTestRepository.find({
+                where: { name: Like(`%${q}%`) },
+                relations: ['category'],
+                order: { name: 'ASC' },
+                take: options.limit,
+                skip: (page * options.limit),
+            });
 
-        const count = await this.labTestRepository.count();
+            count = await this.labTestRepository.count({
+                where: { name: Like(`%${q}%`) },
+            });
+        } else {
+            result = await this.labTestRepository.find({
+                relations: ['category'],
+                order: { name: 'ASC' },
+                take: options.limit,
+                skip: (page * options.limit),
+            });
+
+            count = await this.labTestRepository.count();
+        }
 
         return {
             result,
@@ -80,7 +91,11 @@ export class LabService {
         const category = await this.labTestCategoryRepo.findOne(lab_category_id);
         const labTest = await this.labTestRepository.findOne(id);
 
-        return this.labTestRepository.updateLabTest(labTestDto, labTest, category, updatedBy);
+        try {
+            return this.labTestRepository.updateLabTest(labTestDto, labTest, category, updatedBy);
+        } catch (e) {
+            throw new NotFoundException('could not update lab test');
+        }
     }
 
     async deleteLabTest(id: string): Promise<LabTest> {
@@ -102,6 +117,7 @@ export class LabService {
         test.id = id;
         return test;
     }
+
     /*
         LAB TEST CATEGORIES
     */
@@ -117,10 +133,10 @@ export class LabService {
         for (const category of categories) {
             const tests = await this.labTestRepository.find({
                 where: { category },
-                order: {name: 'ASC'},
+                order: { name: 'ASC' },
             });
 
-            results = [...results, {...category, lab_tests: tests}];
+            results = [...results, { ...category, lab_tests: tests }];
         }
 
         return results;
@@ -155,7 +171,14 @@ export class LabService {
         LAB TEST PARAMETERS
     */
 
-    async getParameters(): Promise<Parameter[]> {
+    async getParameters(searchTerm): Promise<Parameter[]> {
+        if (searchTerm && searchTerm.length > 0) {
+            return await this.parameterRepository.find({
+                where: { name: Like(`%${searchTerm}%`) },
+                order: { name: 'ASC' },
+            });
+        }
+
         return this.parameterRepository.find();
     }
 
@@ -216,25 +239,61 @@ export class LabService {
         LAB GROUPS
     */
 
-    async getGroups(): Promise<Group[]> {
-        return this.groupRepository.find();
+    async getGroups(): Promise<any[]> {
+        const rs = await this.groupRepository.find();
+
+        let groups = [];
+        for (const group of rs) {
+            let tests = [];
+            for (const test of group.lab_tests) {
+                const labTest = await this.labTestRepository.findOne({
+                    where: { id: test.id },
+                    relations: ['category'],
+                });
+                tests = [...tests, labTest];
+            }
+            groups = [...groups, { ...group, tests }];
+        }
+
+        return groups;
     }
 
-    async createGroup(groupDto: GroupDto, createdBy: string): Promise<Group> {
-        return this.groupRepository.saveGroup(groupDto, createdBy);
+    async createGroup(groupDto: GroupDto, createdBy: string): Promise<any> {
+        const group = await this.groupRepository.saveGroup(groupDto, createdBy);
+
+        let tests = [];
+        for (const test of group.lab_tests) {
+            const rs = await this.labTestRepository.findOne({
+                where: { id: test.id },
+                relations: ['category'],
+            });
+            tests = [...tests, rs];
+        }
+        group.tests = tests;
+
+        return group;
     }
 
-    async updateGroup(id: string, groupDto: GroupDto, updatedBy: string): Promise<Group> {
-        const { name, lab_tests, price, description } = groupDto;
+    async updateGroup(id: string, groupDto: GroupDto, updatedBy: string): Promise<any> {
+        const { name, lab_tests, description } = groupDto;
         const group = await this.groupRepository.findOne(id);
         group.name = name;
         group.slug = slugify(name);
         group.lab_tests = lab_tests;
-        group.price = price;
         group.description = description;
         group.lastChangedBy = updatedBy;
         await group.save();
-        return group;
+
+        let tests = [];
+        for (const test of lab_tests) {
+            const rs = await this.labTestRepository.findOne({
+                where: { id: test.id },
+                relations: ['category'],
+            });
+            tests = [...tests, rs];
+        }
+
+        return { ...group, tests };
     }
 
     async deleteGroup(id: string): Promise<Group> {

@@ -14,30 +14,34 @@ export class RequestPaymentHelper {
     static serviceRepository = new ServiceRepository();
     static stockRepository = new StockRepository();
 
-    constructor() {}
-
-    static async clinicalLabPayment(requestBody, request, patient: Patient, createdBy) {
-        let totalAmount = 0;
-        const items = [];
-        for (const test of requestBody) {
+    static async clinicalLabPayment(labRequests, patient: Patient, createdBy) {
+        let requests = [];
+        let payments = [];
+        for (const request of labRequests) {
             // get test
-            const labTest = await getConnection().getRepository(LabTest).findOne(test.id);
-            totalAmount += parseFloat(labTest.price);
-            items.push(labTest);
+            const labTest = await getConnection().getRepository(LabTest).findOne(request.requestBody.id);
+
+            const data = {
+                patient,
+                amount: parseFloat(labTest.price),
+                description: 'Payment for clinical lab',
+                payment_type: (patient.hmo) ? 'HMO' : '',
+                hmo_approval_status: (patient.hmo) ? 1 : 0,
+                transaction_type: 'lab',
+                transaction_details: labTest,
+                createdBy,
+                status: 0,
+                patientRequest: request,
+            };
+
+            const result = await this.save(data);
+            const payment = result.generatedMaps[0];
+
+            payments = [...payments, payment];
+            requests = [...requests, { ...request, transaction: payment }];
         }
-        const data = {
-            patient,
-            amount: totalAmount,
-            description: 'Payment for clinical lab',
-            payment_type: (patient.hmo) ? 'HMO' : '',
-            hmo_approval_status: (patient.hmo) ? 1 : 0,
-            transaction_type: 'lab',
-            transaction_details: items,
-            patientRequest: request,
-            createdBy,
-        };
-        const payment = await this.save(data);
-        return {payment};
+
+        return { labRequest: requests, transactions: payments };
     }
 
     static async pharmacyPayment(requestBody, patient: Patient, createdBy) {
@@ -46,7 +50,7 @@ export class RequestPaymentHelper {
         for (const body of requestBody) {
             const drug = await getConnection().getRepository(Stock).findOne(body.drug_id);
             totalAmount += parseFloat(drug.sales_price);
-            items.push({name: drug.name, amount: drug.sales_price});
+            items.push({ name: drug.name, amount: drug.sales_price });
         }
         const data = {
             patient,
@@ -59,7 +63,7 @@ export class RequestPaymentHelper {
             createdBy,
         };
         const payment = await this.save(data);
-        return {payment};
+        return { payment: payment.generatedMaps[0] };
     }
 
     static async physiotherapyPayment(requestBody, patient: Patient, createdBy) {
@@ -68,7 +72,7 @@ export class RequestPaymentHelper {
         for (const body of requestBody) {
             const service = await getConnection().getRepository(Service).findOne(body.service_id);
             totalAmount += parseFloat(service.tariff);
-            items.push({name: service.name, amount: service.tariff});
+            items.push({ name: service.name, amount: service.tariff });
         }
         const data = {
             patient,
@@ -81,7 +85,7 @@ export class RequestPaymentHelper {
             createdBy,
         };
         const payment = await this.save(data);
-        return {payment};
+        return { payment: payment.generatedMaps[0] };
     }
 
     static async opthalmologyPayment(requestBody, patient: Patient, createdBy) {
@@ -90,7 +94,7 @@ export class RequestPaymentHelper {
         for (const body of requestBody) {
             const service = await getConnection().getRepository(Service).findOne(body.service_id);
             totalAmount += parseFloat(service.tariff);
-            items.push({name: service.name, amount: service.tariff});
+            items.push({ name: service.name, amount: service.tariff });
         }
 
         const data = {
@@ -104,8 +108,8 @@ export class RequestPaymentHelper {
             createdBy,
         };
         const payment = await this.save(data);
-        return {payment};
-     }
+        return { payment: payment.generatedMaps[0] };
+    }
 
     static async dentistryPayment(requestBody, patient: Patient, createdBy) {
         let totalAmount = 0;
@@ -113,7 +117,7 @@ export class RequestPaymentHelper {
         for (const body of requestBody) {
             const service = await getConnection().getRepository(Service).findOne(body.service_id);
             totalAmount += parseFloat(service.tariff);
-            items.push({name: service.name, amount: service.tariff});
+            items.push({ name: service.name, amount: service.tariff });
         }
 
         const data = {
@@ -127,7 +131,7 @@ export class RequestPaymentHelper {
             createdBy,
         };
         const payment = await this.save(data);
-        return {payment};
+        return { payment: payment.generatedMaps[0] };
     }
 
     static async imagingPayment(requestBody, patient: Patient, createdBy) {
@@ -136,7 +140,7 @@ export class RequestPaymentHelper {
         for (const body of requestBody) {
             const service = await getConnection().getRepository(Service).findOne(body.service_id);
             totalAmount += parseFloat(service.tariff);
-            items.push({name: service.name, amount: service.tariff});
+            items.push({ name: service.name, amount: service.tariff });
         }
 
         const data = {
@@ -150,7 +154,7 @@ export class RequestPaymentHelper {
             createdBy,
         };
         const payment = await this.save(data);
-        return {payment};
+        return { payment: payment.generatedMaps[0] };
     }
 
     static async procedurePayment(requestBody, patient: Patient, createdBy) {
@@ -159,7 +163,7 @@ export class RequestPaymentHelper {
         for (const body of requestBody) {
             const service = await getConnection().getRepository(Service).findOne(body.service_id);
             totalAmount += parseFloat(service.tariff);
-            items.push({name: service.name, amount: service.tariff});
+            items.push({ name: service.name, amount: service.tariff });
         }
 
         const data = {
@@ -173,11 +177,11 @@ export class RequestPaymentHelper {
             createdBy,
         };
         const payment = await this.save(data);
-        return {payment};
+        return { payment: payment.generatedMaps[0] };
     }
 
     static async save(data) {
-        await getConnection()
+        return await getConnection()
             .createQueryBuilder()
             .insert()
             .into(Transactions)

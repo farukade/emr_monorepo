@@ -1,4 +1,22 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UsePipes, ValidationPipe, UseInterceptors, UploadedFile, Res, UploadedFiles, UseGuards, Request } from '@nestjs/common';
+import {
+    Controller,
+    Get,
+    Post,
+    Body,
+    Patch,
+    Param,
+    Delete,
+    Query,
+    UsePipes,
+    ValidationPipe,
+    UseInterceptors,
+    UploadedFile,
+    Res,
+    UploadedFiles,
+    UseGuards,
+    Request,
+    Render,
+} from '@nestjs/common';
 import { PatientService } from './patient.service';
 import { Patient } from './entities/patient.entity';
 import { PatientDto } from './dto/patient.dto';
@@ -18,7 +36,12 @@ import { OpdPatientDto } from './dto/opd-patient.dto';
 @UseGuards(AuthGuard('jwt'))
 @Controller('patient')
 export class PatientController {
-    constructor(private patientService: PatientService) {}
+    constructor(private patientService: PatientService) {
+    }
+
+    @Get()
+    @Render('lab-result')
+
 
     @Get('list')
     listAllPatients(): Promise<Patient[]> {
@@ -78,7 +101,7 @@ export class PatientController {
     getVouchers(
         @Param('id') id: string,
         @Query() urlParams,
-    ): Promise <Voucher[]> {
+    ): Promise<Voucher[]> {
         return this.patientService.getVouchers(id, urlParams);
     }
 
@@ -86,7 +109,7 @@ export class PatientController {
     getPatientDocument(
         @Param('id') id: string,
         @Query() urlParams,
-    ): Promise <PatientDocument[]> {
+    ): Promise<PatientDocument[]> {
         return this.patientService.getDocuments(id, urlParams);
     }
 
@@ -94,7 +117,7 @@ export class PatientController {
     getRequestDocument(
         @Param('id') id: string,
         @Query() urlParams,
-    ): Promise <PatientRequestDocument[]> {
+    ): Promise<PatientRequestDocument[]> {
         return this.patientService.getRequestDocuments(id, urlParams);
     }
 
@@ -102,7 +125,7 @@ export class PatientController {
     getVitals(
         @Param('id') id: string,
         @Query() urlParams,
-    ): Promise <PatientVital[]> {
+    ): Promise<PatientVital[]> {
         return this.patientService.getVitals(id, urlParams);
     }
 
@@ -166,7 +189,7 @@ export class PatientController {
     getAllergies(
         @Param('id') id: string,
         @Query() urlParams,
-    ): Promise <PatientAllergy[]> {
+    ): Promise<PatientAllergy[]> {
         return this.patientService.getAllergies(id, urlParams);
     }
 
@@ -217,7 +240,7 @@ export class PatientController {
     getRequests(
         @Param('requestType') requestType: string,
         @Query() urlParams,
-    ): Promise <any[]> {
+    ): Promise<any> {
         return this.patientService.listRequests(requestType, urlParams);
     }
 
@@ -226,23 +249,59 @@ export class PatientController {
         @Param('patientId') id: string,
         @Param('requestType') requestType: string,
         @Query() urlParams,
-    ): Promise <PatientRequest[]> {
-        return this.patientService.doListRequest(requestType, id, urlParams);
+    ): Promise<any> {
+        return this.patientService.listPatientRequests(requestType, id, urlParams);
     }
 
-    @Get('request/:requestId/approve-result')
+    @Get(':requestId/print')
+    printResult(
+        @Param('requestId') requestId: string,
+        @Query() urlParams,
+    ): Promise<any> {
+        return this.patientService.printResult(requestId, urlParams);
+    }
+
+    @Patch('request/:requestId/approve-result')
     approveResult(
+        @Param('requestId') requestId: string,
+        @Query() urlParams,
+        @Request() req,
+    ) {
+        return this.patientService.doApproveResult(requestId, urlParams, req.user.username);
+    }
+
+    @Patch(':requestId/reject-result')
+    rejectLabResult(
         @Param('requestId') requestId: string,
         @Request() req,
     ) {
-        return this.patientService.doApproveResult(requestId, req.user.username);
+        return this.patientService.rejectResult(requestId, req.user.username);
     }
 
     @Delete(':requestId/delete-request')
     deletePatientRequest(
         @Param('requestId') requestId: string,
+        @Query() urlParams,
+        @Request() req,
     ) {
-        return this.patientService.deleteRequest(requestId);
+        return this.patientService.deleteRequest(requestId, urlParams, req.user.username);
+    }
+
+    @Patch(':requestId/receive-specimen')
+    receiveLabSpecimen(
+        @Param('requestId') requestId: string,
+        @Request() req,
+    ) {
+        return this.patientService.receiveSpecimen(requestId, req.user.username);
+    }
+
+    @Patch(':requestId/fill-result')
+    fillLabResult(
+        @Param('requestId') requestId: string,
+        @Request() req,
+        @Body() param,
+    ) {
+        return this.patientService.fillResult(requestId, param, req.user.username);
     }
 
     @Post(':id/upload-document')
@@ -291,6 +350,6 @@ export class PatientController {
         @Res() response,
     ) {
         // const file = fs.readFile(`uploads/${filename}`)
-        return response.sendFile(join(__dirname, '../../../uploads/') + filename  );
+        return response.sendFile(join(__dirname, '../../../uploads/') + filename);
     }
 }

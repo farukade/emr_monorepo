@@ -177,9 +177,10 @@ export class ServicesService {
                             price: test.amount.replace(',', ''),
                             test_type: null,
                             description: null,
-                            parameters: null,
-                            sub_tests: null,
+                            parameters: [],
+                            specimens: [],
                             lab_category_id: category.id,
+                            hasParameters: false,
                         };
 
                         await this.labTestRepository.saveLabTest(labTest, category, username);
