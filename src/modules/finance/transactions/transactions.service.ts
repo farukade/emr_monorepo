@@ -13,7 +13,7 @@ import { StaffRepository } from '../../hr/staff/staff.repository';
 import { Pagination, PaginationOptionsInterface } from '../../../common/paginate';
 import { QueueSystemRepository } from '../../frontdesk/queue-system/queue-system.repository';
 import { AppointmentRepository } from '../../frontdesk/appointment/appointment.repository';
-import {AppGateway} from "../../../app.gateway";
+import {AppGateway} from '../../../app.gateway';
 
 @Injectable()
 export class TransactionsService {
@@ -40,9 +40,11 @@ export class TransactionsService {
     async fetchList(options: PaginationOptionsInterface, params): Promise<Transactions[]> {
         const {startDate, endDate, patient_id, staff_id, status, payment_type, transaction_type} = params;
 
-        const query = this.transactionsRepository.createQueryBuilder('q')
-        .select('q.*')
-        .where('q.transaction_type = :type', {type: transaction_type});
+        const query = this.transactionsRepository.createQueryBuilder('q').select('q.*');
+
+        if (transaction_type && transaction_type !== '') {
+            query.where('q.transaction_type = :type', {type: transaction_type});
+        }
 
         if (startDate && startDate !== '') {
             const start = moment(startDate).startOf('day').toISOString();
@@ -63,9 +65,9 @@ export class TransactionsService {
             query.andWhere('q.staff_id = :staff_id', {staff_id});
         }
 
-        if (status) {
-            query.andWhere('q.status = :status', {status});
-        }
+        // if (status) {
+        //     query.andWhere('q.status = :status', {status});
+        // }
 
         const transactions = await query.skip((options.page * options.limit) - options.page)
             .limit(options.limit)

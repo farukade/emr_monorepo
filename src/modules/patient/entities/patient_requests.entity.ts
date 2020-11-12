@@ -5,17 +5,23 @@ import { Patient } from './patient.entity';
 @Entity({name: 'patient_requests'})
 export class PatientRequest extends CustomBaseEntity {
 
+    @Column({ nullable: true })
+    code: string;
+
     @Column()
     requestType: string;
 
     @Column({ type: 'jsonb'})
-    requestBody: string;
+    requestBody: any;
 
     @Column({ nullable: true })
     requestNote: string;
 
     @Column({ type: 'boolean', default: false })
     isFilled: boolean;
+
+    @Column({ type: 'boolean', default: false })
+    urgent: boolean;
 
     @ManyToOne(type => Patient)
     @JoinColumn({name: 'patient_id'})

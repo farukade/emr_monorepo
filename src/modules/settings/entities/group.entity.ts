@@ -9,9 +9,6 @@ export class Group extends CustomBaseEntity {
     @Column({type: 'jsonb', nullable: true})
     lab_tests: any;
 
-    @Column({ type: 'varchar', length: 300})
-    price: string;
-
     @Column({ type: 'varchar', nullable: true})
     slug: string;
 

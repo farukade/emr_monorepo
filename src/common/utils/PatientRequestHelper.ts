@@ -10,26 +10,37 @@ export class PatientRequestHelper {
     }
 
     static async handleLabRequest(param, patient, createdBy) {
-        const { requestBody, id, request_note } = param;
-        const data = {
-            requestType: 'lab',
-            requestBody,
-            patient,
-            requestNote: request_note,
-            createdBy: '',
-            lastChangedBy: '',
-        };
-        let res;
+        const { requestBody, request_note, urgent } = param;
+
         try {
-            if (id && id !== '') {
-                data.lastChangedBy = createdBy;
-                res = await this.update(data, id);
-            } else {
-                data.createdBy = createdBy;
-                res = await this.save(data);
+            const requestCount = await getConnection()
+                .createQueryBuilder()
+                .select('*')
+                .from(PatientRequest, 'q')
+                .where('q.requestType = :type', {type: 'lab'})
+                .getCount();
+
+            const nextId = `00000${requestCount + 1}`;
+            const code = `DH/${moment().format('MM')}/${nextId.slice(-5)}`;
+
+            let result = [];
+            for (const request of requestBody) {
+                const data = {
+                    code,
+                    requestType: 'lab',
+                    requestBody: request,
+                    patient,
+                    requestNote: request_note,
+                    createdBy,
+                    urgent,
+                };
+                const res = await this.save(data);
+                result = [...result, res.generatedMaps[0]];
             }
-            return { success: true, data: res };
+
+            return { success: true, data: result };
         } catch (error) {
+            console.log(error);
             return { success: false, message: error.message };
         }
     }
@@ -54,7 +65,7 @@ export class PatientRequestHelper {
                 data.createdBy = createdBy;
                 res = await this.save(data);
             }
-            return { success: true, data: res };
+            return { success: true, data: res.generatedMaps[0] };
         } catch (error) {
             return { success: false, message: error.message };
         }
@@ -107,7 +118,7 @@ export class PatientRequestHelper {
         let res;
         try {
             res = await this.save(data);
-            return { success: true, data: res };
+            return { success: true, data: res.generatedMaps[0] };
         } catch (error) {
             return { success: false, message: error.message };
         }
@@ -133,7 +144,7 @@ export class PatientRequestHelper {
                 data.createdBy = createdBy;
                 res = await this.save(data);
             }
-            return { success: true, data: res };
+            return { success: true, data: res.generatedMaps[0] };
         } catch (error) {
             return { success: false, message: error.message };
         }
@@ -159,7 +170,7 @@ export class PatientRequestHelper {
                 data.createdBy = createdBy;
                 res = await this.save(data);
             }
-            return { success: true, data: res };
+            return { success: true, data: res.generatedMaps[0] };
         } catch (error) {
             return { success: false, message: error.message };
         }
@@ -185,7 +196,7 @@ export class PatientRequestHelper {
                 data.createdBy = createdBy;
                 res = await this.save(data);
             }
-            return { success: true, data: res };
+            return { success: true, data: res.generatedMaps[0] };
         } catch (error) {
             return { success: false, message: error.message };
         }
@@ -211,7 +222,7 @@ export class PatientRequestHelper {
                 data.createdBy = createdBy;
                 res = await this.save(data);
             }
-            return { success: true, data: res };
+            return { success: true, data: res.generatedMaps[0] };
         } catch (error) {
             return { success: false, message: error.message };
         }
@@ -237,7 +248,7 @@ export class PatientRequestHelper {
                 data.createdBy = createdBy;
                 res = await this.save(data);
             }
-            return { success: true, data: res };
+            return { success: true, data: res.generatedMaps[0] };
         } catch (error) {
             return { success: false, message: error.message };
         }
