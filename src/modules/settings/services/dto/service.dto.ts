@@ -10,6 +10,10 @@ export class ServiceDto {
   
   category_id: string;
 
+  hmo_id: string;
+
+  hmo_tariff: string;
+
   noOfVisits: number;
 
   gracePeriod: string;

@@ -9,11 +9,13 @@ import { ServiceSubCategoryRepository } from './service.sub.category.repository'
 import { ServiceRepository } from './service.repository';
 import { ServiceSubCategory } from '../entities/service_sub_category.entity';
 import { ServiceSubCategoryDto } from './dto/service.sub.category.dto';
+import { HmoRepository } from '../../hmo/hmo.repository';
 import { LabTestCategoryRepository } from '../lab/lab.category.repository';
 import { LabTestRepository } from '../lab/lab.test.repository';
 import { LabTestCategory } from '../entities/lab_test_category.entity';
 import { LabTestDto } from '../lab/dto/lab_test.dto';
 import { slugify } from '../../../common/utils/utils';
+import { Hmo } from 'src/modules/hmo/entities/hmo.entity';
 
 @Injectable()
 export class ServicesService {
@@ -28,6 +30,8 @@ export class ServicesService {
         private labTestCategoryRepository: LabTestCategoryRepository,
         @InjectRepository(LabTestRepository)
         private labTestRepository: LabTestRepository,
+        @InjectRepository(HmoRepository)
+        private hmoRepository: HmoRepository,
     ) {}
 
     async getAllServices(): Promise<Service[]> {
@@ -63,10 +67,11 @@ export class ServicesService {
     }
 
     async createService(serviceDto: ServiceDto): Promise<Service> {
-        const { category_id, sub_category_id } = serviceDto;
+        const { category_id, sub_category_id, hmo_id } = serviceDto;
         const category = await this.serviceCategoryRepository.findOne(category_id);
         const subCategory = await this.serviceSubCategoryRepository.findOne(sub_category_id);
-        return this.serviceRepository.createService(serviceDto, category, subCategory);
+        const hmo = await this.hmoRepository.findOne(hmo_id);
+        return this.serviceRepository.createService(serviceDto, category, subCategory, hmo);
 
     }
 
@@ -112,6 +117,8 @@ export class ServicesService {
                     subCategory: row.SubCategory,
                     service: row.Service,
                     amount: row.Amount,
+                    hmo: row.Hmo,
+                    hmoAmount: row.HmoAmount
                 };
 
                 if (data.category === 'Clinical Laboratory') {
@@ -125,6 +132,7 @@ export class ServicesService {
                 for (const item of content) {
                     let category;
                     let subCategory;
+                    let hmo;
                     // check if category exists
                     category = await this.serviceCategoryRepository.findOne({where : {name: item.category.trim()}});
                     if (!category) {
@@ -148,6 +156,14 @@ export class ServicesService {
                         }
                     }
 
+                    if(item.hmo){
+                        hmo = await this.hmoRepository.findOne({where : {name: item.hmo.trim()}});
+
+                        if(!hmo){
+                            hmo = await this.hmoRepository.save({name: item.hmo.trim()})
+                        }
+                    }
+
                     const service = await this.serviceRepository.findOne({where : {slug: slugify(item.service)}});
                     if (!service) {
                         // save service
@@ -157,16 +173,27 @@ export class ServicesService {
                             tariff: item.amount.replace(',', ''),
                             category,
                             subCategory: (subCategory) ? subCategory : null,
+                            hmo: hmo? hmo : null,
+                            hmoTarrif: item.hmoAmount? item.hmoAmount.replace(',', '') : null
                         });
                     }
                 }
 
                 for (const test of labs) {
                     let category;
+                    let hmo;
 
                     category = await this.labTestCategoryRepository.findOne({where : {name: test.subCategory}});
                     if (!category) {
                         category = await this.labTestCategoryRepository.saveCategory({name: test.subCategory}, username);
+                    }
+
+                    if(test.hmo){
+                        hmo = await this.hmoRepository.findOne({where : {name: test.hmo.trim()}});
+
+                        if(!hmo){
+                            hmo = await this.hmoRepository.save({name: test.hmo.trim()})
+                        }
                     }
 
                     const findTest = await this.labTestRepository.findOne({where : {slug: slugify(test.service)}});
@@ -180,6 +207,8 @@ export class ServicesService {
                             parameters: null,
                             sub_tests: null,
                             lab_category_id: category.id,
+                            hmo: hmo? hmo : null,
+                            hmoTarrif: test.hmoAmount? test.hmoAmount.replace(',', '') : null
                         };
 
                         await this.labTestRepository.saveLabTest(labTest, category, username);
