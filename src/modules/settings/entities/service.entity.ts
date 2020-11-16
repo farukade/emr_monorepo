@@ -2,6 +2,7 @@ import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 import { ServiceSubCategory } from './service_sub_category.entity';
 import { ServiceCategory } from './service_category.entity';
+import { Hmo } from '../../hmo/entities/hmo.entity';
 
 @Entity({ name: 'services' })
 export class Service extends CustomBaseEntity {
@@ -26,6 +27,9 @@ export class Service extends CustomBaseEntity {
   @Column({ type: 'varchar', nullable: true })
   slug: string;
 
+  @Column({type: 'varchar', nullable: true})
+  hmoTarrif: string;
+
   @ManyToOne(type => ServiceSubCategory)
   @JoinColumn({ name: 'sub_category_id' })
   public subCategory!: ServiceSubCategory;
@@ -33,4 +37,8 @@ export class Service extends CustomBaseEntity {
   @ManyToOne(type => ServiceCategory, {nullable: true})
   @JoinColumn({ name: 'category_id' })
   public category!: ServiceCategory;
+
+  @ManyToOne(type => Hmo, {nullable: true})
+  @JoinColumn({ name: 'hmo_id' })
+  public hmo!: Hmo;
 }

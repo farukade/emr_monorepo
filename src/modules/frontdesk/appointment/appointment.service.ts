@@ -87,9 +87,6 @@ export class AppointmentService {
 
             if (sendToQueue) {
                 if (amount) {
-                    // save payment
-                    const payment = await this.saveTransaction(patient, service, amount, paymentType, hmoApprovalStatus);
-                    appointment.transaction = payment;
 
                     if (patient.insurranceStatus === 'HMO') {
                         paymentType = 'HMO';
@@ -106,6 +103,10 @@ export class AppointmentService {
                         // save paypoint queue
                         queue = await this.queueSystemRepository.saveQueue(appointment, 'paypoint');
                     }
+
+                     // save payment
+                     const payment = await this.saveTransaction(patient, service, amount, paymentType, hmoApprovalStatus);
+                     appointment.transaction = payment;
 
                     // send queue message
                     this.appGateway.server.emit('paypoint-queue', {queue, payment});

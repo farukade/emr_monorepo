@@ -25,7 +25,7 @@ export default class CreateUser implements Seeder {
         staff.last_name      = 'Deda'.toLocaleLowerCase();
         staff.email          = 'admin@deda.com';
         staff.user = user;
-        staff.emp_code = 'DEDA-' + Math.floor(Math.random() * 90000),
+        staff.emp_code = 'DHS ' + Math.floor(Math.random() * 90000),
 
         await staff.save();
     }

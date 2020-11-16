@@ -56,4 +56,6 @@ export class PatientDto {
     nok_maritalStatus: string;
 
     nok_ethnicity: string;
+
+    admitTo: string;
 }

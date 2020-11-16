@@ -2,6 +2,7 @@ import { Type } from 'class-transformer';
 import { Column, Entity, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 import { LabTestCategory } from './lab_test_category.entity';
+import { Hmo } from '../../hmo/entities/hmo.entity';
 
 @Entity({ name: 'lab_tests' })
 export class  LabTest extends CustomBaseEntity {
@@ -20,6 +21,13 @@ export class  LabTest extends CustomBaseEntity {
   @Column({type: 'varchar', nullable: true})
   description: string;
 
+  @Column({type: 'varchar', nullable: true})
+  hmoPrice: string;
+
+  @ManyToOne(type => Hmo, {nullable: true})
+  @JoinColumn({ name: 'hmo_id' })
+  public hmo!: Hmo;
+ 
   @ManyToOne(type => LabTestCategory)
   @JoinColumn({ name: 'lab_test_category_id' })
   public category!: LabTestCategory;

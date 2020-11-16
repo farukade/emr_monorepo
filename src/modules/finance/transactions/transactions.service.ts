@@ -339,4 +339,14 @@ export class TransactionsService {
                                 .getRawOne();
         return query;
     }
+
+    async personalCafeterialBill(userId) {
+        const query = await this.transactionsRepository.createQueryBuilder('transaction')
+                                .where('transaction.transaction_type = :type', {type: 'cafeteria'})
+                                .andWhere('transaction.staff_id = :user', {user: `${userId}`})
+                                .andWhere('transaction.status = :status', {status: 0})
+                                .getRawOne();
+        
+    return query;
+    }
 }
