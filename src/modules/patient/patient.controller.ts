@@ -39,10 +39,6 @@ export class PatientController {
     constructor(private patientService: PatientService) {
     }
 
-    @Get()
-    @Render('lab-result')
-
-
     @Get('list')
     listAllPatients(): Promise<Patient[]> {
         return this.patientService.listAllPatients();

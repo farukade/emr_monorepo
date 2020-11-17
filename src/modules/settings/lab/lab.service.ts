@@ -50,7 +50,7 @@ export class LabService {
         if (q && q.length > 0) {
             result = await this.labTestRepository.find({
                 where: { name: Like(`%${q}%`) },
-                relations: ['category'],
+                relations: ['category', 'hmo'],
                 order: { name: 'ASC' },
                 take: options.limit,
                 skip: (page * options.limit),
@@ -61,7 +61,7 @@ export class LabService {
             });
         } else {
             result = await this.labTestRepository.find({
-                relations: ['category'],
+                relations: ['category', 'hmo'],
                 order: { name: 'ASC' },
                 take: options.limit,
                 skip: (page * options.limit),
@@ -133,6 +133,7 @@ export class LabService {
         for (const category of categories) {
             const tests = await this.labTestRepository.find({
                 where: { category },
+                relations: ['category', 'hmo'],
                 order: { name: 'ASC' },
             });
 
@@ -248,7 +249,7 @@ export class LabService {
             for (const test of group.lab_tests) {
                 const labTest = await this.labTestRepository.findOne({
                     where: { id: test.id },
-                    relations: ['category'],
+                    relations: ['category', 'hmo'],
                 });
                 tests = [...tests, labTest];
             }
@@ -265,7 +266,7 @@ export class LabService {
         for (const test of group.lab_tests) {
             const rs = await this.labTestRepository.findOne({
                 where: { id: test.id },
-                relations: ['category'],
+                relations: ['category', 'hmo'],
             });
             tests = [...tests, rs];
         }
@@ -288,7 +289,7 @@ export class LabService {
         for (const test of lab_tests) {
             const rs = await this.labTestRepository.findOne({
                 where: { id: test.id },
-                relations: ['category'],
+                relations: ['category', 'hmo'],
             });
             tests = [...tests, rs];
         }

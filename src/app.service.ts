@@ -32,7 +32,7 @@ class AppService {
   public getTypeOrmConfig(): TypeOrmModuleOptions {
     let typeOrmConfig;
     const mode = this.getValue('MODE', false);
-    
+
     if (mode === 'DEV') {
       typeOrmConfig = {
         type: 'postgres',
@@ -62,7 +62,7 @@ class AppService {
     } else {
       const databaseUrl: string = process.env.DATABASE_URL;
       const connectionOptions = PostgressConnectionStringParser.parse(databaseUrl);
-      
+
       typeOrmConfig = {
           type: 'postgres',
           // name: connectionOptions.user,

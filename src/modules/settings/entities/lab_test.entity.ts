@@ -27,7 +27,7 @@ export class  LabTest extends CustomBaseEntity {
   @ManyToOne(type => Hmo, {nullable: true})
   @JoinColumn({ name: 'hmo_id' })
   public hmo!: Hmo;
- 
+
   @ManyToOne(type => LabTestCategory)
   @JoinColumn({ name: 'lab_test_category_id' })
   public category!: LabTestCategory;

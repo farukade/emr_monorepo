@@ -87,7 +87,7 @@ export class AntenatalService {
                     await RequestPaymentHelper.clinicalLabPayment(labRequestRes.data, patient, createdBy);
                 }
 
-                visit.labRequest = labRequestRes.data;
+                visit.labRequests = labRequestRes.data;
             }
 
             if (pharmacyRequest && pharmacyRequest.requestBody) {

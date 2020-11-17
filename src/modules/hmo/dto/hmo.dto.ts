@@ -11,5 +11,4 @@ export class HmoDto {
 
     email: any;
 
-    percentage_coverage: string;
 }

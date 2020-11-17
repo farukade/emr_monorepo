@@ -46,6 +46,7 @@ export class HmoService {
                 },
             };
         }
+
         return this.hmoRepository.find(searchParam);
     }
 
@@ -64,11 +65,11 @@ export class HmoService {
         }
     }
 
-    async createHmo(hmoDto: HmoDto, logo): Promise<Hmo> {
-        return this.hmoRepository.saveHmo(hmoDto, logo);
+    async createHmo(hmoDto: HmoDto): Promise<Hmo> {
+        return this.hmoRepository.saveHmo(hmoDto);
     }
 
-    async updateHmo(id: string, hmoDto: HmoDto, logo): Promise<any> {
+    async updateHmo(id: string, hmoDto: HmoDto): Promise<any> {
         const { name, address, phoneNumber, email }  = hmoDto;
         const hmo = await this.hmoRepository.findOne(id);
         if (!hmo) {
@@ -98,82 +99,6 @@ export class HmoService {
         }
     }
 
-    async dowloadHmoSample() {
-        const fs = require('fs');
-        const createCsvWriter = require('csv-writer').createObjectCsvWriter;
-        const csvWriter = createCsvWriter({
-            path: 'hmo-sample.csv',
-            header: [
-                {id: 'name', title: 'HMO Name'},
-                {id: 'address', title: 'Address'},
-                {id: 'email', title: 'Email Address'},
-                {id: 'phoneNumber', title: 'Phone Number'},
-            ],
-        });
-
-        const hmos = await this.hmoRepository.find();
-
-        if (hmos.length) {
-            for (const hmo of hmos) {
-                const data = [
-                    {
-                        name: hmo.name,
-                        address: hmo.address,
-                        email: hmo.email,
-                        phoneNumber: hmo.phoneNumber,
-                    },
-                ];
-
-                await csvWriter.writeRecords(data);
-            }
-        } else {
-            const data = [
-                {
-                    name: '',
-                    address: '',
-                    email: '',
-                    phoneNumber: '',
-                },
-            ];
-            await csvWriter.writeRecords(data);
-        }
-        return 'Completed';
-    }
-
-    async doUploadHmo(file: any) {
-        const csv = require('csv-parser');
-        const fs = require('fs');
-        const content = [];
-        try {
-            // read uploaded file
-            fs.createReadStream(file.path)
-            .pipe(csv())
-            .on('data', (row) => {
-                const data = {
-                    name: row['HMO Name'],
-                    address: row.Address,
-                    email: row['Email Address'],
-                    phoneNumber: row['Phone Number'],
-                };
-                content.push(data);
-            })
-            .on('end', async () => {
-                for (const item of content) {
-                    // save service
-                    await this.hmoRepository.save({
-                            name: item.name.toLowerCase(),
-                            address: item.address,
-                            email: item.email,
-                            phoneNumber: item.phoneNumber,
-                        });
-                }
-            });
-            return {success: true};
-        } catch (err) {
-            return {success: false, message: err.message};
-        }
-    }
-
     async downloadHmoRate(query) {
         const {downloadType} = query;
         if (downloadType === 'services') {
@@ -200,7 +125,7 @@ export class HmoService {
             ],
         });
 
-        const services = await this.serviceRepository.find({relations: ['subCategory', 'category']});
+        const services = await this.serviceRepository.find({relations: ['subCategory', 'category', 'hmo']});
 
         if (services.length) {
             for (const service of services) {

@@ -3,7 +3,7 @@ import { Service } from '../entities/service.entity';
 import { ServiceDto } from './dto/service.dto';
 import { ServiceSubCategory } from '../entities/service_sub_category.entity';
 import { ServiceCategory } from '../entities/service_category.entity';
-import { Hmo } from '../../hmo/entities/hmo.entity'
+import { Hmo } from '../../hmo/entities/hmo.entity';
 
 @EntityRepository(Service)
 export class ServiceRepository extends Repository<Service> {
