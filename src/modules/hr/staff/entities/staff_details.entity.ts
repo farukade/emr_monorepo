@@ -1,4 +1,3 @@
-import { Type } from 'class-transformer';
 import { Column, Entity, OneToMany, ManyToOne, JoinColumn, OneToOne } from 'typeorm';
 import { CustomBaseEntity } from '../../../../common/entities/custom-base.entity';
 import { Department } from '../../../settings/entities/department.entity';
@@ -6,6 +5,7 @@ import { User } from '../../entities/user.entity';
 import { Transactions } from '../../../finance/transactions/transaction.entity';
 import {Specialization} from '../../../settings/entities/specialization.entity';
 import {ConsultingRoom} from '../../../settings/entities/consulting-room.entity';
+import { Immunization } from '../../../patient/immunization/entities/immunization.entity';
 
 @Entity({ name: 'staff_details' })
 export class StaffDetails extends CustomBaseEntity {
@@ -115,6 +115,9 @@ export class StaffDetails extends CustomBaseEntity {
   @OneToOne(type => User, { cascade: true, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user: User;
+
+  @OneToMany(type => Immunization, i => i.administeredBy)
+  immunizations: Immunization;
 
   @OneToMany(type => Transactions, transaction => transaction.staff)
   transactions!: Transactions;

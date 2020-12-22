@@ -12,10 +12,7 @@ import { ServiceSubCategoryDto } from './dto/service.sub.category.dto';
 import { HmoRepository } from '../../hmo/hmo.repository';
 import { LabTestCategoryRepository } from '../lab/lab.category.repository';
 import { LabTestRepository } from '../lab/lab.test.repository';
-import { LabTestCategory } from '../entities/lab_test_category.entity';
-import { LabTestDto } from '../lab/dto/lab_test.dto';
 import { slugify } from '../../../common/utils/utils';
-import { Hmo } from 'src/modules/hmo/entities/hmo.entity';
 
 @Injectable()
 export class ServicesService {
@@ -180,7 +177,7 @@ export class ServicesService {
                                 category,
                                 subCategory: (subCategory) ? subCategory : null,
                                 hmo,
-                                hmoTarrif: item.hmoAmount ? item.hmoAmount.replace(',', '') : 0.00,
+                                hmoTarrif: (item.hmoAmount || item.amount).replace(',', ''),
                             });
 
                             query.hmo = item.hmo;
@@ -211,7 +208,7 @@ export class ServicesService {
                             category = await this.labTestCategoryRepository.saveCategory({ name: test.subCategory }, username);
                         }
 
-                        const findTest = await this.labTestRepository.findOne({ where: { slug: slugify(test.service), hmo: test.hmo } });
+                        const findTest = await this.labTestRepository.findOne({ where: { slug: slugify(test.service), hmo } });
                         if (!findTest) {
                             const labTest = {
                                 name: test.service,
@@ -222,12 +219,12 @@ export class ServicesService {
                                 parameters: [],
                                 specimens: [],
                                 lab_category_id: category.id,
-                                hmo,
-                                hmoTarrif: test.hmoAmount ? test.hmoAmount.replace(',', '') : null,
+                                hmoPrice: (test.hmoAmount || test.amount).replace(',', ''),
                                 hasParameters: false,
+                                hmo_id: hmo.id,
                             };
 
-                            await this.labTestRepository.saveLabTest(labTest, category, username);
+                            await this.labTestRepository.saveLabTest(labTest, category, username, hmo);
                         }
                     }
                 });

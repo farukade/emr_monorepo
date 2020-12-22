@@ -39,7 +39,7 @@ export class Immunization extends BaseEntity {
   period: string;
 
   @Column({ type: 'varchar', nullable: true })
-  appointment_date: string
+  appointment_date: string;
 
   @Column({ type: 'varchar', nullable: true })
   date_administered: string;
@@ -48,7 +48,7 @@ export class Immunization extends BaseEntity {
   @JoinColumn({ name: 'staff_id' })
   createdBy: StaffDetails;
 
-  @ManyToOne(type => StaffDetails, { nullable: true })
+  @ManyToOne(type => StaffDetails, s => s.immunizations, { nullable: true })
   @JoinColumn({ name: 'administeredBy' })
   administeredBy: StaffDetails;
 

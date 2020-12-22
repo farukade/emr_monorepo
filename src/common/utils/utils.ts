@@ -44,3 +44,9 @@ export const generatePDF = async (template: string, data) => {
 
     await browser.close();
 };
+
+export const sentenceCase = (text) => {
+    return text.toLowerCase().split(' ').map((word) => {
+        return word.replace(word[0], word[0].toUpperCase());
+    }).join(' ');
+};

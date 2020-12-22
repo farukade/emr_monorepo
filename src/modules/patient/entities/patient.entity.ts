@@ -40,16 +40,10 @@ export class Patient extends CustomBaseEntity {
     maritalStatus: string;
 
     @Column({ type: 'varchar', nullable: true})
-    insurranceStatus: string;
-
-    @Column({ type: 'varchar', nullable: true})
     ethnicity: string;
 
     @Column({ type: 'varchar', nullable: true})
     referredBy: string;
-
-    @Column({ type: 'varchar', nullable: true, default: 'in-patient'})
-    patientType: string;
 
     @OneToOne(type => PatientNOK, { cascade: true })
     @JoinColumn()
@@ -70,8 +64,9 @@ export class Patient extends CustomBaseEntity {
     @OneToMany(type => Immunization, immunization => immunization.patient)
     immunization: Immunization;
 
-    @ManyToOne(() => Hmo, {nullable: true})
-    hmo?: Hmo;
+    @ManyToOne(() => Hmo)
+    @JoinColumn({ name: 'hmo_id' })
+    hmo: Hmo;
 
     @Column({ default: false })
     isAdmitted: boolean;

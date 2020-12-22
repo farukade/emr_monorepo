@@ -30,8 +30,6 @@ import { AuthGuard } from '@nestjs/passport';
 @UseGuards(AuthGuard('jwt'))
 @Controller('hmos')
 export class HmoController {
-    SERVER_URL: string = process.env.SERVER_URL;
-
     constructor(private hmoService: HmoService) {
     }
 
@@ -47,7 +45,7 @@ export class HmoController {
         @Query() params,
         @Request() request,
     ): Promise<Transactions[]> {
-        const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 2;
+        const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 10;
         const page = request.query.hasOwnProperty('page') ? request.query.page : 0;
         return this.hmoService.fetchTransactions({ page, limit }, params);
     }
@@ -57,7 +55,7 @@ export class HmoController {
         @Query() params,
         @Request() request,
     ): Promise<Transactions[]> {
-        const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 2;
+        const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 10;
         const page = request.query.hasOwnProperty('page') ? request.query.page : 0;
         return this.hmoService.fetchPendingTransactions({ page, limit }, params);
     }

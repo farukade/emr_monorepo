@@ -1,4 +1,4 @@
-import { IsNotEmpty } from "class-validator";
+import { IsNotEmpty } from 'class-validator';
 
 export class CreateAppriasalPeriodDto {
 
@@ -11,5 +11,5 @@ export class CreateAppriasalPeriodDto {
     @IsNotEmpty()
     endDate: string;
 
-    id: string;
+    id: number;
 }

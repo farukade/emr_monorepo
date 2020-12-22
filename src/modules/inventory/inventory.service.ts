@@ -15,6 +15,7 @@ import { PaginationOptionsInterface } from '../../common/paginate';
 import { VendorRepository } from './vendor/vendor.repository';
 import * as moment from 'moment';
 import { Pagination } from '../../common/paginate/paginate.interface';
+import { HmoRepository } from '../hmo/hmo.repository';
 
 @Injectable()
 export class InventoryService {
@@ -27,6 +28,8 @@ export class InventoryService {
         private stockRepository: StockRepository,
         @InjectRepository(VendorRepository)
         private vendorRepository: VendorRepository,
+        @InjectRepository(HmoRepository)
+        private hmoRepository: HmoRepository,
     ) {}
 
     /*
@@ -74,11 +77,12 @@ export class InventoryService {
         return await this.stockRepository.findOne(id);
     }
 
-    async getStocksByCategoryId(category_id: string): Promise<Stock[]> {
+    async getStocksByCategoryId(category_id: string, hmo_id: string): Promise<Stock[]> {
         // find category
         const category = await this.inventoryCategoryRepository.findOne(category_id);
+        const hmo = await this.hmoRepository.findOne(hmo_id);
 
-        return this.stockRepository.find({where: {category}, relations: ['vendor']});
+        return this.stockRepository.find({where: {category, hmo}, relations: ['vendor', 'hmo']});
     }
 
     async getStocksByCategoryName(name: string): Promise<Stock[]> {
@@ -233,6 +237,7 @@ export class InventoryService {
                     quantity: row['QUANTITY ON HAND'],
                     sales_price: row['SALES PRICE'],
                     expiry_date: row['EXPIRY DATE'],
+                    hmo: row.Hmo,
                     stock_code: 'STU-' + (Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5)).toUpperCase(),
                 };
                 content.push(data);
@@ -249,14 +254,26 @@ export class InventoryService {
                         }
                     }
 
+                    let hmo;
+                    if (item.hmo && item.hmo !== '') {
+                        hmo = await this.hmoRepository.findOne({ where: { name: item.hmo } });
+
+                        if (!hmo) {
+                            hmo = await this.hmoRepository.save({ name: item.hmo.trim() });
+                        }
+                    } else {
+                        hmo = await this.hmoRepository.findOne({ where: { name: 'Private' } });
+                    }
+
                     if (item.name && item.name !== '') {
                         // check if name exist
                         const stock = vendor ? await this.stockRepository.findOne({
                             where: {
                                 name: item.name,
                                 vendor,
+                                hmo,
                             },
-                        }) : await this.stockRepository.findOne({ where: { name: item.name } });
+                        }) : await this.stockRepository.findOne({ where: { name: item.name, hmo } });
 
                         const expiryDate = moment(item.expiry_date, 'M/D/YY').format('YYYY-MM-DD');
                         if (!stock) {
@@ -266,6 +283,8 @@ export class InventoryService {
                             item.sales_price = item.sales_price.replace(',', '');
                             item.quantity = parseInt(item.quantity.replace(',', ''), 10);
                             item.expiry_date = expiryDate;
+                            item.hmo = hmo;
+                            item.hmoPrice = (item.hmoPrice || item.sales_price).replace(',', '');
                             // save stock
                             await this.stockRepository.save(item);
                             // console.log('new stock');
@@ -277,6 +296,8 @@ export class InventoryService {
                             stock.category = category;
                             stock.subCategory = subCategory;
                             stock.expiry_date = expiryDate;
+                            stock.hmo = hmo;
+                            stock.hmoPrice = (item.hmoPrice || item.sales_price).replace(',', '');
                             await stock.save();
                             console.log('update stock');
                         }

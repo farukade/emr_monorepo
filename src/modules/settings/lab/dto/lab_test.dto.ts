@@ -8,6 +8,8 @@ export class LabTestDto {
     @IsNotEmpty()
     price: string;
 
+    hmoPrice: string;
+
     @IsNotEmpty()
     lab_category_id: string;
 
@@ -20,4 +22,6 @@ export class LabTestDto {
     description: string;
 
     hasParameters: boolean;
+
+    hmo_id: number;
 }

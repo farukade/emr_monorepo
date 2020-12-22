@@ -26,6 +26,8 @@ import { ImmunizationModule } from './immunization/immunization.module';
 import { NicuModule } from './nicu/nicu.module';
 import { AuthRepository } from '../auth/auth.repository';
 import { TransactionsRepository } from '../finance/transactions/transactions.repository';
+import { AdmissionClinicalTaskRepository } from './admissions/repositories/admission-clinical-tasks.repository';
+import { AdmissionsRepository } from './admissions/repositories/admissions.repository';
 
 @Module({
   imports: [TypeOrmModule.forFeature([
@@ -44,6 +46,8 @@ import { TransactionsRepository } from '../finance/transactions/transactions.rep
       AppointmentRepository,
       AuthRepository,
       TransactionsRepository,
+      AdmissionClinicalTaskRepository,
+      AdmissionsRepository,
   ]), AntenatalModule, AdmissionsModule, ConsultationModule, LabourManagementModule, ImmunizationModule, NicuModule],
   controllers: [PatientController, IvfController],
   providers: [AppGateway, PatientService, IvfService],

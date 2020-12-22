@@ -91,6 +91,8 @@ export class PatientRequestHelper {
                 diagnosis: '',
                 drug_name: '',
                 drug_cost: '',
+                drug_hmo_id: patient.hmo.id,
+                drug_hmo_cost: '',
                 frequency: '1',
                 regimenNote: '',
                 prescription: 0,

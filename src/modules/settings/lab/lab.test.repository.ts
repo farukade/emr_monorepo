@@ -4,12 +4,13 @@ import { LabTestDto } from './dto/lab_test.dto';
 import { LabTestCategory } from '../entities/lab_test_category.entity';
 import { slugify } from '../../../common/utils/utils';
 import { Parameter } from '../entities/parameters.entity';
+import { Hmo } from '../../hmo/entities/hmo.entity';
 
 @EntityRepository(LabTest)
 export class LabTestRepository extends Repository<LabTest> {
 
-    async saveLabTest(labTestDto: LabTestDto, category: LabTestCategory, createdBy: string): Promise<LabTest> {
-        const { name, price, test_type, description, parameters, specimens, hasParameters } = labTestDto;
+    async saveLabTest(labTestDto: LabTestDto, category: LabTestCategory, createdBy: string, hmo: Hmo): Promise<LabTest> {
+        const { name, price, test_type, description, parameters, specimens, hasParameters, hmoPrice } = labTestDto;
         const labTest = new LabTest();
         labTest.name = name;
         labTest.price = price;
@@ -20,13 +21,15 @@ export class LabTestRepository extends Repository<LabTest> {
         labTest.parameters = parameters;
         labTest.hasParameters = hasParameters;
         labTest.specimens = specimens;
+        labTest.hmo = hmo;
+        labTest.hmoPrice = hmoPrice;
         labTest.slug = slugify(name);
         await this.manager.save(labTest);
         return labTest;
     }
 
-    async updateLabTest(labTestDto: LabTestDto, labTest: LabTest, category: LabTestCategory, updatedBy: string): Promise<LabTest> {
-        const { name, price, test_type, parameters, specimens, description, hasParameters } = labTestDto;
+    async updateLabTest(labTestDto: LabTestDto, labTest: LabTest, category: LabTestCategory, updatedBy: string, hmo: Hmo): Promise<LabTest> {
+        const { name, price, test_type, parameters, specimens, description, hasParameters, hmoPrice } = labTestDto;
         console.log(hasParameters);
 
         const allParameters = await this.saveParameters(parameters, updatedBy);
@@ -41,6 +44,10 @@ export class LabTestRepository extends Repository<LabTest> {
         labTest.parameters = allParameters;
         labTest.hasParameters = hasParameters;
         labTest.specimens = specimens;
+        labTest.hmo = hmo;
+        if (labTest.hmo.id !== hmo.id) {
+            labTest.hmoPrice = hmoPrice;
+        }
         labTest = await this.manager.save(labTest);
 
         return labTest;

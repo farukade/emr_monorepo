@@ -9,7 +9,7 @@ import {
     Query,
     UsePipes,
     ValidationPipe,
-    Patch
+    Patch,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AdmissionsService } from './admissions.service';
@@ -38,7 +38,7 @@ export class AdmissionsController {
         @Param('id') id: string,
         @Body() createDto: CreateAdmissionDto,
         @Request() req,
-    ) {
+    ): Promise<any> {
         return this.admissionService.saveAdmission(id, createDto, req.user.userId);
     }
 
@@ -48,5 +48,25 @@ export class AdmissionsController {
         @Request() req,
     ) {
         return this.admissionService.saveAssignBed(params);
+    }
+
+    @Get('/tasks')
+    getTasks(
+        @Query() urlParams,
+        @Request() request,
+    ) {
+        const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 20;
+        let page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
+        page = page - 1;
+        return this.admissionService.getTasks({page, limit}, urlParams);
+    }
+
+    @Patch('/create-task/:id')
+    createTask(
+        @Param('id') id: number,
+        @Body() params,
+        @Request() req,
+    ) {
+        return this.admissionService.saveClinicalTasks(id, params, req.user.userId);
     }
 }

@@ -32,6 +32,10 @@ import { AuthRepository } from '../auth/auth.repository';
 import { TransactionsRepository } from '../finance/transactions/transactions.repository';
 import { generatePDF } from '../../common/utils/utils';
 import * as path from 'path';
+import { AdmissionClinicalTaskRepository } from './admissions/repositories/admission-clinical-tasks.repository';
+import { AdmissionClinicalTask } from './admissions/entities/admission-clinical-task.entity';
+import { AdmissionsRepository } from './admissions/repositories/admissions.repository';
+import { Immunization } from './immunization/entities/immunization.entity';
 
 @Injectable()
 export class PatientService {
@@ -64,11 +68,15 @@ export class PatientService {
         private transactionsRepository: TransactionsRepository,
         private connection: Connection,
         private readonly appGateway: AppGateway,
+        @InjectRepository(AdmissionsRepository)
+        private admissionRepository: AdmissionsRepository,
+        @InjectRepository(AdmissionClinicalTaskRepository)
+        private clinicalTaskRepository: AdmissionClinicalTaskRepository,
     ) {
     }
 
     async listAllPatients(): Promise<Patient[]> {
-        return await this.patientRepository.find({ relations: ['nextOfKin', 'immunization'] });
+        return await this.patientRepository.find({ relations: ['nextOfKin', 'immunization', 'hmo'] });
     }
 
     async findPatient(param: string): Promise<Patient[]> {
@@ -77,17 +85,15 @@ export class PatientService {
                 { surname: Like(`%${param.toLocaleLowerCase()}%`) },
                 { other_names: Like(`%${param.toLocaleLowerCase()}%`) },
                 { fileNumber: Like(`%${param}%`) },
-            ], relations: ['nextOfKin', 'immunization'],
+            ], relations: ['nextOfKin', 'immunization', 'hmo'],
         });
     }
 
     async saveNewPatient(patientDto: PatientDto, createdBy: string): Promise<any> {
         try {
             const { hmoId } = patientDto;
-            let hmo;
-            if (hmoId && hmoId !== '') {
-                hmo = await this.hmoRepository.findOne(hmoId);
-            }
+
+            const hmo = await this.hmoRepository.findOne(hmoId);
             const nok = await this.patientNOKRepository.saveNOK(patientDto);
 
             const patient = await this.patientRepository.savePatient(patientDto, nok, hmo, createdBy);
@@ -101,7 +107,7 @@ export class PatientService {
     async saveNewOpdPatient(patientDto: OpdPatientDto, createdBy: string): Promise<any> {
         try {
             const patient = new Patient();
-            patient.fileNumber = 'DH ' + Math.floor(Math.random() * 90000);
+            patient.fileNumber = 'DH' + Math.floor(Math.random() * 90000);
             patient.surname = patientDto.surname.toLocaleLowerCase();
             patient.other_names = patientDto.other_names.toLocaleLowerCase();
             patient.address = patientDto.address.toLocaleLowerCase();
@@ -136,7 +142,6 @@ export class PatientService {
             patient.maritalStatus = patientDto.maritalStatus;
             patient.ethnicity = patientDto.ethnicity;
             patient.referredBy = patientDto.referredBy;
-            patient.insurranceStatus = patientDto.insurranceStatus;
             patient.lastChangedBy = updatedBy;
             patient.nextOfKin.surname = patientDto.nok_surname;
             patient.nextOfKin.other_names = patientDto.nok_other_names;
@@ -149,12 +154,11 @@ export class PatientService {
             patient.nextOfKin.phoneNumber = patientDto.nok_phoneNumber;
             patient.nextOfKin.maritalStatus = patientDto.nok_maritalStatus;
             patient.nextOfKin.ethnicity = patientDto.nok_ethnicity;
-            if (patientDto.hmoId && patientDto.hmoId !== '') {
-                patient.hmo = await this.hmoRepository.findOne(patientDto.hmoId);
-            }
-            patient.save();
+            patient.hmo = await this.hmoRepository.findOne(patientDto.hmoId);
 
-            return { success: true, patient };
+            const rs = patient.save();
+
+            return { success: true, patient: rs };
         } catch (err) {
             return { success: false, message: err.message };
         }
@@ -175,15 +179,69 @@ export class PatientService {
     }
 
     async doSaveVitals(param, createdBy: string): Promise<any> {
-        const { patient_id, readingType, reading } = param;
+        const { patient_id, readingType, reading, task_id } = param;
         try {
+            const user = await this.authRepository.findOne({ where: { username: createdBy } });
+
+            const staff = await this.connection.getRepository(StaffDetails)
+                .createQueryBuilder('s')
+                .where('s.user_id = :id', { id: user.id })
+                .getOne();
+
             const patient = await this.patientRepository.findOne(patient_id);
+
+            let task;
+            if (task_id !== '') {
+                 task = await this.clinicalTaskRepository.findOne(task_id);
+
+                 if (task && task.tasksCompleted < task.taskCount) {
+                    let nextTime;
+                    switch (task.intervalType) {
+                        case 'minutes':
+                            nextTime = moment().add(task.interval, 'm').format('YYYY-MM-DD HH:mm:ss');
+                            break;
+                        case 'hours':
+                            nextTime = moment().add(task.interval, 'h').format('YYYY-MM-DD HH:mm:ss');
+                            break;
+                        case 'days':
+                            nextTime = moment().add(task.interval, 'd').format('YYYY-MM-DD HH:mm:ss');
+                            break;
+                        case 'weeks':
+                            nextTime = moment().add(task.interval, 'w').format('YYYY-MM-DD HH:mm:ss');
+                            break;
+                        case 'months':
+                            nextTime = moment().add(task.interval, 'M').format('YYYY-MM-DD HH:mm:ss');
+                            break;
+                        default:
+                            break;
+                    }
+
+                    const completed = task.tasksCompleted + 1;
+
+                    task.nextTime = nextTime;
+                    task.tasksCompleted = completed;
+                    task.lastChangedBy = createdBy;
+                    task.completed = completed === task.taskCount;
+                    await task.save();
+
+                    if (task.drug && task.drug.vaccine) {
+                        await getConnection()
+                            .createQueryBuilder()
+                            .update(Immunization)
+                            .set({ date_administered: moment().format('YYYY-MM-DD HH:mm:ss'), administeredBy: staff })
+                            .where('id = :id', { id: task.drug.vaccine.id })
+                            .execute();
+                    }
+                }
+            }
+
             if (patient) {
                 const data = {
                     readingType,
                     reading,
                     patient,
                     createdBy,
+                    task: task || null,
                 };
                 const readings = await this.patientVitalRepository.save(data);
                 return { success: true, readings };
@@ -451,8 +509,8 @@ export class PatientService {
                 patient,
                 amount: total_amount,
                 description: 'Payment for pharmacy request',
-                payment_type: (patient.hmo) ? 'HMO' : '',
-                hmo_approval_status: (patient.hmo) ? 1 : 0,
+                payment_type: patient.hmo.id === 1 ? 'Private' : 'HMO',
+                hmo_approval_status: patient.hmo.id === 1 ? 2 : 0,
                 transaction_type: 'pharmacy',
                 transaction_details: requestBody,
                 createdBy: updatedBy,
@@ -488,7 +546,7 @@ export class PatientService {
             .innerJoin(StaffDetails, 'staff1', 'staff1.user_id = creator.id')
             .select('q.id, q.requestType, q.code, q.requestBody, q.createdAt, q.status, q.isFilled, q.urgent, q.requestNote')
             .addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
-            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id, patient.fileNumber')
+            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id, patient.fileNumber, patient.hmo_id as patient_hmo_id')
             .addSelect('transaction.status as transaction_status')
             .where('q.patient_id = :patient_id', { patient_id })
             .andWhere('q.requestType = :requestType', { requestType });
@@ -539,7 +597,7 @@ export class PatientService {
             .select('patient_request.id, patient_request.requestType, patient_request.code, patient_request.requestBody, patient_request.createdAt, patient_request.status, patient_request.isFilled, patient_request.urgent, patient_request.requestNote')
             .addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
             .addSelect('transaction.status as transaction_status')
-            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id, patient.fileNumber')
+            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id, patient.fileNumber, patient.hmo_id as patient_hmo_id')
             .andWhere('patient_request.requestType = :requestType', { requestType });
 
         if (startDate && startDate !== '') {
@@ -579,7 +637,7 @@ export class PatientService {
     async doApproveResult(id: string, params, username) {
         const { type } = params;
 
-        const result = await this.patientRequestRepository.findOne(id);
+        const result = await this.patientRequestRepository.findOne({ where: { id }, relations: ['patient'] });
 
         switch (type) {
             case 'lab':
@@ -601,25 +659,34 @@ export class PatientService {
             case 'pharmacy':
             default:
                 try {
-                    const user = await this.authRepository.findOne({ where: { username } });
+                    const patient = result.patient;
+                    const admission = await this.admissionRepository.findOne({ where: { patientId: patient.id } });
 
-                    const staff = await this.connection.getRepository(StaffDetails)
-                        .createQueryBuilder('s')
-                        .where('s.user_id = :id', { id: user.id })
-                        .getOne();
-
+                    let results = [];
                     for (const drug of result.requestBody) {
                         // @ts-ignore
                         const { vaccine } = drug;
                         if (vaccine) {
-                            // await getConnection()
-                            //     .createQueryBuilder()
-                            //     .update(Immunization)
-                            //     .set({ date_administered: moment().format('YYYY-MM-DD HH:mm:ss'), administeredBy: staff })
-                            //     .where('id = :id', { id: vaccine.id })
-                            //     .execute();
+                            const newTask = new AdmissionClinicalTask();
 
-                            // TODO: create clinical task for vaccines
+                            newTask.task = 'Immunization';
+                            newTask.title = `Give ${drug.drug_name} Immediately`;
+                            newTask.taskType = 'regimen';
+                            newTask.drug = drug;
+                            newTask.dose = 1;
+                            newTask.interval = 1;
+                            newTask.intervalType = 'immediately';
+                            newTask.frequency = 'Immediately';
+                            newTask.taskCount = 1;
+                            newTask.startTime = moment().format('YYYY-MM-DD HH:mm:ss');
+                            newTask.nextTime = moment().format('YYYY-MM-DD HH:mm:ss');
+                            newTask.patient = patient;
+                            newTask.admission = admission;
+                            newTask.createdBy = username;
+                            newTask.request = result;
+
+                            const rs = await newTask.save();
+                            results = [...results, rs];
                         }
                     }
 

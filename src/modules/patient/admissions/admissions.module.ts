@@ -8,6 +8,7 @@ import { PatientRepository } from '../repositories/patient.repository';
 import { StaffRepository } from '../../hr/staff/staff.repository';
 import { RoomRepository } from '../../settings/room/room.repository';
 import { AppGateway } from '../../../app.gateway';
+import { PatientVitalRepository } from '../repositories/patient_vitals.repository';
 
 @Module({
   imports: [TypeOrmModule.forFeature([
@@ -16,6 +17,7 @@ import { AppGateway } from '../../../app.gateway';
     PatientRepository,
     StaffRepository,
     RoomRepository,
+    PatientVitalRepository,
   ])],
   controllers: [AdmissionsController],
   providers: [AppGateway, AdmissionsService],

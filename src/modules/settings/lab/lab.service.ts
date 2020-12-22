@@ -19,6 +19,7 @@ import { slugify } from '../../../common/utils/utils';
 import { PaginationOptionsInterface } from '../../../common/paginate';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import { Like } from 'typeorm';
+import { HmoRepository } from '../../hmo/hmo.repository';
 
 @Injectable()
 export class LabService {
@@ -33,6 +34,8 @@ export class LabService {
         private specimenRepository: SpecimenRepository,
         @InjectRepository(GroupRepository)
         private groupRepository: GroupRepository,
+        @InjectRepository(HmoRepository)
+        private hmoRepository: HmoRepository,
     ) {
     }
 
@@ -80,25 +83,27 @@ export class LabService {
     }
 
     async createLabTest(labTestDto: LabTestDto, createdBy: string): Promise<LabTest> {
-        const { lab_category_id } = labTestDto;
+        const { lab_category_id, hmo_id } = labTestDto;
         const category = await this.labTestCategoryRepo.findOne(lab_category_id);
+        const hmo = await this.hmoRepository.findOne(hmo_id);
 
-        return this.labTestRepository.saveLabTest(labTestDto, category, createdBy);
+        return this.labTestRepository.saveLabTest(labTestDto, category, createdBy, hmo);
     }
 
     async updateLabTest(id: string, labTestDto: LabTestDto, updatedBy: string): Promise<LabTest> {
-        const { lab_category_id } = labTestDto;
+        const { lab_category_id, hmo_id } = labTestDto;
         const category = await this.labTestCategoryRepo.findOne(lab_category_id);
-        const labTest = await this.labTestRepository.findOne(id);
+        const labTest = await this.labTestRepository.findOne({ where: {id}, relations: ['hmo'] });
+        const hmo = await this.hmoRepository.findOne(hmo_id);
 
         try {
-            return this.labTestRepository.updateLabTest(labTestDto, labTest, category, updatedBy);
+            return this.labTestRepository.updateLabTest(labTestDto, labTest, category, updatedBy, hmo);
         } catch (e) {
             throw new NotFoundException('could not update lab test');
         }
     }
 
-    async deleteLabTest(id: string): Promise<LabTest> {
+    async deleteLabTest(id: number): Promise<LabTest> {
         // // delete previous parameters
         // await getConnection()
         //     .createQueryBuilder()
@@ -147,16 +152,18 @@ export class LabService {
         return this.labTestCategoryRepo.saveCategory(labCategoryDto, createdBy);
     }
 
-    async updateCategory(id: string, labCategoryDto: LabCategoryDto, updatedBy: string): Promise<LabTestCategory> {
+    async updateCategory(id: number, labCategoryDto: LabCategoryDto, updatedBy: string): Promise<LabTestCategory> {
         const { name } = labCategoryDto;
         const category = await this.labTestCategoryRepo.findOne(id);
-        category.name = name;
-        category.lastChangedBy = updatedBy;
-        await category.save();
+        if (name !== category.name) {
+            category.name = name;
+            category.lastChangedBy = updatedBy;
+            await category.save();
+        }
         return category;
     }
 
-    async deleteCategory(id: string): Promise<LabTestCategory> {
+    async deleteCategory(id: number): Promise<LabTestCategory> {
         const result = await this.labTestCategoryRepo.delete(id);
 
         if (result.affected === 0) {
@@ -224,7 +231,7 @@ export class LabService {
         return specimen;
     }
 
-    async deleteSpecimen(id: string): Promise<Specimen> {
+    async deleteSpecimen(id: number): Promise<Specimen> {
         const result = await this.specimenRepository.delete(id);
 
         if (result.affected === 0) {
@@ -297,7 +304,7 @@ export class LabService {
         return { ...group, tests };
     }
 
-    async deleteGroup(id: string): Promise<Group> {
+    async deleteGroup(id: number): Promise<Group> {
         const result = await this.groupRepository.delete(id);
 
         if (result.affected === 0) {

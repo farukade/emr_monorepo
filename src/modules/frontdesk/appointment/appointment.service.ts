@@ -16,7 +16,8 @@ import { TransactionsRepository } from '../../finance/transactions/transactions.
 import { ServiceCategoryRepository } from '../../settings/services/service.category.repository';
 import { AppGateway } from '../../../app.gateway';
 import { getRepository } from 'typeorm';
-import {StaffDetails} from '../../hr/staff/entities/staff_details.entity';
+import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
+import { HmoRepository } from '../../hmo/hmo.repository';
 
 @Injectable()
 export class AppointmentService {
@@ -39,16 +40,19 @@ export class AppointmentService {
         private serviceCategoryRepository: ServiceCategoryRepository,
         @InjectRepository(TransactionsRepository)
         private transactionsRepository: TransactionsRepository,
+        @InjectRepository(HmoRepository)
+        private hmoRepository: HmoRepository,
         private readonly appGateway: AppGateway,
-    ) {}
+    ) {
+    }
 
-    async todaysAppointments({type}): Promise<Appointment[]> {
+    async todaysAppointments({ type }): Promise<Appointment[]> {
         if (!type) {
             type = 'in-patient';
         }
         const today = moment().format('YYYY-MM-DD');
         return await this.appointmentRepository.find({
-            where: {appointment_date: today, appointmentType: type, canSeeDoctor: 1},
+            where: { appointment_date: today, appointmentType: type, canSeeDoctor: 1 },
             relations: ['patient', 'whomToSee', 'consultingRoom', 'encounter', 'transaction'],
         });
 
@@ -56,7 +60,7 @@ export class AppointmentService {
 
     async getAppointment(id: string): Promise<Appointment> {
         return await this.appointmentRepository.findOne({
-            where: {id},
+            where: { id },
             relations: ['patient', 'whomToSee', 'consultingRoom', 'encounter', 'transaction'],
         });
 
@@ -64,19 +68,21 @@ export class AppointmentService {
 
     async saveNewAppointment(appointmentDto: AppointmentDto): Promise<any> {
         try {
-            const { patient_id, consulting_room_id, doctor_id, sendToQueue, serviceType, serviceCategory, amount} = appointmentDto;
+            const { patient_id, consulting_room_id, doctor_id, sendToQueue, serviceType, serviceCategory, amount } = appointmentDto;
             // find patient details
             const patient = await this.patientRepository.findOne(patient_id);
             // find doctor
             const doctor = await getRepository(StaffDetails).findOne(doctor_id);
-             // find consulting room
+            // find consulting room
             const consultingRoom = await this.consultingRoomRepository.findOne(consulting_room_id);
             // find service
             const service = await this.serviceRepository.findOne(serviceType);
             // find service category
             const category = await this.serviceCategoryRepository.findOne(serviceCategory);
 
-            const appointment = await this.appointmentRepository.saveAppointment(appointmentDto, patient, consultingRoom, doctor, amount, service, category);
+            const appointment = await this.appointmentRepository.saveAppointment(
+                appointmentDto, patient, consultingRoom, doctor, amount, service, category,
+            );
             // update patient appointment date
             patient.lastAppointmentDate = new Date().toString();
             await patient.save();
@@ -87,8 +93,8 @@ export class AppointmentService {
 
             if (sendToQueue) {
                 if (amount) {
-
-                    if (patient.insurranceStatus === 'HMO') {
+                    const hmo = await this.hmoRepository.findOne(patient.hmo);
+                    if (hmo.name !== 'Private') {
                         paymentType = 'HMO';
                         hmoApprovalStatus = 1;
                         // update appointment status
@@ -104,20 +110,20 @@ export class AppointmentService {
                         queue = await this.queueSystemRepository.saveQueue(appointment, 'paypoint');
                     }
 
-                     // save payment
-                     const payment = await this.saveTransaction(patient, service, amount, paymentType, hmoApprovalStatus);
-                     appointment.transaction = payment;
+                    // save payment
+                    const payment = await this.saveTransaction(patient, service, amount, paymentType, hmoApprovalStatus);
+                    appointment.transaction = payment;
 
                     // send queue message
-                    this.appGateway.server.emit('paypoint-queue', {queue, payment});
+                    this.appGateway.server.emit('paypoint-queue', { queue, payment });
                 } else {
                     queue = await this.queueSystemRepository.saveQueue(appointment, 'vitals');
-                    this.appGateway.server.emit('nursing-queue', {queue});
+                    this.appGateway.server.emit('nursing-queue', { queue });
                 }
 
-                this.appGateway.server.emit('all-queues', {queue});
+                this.appGateway.server.emit('all-queues', { queue });
             }
-            const resp = { success: true, appointment};
+            const resp = { success: true, appointment };
 
             // go to front desk
             this.appGateway.server.emit('new-appointment', resp);
@@ -128,7 +134,7 @@ export class AppointmentService {
     }
 
     async listAppointments(params) {
-        const {startDate, endDate} = params;
+        const { startDate, endDate } = params;
         let type = params.type;
         if (!type) {
             type = 'in-patient';
@@ -139,7 +145,7 @@ export class AppointmentService {
             .leftJoinAndSelect('q.consultingRoom', 'consultingRoom')
             .leftJoinAndSelect('q.encounter', 'encounter')
             .leftJoinAndSelect('q.transaction', 'transaction')
-            .where('q.appointmentType = :type', {type});
+            .where('q.appointmentType = :type', { type });
 
         if (startDate && startDate !== '') {
             const start = moment(startDate).startOf('day').toISOString();
@@ -149,6 +155,7 @@ export class AppointmentService {
             const end = moment(endDate).endOf('day').toISOString();
             query.andWhere(`q.createdAt <= '${end}'`);
         }
+
         const result = await query.getMany();
 
         return result;
@@ -158,17 +165,18 @@ export class AppointmentService {
         return await this.appointmentRepository
             .createQueryBuilder('appointment')
             .leftJoinAndSelect('appointment.patient', 'patient')
-            .where('appointment.patient_id = :patient_id', {patient_id})
-            .andWhere('appointment.isActive = :status', {status: true})
+            .where('appointment.patient_id = :patient_id', { patient_id })
+            .andWhere('appointment.isActive = :status', { status: true })
             .getOne();
     }
 
     async checkAppointmentStatus(params) {
-        const {patient_id, service_id} = params;
+        const { patient_id, service_id } = params;
         // find service
         const service = await this.serviceRepository.findOne(service_id);
 
-        let resGracePeriod, resNoOfVisits;
+        let resGracePeriod;
+        let resNoOfVisits;
 
         if (service.gracePeriod) {
             const gracePeriodParams = service.gracePeriod.split(' ');
@@ -180,9 +188,9 @@ export class AppointmentService {
         }
 
         if (resGracePeriod && resNoOfVisits) {
-            return {isPaying: false, amount: 0};
+            return { isPaying: false, amount: 0 };
         } else {
-            return {isPaying: true, amount: parseInt(service.tariff, 10)};
+            return { isPaying: true, amount: parseInt(service.tariff, 10) };
         }
     }
 
@@ -193,16 +201,16 @@ export class AppointmentService {
         appointment.isActive = false;
         await appointment.save();
         // remove from queue
-        await this.queueSystemRepository.delete( {appointment});
+        await this.queueSystemRepository.delete({ appointment });
     }
 
-    async updateDoctorStatus({appointmentId, action}, user) {
+    async updateDoctorStatus({ appointmentId, action }, user) {
         try {
             const appointment = await this.getAppointment(appointmentId);
             appointment.doctorStatus = action;
             await appointment.save();
-            this.appGateway.server.emit('appointment-update', {appointment, action});
-            return {success: true};
+            this.appGateway.server.emit('appointment-update', { appointment, action });
+            return { success: true };
         } catch (e) {
             return { success: false, message: e.message };
         }
@@ -228,10 +236,10 @@ export class AppointmentService {
     }
 
     private async verifyGracePeriod(gracePeriodParams, patient_id, service_id) {
-         // find patient last appointment
+        // find patient last appointment
         const appointments = await this.appointmentRepository.createQueryBuilder('appointment')
-            .where('appointment.patient_id = :patient_id', {patient_id})
-            .andWhere('appointment.service_id = :service_id', {service_id})
+            .where('appointment.patient_id = :patient_id', { patient_id })
+            .andWhere('appointment.service_id = :service_id', { service_id })
             .select(['appointment.createdAt as created_at'])
             .orderBy('appointment.createdAt', 'DESC')
             .limit(gracePeriodParams[0])
@@ -252,8 +260,8 @@ export class AppointmentService {
 
     private async verifyNoOfVisits(noOfVisits, patient_id, service_id) {
         const appointments = await this.appointmentRepository.createQueryBuilder('appointment')
-            .where('appointment.patient_id = :patient_id', {patient_id})
-            .andWhere('appointment.service_id = :service_id', {service_id})
+            .where('appointment.patient_id = :patient_id', { patient_id })
+            .andWhere('appointment.service_id = :service_id', { service_id })
             .select(['appointment.createdAt as created_at'])
             .orderBy('appointment.createdAt', 'DESC')
             .limit(noOfVisits)

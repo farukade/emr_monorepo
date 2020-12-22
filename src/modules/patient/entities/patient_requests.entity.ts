@@ -1,6 +1,8 @@
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
-import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, OneToOne, OneToMany } from 'typeorm';
 import { Patient } from './patient.entity';
+import { AdmissionClinicalTask } from '../admissions/entities/admission-clinical-task.entity';
+import { PatientVital } from './patient_vitals.entity';
 
 @Entity({name: 'patient_requests'})
 export class PatientRequest extends CustomBaseEntity {
@@ -29,4 +31,7 @@ export class PatientRequest extends CustomBaseEntity {
 
     @Column({type: 'smallint', default: 0})
     status: number;
+
+    @OneToMany(type => AdmissionClinicalTask, task => task.request)
+    task: AdmissionClinicalTask;
 }

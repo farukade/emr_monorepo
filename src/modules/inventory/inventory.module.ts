@@ -13,10 +13,11 @@ import { InventorySubCategoryRepository } from './inventory.sub-category.reposit
 import { StockRepository } from './stock.repository';
 import { VendorModule } from './vendor/vendor.module';
 import { VendorRepository } from './vendor/vendor.repository';
+import { HmoRepository } from '../hmo/hmo.repository';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([InventoryCategoryRepository, InventorySubCategoryRepository, StockRepository, VendorRepository]),
+    TypeOrmModule.forFeature([InventoryCategoryRepository, InventorySubCategoryRepository, StockRepository, VendorRepository, HmoRepository]),
     PharmacyModule,
     CafeteriaModule,
     StoreModule,

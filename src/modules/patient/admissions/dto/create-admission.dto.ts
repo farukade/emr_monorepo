@@ -1,5 +1,5 @@
 export class CreateAdmissionDto {
-    
+
     healthState: string;
     riskToFall: boolean;
     // room_id: string;

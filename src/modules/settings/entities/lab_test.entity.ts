@@ -6,7 +6,7 @@ import { Hmo } from '../../hmo/entities/hmo.entity';
 
 @Entity({ name: 'lab_tests' })
 export class  LabTest extends CustomBaseEntity {
-  @Column({ type: 'varchar', length: 300, unique: true })
+  @Column({ type: 'varchar', length: 300 })
   name: string;
 
   @Column({ type: 'varchar', length: 300})

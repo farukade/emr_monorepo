@@ -7,10 +7,21 @@ import { LabTestRepository } from './lab.test.repository';
 import { ParameterRepository } from './parameter.repository';
 import { SpecimenRepository } from './specimen.repository';
 import { GroupRepository } from './group.repository';
+import { HmoRepository } from '../../hmo/hmo.repository';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([LabTestCategoryRepository, LabTestRepository, ParameterRepository, SpecimenRepository, GroupRepository])],
-  controllers: [LabController],
-  providers: [LabService],
+    imports: [
+        TypeOrmModule.forFeature([
+            LabTestCategoryRepository,
+            LabTestRepository,
+            ParameterRepository,
+            SpecimenRepository,
+            GroupRepository,
+            HmoRepository,
+        ]),
+    ],
+    controllers: [LabController],
+    providers: [LabService],
 })
-export class LabModule {}
+export class LabModule {
+}

@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsEmail } from "class-validator";
+import { IsNotEmpty, IsEmail } from 'class-validator';
 
 export class PatientDto {
 
@@ -25,8 +25,6 @@ export class PatientDto {
     maritalStatus: string;
 
     ethnicity: string;
-
-    insurranceStatus: string;
 
     hmoId: string;
 

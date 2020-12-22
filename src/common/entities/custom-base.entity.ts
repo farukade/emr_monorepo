@@ -7,8 +7,8 @@ import {
 } from 'typeorm';
 
 export abstract class CustomBaseEntity extends BaseEntity {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn('increment')
+  id: number;
 
   @Column({ type: 'boolean', default: true })
   isActive: boolean;

@@ -12,6 +12,7 @@ import { ServiceRepository } from '../../settings/services/service.repository';
 import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
 import { ServiceCategoryRepository } from '../../settings/services/service.category.repository';
 import { AppGateway } from '../../../app.gateway';
+import { HmoRepository } from '../../hmo/hmo.repository';
 
 @Module({
   imports: [TypeOrmModule.forFeature([
@@ -24,6 +25,7 @@ import { AppGateway } from '../../../app.gateway';
     ServiceRepository,
     ServiceCategoryRepository,
     TransactionsRepository,
+    HmoRepository,
   ])],
   controllers: [AppointmentController],
   providers: [AppGateway  , AppointmentService],

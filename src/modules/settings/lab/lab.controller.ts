@@ -1,4 +1,4 @@
-import { Controller, Get, Post, UsePipes, ValidationPipe, Body, Patch, Param, Delete, UseGuards, Request, Query } from '@nestjs/common';
+import { Controller, Get, Post, UsePipes, ValidationPipe, Body, Patch, Param, Delete, UseGuards, Request, Query, Put } from '@nestjs/common';
 import { LabService } from './lab.service';
 import { LabTestCategory } from '../entities/lab_test_category.entity';
 import { LabCategoryDto } from './dto/lab.category.dto';
@@ -54,7 +54,7 @@ export class LabController {
     }
 
     @Delete(':id')
-    deleteLabTest(@Param('id') id: string): Promise<LabTest> {
+    deleteLabTest(@Param('id') id: number): Promise<LabTest> {
         return this.labService.deleteLabTest(id);
     }
 
@@ -77,10 +77,10 @@ export class LabController {
         return this.labService.createCategory(labCategoryDto, req.user.username);
     }
 
-    @Patch('categories/:id/update')
+    @Put('categories/:id/update')
     @UsePipes(ValidationPipe)
     updateCategory(
-        @Param('id') id: string,
+        @Param('id') id: number,
         @Body() labCategoryDto: LabCategoryDto,
         @Request() req,
     ): Promise<LabTestCategory> {
@@ -88,7 +88,7 @@ export class LabController {
     }
 
     @Delete('categories/:id')
-    deleteServiceCategory(@Param('id') id: string): Promise<LabTestCategory> {
+    deleteServiceCategory(@Param('id') id: number): Promise<LabTestCategory> {
         return this.labService.deleteCategory(id);
     }
 
@@ -150,7 +150,7 @@ export class LabController {
     }
 
     @Delete('/specimens/:id')
-    deleteSpecimen(@Param('id') id: string): Promise<Specimen> {
+    deleteSpecimen(@Param('id') id: number): Promise<Specimen> {
         return this.labService.deleteSpecimen(id);
     }
 
@@ -182,7 +182,7 @@ export class LabController {
     }
 
     @Delete('/groups/:id')
-    deleteGroup(@Param('id') id: string): Promise<Group> {
+    deleteGroup(@Param('id') id: number): Promise<Group> {
         return this.labService.deleteGroup(id);
     }
 }

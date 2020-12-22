@@ -27,7 +27,7 @@ export class Admission extends CustomBaseEntity {
     anticipatedDischargeDate: string;
 
     @ManyToOne(() => StaffDetails)
-    @JoinColumn({name: 'pcg'})
+    @JoinColumn({name: 'staff_id'})
     careGiver: StaffDetails;
 
     @OneToMany(() => AdmissionClinicalTask, tasks => tasks.admission)

@@ -1,14 +1,18 @@
-import { Type } from 'class-transformer';
 import { Column, Entity, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 import { InventorySubCategory } from './inventory.sub-category.entity';
 import { InventoryCategory } from './inventory.category.entity';
 import { Vendor } from '../vendor/vendor.entity';
+import { Hmo } from '../../hmo/entities/hmo.entity';
 
 @Entity({ name: 'stocks' })
 export class Stock extends CustomBaseEntity {
-  @Column({ type: 'varchar', length: 300, unique: true })
+  @Column({ type: 'varchar', length: 300 })
   name: string;
+
+  @ManyToOne(type => Hmo, {nullable: true})
+  @JoinColumn({ name: 'hmo_id' })
+  public hmo!: Hmo;
 
   @Column({ type: 'varchar', length: 300, nullable: true })
   generic_name: string;
@@ -24,6 +28,9 @@ export class Stock extends CustomBaseEntity {
 
   @Column({ type: 'varchar', nullable: true})
   sales_price: string;
+
+  @Column({type: 'varchar', nullable: true})
+  hmoPrice: string;
 
   @Column({ type: 'integer', default: 0})
   quantity: number;
