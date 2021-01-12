@@ -47,7 +47,7 @@ export class DepartmentsService {
         return this.departmentRepository.saveDepartment(departmentDto, staff, createdBy);
     }
 
-    async updateDepartment(id: string, departmentDto: DepartmentDto, updatedBy): Promise<Department> {
+    async updateDepartment(id: string, departmentDto: DepartmentDto, updatedBy): Promise<any> {
         try {
             const { name, description, hod_id } = departmentDto;
 
@@ -56,19 +56,16 @@ export class DepartmentsService {
                 staff = await this.staffRepository.findOne(hod_id);
 
                 const dept = await this.departmentRepository.findOne({
-                    where: { staff, id: Not(Equal(hod_id)) },
+                    where: { staff },
                 });
 
-                if (dept && dept.staff && staff && dept.staff.id === staff.id) {
-                    console.log('error here');
-                    throw new HttpException('you cannot use the same staff for multiple departments', 500);
-                    return;
+                if (dept && dept.id !== parseInt(id, 10) && dept.staff.id === parseInt(hod_id, 10)) {
+                    return { success: false, message: 'you cannot use the same staff for multiple departments' };
                 }
             }
 
             const department = await this.departmentRepository.findOne(id);
 
-            console.log('continue');
             department.name = name;
             department.description = description;
             department.lastChangedBy = updatedBy;
@@ -76,10 +73,10 @@ export class DepartmentsService {
                 department.staff = staff;
             }
             await department.save();
-            return department;
+            return { success: true, department };
         } catch (e) {
             console.log(e);
-            throw new NotFoundException('error, ');
+            return { success: false, message: 'could not save department' };
         }
     }
 

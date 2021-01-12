@@ -29,7 +29,7 @@ export class DepartmentsController {
         @Param('id') id: string,
         @Body() departmentDto: DepartmentDto,
         @Request() req,
-    ): Promise<Department> {
+    ): Promise<any> {
         return this.departmentService.updateDepartment(id, departmentDto, req.user.username);
     }
 
