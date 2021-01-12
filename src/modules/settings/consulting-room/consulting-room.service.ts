@@ -37,11 +37,13 @@ export class ConsultingRoomService {
         return consultingRoom;
     }
 
-    async deleteConsultingRoom(id: string): Promise<void> {
+    async deleteConsultingRoom(id: string): Promise<any> {
         const result = await this.consultingRoomRepository.delete(id);
 
         if (result.affected === 0) {
             throw new NotFoundException(`Consulting Room with ID '${id}' not found`);
+        } else {
+            return result;
         }
     }
 }

@@ -34,7 +34,7 @@ export class ConsultingRoomController {
     }
 
     @Delete('/:id')
-    deleteConsultingRoom(@Param('id') id: string): Promise<void> {
+    deleteConsultingRoom(@Param('id') id: string): Promise<any> {
         return this.consultingRoomService.deleteConsultingRoom(id);
     }
 }
