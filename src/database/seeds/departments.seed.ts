@@ -1,7 +1,7 @@
 import fs = require('fs');
 import { Connection } from 'typeorm';
 import { Factory, Seeder } from 'typeorm-seeding';
-import {Department} from "../../modules/settings/entities/department.entity";
+import {Department} from '../../modules/settings/entities/department.entity';
 
 export default class CreateBanks implements Seeder {
   public async run(factory: Factory, connection: Connection): Promise<any> {

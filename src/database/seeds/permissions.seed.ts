@@ -3,7 +3,7 @@ import { Connection } from 'typeorm';
 import { Factory, Seeder } from 'typeorm-seeding';
 import {Permission} from '../../modules/settings/entities/permission.entity';
 
-export default class CreateBanks implements Seeder {
+export default class CreatePermissions implements Seeder {
   public async run(factory: Factory, connection: Connection): Promise<any> {
     const permissions = JSON.parse(
       fs.readFileSync('src/database/seeds/dumbs/permissions.json', 'utf8'),

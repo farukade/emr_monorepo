@@ -17,7 +17,7 @@ export class RolesService {
   ) {}
 
   async getAllRole(): Promise<Role[]> {
-    return this.roleRepository.find({ relations: ['permissions']});
+    return this.roleRepository.find({ relations: ['permissions'], order: { createdAt: 'ASC' }});
   }
 
   async getRoleById(id: string): Promise<Role> {
@@ -85,9 +85,9 @@ export class RolesService {
       }
 
       role.permissions = selectedPermission;
-      await role.save();
+      const rs = await role.save();
 
-      return {success: true};
+      return {success: true, role: rs};
     } catch (err ) {
       return {success: false, message: err.message};
     }

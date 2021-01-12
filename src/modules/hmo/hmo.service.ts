@@ -275,7 +275,7 @@ export class HmoService {
 
         const query = this.transactionsRepository.createQueryBuilder('q')
                             .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
-                            .leftJoin(Hmo, 'hmo', `"patient"."hmoId" = "hmo"."id"`)
+                            .leftJoin(Hmo, 'hmo', `"patient"."hmo_id" = "hmo"."id"`)
                             .where('q.payment_type = :type', {type: 'HMO'})
                             .select('q.*')
                             .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.fileNumber, hmo.name as hmo_name, hmo.id as hmo_id');
@@ -309,7 +309,7 @@ export class HmoService {
 
         const query = this.transactionsRepository.createQueryBuilder('q')
                         .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
-                        .leftJoin(Hmo, 'hmo', `"patient"."hmoId" = "hmo"."id"`)
+                        .leftJoin(Hmo, 'hmo', `"patient"."hmo_id" = "hmo"."id"`)
                         .where('q.payment_type = :type', {type: 'HMO'})
                         .andWhere('q.hmo_approval_status = :status', {status: 0})
                         .select('q.*')

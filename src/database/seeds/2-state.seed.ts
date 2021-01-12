@@ -17,7 +17,7 @@ export default class CreateStates implements Seeder {
           const state = new State();
           state.id = s.id;
           state.name = s.name;
-          state.country = await Country.findOne(s.country_id);;
+          state.country = await Country.findOne(s.country_id);
           await state.save();
       } catch (error) {
           continue;
