@@ -9,7 +9,8 @@ export class LeaveCategoryService {
     constructor(
         @InjectRepository(LeaveCategoryRepository)
         private leaveCategoryRepository: LeaveCategoryRepository,
-    ) {}
+    ) {
+    }
 
     async getCategories(): Promise<LeaveCategory[]> {
         return this.leaveCategoryRepository.find();
@@ -28,11 +29,15 @@ export class LeaveCategoryService {
         return category;
     }
 
-    async deleteCategory(id: string): Promise<void> {
+    async deleteCategory(id: number): Promise<any> {
         const result = await this.leaveCategoryRepository.delete(id);
 
         if (result.affected === 0) {
             throw new NotFoundException(`Lab test category with ID '${id}' not found`);
         }
+
+        const category = new LeaveCategory();
+        category.id = id;
+        return category;
     }
 }

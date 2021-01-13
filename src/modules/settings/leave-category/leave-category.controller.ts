@@ -30,7 +30,7 @@ export class LeaveCategoryController {
     }
 
     @Delete(':id')
-    deleteServiceCategory(@Param('id') id: string): Promise<void> {
+    deleteServiceCategory(@Param('id') id: number): Promise<any> {
         return this.leaveCategoryService.deleteCategory(id);
     }
 }
