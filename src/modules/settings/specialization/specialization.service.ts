@@ -9,7 +9,9 @@ export class SpecializationService {
     constructor(
         @InjectRepository(SpecializationRepository)
         private specializationRepository: SpecializationRepository,
-    ) {}
+    ) {
+    }
+
     async getSpecializations(): Promise<Specialization[]> {
         return this.specializationRepository.find();
     }
@@ -26,11 +28,15 @@ export class SpecializationService {
         return specialization;
     }
 
-    async deleteSpecialization(id: string): Promise<void> {
+    async deleteSpecialization(id: number): Promise<any> {
         const result = await this.specializationRepository.delete(id);
 
         if (result.affected === 0) {
             throw new NotFoundException(`Specialization with ID '${id}' not found`);
         }
+
+        const specialization = new Specialization();
+        specialization.id = id;
+        return specialization;
     }
 }

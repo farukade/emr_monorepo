@@ -28,7 +28,7 @@ export class SpecializationController {
     }
 
     @Delete('/:id')
-    deleteSpecialization(@Param('id') id: string): Promise<void> {
+    deleteSpecialization(@Param('id') id: number): Promise<any> {
         return this.specializationService.deleteSpecialization(id);
     }
 }
