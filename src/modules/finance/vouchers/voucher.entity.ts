@@ -17,6 +17,9 @@ export class Voucher extends CustomBaseEntity {
     @Column()
     duration: string;
 
+    @Column()
+    start_date: string;
+
     @ManyToOne(() => Patient)
     patient: Patient;
 }

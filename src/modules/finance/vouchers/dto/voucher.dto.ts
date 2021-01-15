@@ -13,4 +13,6 @@ export class VoucherDto {
     transaction_id: string;
 
     duration: string;
+
+    start_date: string;
 }

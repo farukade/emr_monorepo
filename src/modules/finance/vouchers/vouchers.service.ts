@@ -61,7 +61,7 @@ export class VouchersService {
     }
 
     async save(voucherDto: VoucherDto, createdBy): Promise<any> {
-        const {patient_id, amount, duration, voucher_no, transaction_id} = voucherDto;
+        const {patient_id, amount, duration, voucher_no, transaction_id, start_date} = voucherDto;
         // find patient record
         const patient = await this.patientRepository.findOne(patient_id);
 
@@ -72,6 +72,7 @@ export class VouchersService {
                 duration,
                 voucher_no,
                 createdBy,
+                start_date,
             });
             if (transaction_id && transaction_id !== '') {
                 await this.addVoucherToTransaction(voucher, transaction_id);
