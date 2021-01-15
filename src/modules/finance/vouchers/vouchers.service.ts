@@ -24,20 +24,21 @@ export class VouchersService {
         private voucherRepository: VoucherRepository,
         @InjectRepository(TransactionsRepository)
         private transactionsRepository: TransactionsRepository,
-    ) {}
+    ) {
+    }
 
     async fetchList(params): Promise<Voucher[]> {
-        const {startDate, endDate, patient_id, status} = params;
+        const { startDate, endDate, patient_id, status } = params;
         const query = this.voucherRepository.createQueryBuilder('q')
-        .innerJoin('q.patient', 'patient')
-        .leftJoin(User, 'creator', 'q.createdBy = creator.username')
-        // .innerJoin(User, 'updator', 'q.lastChangedBy = updator.username')
-        .innerJoin(StaffDetails, 'staff1', 'staff1.user_id = creator.id')
-        // .innerJoin(StaffDetails, 'staff2', 'staff2.user_id = updator.id')
-        .select('q.id, q.voucher_no, q.amount, q.amount_used')
-        .addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
-        // .addSelect('CONCAT(staff2.first_name || \' \' || staff2.last_name) as updated_by, staff2.id as updated_by_id')
-        .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id');
+            .innerJoin('q.patient', 'patient')
+            .leftJoin(User, 'creator', 'q.createdBy = creator.username')
+            // .innerJoin(User, 'updator', 'q.lastChangedBy = updator.username')
+            .innerJoin(StaffDetails, 'staff1', 'staff1.user_id = creator.id')
+            // .innerJoin(StaffDetails, 'staff2', 'staff2.user_id = updator.id')
+            .select('q.id, q.voucher_no, q.amount, q.amount_used')
+            .addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
+            // .addSelect('CONCAT(staff2.first_name || \' \' || staff2.last_name) as updated_by, staff2.id as updated_by_id')
+            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id');
 
         if (startDate && startDate !== '') {
             const start = moment(startDate).endOf('day').toISOString();
@@ -48,11 +49,11 @@ export class VouchersService {
             query.where(`q.createdAt <= '${end}'`);
         }
         if (patient_id && patient_id !== '') {
-            query.where('q.patient_id = :patient_id', {patient_id});
+            query.where('q.patient_id = :patient_id', { patient_id });
         }
 
         if (status) {
-            query.where('q.status = :status', {status});
+            query.where('q.status = :status', { status });
         }
 
         const result = await query.getRawMany();
@@ -61,9 +62,13 @@ export class VouchersService {
     }
 
     async save(voucherDto: VoucherDto, createdBy): Promise<any> {
-        const {patient_id, amount, duration, voucher_no, transaction_id, start_date} = voucherDto;
+        const { patient_id, amount, duration, voucher_no, transaction_id, start_date } = voucherDto;
+
         // find patient record
         const patient = await this.patientRepository.findOne(patient_id);
+        if (!patient) {
+            return { success: false, message: 'select patient' };
+        }
 
         try {
             const voucher = await this.voucherRepository.save({
@@ -77,29 +82,29 @@ export class VouchersService {
             if (transaction_id && transaction_id !== '') {
                 await this.addVoucherToTransaction(voucher, transaction_id);
             }
-            return {success: true, voucher };
+            return { success: true, voucher };
         } catch (error) {
-            return {success: false, message: error.message };
+            return { success: false, message: error.message };
         }
     }
 
     async update(id: string, voucherDto: VoucherDto, updatedBy): Promise<any> {
-        const {patient_id, amount, duration, voucher_no} = voucherDto;
+        const { patient_id, amount, duration, voucher_no } = voucherDto;
         // find patient record
         const patient = await this.patientRepository.findOne(patient_id);
 
         try {
             const voucher = await this.voucherRepository.findOne(id);
-            voucher.patient     = patient;
-            voucher.amount      = amount;
-            voucher.duration    = duration;
-            voucher.voucher_no  = voucher_no;
-            voucher.lastChangedBy  = updatedBy;
+            voucher.patient = patient;
+            voucher.amount = amount;
+            voucher.duration = duration;
+            voucher.voucher_no = voucher_no;
+            voucher.lastChangedBy = updatedBy;
             await voucher.save();
 
-            return {success: true, voucher };
+            return { success: true, voucher };
         } catch (error) {
-            return {success: false, message: error.message };
+            return { success: false, message: error.message };
         }
     }
 
