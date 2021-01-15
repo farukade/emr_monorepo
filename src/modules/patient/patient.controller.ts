@@ -101,6 +101,13 @@ export class PatientController {
         return this.patientService.getVouchers(id, urlParams);
     }
 
+    @Delete(':id/vouchers')
+    deleteVoucher(
+        @Param('id') id: number,
+    ): Promise<Voucher> {
+        return this.patientService.deleteVoucher(id);
+    }
+
     @Get(':id/documents')
     getPatientDocument(
         @Param('id') id: string,

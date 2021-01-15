@@ -36,6 +36,7 @@ import { AdmissionClinicalTaskRepository } from './admissions/repositories/admis
 import { AdmissionClinicalTask } from './admissions/entities/admission-clinical-task.entity';
 import { AdmissionsRepository } from './admissions/repositories/admissions.repository';
 import { Immunization } from './immunization/entities/immunization.entity';
+import { Specimen } from '../settings/entities/specimen.entity';
 
 @Injectable()
 export class PatientService {
@@ -192,9 +193,9 @@ export class PatientService {
 
             let task;
             if (task_id !== '') {
-                 task = await this.clinicalTaskRepository.findOne(task_id);
+                task = await this.clinicalTaskRepository.findOne(task_id);
 
-                 if (task && task.tasksCompleted < task.taskCount) {
+                if (task && task.tasksCompleted < task.taskCount) {
                     let nextTime;
                     switch (task.intervalType) {
                         case 'minutes':
@@ -290,6 +291,18 @@ export class PatientService {
             query.andWhere('q.isActive = :status', { status: stat });
         }
         return await query.orderBy('q.createdAt', 'DESC').getMany();
+    }
+
+    async deleteVoucher(id): Promise<Voucher> {
+        const result = await this.voucherRepository.softDelete(id);
+
+        if (result.affected === 0) {
+            throw new NotFoundException(`Voucher with ID '${id}' not found`);
+        }
+
+        const voucher = new Voucher();
+        voucher.id = id;
+        return voucher;
     }
 
     async getDocuments(id, urlParams): Promise<PatientDocument[]> {
