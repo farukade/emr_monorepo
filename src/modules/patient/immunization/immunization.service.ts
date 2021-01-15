@@ -185,7 +185,7 @@ export class ImmunizationService {
                                     description: vaccine.description,
                                     date_due: dateDue.format('YYYY-MM-DD'),
                                     period: vaccine.weeks[i].time === 0 ? 'Birth' : `${vaccine.weeks[i].time} ${type}${extras}`,
-                                    createdBy: staff,
+                                    createdBy,
                                 };
 
                                 const record = await this.immunizationRepository.save(data);

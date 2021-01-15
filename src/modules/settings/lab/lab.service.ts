@@ -232,7 +232,7 @@ export class LabService {
     }
 
     async deleteSpecimen(id: number): Promise<Specimen> {
-        const result = await this.specimenRepository.delete(id);
+        const result = await this.specimenRepository.softDelete(id);
 
         if (result.affected === 0) {
             throw new NotFoundException(`Lab parameter with ID '${id}' not found`);

@@ -1,14 +1,12 @@
-import { BaseEntity, Column, CreateDateColumn, Entity, UpdateDateColumn, ManyToOne, JoinColumn, PrimaryGeneratedColumn, Double } from 'typeorm';
+import { Column, Entity, ManyToOne, JoinColumn } from 'typeorm';
+import { CustomBaseEntity } from '../../../../common/entities/custom-base.entity';
 import { Patient } from '../../entities/patient.entity';
 
 @Entity({ name: 'nicu' })
-export class Nicu extends BaseEntity {
-    @PrimaryGeneratedColumn()
-    id: string;
-
-    // @ManyToOne(type => Patient)
-    // @JoinColumn({ name: 'patient_id' })
-    // patient: Patient;
+export class Nicu extends CustomBaseEntity {
+    @ManyToOne(type => Patient, patient => patient.nicu, { nullable: true })
+    @JoinColumn({ name: 'patient_id' })
+    patient: Patient;
 
     @Column({ type: 'double precision' })
     temperature: number;
@@ -19,26 +17,18 @@ export class Nicu extends BaseEntity {
     @Column({ type: 'double precision' })
     resp: number;
 
-    @Column({type: 'varchar'})
-    sp02: string
-
-    @Column({ type: 'varchar'})
-    oxygen: string
-
-    @Column({type: 'varchar'})
-    cypap: string
-
-    @Column({type: 'varchar'})
-    offoxygen: string
+    @Column({ type: 'varchar' })
+    sp02: string;
 
     @Column({ type: 'varchar' })
-    remark: string
+    oxygen: string;
 
-    @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-    createdAt: Date;
+    @Column({ type: 'varchar' })
+    cypap: string;
 
-    @UpdateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-    updateAt: Date;
+    @Column({ type: 'varchar' })
+    offoxygen: string;
 
-
+    @Column({ type: 'varchar' })
+    remark: string;
 }

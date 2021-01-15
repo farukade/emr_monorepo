@@ -73,7 +73,10 @@ export class DepartmentsService {
                 department.staff = staff;
             }
             await department.save();
-            return { success: true, department };
+            return {
+                success: true,
+                department: { ...department, hod_name: (staff) ? `${staff.first_name} ${staff.last_name}` : '' },
+            };
         } catch (e) {
             console.log(e);
             return { success: false, message: 'could not save department' };

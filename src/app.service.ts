@@ -1,6 +1,7 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import * as PostgressConnectionStringParser from 'pg-connection-string';
 
+// tslint:disable-next-line:no-var-requires
 require('dotenv').config();
 
 class AppService {
@@ -58,6 +59,8 @@ class AppService {
         synchronize: false,
         migrationsRun: false,
         uuidExtension: 'pgcrypto',
+        factories: [ 'dist/database/factories/*.factory{.ts,.js}' ],
+        seeds: [ 'dist/database/seeds/*.seed{.ts,.js}' ],
       };
     } else {
       const databaseUrl: string = process.env.DATABASE_URL;

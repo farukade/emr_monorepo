@@ -1,27 +1,35 @@
 import {
-  BaseEntity,
-  Column,
-  CreateDateColumn,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
+    BaseEntity,
+    Column,
+    CreateDateColumn,
+    DeleteDateColumn,
+    PrimaryGeneratedColumn,
+    UpdateDateColumn,
 } from 'typeorm';
 
 export abstract class CustomBaseEntity extends BaseEntity {
-  @PrimaryGeneratedColumn('increment')
-  id: number;
+    @PrimaryGeneratedColumn('increment')
+    id: number;
 
-  @Column({ type: 'boolean', default: true })
-  isActive: boolean;
+    @Column({ type: 'boolean', default: true })
+    isActive: boolean;
 
-  @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  createdAt: Date;
+    @Column({ type: 'varchar', length: 300, nullable: true })
+    createdBy: string;
 
-  @UpdateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  updateAt: Date;
+    // @ManyToOne(type => StaffDetails)
+    // @JoinColumn({ name: 'staff_id' })
+    // createdBy: StaffDetails;
 
-  @Column({ type: 'varchar', length: 300, nullable: true })
-  createdBy: string;
+    @Column({ type: 'varchar', length: 300, nullable: true })
+    lastChangedBy: string;
 
-  @Column({ type: 'varchar', length: 300, nullable: true })
-  lastChangedBy: string;
+    @DeleteDateColumn({ type: 'timestamp', nullable: true, name: 'deleted_at' })
+    deletedAt: Date;
+
+    @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+    createdAt: Date;
+
+    @UpdateDateColumn({ type: 'timestamp', name: 'updated_at', default: () => 'CURRENT_TIMESTAMP' })
+    updatedAt: Date;
 }

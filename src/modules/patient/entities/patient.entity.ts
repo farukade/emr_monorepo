@@ -5,6 +5,7 @@ import { Appointment } from '../../frontdesk/appointment/appointment.entity';
 import { Hmo } from '../../hmo/entities/hmo.entity';
 import { Transactions } from '../../finance/transactions/transaction.entity';
 import { Immunization } from '../immunization/entities/immunization.entity';
+import { Nicu } from '../nicu/entities/nicu.entity';
 
 @Entity({ name: 'patients' })
 export class Patient extends CustomBaseEntity {
@@ -56,13 +57,16 @@ export class Patient extends CustomBaseEntity {
     noOfVisits: number;
 
     @OneToMany(type => Appointment, appointment => appointment.patient)
-    appointments: Appointment;
+    appointments: Appointment[];
 
     @OneToMany(type => Transactions, transaction => transaction.patient)
-    transactions: Transactions;
+    transactions: Transactions[];
 
     @OneToMany(type => Immunization, immunization => immunization.patient)
-    immunization: Immunization;
+    immunization: Immunization[];
+
+    @OneToMany(type => Nicu, nicu => nicu.patient)
+    nicu: Nicu[];
 
     @ManyToOne(() => Hmo)
     @JoinColumn({ name: 'hmo_id' })
