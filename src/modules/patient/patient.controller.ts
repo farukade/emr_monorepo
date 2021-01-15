@@ -81,9 +81,10 @@ export class PatientController {
 
     @Delete(':id')
     deletePatient(
-        @Param('id') id: string,
-    ): Promise<void> {
-        return this.patientService.deletePatient(id);
+        @Param('id') id: number,
+        @Request() req,
+    ): Promise<Patient> {
+        return this.patientService.deletePatient(id, req.user.username);
     }
 
     @Post('check-payment-status')
@@ -104,8 +105,9 @@ export class PatientController {
     @Delete(':id/vouchers')
     deleteVoucher(
         @Param('id') id: number,
+        @Request() req,
     ): Promise<Voucher> {
-        return this.patientService.deleteVoucher(id);
+        return this.patientService.deleteVoucher(id, req.user.username);
     }
 
     @Get(':id/documents')

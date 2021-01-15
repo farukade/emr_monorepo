@@ -3,9 +3,11 @@ import {
     Column,
     CreateDateColumn,
     DeleteDateColumn,
+    ManyToOne,
     PrimaryGeneratedColumn,
     UpdateDateColumn,
 } from 'typeorm';
+import { StaffDetails } from '../../modules/hr/staff/entities/staff_details.entity';
 
 export abstract class CustomBaseEntity extends BaseEntity {
     @PrimaryGeneratedColumn('increment')
@@ -17,15 +19,14 @@ export abstract class CustomBaseEntity extends BaseEntity {
     @Column({ type: 'varchar', length: 300, nullable: true })
     createdBy: string;
 
-    // @ManyToOne(type => StaffDetails)
-    // @JoinColumn({ name: 'staff_id' })
-    // createdBy: StaffDetails;
-
     @Column({ type: 'varchar', length: 300, nullable: true })
     lastChangedBy: string;
 
     @DeleteDateColumn({ type: 'timestamp', nullable: true, name: 'deleted_at' })
     deletedAt: Date;
+
+    @Column({ type: 'varchar', length: 300, nullable: true })
+    deletedBy: string;
 
     @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     createdAt: Date;

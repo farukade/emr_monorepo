@@ -165,12 +165,17 @@ export class PatientService {
         }
     }
 
-    async deletePatient(id: string) {
-        const result = await this.patientRepository.delete(id);
+    async deletePatient(id: number, username) {
+        const patient = await this.patientRepository.findOne(id);
 
-        if (result.affected === 0) {
+        if (!patient) {
             throw new NotFoundException(`Patient with ID '${id}' not found`);
         }
+
+        patient.deletedBy = username;
+        await patient.save();
+
+        return await patient.softRemove();
     }
 
     async checkPaymentStatus(param) {
@@ -293,16 +298,17 @@ export class PatientService {
         return await query.orderBy('q.createdAt', 'DESC').getMany();
     }
 
-    async deleteVoucher(id): Promise<Voucher> {
-        const result = await this.voucherRepository.softDelete(id);
+    async deleteVoucher(id, username): Promise<Voucher> {
+        const voucher = await this.voucherRepository.findOne(id);
 
-        if (result.affected === 0) {
+        if (!voucher) {
             throw new NotFoundException(`Voucher with ID '${id}' not found`);
         }
 
-        const voucher = new Voucher();
-        voucher.id = id;
-        return voucher;
+        voucher.deletedBy = username;
+        await voucher.save();
+
+        return voucher.softRemove();
     }
 
     async getDocuments(id, urlParams): Promise<PatientDocument[]> {
