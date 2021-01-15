@@ -206,6 +206,20 @@ export class AppointmentService {
         await appointment.save();
         // remove from queue
         await this.queueSystemRepository.delete({ appointment });
+
+        return appointment;
+    }
+
+    async cancelAppointment(id, username) {
+        // find appointment
+        const appointment = await this.appointmentRepository.findOne(id);
+        // update status
+        appointment.isActive = false;
+        await appointment.save();
+        // remove from queue
+        await this.queueSystemRepository.delete({ appointment });
+
+        return await appointment.softRemove();
     }
 
     async updateDoctorStatus({ appointmentId, action }, user) {

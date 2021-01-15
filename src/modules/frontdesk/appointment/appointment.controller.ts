@@ -58,6 +58,14 @@ export class AppointmentController {
         return this.appointmentService.closeAppointment(id);
     }
 
+    @Patch(':id/cancel')
+    cancelAppointment(
+        @Param('id') id: string,
+        @Request() req,
+    ) {
+        return this.appointmentService.cancelAppointment(id, req.user);
+    }
+
     @Patch('accept-decline')
     acceptDeclineAppointment(
         @Body() param,
