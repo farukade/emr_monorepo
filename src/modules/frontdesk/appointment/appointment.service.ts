@@ -71,6 +71,10 @@ export class AppointmentService {
             const { patient_id, consulting_room_id, doctor_id, sendToQueue, serviceType, serviceCategory, amount } = appointmentDto;
             // find patient details
             const patient = await this.patientRepository.findOne(patient_id);
+            if (!patient) {
+                return { success: false, message: 'please select a patient' };
+            }
+
             // find doctor
             const doctor = await getRepository(StaffDetails).findOne(doctor_id);
             // find consulting room
