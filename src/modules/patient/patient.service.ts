@@ -298,19 +298,6 @@ export class PatientService {
         return await query.orderBy('q.createdAt', 'DESC').getMany();
     }
 
-    async deleteVoucher(id, username): Promise<Voucher> {
-        const voucher = await this.voucherRepository.findOne(id);
-
-        if (!voucher) {
-            throw new NotFoundException(`Voucher with ID '${id}' not found`);
-        }
-
-        voucher.deletedBy = username;
-        await voucher.save();
-
-        return voucher.softRemove();
-    }
-
     async getDocuments(id, urlParams): Promise<PatientDocument[]> {
         const { startDate, endDate, documentType } = urlParams;
 

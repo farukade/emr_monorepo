@@ -7,7 +7,8 @@ import { AuthGuard } from '@nestjs/passport';
 @UseGuards(AuthGuard('jwt'))
 @Controller('vouchers')
 export class VouchersController {
-    constructor(private voucherService: VouchersService) {}
+    constructor(private voucherService: VouchersService) {
+    }
 
     @Get('list')
     getVouchers(
@@ -36,7 +37,7 @@ export class VouchersController {
     }
 
     @Delete('/:id')
-    deleteVoucher(@Param('id') id: string): Promise<void> {
-        return this.voucherService.delete(id);
+    deleteVoucher(@Param('id') id: number, @Request() req): Promise<Voucher> {
+        return this.voucherService.delete(id, req.user.username);
     }
 }

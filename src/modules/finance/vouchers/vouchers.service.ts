@@ -5,11 +5,6 @@ import * as moment from 'moment';
 import { PatientRepository } from '../../patient/repositories/patient.repository';
 import { Voucher } from './voucher.entity';
 import { VoucherDto } from './dto/voucher.dto';
-import { DepartmentRepository } from '../../settings/departments/department.repository';
-import { ServiceRepository } from '../../settings/services/service.repository';
-import { Patient } from '../../patient/entities/patient.entity';
-import { Service } from '../../settings/entities/service.entity';
-import { Department } from '../../settings/entities/department.entity';
 import { TransactionsRepository } from '../transactions/transactions.repository';
 import { User } from '../../hr/entities/user.entity';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
@@ -108,12 +103,17 @@ export class VouchersService {
         }
     }
 
-    async delete(id: string): Promise<void> {
-        const result = await this.voucherRepository.delete(id);
+    async delete(id: number, username): Promise<Voucher> {
+        const voucher = await this.voucherRepository.findOne(id);
 
-        if (result.affected === 0) {
+        if (!voucher) {
             throw new NotFoundException(`Voucher with ID '${id}' not found`);
         }
+
+        voucher.deletedBy = username;
+        await voucher.save();
+
+        return voucher.softRemove();
     }
 
     async addVoucherToTransaction(voucher, transaction_id) {
