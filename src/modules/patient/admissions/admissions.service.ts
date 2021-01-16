@@ -139,7 +139,7 @@ export class AdmissionsService {
             .leftJoinAndSelect('q.patient', 'patient')
             .leftJoinAndSelect('q.request', 'request')
             .select('q.*')
-            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id, patient.fileNumber as patient_file, patient.gender as patient_gender')
+            .addSelect('CONCAT(patient.other_names || \' \' || patient.surname) as patient_name')
             .addSelect('request.status as request_status');
 
         if (patient_id && patient_id !== '') {
@@ -162,14 +162,20 @@ export class AdmissionsService {
             });
 
             const admission = await this.admissionRepository.findOne({
-                where: { admission: request.admission },
+                where: { id: request.admission_id },
                 relations: ['room'],
+            });
+
+            const patient = await this.patientRepository.findOne({
+                where: { id: request.patient_id },
+                relations: ['nextOfKin', 'immunization', 'hmo']
             });
 
             const data = {
                 ...request,
                 vitals,
                 admission,
+                patient,
             };
             results = [...results, data];
         }
@@ -188,8 +194,8 @@ export class AdmissionsService {
             const { tasks, prescription } = params;
 
             const patient = await this.patientRepository.findOne(patientId);
-            const admission = await this.admissionRepository.findOne({ where: { patientId: patient.id } });
-            const staff = await this.staffRepository.findOne({ where: { user_id: createdById }, relations: ['user'] });
+            const admission = await this.admissionRepository.findOne({ where: { patient: patient.id } });
+            const staff = await this.staffRepository.findOne({ where: { user: createdById }, relations: ['user'] });
 
             let request;
             if (prescription.requestBody && prescription.requestBody.length > 0) {
