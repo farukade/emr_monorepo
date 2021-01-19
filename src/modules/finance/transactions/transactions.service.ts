@@ -287,11 +287,14 @@ export class TransactionsService {
             let queue;
             if (transaction.next_location && transaction.next_location === 'vitals') {
                 // find appointment
-                const appointment = await this.appointmentRepository.findOne({
-                    where: { transaction_id: transaction.id },
-                    relations: ['patient', 'whomToSee', 'consultingRoom', 'serviceCategory', 'serviceType'],
-                });
-                // console.log(appointment);
+                const appointment = await this.appointmentRepository.createQueryBuilder('a')
+                    .where('a.transaction_id = :id', { id: transaction.id })
+                    .getOne();
+
+                console.log(appointment);
+
+                appointment.patient = await this.patientRepository.findOne(transaction.patient.id);
+
                 // create new queue
                 if (!appointment) {
                     return { success: false, message: 'Cannot find appointment' };
