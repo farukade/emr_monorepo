@@ -289,7 +289,7 @@ export class TransactionsService {
                 // find appointment
                 const appointment = await this.appointmentRepository.createQueryBuilder('a')
                     .where('a.transaction_id = :id', { id: transaction.id })
-                    .getOne();
+                    .getRawOne();
 
                 console.log(appointment);
 
