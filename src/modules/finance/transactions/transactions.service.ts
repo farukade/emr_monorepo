@@ -288,7 +288,7 @@ export class TransactionsService {
             if (transaction.next_location && transaction.next_location === 'vitals') {
                 // find appointment
                 const appointment = await this.appointmentRepository.findOne({
-                    where: { transaction },
+                    where: { transaction_id: transaction.id },
                     relations: ['patient', 'whomToSee', 'consultingRoom', 'serviceCategory', 'serviceType'],
                 });
                 // console.log(appointment);
@@ -306,6 +306,7 @@ export class TransactionsService {
 
             return { success: true, transaction, queue };
         } catch (error) {
+            console.log(error);
             return { success: false, message: error.message };
         }
     }
