@@ -532,7 +532,7 @@ export class PatientService {
 
             this.appGateway.server.emit('paypoint-queue', { payment });
 
-            return { success: true, data: { ...res, payment } };
+            return { success: true, data: { ...res, transaction_status: 0, payment } };
         } catch (e) {
             // console.log(e.message)
             return { success: false, message: e.message };
