@@ -27,11 +27,16 @@ export class VendorService {
         return vendor;
     }
 
-    async delete(id: string): Promise<void> {
-        const result = await this.vendorRepository.delete(id);
+    async delete(id: number, username): Promise<any> {
+        const vendor = await this.vendorRepository.findOne(id);
 
-        if (result.affected === 0) {
+        if (!vendor) {
             throw new NotFoundException(`Vendor with ID '${id}' not found`);
         }
+
+        vendor.deletedBy = username;
+        await vendor.save();
+
+        return vendor.softRemove();
     }
 }

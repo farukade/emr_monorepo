@@ -56,6 +56,20 @@ export class VouchersService {
         return result;
     }
 
+    async fetchByCode(code): Promise<any> {
+        try {
+            const voucher = await this.voucherRepository.findOne({ voucher_no: code });
+
+            if (voucher) {
+                return { success: true, voucher };
+            } else {
+                return { success: false, message: 'could not find voucher' };
+            }
+        } catch (error) {
+            return { success: false, message: error.message };
+        }
+    }
+
     async save(voucherDto: VoucherDto, createdBy): Promise<any> {
         const { patient_id, amount, duration, voucher_no, transaction_id, start_date } = voucherDto;
 

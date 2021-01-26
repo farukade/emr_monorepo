@@ -121,11 +121,16 @@ export class LeavemgtService {
         return leave;
     }
 
-    async deleteApplication(id: string) {
-        const result = await this.leaveRepository.delete(id);
+    async deleteApplication(id: number, username) {
+        const leave = await this.leaveRepository.findOne(id);
 
-        if (result.affected === 0) {
+        if (!leave) {
             throw new NotFoundException(`Leave application with '${id}' does not exist`);
         }
+
+        leave.deletedBy = username;
+        await leave.save();
+
+        return leave.softRemove();
     }
 }

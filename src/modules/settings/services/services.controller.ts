@@ -12,7 +12,7 @@ import {
     UploadedFile,
     Header,
     Res,
-    Request,
+    Request, Query,
 } from '@nestjs/common';
 import { ServicesService } from './services.service';
 import { Service } from '../entities/service.entity';
@@ -21,15 +21,24 @@ import { ServiceDto } from './dto/service.dto';
 import { ServiceCategoryDto } from './dto/service.category.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { extname, join, resolve } from 'path';
+import { extname, join } from 'path';
+import { ServicesUploadRateDto } from './dto/service.upload.dto';
+import { Pagination } from '../../../common/paginate/paginate.interface';
 
 @Controller('services')
 export class ServicesController {
-    constructor(private servicesService: ServicesService) {}
+    constructor(private servicesService: ServicesService) {
+    }
 
     @Get()
-    getServices(): Promise<Service[]> {
-        return this.servicesService.getAllServices();
+    getServices(
+        @Request() request,
+        @Query() urlParams,
+    ): Promise<Pagination> {
+        const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 30;
+        const page = request.query.hasOwnProperty('page') ? request.query.page : 1;
+
+        return this.servicesService.getAllServices({ page, limit }, urlParams);
     }
 
     @Get('/consultations')
@@ -53,8 +62,11 @@ export class ServicesController {
     }
 
     @Delete('/:id')
-    deleteService(@Param('id') id: string): Promise<void> {
-        return this.servicesService.deleteService(id);
+    deleteService(
+        @Param('id') id: number,
+        @Request() req,
+    ): Promise<any> {
+        return this.servicesService.deleteService(id, req.user.username);
     }
 
     @Post('/upload-services')
@@ -68,9 +80,9 @@ export class ServicesController {
     }))
     uploadServices(
         @UploadedFile() file,
-        @Body('username') username: string,
+        @Body() uploadDto: ServicesUploadRateDto,
     ) {
-        return this.servicesService.doUploadServices(file, username);
+        return this.servicesService.doUploadServices(uploadDto, file);
     }
 
     @Get('download-services')
@@ -112,7 +124,10 @@ export class ServicesController {
     }
 
     @Delete('categories/:id')
-    deleteServiceCategory(@Param('id') id: string): Promise<void> {
-        return this.servicesService.deleteServiceCategory(id);
+    deleteServiceCategory(
+        @Param('id') id: number,
+        @Request() req,
+    ): Promise<any> {
+        return this.servicesService.deleteServiceCategory(id, req.user.username);
     }
 }

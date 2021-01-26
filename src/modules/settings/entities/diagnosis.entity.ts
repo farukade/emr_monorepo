@@ -7,7 +7,7 @@ export class Diagnosis extends CustomBaseEntity {
   @Column({ type: 'varchar', length: 300 })
   procedureCode: string;
 
-  @Column({ type: 'varchar', length: 300, unique: true, nullable: true })
+  @Column({ type: 'varchar', length: 300, nullable: true })
   icd10Code: string;
 
   @Column({ type: 'varchar', length: 300 })

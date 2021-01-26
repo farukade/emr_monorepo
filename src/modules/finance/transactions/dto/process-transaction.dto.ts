@@ -2,7 +2,9 @@ import { IsNotEmpty } from "class-validator";
 
 export class ProcessTransactionDto {
 
-    voucher_id: string;
+    voucher_id: number;
+
+    patient_id: number;
 
     @IsNotEmpty()
     amount_paid: number;

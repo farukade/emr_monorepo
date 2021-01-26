@@ -6,7 +6,7 @@ import { ServiceSubCategory } from './service_sub_category.entity';
 
 @Entity({ name: 'service_categories' })
 export class ServiceCategory extends CustomBaseEntity {
-  @Column({ type: 'varchar', length: 300, unique: true })
+  @Column({ type: 'varchar', length: 300 })
   name: string;
 
   @Column({ type: 'varchar', nullable: true })

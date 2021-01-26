@@ -3,7 +3,7 @@ import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 
 @Entity({ name: 'hmos' })
 export class Hmo extends CustomBaseEntity {
-  @Column({ type: 'varchar', length: 300, unique: true })
+  @Column({ type: 'varchar', length: 300 })
   name: string;
 
   @Column({ type: 'varchar', length: 300, nullable: true })

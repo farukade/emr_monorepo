@@ -3,7 +3,7 @@ import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 
 @Entity({ name: 'lab_groups' })
 export class Group extends CustomBaseEntity {
-    @Column({ type: 'varchar', length: 300, unique: true })
+    @Column({ type: 'varchar', length: 300 })
     name: string;
 
     @Column({type: 'jsonb', nullable: true})

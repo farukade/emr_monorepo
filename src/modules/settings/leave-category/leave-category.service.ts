@@ -29,15 +29,16 @@ export class LeaveCategoryService {
         return category;
     }
 
-    async deleteCategory(id: number): Promise<any> {
-        const result = await this.leaveCategoryRepository.delete(id);
+    async deleteCategory(id: number, username): Promise<any> {
+        const category = await this.leaveCategoryRepository.findOne(id);
 
-        if (result.affected === 0) {
+        if (!category) {
             throw new NotFoundException(`Lab test category with ID '${id}' not found`);
         }
 
-        const category = new LeaveCategory();
-        category.id = id;
-        return category;
+        category.deletedBy = username;
+        await category.save();
+
+        return category.softRemove();
     }
 }

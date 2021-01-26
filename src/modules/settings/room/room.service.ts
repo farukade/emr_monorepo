@@ -6,6 +6,8 @@ import { RoomCategory } from '../entities/room_category.entity';
 import { Room } from '../entities/room.entity';
 import { RoomCategoryRepository } from './room.category.repository';
 import { RoomRepository } from './room.repository';
+import { getConnection } from 'typeorm';
+import { Hmo } from '../../hmo/entities/hmo.entity';
 
 @Injectable()
 export class RoomService {
@@ -50,12 +52,17 @@ export class RoomService {
         return room;
     }
 
-    async deleteRoom(id: string): Promise<void> {
-        const result = await this.roomRepository.delete(id);
+    async deleteRoom(id: number, username: string): Promise<any> {
+        const room = await this.roomRepository.findOne(id);
 
-        if (result.affected === 0) {
+        if (!room) {
             throw new NotFoundException(`Room with ID '${id}' not found`);
         }
+
+        room.deletedBy = username;
+        await room.save();
+
+        return room.softRemove();
     }
 
     /*
@@ -63,7 +70,7 @@ export class RoomService {
     */
 
     async getRoomsCategory(): Promise<RoomCategory[]> {
-        return this.roomCategoryRepository.find({relations: ['rooms']});
+        return this.roomCategoryRepository.find({relations: ['rooms', 'hmo']});
     }
 
     async createRoomCategory(roomCategoryDto: RoomCategoryDto): Promise<RoomCategory> {
@@ -71,20 +78,27 @@ export class RoomService {
     }
 
     async updateRoomCategory(id: string, roomCategoryDto: RoomCategoryDto): Promise<RoomCategory> {
-        const { name, price, discount } = roomCategoryDto;
+        const { name, price, hmo_id, hmo_tarrif } = roomCategoryDto;
+        const hmo = await getConnection().getRepository(Hmo).findOne(hmo_id);
         const category = await this.roomCategoryRepository.findOne(id);
         category.name = name;
         category.price = price;
-        category.discount = discount;
+        category.hmo = hmo;
+        category.hmoTarrif = hmo_tarrif;
         await category.save();
         return category;
     }
 
-    async deleteRoomCategory(id: string): Promise<void> {
-        const result = await this.roomCategoryRepository.delete(id);
+    async deleteRoomCategory(id: number, username: string): Promise<any> {
+        const category = await this.roomCategoryRepository.findOne(id);
 
-        if (result.affected === 0) {
+        if (!category) {
             throw new NotFoundException(`Room category with ID '${id}' not found`);
         }
+
+        category.deletedBy = username;
+        await category.save();
+
+        return category.softRemove();
     }
 }

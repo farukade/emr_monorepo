@@ -30,7 +30,8 @@ export class InventoryService {
         private vendorRepository: VendorRepository,
         @InjectRepository(HmoRepository)
         private hmoRepository: HmoRepository,
-    ) {}
+    ) {
+    }
 
     /*
         INVENTORY
@@ -45,14 +46,14 @@ export class InventoryService {
         let count;
         if (categoryId && categoryId !== '' && category) {
             result = await this.stockRepository.find({
-                where: {category},
+                where: { category },
                 relations: ['subCategory', 'category', 'vendor'],
                 take: options.limit,
                 skip: (page * options.limit),
             });
 
             count = await this.stockRepository.count({
-                where: {category},
+                where: { category },
             });
         } else {
             result = await this.stockRepository.find({
@@ -82,23 +83,23 @@ export class InventoryService {
         const category = await this.inventoryCategoryRepository.findOne(category_id);
         const hmo = await this.hmoRepository.findOne(hmo_id);
 
-        return this.stockRepository.find({where: {category, hmo}, relations: ['vendor', 'hmo']});
+        return this.stockRepository.find({ where: { category, hmo }, relations: ['vendor', 'hmo'] });
     }
 
     async getStocksByCategoryName(name: string): Promise<Stock[]> {
         // find sub category
-        const subCategory = await this.inventorySubCategoryRepository.findOne({where: {name}});
+        const subCategory = await this.inventorySubCategoryRepository.findOne({ where: { name } });
 
-        return this.stockRepository.find({where: {subCategory}});
+        return this.stockRepository.find({ where: { subCategory } });
     }
 
     async getStocksBySubCategory(sub_category_id: string): Promise<Stock[]> {
         const subCategory = await this.inventorySubCategoryRepository.findOne(sub_category_id);
-        return this.stockRepository.find({ where: {subCategory}});
+        return this.stockRepository.find({ where: { subCategory } });
     }
 
     async createStock(stockDto: StockDto): Promise<Stock> {
-        const { category_id, sub_category_id, vendor_id } = stockDto;
+        const { category_id, sub_category_id, vendor_id, hmo_id } = stockDto;
         const category = await this.inventoryCategoryRepository.findOne(category_id);
         let subCategory;
         if (sub_category_id) {
@@ -108,7 +109,10 @@ export class InventoryService {
         if (vendor_id) {
             vendor = await this.vendorRepository.findOne(vendor_id);
         }
-        return this.stockRepository.saveStock(stockDto, category, subCategory, vendor);
+
+        const hmo = await this.hmoRepository.findOne(hmo_id);
+
+        return this.stockRepository.saveStock(stockDto, category, subCategory, vendor, hmo);
     }
 
     async updateStock(id: string, stockDto: StockDto): Promise<Stock> {
@@ -116,14 +120,14 @@ export class InventoryService {
         const category = await this.inventoryCategoryRepository.findOne(category_id);
         const subCategory = await this.inventorySubCategoryRepository.findOne(sub_category_id);
         const stock = await this.stockRepository.findOne(id);
-        stock.name        = name;
-        stock.stock_code  = (stock_code !== '') ? 'STU-' + stock_code : 'STU-' + Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5);
+        stock.name = name;
+        stock.stock_code = (stock_code !== '') ? 'STU-' + stock_code : 'STU-' + Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5);
         stock.description = description;
-        stock.cost_price  = cost_price;
+        stock.cost_price = cost_price;
         stock.sales_price = sales_price;
-        stock.quantity    = quantity;
+        stock.quantity = quantity;
         stock.subCategory = subCategory;
-        stock.category    = category;
+        stock.category = category;
         await stock.save();
         return stock;
     }
@@ -131,7 +135,7 @@ export class InventoryService {
     async updateExpiryDate(id: string, param): Promise<Stock> {
         const { expiry_date } = param;
         const stock = await this.stockRepository.findOne(id);
-        stock.expiry_date    = expiry_date;
+        stock.expiry_date = expiry_date;
         await stock.save();
         return stock;
     }
@@ -142,19 +146,19 @@ export class InventoryService {
         const csvWriter = createCsvWriter({
             path: 'stocks.csv',
             header: [
-                {id: 'category', title: 'DRUG CLASS'},
-                {id: 'stock_code', title: 'STOCK CODE'},
-                {id: 'name', title: 'BRAND NAME'},
-                {id: 'generic_name', title: 'GENERIC NAME'},
-                {id: 'quantity', title: 'QUANTITY ON HAND'},
-                {id: 'sales_price', title: 'SALES PRICE'},
-                {id: 'expiry_date', title: 'EXPIRY DATE'},
-                {id: 'vendor', title: 'VENDOR'},
+                { id: 'category', title: 'DRUG CLASS' },
+                { id: 'stock_code', title: 'STOCK CODE' },
+                { id: 'name', title: 'BRAND NAME' },
+                { id: 'generic_name', title: 'GENERIC NAME' },
+                { id: 'quantity', title: 'QUANTITY ON HAND' },
+                { id: 'sales_price', title: 'SALES PRICE' },
+                { id: 'expiry_date', title: 'EXPIRY DATE' },
+                { id: 'vendor', title: 'VENDOR' },
             ],
         });
 
         try {
-            const stocks = await this.stockRepository.find({relations: ['subCategory', 'vendor']});
+            const stocks = await this.stockRepository.find({ relations: ['subCategory', 'vendor'] });
 
             if (stocks.length) {
                 for (const stock of stocks) {
@@ -186,19 +190,19 @@ export class InventoryService {
                         vendor: '',
                     },
                 ];
-                await csvWriter.writeRecords({data});
+                await csvWriter.writeRecords({ data });
 
             }
-            return {success: true};
+            return { success: true };
         } catch (error) {
-            return {success: false, message: error.message };
+            return { success: false, message: error.message };
         }
     }
 
     async updateStockQty(stockQtyDto: StockQtyDto): Promise<Stock> {
         const { id, quantity } = stockQtyDto;
         const stock = await this.stockRepository.findOne(id);
-        stock.quantity    = quantity;
+        stock.quantity = quantity;
         await stock.save();
         return stock;
     }
@@ -228,86 +232,86 @@ export class InventoryService {
         try {
             // read uploaded file
             fs.createReadStream(file.path)
-            .pipe(csv())
-            .on('data', async (row) => {
-                const data = {
-                    category: row['DRUG CLASS'],
-                    name: row['BRAND NAME'],
-                    generic_name: row['GENERIC NAME'],
-                    quantity: row['QUANTITY ON HAND'],
-                    sales_price: row['SALES PRICE'],
-                    expiry_date: row['EXPIRY DATE'],
-                    hmo: row.Hmo,
-                    stock_code: 'STU-' + (Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5)).toUpperCase(),
-                };
-                content.push(data);
-            })
-            .on('end', async () => {
-                for (const item of content) {
-                    // check if sub category exists
-                    if (item.category && item.category !== '') {
-                        subCategory = await this.inventorySubCategoryRepository.findOne({
-                            where: {name: item.category},
-                        });
-                        if (!subCategory) {
-                            subCategory = await this.inventorySubCategoryRepository.save({name: item.category, category});
+                .pipe(csv())
+                .on('data', async (row) => {
+                    const data = {
+                        category: row['DRUG CLASS'],
+                        name: row['BRAND NAME'],
+                        generic_name: row['GENERIC NAME'],
+                        quantity: row['QUANTITY ON HAND'],
+                        sales_price: row['SALES PRICE'],
+                        expiry_date: row['EXPIRY DATE'],
+                        hmo: row.Hmo,
+                        stock_code: 'STU-' + (Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5)).toUpperCase(),
+                    };
+                    content.push(data);
+                })
+                .on('end', async () => {
+                    for (const item of content) {
+                        // check if sub category exists
+                        if (item.category && item.category !== '') {
+                            subCategory = await this.inventorySubCategoryRepository.findOne({
+                                where: { name: item.category },
+                            });
+                            if (!subCategory) {
+                                subCategory = await this.inventorySubCategoryRepository.save({ name: item.category, category });
+                            }
                         }
-                    }
 
-                    let hmo;
-                    if (item.hmo && item.hmo !== '') {
-                        hmo = await this.hmoRepository.findOne({ where: { name: item.hmo } });
+                        let hmo;
+                        if (item.hmo && item.hmo !== '') {
+                            hmo = await this.hmoRepository.findOne({ where: { name: item.hmo } });
 
-                        if (!hmo) {
-                            hmo = await this.hmoRepository.save({ name: item.hmo.trim() });
-                        }
-                    } else {
-                        hmo = await this.hmoRepository.findOne({ where: { name: 'Private' } });
-                    }
-
-                    if (item.name && item.name !== '') {
-                        // check if name exist
-                        const stock = vendor ? await this.stockRepository.findOne({
-                            where: {
-                                name: item.name,
-                                vendor,
-                                hmo,
-                            },
-                        }) : await this.stockRepository.findOne({ where: { name: item.name, hmo } });
-
-                        const expiryDate = moment(item.expiry_date, 'M/D/YY').format('YYYY-MM-DD');
-                        if (!stock) {
-                            item.subCategory = subCategory;
-                            item.category = category;
-                            item.vendor = vendor;
-                            item.sales_price = item.sales_price.replace(',', '');
-                            item.quantity = parseInt(item.quantity.replace(',', ''), 10);
-                            item.expiry_date = expiryDate;
-                            item.hmo = hmo;
-                            item.hmoPrice = (item.hmoPrice || item.sales_price).replace(',', '');
-                            // save stock
-                            await this.stockRepository.save(item);
-                            // console.log('new stock');
+                            if (!hmo) {
+                                hmo = await this.hmoRepository.save({ name: item.hmo.trim() });
+                            }
                         } else {
-                            stock.name = item.name;
-                            stock.generic_name = item.generic_name;
-                            stock.sales_price = item.sales_price.replace(',', '');
-                            stock.quantity = parseInt(item.quantity.replace(',', ''), 10);
-                            stock.category = category;
-                            stock.subCategory = subCategory;
-                            stock.expiry_date = expiryDate;
-                            stock.hmo = hmo;
-                            stock.hmoPrice = (item.hmoPrice || item.sales_price).replace(',', '');
-                            await stock.save();
-                            console.log('update stock');
+                            hmo = await this.hmoRepository.findOne({ where: { name: 'Private' } });
+                        }
+
+                        if (item.name && item.name !== '') {
+                            // check if name exist
+                            const stock = vendor ? await this.stockRepository.findOne({
+                                where: {
+                                    name: item.name,
+                                    vendor,
+                                    hmo,
+                                },
+                            }) : await this.stockRepository.findOne({ where: { name: item.name, hmo } });
+
+                            const expiryDate = moment(item.expiry_date, 'M/D/YY').format('YYYY-MM-DD');
+                            if (!stock) {
+                                item.subCategory = subCategory;
+                                item.category = category;
+                                item.vendor = vendor;
+                                item.sales_price = item.sales_price.replace(',', '');
+                                item.quantity = parseInt(item.quantity.replace(',', ''), 10);
+                                item.expiry_date = expiryDate;
+                                item.hmo = hmo;
+                                item.hmoPrice = (item.hmoPrice || item.sales_price).replace(',', '');
+                                // save stock
+                                await this.stockRepository.save(item);
+                                // console.log('new stock');
+                            } else {
+                                stock.name = item.name;
+                                stock.generic_name = item.generic_name;
+                                stock.sales_price = item.sales_price.replace(',', '');
+                                stock.quantity = parseInt(item.quantity.replace(',', ''), 10);
+                                stock.category = category;
+                                stock.subCategory = subCategory;
+                                stock.expiry_date = expiryDate;
+                                stock.hmo = hmo;
+                                stock.hmoPrice = (item.hmoPrice || item.sales_price).replace(',', '');
+                                await stock.save();
+                                console.log('update stock');
+                            }
                         }
                     }
-                }
-                // console.log(content);
-            });
-            return {success: true};
+                    // console.log(content);
+                });
+            return { success: true };
         } catch (err) {
-            return {success: false, message: err.message};
+            return { success: false, message: err.message };
         }
     }
 
@@ -331,12 +335,17 @@ export class InventoryService {
         return category;
     }
 
-    async deleteCategory(id: string): Promise<void> {
-        const result = await this.inventoryCategoryRepository.delete(id);
+    async deleteCategory(id: number, username): Promise<any> {
+        const category = await this.inventoryCategoryRepository.findOne(id);
 
-        if (result.affected === 0) {
+        if (!category) {
             throw new NotFoundException(`Inventory category with ID '${id}' not found`);
         }
+
+        category.deletedBy = username;
+        await category.save();
+
+        return category.softRemove();
     }
 
     /*
@@ -344,11 +353,11 @@ export class InventoryService {
     */
 
     getAllSubCategories(): Promise<InventorySubCategory[]> {
-        return this.inventorySubCategoryRepository.find({relations: ['category']});
+        return this.inventorySubCategoryRepository.find({ relations: ['category'] });
     }
 
     async getSubCategories(categoryID: string): Promise<InventorySubCategory[]> {
-        return this.inventorySubCategoryRepository.find({where: {inventory_category_id: categoryID}});
+        return this.inventorySubCategoryRepository.find({ where: { inventory_category_id: categoryID } });
     }
 
     async createSubCategory(inventorySubCategoryDto: InventorySubCategoryDto): Promise<InventorySubCategory> {
@@ -368,11 +377,16 @@ export class InventoryService {
         return subCategory;
     }
 
-    async deleteSubCategory(id: string): Promise<void> {
-        const result = await this.inventorySubCategoryRepository.delete(id);
+    async deleteSubCategory(id: number, username): Promise<any> {
+        const subCategory = await this.inventorySubCategoryRepository.findOne(id);
 
-        if (result.affected === 0) {
+        if (!subCategory) {
             throw new NotFoundException(`Inventory sub category with ID '${id}' not found`);
         }
+
+        subCategory.deletedBy = username;
+        await subCategory.save();
+
+        return subCategory.softRemove();
     }
 }

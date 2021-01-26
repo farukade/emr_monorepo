@@ -13,6 +13,11 @@ import { HmoRepository } from '../../hmo/hmo.repository';
 import { LabTestCategoryRepository } from '../lab/lab.category.repository';
 import { LabTestRepository } from '../lab/lab.test.repository';
 import { slugify } from '../../../common/utils/utils';
+import { ServicesUploadRateDto } from './dto/service.upload.dto';
+import { PaginationOptionsInterface } from '../../../common/paginate';
+import { Pagination } from '../../../common/paginate/paginate.interface';
+import { Like, Raw } from 'typeorm';
+import { Specimen } from '../entities/specimen.entity';
 
 @Injectable()
 export class ServicesService {
@@ -32,8 +37,37 @@ export class ServicesService {
     ) {
     }
 
-    async getAllServices(): Promise<Service[]> {
-        return this.serviceRepository.find({ relations: ['category', 'subCategory', 'hmo'] });
+    async getAllServices(options: PaginationOptionsInterface, params): Promise<Pagination> {
+        const { q } = params;
+
+        const page = options.page - 1;
+
+        let result;
+        let total = 0;
+        if (q && q.length > 0) {
+            [result, total] = await this.serviceRepository.findAndCount({
+                where: { name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`) },
+                relations: ['category', 'subCategory', 'hmo'],
+                order: { name: 'ASC' },
+                take: options.limit,
+                skip: (page * options.limit),
+            });
+        } else {
+            [result, total] = await this.serviceRepository.findAndCount({
+                relations: ['category', 'subCategory', 'hmo'],
+                order: { name: 'ASC' },
+                take: options.limit,
+                skip: (page * options.limit),
+            });
+        }
+
+        return {
+            result,
+            lastPage: Math.ceil(total / options.limit),
+            itemsPerPage: options.limit,
+            totalPages: total,
+            currentPage: options.page,
+        };
     }
 
     async getServiceById(id: string): Promise<Service> {
@@ -92,20 +126,33 @@ export class ServicesService {
         return service;
     }
 
-    async deleteService(id: string): Promise<void> {
-        const result = await this.serviceRepository.delete(id);
+    async deleteService(id: number, username: string): Promise<any> {
+        const service = await this.serviceRepository.findOne(id);
 
-        if (result.affected === 0) {
+        if (!service) {
             throw new NotFoundException(`Service with ID '${id}' not found`);
         }
+
+        service.deletedBy = username;
+        await service.save();
+
+        return service.softRemove();
     }
 
-    async doUploadServices(file: any, username: string) {
+    async doUploadServices(uploadDto: ServicesUploadRateDto, file: any) {
         const csv = require('csv-parser');
         const fs = require('fs');
         const content = [];
         const labs = [];
         let results = [];
+
+        const { hmo_id, username } = uploadDto;
+
+        if (!hmo_id) {
+            return { success: false, message: 'Select HMO' };
+        }
+
+        const hmo = await this.hmoRepository.findOne(hmo_id);
 
         try {
             // read uploaded file
@@ -117,7 +164,6 @@ export class ServicesService {
                         subCategory: row.SubCategory,
                         service: row.Service,
                         amount: row.Amount,
-                        hmo: row.Hmo,
                         hmoAmount: row.HmoAmount,
                     };
 
@@ -132,17 +178,6 @@ export class ServicesService {
                     for (const item of content) {
                         let category;
                         let subCategory;
-
-                        let hmo;
-                        if (item.hmo && item.hmo !== '') {
-                            hmo = await this.hmoRepository.findOne({ where: { name: item.hmo } });
-
-                            if (!hmo) {
-                                hmo = await this.hmoRepository.save({ name: item.hmo.trim() });
-                            }
-                        } else {
-                            hmo = await this.hmoRepository.findOne({ where: { name: 'Private' } });
-                        }
 
                         // check if category exists
                         category = await this.serviceCategoryRepository.findOne({ where: { name: item.category.trim() } });
@@ -167,7 +202,11 @@ export class ServicesService {
                             }
                         }
 
-                        const service = await this.serviceRepository.findOne({ where: { slug: slugify(item.service), hmo: item.hmo }, relations: ['category', 'subCategory', 'hmo'] });
+                        const service = await this.serviceRepository.findOne({
+                            where: { slug: slugify(item.service), hmo },
+                            relations: ['category', 'subCategory', 'hmo'],
+                        });
+
                         if (!service) {
                             // save service
                             const query = await this.serviceRepository.save({
@@ -180,7 +219,7 @@ export class ServicesService {
                                 hmoTarrif: (item.hmoAmount || item.amount).replace(',', ''),
                             });
 
-                            query.hmo = item.hmo;
+                            query.hmo = hmo;
                             query.category = category;
                             query.subCategory = subCategory;
 
@@ -191,17 +230,6 @@ export class ServicesService {
                     }
 
                     for (const test of labs) {
-                        let hmo;
-                        if (test.hmo && test.hmo !== '') {
-                            hmo = await this.hmoRepository.findOne({ where: { name: test.hmo } });
-
-                            if (!hmo) {
-                                hmo = await this.hmoRepository.save({ name: test.hmo.trim() });
-                            }
-                        } else {
-                            hmo = await this.hmoRepository.findOne({ where: { name: 'Private' } });
-                        }
-
                         let category;
                         category = await this.labTestCategoryRepository.findOne({ where: { name: test.subCategory } });
                         if (!category) {
@@ -231,6 +259,7 @@ export class ServicesService {
 
             return { success: true, results };
         } catch (err) {
+            console.log(err);
             return { success: false, message: err.message };
         }
     }
@@ -304,12 +333,17 @@ export class ServicesService {
         return category;
     }
 
-    async deleteServiceCategory(id: string): Promise<void> {
-        const result = await this.serviceCategoryRepository.delete(id);
+    async deleteServiceCategory(id: number, username: string): Promise<any> {
+        const category = await this.serviceCategoryRepository.findOne(id);
 
-        if (result.affected === 0) {
+        if (!category) {
             throw new NotFoundException(`Service category with ID '${id}' not found`);
         }
+
+        category.deletedBy = username;
+        await category.save();
+
+        return category.softRemove();
     }
 
     /*
@@ -337,11 +371,16 @@ export class ServicesService {
         return subCategory;
     }
 
-    async deleteSubCategory(id: string): Promise<void> {
-        const result = await this.serviceSubCategoryRepository.delete(id);
+    async deleteSubCategory(id: number, username: string): Promise<any> {
+        const category = await this.serviceSubCategoryRepository.findOne(id);
 
-        if (result.affected === 0) {
+        if (!category) {
             throw new NotFoundException(`Service sub category with ID '${id}' not found`);
         }
+
+        category.deletedBy = username;
+        await category.save();
+
+        return category.softRemove();
     }
 }

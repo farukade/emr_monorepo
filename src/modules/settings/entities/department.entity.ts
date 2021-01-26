@@ -5,7 +5,7 @@ import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 
 @Entity({ name: 'departments' })
 export class Department extends CustomBaseEntity {
-  @Column({ type: 'varchar', length: 300, unique: true })
+  @Column({ type: 'varchar', length: 300 })
   name: string;
 
   @Column({ type: 'varchar', length: 300, nullable: true })

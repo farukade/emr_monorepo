@@ -84,19 +84,25 @@ export class HmoService {
         return hmo;
     }
 
-    async deleteHmo(id: string): Promise<void> {
+    async deleteHmo(id: number, username): Promise<Hmo> {
         // delete hmo rates
         await this.hmoRateRepository
             .createQueryBuilder()
             .delete()
             .where('hmo_id = :id', { id })
             .execute();
-        // delete hmo
-        const result = await this.hmoRepository.delete(id);
 
-        if (result.affected === 0) {
+        // delete hmo
+        const data = await this.hmoRepository.findOne(id);
+
+        if (!data) {
             throw new NotFoundException(`HMO with ID '${id}' not found`);
         }
+
+        data.deletedBy = username;
+        await data.save();
+
+        return data.softRemove();
     }
 
     async downloadHmoRate(query) {

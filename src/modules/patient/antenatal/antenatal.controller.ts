@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Param, Request, UseGuards, Get, Query, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Controller, Post, Body, Param, Request, Delete, UseGuards, Get, Query, UsePipes, ValidationPipe } from '@nestjs/common';
 import { AntenatalService } from './antenatal.service';
 import { EnrollmentDto } from './dto/enrollment.dto';
 import { AuthGuard } from '@nestjs/passport';
@@ -10,6 +10,11 @@ export class AntenatalController {
     constructor(
         private antenatalService: AntenatalService,
     ) {}
+
+    @Delete('/:id')
+    deleteAntenatal(@Param('id') id: string){
+        return this.antenatalService.deleteAntenatal(id);
+    }
 
     @Post('/save')
     @UsePipes(ValidationPipe)

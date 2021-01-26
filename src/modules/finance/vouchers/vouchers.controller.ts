@@ -17,6 +17,13 @@ export class VouchersController {
         return this.voucherService.fetchList(urlParams);
     }
 
+    @Get(':code')
+    getVoucher(
+        @Param('code') code: string,
+    ): Promise<Voucher> {
+        return this.voucherService.fetchByCode(code);
+    }
+
     @Post()
     @UsePipes(ValidationPipe)
     saveVoucher(
@@ -37,7 +44,10 @@ export class VouchersController {
     }
 
     @Delete('/:id')
-    deleteVoucher(@Param('id') id: number, @Request() req): Promise<Voucher> {
+    deleteVoucher(
+        @Param('id') id: number,
+        @Request() req,
+    ): Promise<Voucher> {
         return this.voucherService.delete(id, req.user.username);
     }
 }

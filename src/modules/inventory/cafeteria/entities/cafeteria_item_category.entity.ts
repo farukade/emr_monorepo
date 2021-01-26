@@ -4,6 +4,6 @@ import { Entity, Column } from 'typeorm';
 @Entity({name: 'cafeteria_item_categories'})
 export class CafeteriaItemCategory extends CustomBaseEntity {
 
-    @Column({type: 'varchar', unique: true})
+    @Column({type: 'varchar'})
     name: string;
 }

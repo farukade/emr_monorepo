@@ -40,7 +40,7 @@ export class AdmissionsService {
             .leftJoinAndSelect('q.patient', 'patient')
             .leftJoinAndSelect('q.room', 'room')
             .select('q.createdAt as admission_date, q.createdBy as admitted_by, q.reason')
-            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id, patient.fileNumber as patient_name, patient.gender as patient_gender')
+            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id, patient.fileNumber as patient_fileNumber, patient.gender as patient_gender')
             .addSelect('room.name as suite, room.floor as floor');
 
         if (type === 'in-admission') {

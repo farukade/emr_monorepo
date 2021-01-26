@@ -12,6 +12,8 @@ export class StockDto {
 
   sales_price: string;
 
+  hmoPrice: string;
+
   quantity: number;
 
   @IsNotEmpty()
@@ -20,6 +22,8 @@ export class StockDto {
   sub_category_id: string;
 
   vendor_id: string;
+
+  hmo_id: string;
 
   expiry_date: string;
 

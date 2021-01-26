@@ -8,7 +8,8 @@ import { AuthGuard } from '@nestjs/passport';
 @UseGuards(AuthGuard('jwt'))
 @Controller('transactions')
 export class TransactionsController {
-    constructor(private transactionsService: TransactionsService) {}
+    constructor(private transactionsService: TransactionsService) {
+    }
 
     @Get('list')
     getTransactions(
@@ -17,7 +18,7 @@ export class TransactionsController {
     ) {
         const limit = 50;
         const page = request.query.hasOwnProperty('page') ? request.query.page : 1;
-        return this.transactionsService.fetchList({page, limit}, urlParams);
+        return this.transactionsService.fetchList({ page, limit }, urlParams);
     }
 
     @Get('list/pending')
@@ -27,7 +28,7 @@ export class TransactionsController {
     ) {
         const limit = 50;
         const page = request.query.hasOwnProperty('page') ? request.query.page : 1;
-        return this.transactionsService.fetchPending({page, limit}, urlParams);
+        return this.transactionsService.fetchPending({ page, limit }, urlParams);
     }
 
     @Get('show/:id')
@@ -50,8 +51,8 @@ export class TransactionsController {
     }
 
     @Get('personal-cafetaria-bill')
-    getPersonalCafeteriaBill( @Request() req,){
-        return this.transactionsService.personalCafeterialBill(req.user.username)
+    getPersonalCafeteriaBill(@Request() req) {
+        return this.transactionsService.personalCafeterialBill(req.user.username);
     }
 
     @Get('dashboard-list')
@@ -83,7 +84,7 @@ export class TransactionsController {
     @Patch('/:id/process')
     @UsePipes(ValidationPipe)
     processTransaction(
-        @Param('id') id: string,
+        @Param('id') id: number,
         @Body() transactionDto: ProcessTransactionDto,
         @Request() req,
     ): Promise<any> {
@@ -91,7 +92,10 @@ export class TransactionsController {
     }
 
     @Delete('/:id')
-    deleteTransaction(@Param('id') id: string): Promise<void> {
-        return this.transactionsService.delete(id);
+    deleteTransaction(
+        @Param('id') id: number,
+        @Request() req,
+    ): Promise<void> {
+        return this.transactionsService.delete(id, req.user.username);
     }
 }

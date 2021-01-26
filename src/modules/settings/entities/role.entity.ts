@@ -4,7 +4,7 @@ import {Permission} from './permission.entity';
 
 @Entity({ name: 'roles' })
 export class Role extends CustomBaseEntity {
-  @Column({ type: 'varchar', length: 300, unique: true })
+  @Column({ type: 'varchar', length: 300 })
   name: string;
 
   @Column({ type: 'varchar', length: 300, nullable: true })

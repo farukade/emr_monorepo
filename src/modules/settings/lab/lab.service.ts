@@ -18,7 +18,7 @@ import { GroupDto } from './dto/group.dto';
 import { slugify } from '../../../common/utils/utils';
 import { PaginationOptionsInterface } from '../../../common/paginate';
 import { Pagination } from '../../../common/paginate/paginate.interface';
-import { Like } from 'typeorm';
+import { Like, Raw } from 'typeorm';
 import { HmoRepository } from '../../hmo/hmo.repository';
 
 @Injectable()
@@ -49,35 +49,29 @@ export class LabService {
         const page = options.page - 1;
 
         let result;
-        let count = 0;
+        let total = 0;
         if (q && q.length > 0) {
-            result = await this.labTestRepository.find({
-                where: { name: Like(`%${q}%`) },
+            [result, total] = await this.labTestRepository.findAndCount({
+                where: { name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`) },
                 relations: ['category', 'hmo'],
                 order: { name: 'ASC' },
                 take: options.limit,
                 skip: (page * options.limit),
-            });
-
-            count = await this.labTestRepository.count({
-                where: { name: Like(`%${q}%`) },
             });
         } else {
-            result = await this.labTestRepository.find({
+            [result, total] = await this.labTestRepository.findAndCount({
                 relations: ['category', 'hmo'],
                 order: { name: 'ASC' },
                 take: options.limit,
                 skip: (page * options.limit),
             });
-
-            count = await this.labTestRepository.count();
         }
 
         return {
             result,
-            lastPage: Math.ceil(count / options.limit),
+            lastPage: Math.ceil(total / options.limit),
             itemsPerPage: options.limit,
-            totalPages: count,
+            totalPages: total,
             currentPage: options.page,
         };
     }
@@ -93,7 +87,7 @@ export class LabService {
     async updateLabTest(id: string, labTestDto: LabTestDto, updatedBy: string): Promise<LabTest> {
         const { lab_category_id, hmo_id } = labTestDto;
         const category = await this.labTestCategoryRepo.findOne(lab_category_id);
-        const labTest = await this.labTestRepository.findOne({ where: {id}, relations: ['hmo'] });
+        const labTest = await this.labTestRepository.findOne({ where: { id }, relations: ['hmo'] });
         const hmo = await this.hmoRepository.findOne(hmo_id);
 
         try {
@@ -231,16 +225,17 @@ export class LabService {
         return specimen;
     }
 
-    async deleteSpecimen(id: number): Promise<Specimen> {
-        const result = await this.specimenRepository.softDelete(id);
+    async deleteSpecimen(id: number, username: string): Promise<Specimen> {
+        const specimen = await this.specimenRepository.findOne(id);
 
-        if (result.affected === 0) {
+        if (!specimen) {
             throw new NotFoundException(`Lab parameter with ID '${id}' not found`);
         }
 
-        const specimen = new Specimen();
-        specimen.id = id;
-        return specimen;
+        specimen.deletedBy = username;
+        await specimen.save();
+
+        return specimen.softRemove();
     }
 
     /*

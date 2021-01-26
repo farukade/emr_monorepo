@@ -10,5 +10,6 @@ export class StockUploadDto {
   file: string;
 
   vendor_id: string;
+  hmo_id: string;
 
 }

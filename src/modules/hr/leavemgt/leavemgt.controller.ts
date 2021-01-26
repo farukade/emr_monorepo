@@ -1,4 +1,4 @@
-import { Controller, Get, Body, Post, Patch, Param, Delete, Query, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Controller, Get, Body, Post, Patch, Param, Delete, Query, UsePipes, ValidationPipe, Request } from '@nestjs/common';
 import { LeavemgtService } from './leavemgt.service';
 import { LeaveApplicationDto } from './dto/leave.application.dto';
 import { LeaveApplication } from './entities/leave_application.entity';
@@ -49,7 +49,10 @@ export class LeavemgtController {
     }
 
     @Delete(':id')
-    deleteLeaveApplication(@Param('id') id: string) {
-        return this.leaveService.deleteApplication(id);
+    deleteLeaveApplication(
+        @Param('id') id: number,
+        @Request() req,
+    ) {
+        return this.leaveService.deleteApplication(id, req.user.username);
     }
 }

@@ -17,7 +17,8 @@ import { Pagination } from '../../../common/paginate/paginate.interface';
 @Controller('lab-tests')
 export class LabController {
 
-    constructor(private labService: LabService) {}
+    constructor(private labService: LabService) {
+    }
 
     /**
      * LAB TESTs
@@ -150,8 +151,11 @@ export class LabController {
     }
 
     @Delete('/specimens/:id')
-    deleteSpecimen(@Param('id') id: number): Promise<Specimen> {
-        return this.labService.deleteSpecimen(id);
+    deleteSpecimen(
+        @Param('id') id: number,
+        @Request() req,
+    ): Promise<Specimen> {
+        return this.labService.deleteSpecimen(id, req.user.username);
     }
 
     /**

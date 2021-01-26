@@ -5,7 +5,7 @@ import { Patient } from '../../patient/entities/patient.entity';
 @Entity({ name: 'vouchers' })
 export class Voucher extends CustomBaseEntity {
 
-    @Column({ type: 'varchar', length: 300, unique: true })
+    @Column({ type: 'varchar', length: 300 })
     voucher_no: string;
 
     @Column({ type: 'float4' })

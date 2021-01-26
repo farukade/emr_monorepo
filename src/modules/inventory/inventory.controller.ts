@@ -154,8 +154,11 @@ export class InventoryController {
     }
 
     @Delete('/categories/:id')
-    deleteCategory(@Param('id') id: string): Promise<void> {
-        return this.inventoryService.deleteCategory(id);
+    deleteCategory(
+        @Param('id') id: number,
+        @Request() req,
+    ): Promise<any> {
+        return this.inventoryService.deleteCategory(id, req.user.username);
     }
 
     /**
@@ -187,7 +190,10 @@ export class InventoryController {
     }
 
     @Delete('/sub-categories/:id')
-    deleteSubCategory(@Param('id') id: string): Promise<void> {
-        return this.inventoryService.deleteSubCategory(id);
+    deleteSubCategory(
+        @Param('id') id: number,
+        @Request() req,
+    ): Promise<any> {
+        return this.inventoryService.deleteSubCategory(id, req.user.username);
     }
 }

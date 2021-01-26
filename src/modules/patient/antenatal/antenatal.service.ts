@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, Delete } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EnrollmentRepository } from './enrollment.repository';
 import { EnrollmentDto } from './dto/enrollment.dto';
@@ -62,6 +62,24 @@ export class AntenatalService {
                             .skip(options.page * options.limit)
                             .orderBy('e.createdAt', 'DESC')
                             .getRawMany();
+    }
+
+    async deleteAntenatal(id: string) {
+        // delete Antenatal rates
+        await this.patientRequestRepository
+            .createQueryBuilder()
+            .delete()
+            .where('Antenatal_id = :id', { id })
+            .execute();
+        // delete Antenatal
+        const result = await this.patientRequestRepository.delete(id);
+
+        if (result.affected === 0) {
+            throw new NotFoundException(`Antenatal with ID '${id}' not found`);
+        }
+        const antenatal = new PatientAntenatal();
+        antenatal.id = Number(id);
+        return antenatal;
     }
 
     async saveAntenatalVisits(antenatalVisitDto: AntenatalVisitDto, createdBy) {

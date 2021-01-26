@@ -6,7 +6,7 @@ import { StaffDetails } from '../staff/entities/staff_details.entity';
 
 @Entity({ name: 'users' })
 export class User extends CustomBaseEntity {
-  @Column({ length: 50, unique: true })
+  @Column({ length: 50 })
   username: string;
 
   @Column({ length: 100, nullable: true })

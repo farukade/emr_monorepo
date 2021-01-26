@@ -5,7 +5,7 @@ import { InventoryCategory } from './inventory.category.entity';
 
 @Entity({ name: 'inventory_sub_categories' })
 export class InventorySubCategory extends CustomBaseEntity {
-  @Column({ type: 'varchar', length: 300, unique: true })
+  @Column({ type: 'varchar', length: 300 })
   name: string;
 
   @ManyToOne(type => InventoryCategory)

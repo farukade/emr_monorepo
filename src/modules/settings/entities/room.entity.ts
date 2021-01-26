@@ -6,7 +6,7 @@ import { RoomCategory } from './room_category.entity';
 @Entity({ name: 'rooms' })
 export class Room extends CustomBaseEntity {
 
-  @Column({ type: 'varchar', length: 300, unique: true })
+  @Column({ type: 'varchar', length: 300 })
   name: string;
 
   @Column({ type: 'varchar', length: 300, nullable: true })

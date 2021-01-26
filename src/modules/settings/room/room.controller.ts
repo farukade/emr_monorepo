@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, UsePipes, ValidationPipe, Body, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Patch, UsePipes, ValidationPipe, Body, Param, Delete, Request } from '@nestjs/common';
 import { RoomService } from './room.service';
 import { Room } from '../entities/room.entity';
 import { RoomCategory } from '../entities/room_category.entity';
@@ -30,8 +30,11 @@ export class RoomController {
     }
 
     @Delete('/:id')
-    deleteRoom(@Param('id') id: string): Promise<void> {
-        return this.roomService.deleteRoom(id);
+    deleteRoom(
+        @Param('id') id: number,
+        @Body() param,
+    ): Promise<any> {
+        return this.roomService.deleteRoom(id, param.username);
     }
 
     @Get('/categories')
@@ -55,7 +58,10 @@ export class RoomController {
     }
 
     @Delete('categories/:id')
-    deleteRoomCategory(@Param('id') id: string): Promise<void> {
-        return this.roomService.deleteRoomCategory(id);
+    deleteRoomCategory(
+        @Param('id') id: number,
+        @Body() param,
+    ): Promise<any> {
+        return this.roomService.deleteRoomCategory(id, param.username);
     }
 }

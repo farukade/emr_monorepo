@@ -85,8 +85,11 @@ export class HmoController {
     }
 
     @Delete('/:id')
-    deleteHmo(@Param('id') id: string): Promise<void> {
-        return this.hmoService.deleteHmo(id);
+    deleteHmo(
+        @Param('id') id: number,
+        @Request() req,
+    ): Promise<any> {
+        return this.hmoService.deleteHmo(id, req.user.username);
     }
 
     @Post('/upload-tariff')

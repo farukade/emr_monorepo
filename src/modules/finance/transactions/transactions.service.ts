@@ -263,23 +263,29 @@ export class TransactionsService {
         }
     }
 
-    async processTransaction(id: string, transactionDto: ProcessTransactionDto, updatedBy): Promise<any> {
-        const { voucher_id, amount_paid, voucher_amount, payment_type } = transactionDto;
+    async processTransaction(id: number, transactionDto: ProcessTransactionDto, updatedBy): Promise<any> {
+        const { voucher_id, amount_paid, voucher_amount, payment_type, patient_id } = transactionDto;
         try {
             const transaction = await this.transactionsRepository.findOne(id, { relations: ['patient'] });
             transaction.amount_paid = amount_paid;
             transaction.payment_type = payment_type;
             if (payment_type === 'Voucher') {
-                const voucher = await this.voucherRepository.findOne(voucher_id);
+                const voucher = await this.voucherRepository.findOne(voucher_id, { relations: ['patient'] });
+
+                if (voucher.patient.id !== patient_id) {
+                    return { success: false, message: 'invalid voucher code' };
+                } else if (!voucher.isActive) {
+                    return { success: false, message: 'voucher code has been used' };
+                }
+
                 transaction.voucher = voucher;
                 transaction.voucher_amount = voucher_amount;
-                voucher.amount_used = voucher.amount_used + voucher_amount;
+
+                voucher.amount_used = voucher_amount;
+                voucher.isActive = false;
                 await voucher.save();
-                if (voucher.amount_used === voucher.amount) {
-                    voucher.isActive = false;
-                    await voucher.save();
-                }
             }
+
             if (amount_paid < transaction.amount) {
                 transaction.balance = transaction.amount - amount_paid;
             }
@@ -287,14 +293,11 @@ export class TransactionsService {
             let queue;
             if (transaction.next_location && transaction.next_location === 'vitals') {
                 // find appointment
-                const appointment = await this.appointmentRepository.createQueryBuilder('a')
-                    .where('a.transaction_id = :id', { id: transaction.id })
-                    .getRawOne();
-
+                const appointment = await this.appointmentRepository.findOne({
+                    where: { transaction: transaction.id },
+                    relations: ['patient', 'whomToSee', 'consultingRoom', 'serviceCategory', 'serviceType'],
+                });
                 console.log(appointment);
-
-                appointment.patient = await this.patientRepository.findOne(transaction.patient.id);
-
                 // create new queue
                 if (!appointment) {
                     return { success: false, message: 'Cannot find appointment' };
@@ -314,12 +317,17 @@ export class TransactionsService {
         }
     }
 
-    async delete(id: string): Promise<void> {
-        const result = await this.transactionsRepository.delete(id);
+    async delete(id: number, username: string): Promise<any> {
+        const transaction = await this.transactionsRepository.findOne(id);
 
-        if (result.affected === 0) {
+        if (!transaction) {
             throw new NotFoundException(`Transaction with ID '${id}' not found`);
         }
+
+        transaction.deletedBy = username;
+        await transaction.save();
+
+        return transaction.softRemove();
     }
 
     async getTransaction(id: string): Promise<Transactions> {
