@@ -39,7 +39,7 @@ export class LabourManagementService {
     ) {
     }
 
-    async listEnrollements(urlParams): Promise<any> {
+    async listEnrollments(urlParams): Promise<any> {
         const { startDate, endDate, page } = urlParams;
         const limit = 20;
         const query = this.labourEnrollmentRepository.createQueryBuilder('enrollment')
@@ -64,7 +64,18 @@ export class LabourManagementService {
         return requests;
     }
 
-    async doSaveEnrollement(id: string, dto: LabourEnrollmentDto, createdBy): Promise<any> {
+    async getEnrollment(id: number): Promise<any> {
+        const enrollment = this.labourEnrollmentRepository.createQueryBuilder('enrollment')
+            .innerJoinAndSelect('enrollment.patient', 'patient')
+            .select('enrollment.*')
+            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.fileNumber, patient.date_of_birth')
+            .where('enrollment.id = :id', { id })
+            .getRawOne();
+
+        return enrollment;
+    }
+
+    async doSaveEnrollment(id: number, dto: LabourEnrollmentDto, createdBy): Promise<any> {
         try {
             dto.createdBy = createdBy;
             dto.lastChangedBy = createdBy;

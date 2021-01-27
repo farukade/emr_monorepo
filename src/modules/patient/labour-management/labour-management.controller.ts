@@ -17,10 +17,17 @@ export class LabourManagementController {
     constructor(private labourManagementService: LabourManagementService) {}
 
     @Get('/enrollments')
-    getEnrollment(
+    getEnrollments(
         @Query() params,
     ) {
-        return this.labourManagementService.listEnrollements(params);
+        return this.labourManagementService.listEnrollments(params);
+    }
+
+    @Get('/enrollments/:id')
+    getEnrollment(
+        @Param('id') id: number,
+    ) {
+        return this.labourManagementService.getEnrollment(id);
     }
 
     @Post('enrollment/:id/save')
@@ -28,9 +35,9 @@ export class LabourManagementController {
     saveEnrollement(
         @Body() param: LabourEnrollmentDto,
         @Request() req,
-        @Param('id') id: string,
+        @Param('id') id: number,
     ) {
-        return this.labourManagementService.doSaveEnrollement(id, param, req.user.username);
+        return this.labourManagementService.doSaveEnrollment(id, param, req.user.username);
     }
 
     @Post('measurement/:id/save')
