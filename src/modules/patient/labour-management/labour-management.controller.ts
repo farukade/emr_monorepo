@@ -10,6 +10,7 @@ import { LabourVital } from './entities/labour_vital.entity';
 import { LabourMeasurement } from './entities/labour_measurement.entity';
 import { LabourRiskAssessment } from './entities/labour_risk_assessment.entity';
 import { LabourDeliveryRecord } from './entities/labour_delivery_record.entity';
+import { LabourEnrollment } from './entities/labour_enrollment.entity';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('labour-management')
@@ -26,7 +27,7 @@ export class LabourManagementController {
     @Get('/enrollments/:id')
     getEnrollment(
         @Param('id') id: number,
-    ) {
+    ): Promise<LabourEnrollment> {
         return this.labourManagementService.getEnrollment(id);
     }
 

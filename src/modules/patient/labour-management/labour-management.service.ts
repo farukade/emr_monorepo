@@ -18,6 +18,7 @@ import { LabourMeasurement } from './entities/labour_measurement.entity';
 import { LabourVital } from './entities/labour_vital.entity';
 import { LabourRiskAssessment } from './entities/labour_risk_assessment.entity';
 import { LabourDeliveryRecord } from './entities/labour_delivery_record.entity';
+import { LabourEnrollment } from './entities/labour_enrollment.entity';
 
 @Injectable()
 export class LabourManagementService {
@@ -64,7 +65,7 @@ export class LabourManagementService {
         return requests;
     }
 
-    async getEnrollment(id: number): Promise<any> {
+    async getEnrollment(id: number): Promise<LabourEnrollment> {
         const enrollment = this.labourEnrollmentRepository.createQueryBuilder('enrollment')
             .innerJoinAndSelect('enrollment.patient', 'patient')
             .select('enrollment.*')
