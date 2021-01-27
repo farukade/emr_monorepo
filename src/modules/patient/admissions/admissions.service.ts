@@ -117,7 +117,7 @@ export class AdmissionsService {
             admission.room = room;
             await admission.save();
 
-            return { success: true };
+            return { success: true, admission };
         } catch (e) {
             return { success: false, message: e.message };
         }
