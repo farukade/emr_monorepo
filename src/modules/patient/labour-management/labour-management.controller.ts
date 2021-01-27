@@ -44,7 +44,7 @@ export class LabourManagementController {
     }
 
     @Get(':enrollementId/measurement')
-    getMeasurement(@Param('enrollementId') id: string): Promise<LabourMeasurement[]> {
+    getMeasurement(@Param('enrollementId') id: number): Promise<LabourMeasurement[]> {
         return this.labourManagementService.fetchMeasurement(id);
     }
 

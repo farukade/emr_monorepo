@@ -65,5 +65,5 @@ export class LabourMeasurement extends CustomBaseEntity {
     examiner: StaffDetails;
 
     @ManyToOne(() => LabourEnrollment)
-    enrollement: LabourEnrollment;
+    enrollment: LabourEnrollment;
 }

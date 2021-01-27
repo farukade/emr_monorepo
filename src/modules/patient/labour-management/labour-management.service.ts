@@ -36,15 +36,16 @@ export class LabourManagementService {
         private patientRepository: PatientRepository,
         @InjectRepository(StaffRepository)
         private staffRepository: StaffRepository,
-    ) {}
+    ) {
+    }
 
     async listEnrollements(urlParams): Promise<any> {
-        const {startDate, endDate, page} = urlParams;
+        const { startDate, endDate, page } = urlParams;
         const limit = 20;
         const query = this.labourEnrollmentRepository.createQueryBuilder('enrollment')
-                            .innerJoinAndSelect('enrollment.patient', 'patient')
-                            .select('enrollment.*')
-                            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.fileNumber, patient.date_of_birth');
+            .innerJoinAndSelect('enrollment.patient', 'patient')
+            .select('enrollment.*')
+            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.fileNumber, patient.date_of_birth');
 
         if (startDate && startDate !== '') {
             const start = moment(startDate).startOf('day').toISOString();
@@ -56,9 +57,9 @@ export class LabourManagementService {
             query.andWhere(`enrollment.createdAt <= '${end}'`);
         }
         const requests = query.skip((page * limit) - limit)
-                        .limit(limit)
-                .orderBy('enrollment.createdAt', 'DESC')
-                .getRawMany();
+            .limit(limit)
+            .orderBy('enrollment.createdAt', 'DESC')
+            .getRawMany();
 
         return requests;
     }
@@ -69,9 +70,9 @@ export class LabourManagementService {
             dto.lastChangedBy = createdBy;
             dto.patient = await this.patientRepository.findOne(id);
             const enrollement = await this.labourEnrollmentRepository.save(dto);
-            return {success: true, data: enrollement};
+            return { success: true, data: enrollement };
         } catch (err) {
-            return {success: false, message: err.message};
+            return { success: false, message: err.message };
         }
     }
 
@@ -82,9 +83,9 @@ export class LabourManagementService {
             dto.enrollment = await this.labourEnrollmentRepository.findOne(id);
             dto.examiner = await this.staffRepository.findOne(dto.examiner_id);
             const measurement = await this.labourMeasurementRepo.save(dto);
-            return {success: true, data: measurement};
+            return { success: true, data: measurement };
         } catch (err) {
-            return {success: false, message: err.message};
+            return { success: false, message: err.message };
         }
     }
 
@@ -94,9 +95,9 @@ export class LabourManagementService {
             dto.lastChangedBy = createdBy;
             dto.enrollment = await this.labourEnrollmentRepository.findOne(id);
             const vitals = await this.labourVitalRepo.save(dto);
-            return {success: true, data: vitals};
+            return { success: true, data: vitals };
         } catch (err) {
-            return {success: false, message: err.message};
+            return { success: false, message: err.message };
         }
     }
 
@@ -106,9 +107,9 @@ export class LabourManagementService {
             dto.lastChangedBy = createdBy;
             dto.enrollment = await this.labourEnrollmentRepository.findOne(id);
             const assessment = await this.labourRiskAssessmentRepo.save(dto);
-            return {success: true, data: assessment};
+            return { success: true, data: assessment };
         } catch (err) {
-            return {success: false, message: err.message};
+            return { success: false, message: err.message };
         }
     }
 
@@ -116,36 +117,36 @@ export class LabourManagementService {
         try {
             dto.createdBy = createdBy;
             dto.lastChangedBy = createdBy;
-            dto.pediatrician = await this.staffRepository.findOne(dto.pediatrician_id)
+            dto.pediatrician = await this.staffRepository.findOne(dto.pediatrician_id);
             dto.enrollment = await this.labourEnrollmentRepository.findOne(id);
             const assessment = await this.labourDeliveryRepo.save(dto);
-            return {success: true, data: assessment};
+            return { success: true, data: assessment };
         } catch (err) {
-            return {success: false, message: err.message};
+            return { success: false, message: err.message };
         }
     }
 
-    async fetchMeasurement(id: string): Promise<LabourMeasurement[]> {
+    async fetchMeasurement(id: number): Promise<LabourMeasurement[]> {
         const enrollment = await this.labourEnrollmentRepository.findOne(id);
-        const results = await this.labourMeasurementRepo.find({where: {enrollment}});
+        const results = await this.labourMeasurementRepo.find({ where: { enrollment } });
         return results;
     }
 
     async fetchVital(id: string): Promise<LabourVital[]> {
         const enrollment = await this.labourEnrollmentRepository.findOne(id);
-        const results = await this.labourVitalRepo.find({where: {enrollment}});
+        const results = await this.labourVitalRepo.find({ where: { enrollment } });
         return results;
     }
 
     async fetchRiskAssessment(id: string): Promise<LabourRiskAssessment[]> {
         const enrollment = await this.labourEnrollmentRepository.findOne(id);
-        const results = await this.labourRiskAssessmentRepo.find({where: {enrollment}});
+        const results = await this.labourRiskAssessmentRepo.find({ where: { enrollment } });
         return results;
     }
 
     async fetchDeliveryRecord(id: string): Promise<LabourDeliveryRecord[]> {
         const enrollment = await this.labourEnrollmentRepository.findOne(id);
-        const results = await this.labourDeliveryRepo.find({where: {enrollment}});
+        const results = await this.labourDeliveryRepo.find({ where: { enrollment } });
         return results;
     }
 }
