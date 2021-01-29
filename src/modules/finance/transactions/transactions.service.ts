@@ -47,16 +47,18 @@ export class TransactionsService {
         }
 
         if (startDate && startDate !== '') {
-            const start = moment(startDate).startOf('day').toISOString();
+            const start = moment(startDate).endOf('day').toISOString();
             query.andWhere(`q.createdAt >= '${start}'`);
         }
         if (endDate && endDate !== '') {
             const end = moment(endDate).endOf('day').toISOString();
             query.andWhere(`q.createdAt <= '${end}'`);
         }
+
         if (payment_type && payment_type !== '') {
             query.andWhere(`q.payment_type = '${payment_type}'`);
         }
+
         if (patient_id && patient_id !== '') {
             query.andWhere('q.patient_id = :patient_id', { patient_id });
         }
@@ -217,6 +219,9 @@ export class TransactionsService {
             items.push({ name: service.name, amount: service.tariff });
         }
 
+        let date = new Date();
+        date.setDate(date.getDate() - 3);
+
         try {
             const transaction = await this.transactionsRepository.save({
                 patient,
@@ -229,6 +234,7 @@ export class TransactionsService {
                 createdBy,
                 lastChangedBy: createdBy,
                 status: 1,
+                createdAt: date,
             });
             return { success: true, transaction };
         } catch (error) {

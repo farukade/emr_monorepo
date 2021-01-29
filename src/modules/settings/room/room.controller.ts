@@ -38,8 +38,8 @@ export class RoomController {
     }
 
     @Get('/categories')
-    getCategories(): Promise<RoomCategory[]> {
-        return this.roomService.getRoomsCategory();
+    getCategories(@Request() req): Promise<RoomCategory[]> {
+        return this.roomService.getRoomsCategory(req.query.hmo_id);
     }
 
     @Post('/categories')

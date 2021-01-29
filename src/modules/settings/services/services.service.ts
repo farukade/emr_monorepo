@@ -89,13 +89,24 @@ export class ServicesService {
         return services;
     }
 
-    async getServicesByCategory(category_id: string): Promise<Service[]> {
-        // find consultation category
-        const category = await this.serviceCategoryRepository.findOne(category_id);
-        // find services
-        const services = await this.serviceRepository.find({ where: { category } });
-
-        return services;
+    async getServicesByCategory(category_id: string, hmo_id: string): Promise<Service[]> {
+        
+        if (!hmo_id) {
+            // find consultation category
+            const category = await this.serviceCategoryRepository.findOne(category_id);
+            // find services
+            const services = await this.serviceRepository.find({ where: { category } });
+            return services;
+        }
+        else{
+            const hmo = await this.hmoRepository.findOne(hmo_id);
+            // find consultation category
+            const category = await this.serviceCategoryRepository.findOne(category_id);
+            // find services
+            const services = await this.serviceRepository.find({ where: { category, hmo } });
+            return services;
+        }
+        
     }
 
     async createService(serviceDto: ServiceDto): Promise<Service> {
