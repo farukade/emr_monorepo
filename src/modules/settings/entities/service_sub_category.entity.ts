@@ -11,7 +11,7 @@ export class ServiceSubCategory extends CustomBaseEntity {
 
     @ManyToOne(
         () => ServiceCategory,
-        category => category.subCateogries,
+        category => category.subCategories,
     )
     @JoinColumn({ name: 'service_category_id' })
     category: ServiceCategory;

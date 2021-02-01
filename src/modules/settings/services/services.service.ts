@@ -16,8 +16,7 @@ import { slugify } from '../../../common/utils/utils';
 import { ServicesUploadRateDto } from './dto/service.upload.dto';
 import { PaginationOptionsInterface } from '../../../common/paginate';
 import { Pagination } from '../../../common/paginate/paginate.interface';
-import { Like, Raw } from 'typeorm';
-import { Specimen } from '../entities/specimen.entity';
+import { Raw } from 'typeorm';
 
 @Injectable()
 export class ServicesService {
@@ -83,30 +82,21 @@ export class ServicesService {
     async getConsultationServices() {
         // find consultation category
         const category = await this.serviceCategoryRepository.findOne({ where: { name: 'Consultation' } });
+
         // find services
         const services = await this.serviceRepository.find({ where: { category } });
 
         return services;
     }
 
-    async getServicesByCategory(category_id: string, hmo_id: string): Promise<Service[]> {
-        
-        if (!hmo_id) {
-            // find consultation category
-            const category = await this.serviceCategoryRepository.findOne(category_id);
-            // find services
-            const services = await this.serviceRepository.find({ where: { category } });
-            return services;
-        }
-        else{
-            const hmo = await this.hmoRepository.findOne(hmo_id);
-            // find consultation category
-            const category = await this.serviceCategoryRepository.findOne(category_id);
-            // find services
-            const services = await this.serviceRepository.find({ where: { category, hmo } });
-            return services;
-        }
-        
+    async getServicesByCategory(category_id: number, hmo_id: number): Promise<Service[]> {
+        const hmo = await this.hmoRepository.findOne(hmo_id);
+
+        // find consultation category
+        const category = await this.serviceCategoryRepository.findOne(category_id);
+
+        // find services
+        return await this.serviceRepository.find({ where: { category, hmo } });
     }
 
     async createService(serviceDto: ServiceDto): Promise<Service> {
@@ -328,7 +318,11 @@ export class ServicesService {
     */
 
     async getServicesCategory(): Promise<ServiceCategory[]> {
-        return this.serviceCategoryRepository.find({ relations: ['services', 'subCateogries'] });
+        return this.serviceCategoryRepository.find({ relations: ['services', 'subCategories'] });
+    }
+
+    async getServicesCategoryByName(name: string): Promise<ServiceCategory> {
+        return await this.serviceCategoryRepository.findOne({ where: { name } });
     }
 
     async createServiceCategory(serviceCategoryDto: ServiceCategoryDto): Promise<ServiceCategory> {

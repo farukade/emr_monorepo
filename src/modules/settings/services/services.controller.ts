@@ -41,6 +41,14 @@ export class ServicesController {
         return this.servicesService.getAllServices({ page, limit }, urlParams);
     }
 
+    @Get('/:id')
+    getServicesByCategory(
+        @Param('id') id: number,
+        @Request() req,
+    ): Promise<Service[]> {
+        return this.servicesService.getServicesByCategory(id, req.query.hmo_id);
+    }
+
     @Get('/consultations')
     getConsultationServices(): Promise<Service[]> {
         return this.servicesService.getConsultationServices();
@@ -101,12 +109,11 @@ export class ServicesController {
         return this.servicesService.getServicesCategory();
     }
 
-    @Get('/categories/:id')
-    getServicesByCategory(
-        @Param('id') id: string,
-        @Request() req
-    ): Promise<Service[]> {
-        return this.servicesService.getServicesByCategory(id, req.query.hmo_id);
+    @Get('/categories/:name')
+    getCategoryById(
+        @Param('name') name: string,
+    ): Promise<ServiceCategory> {
+        return this.servicesService.getServicesCategoryByName(name);
     }
 
     @Post('/categories')

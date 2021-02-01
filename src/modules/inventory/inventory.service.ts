@@ -125,7 +125,7 @@ export class InventoryService {
         stock.description = description;
         stock.cost_price = cost_price;
         stock.sales_price = sales_price;
-        stock.quantity = quantity;
+        stock.quantity = stock.quantity + quantity;
         stock.subCategory = subCategory;
         stock.category = category;
         await stock.save();
@@ -202,7 +202,7 @@ export class InventoryService {
     async updateStockQty(stockQtyDto: StockQtyDto): Promise<Stock> {
         const { id, quantity } = stockQtyDto;
         const stock = await this.stockRepository.findOne(id);
-        stock.quantity = quantity;
+        stock.quantity = parseInt(String(stock.quantity), 10) + parseInt(String(quantity), 10);
         await stock.save();
         return stock;
     }
@@ -218,7 +218,7 @@ export class InventoryService {
     async doUploadStock(stockUploadDto: StockUploadDto, file: any) {
         const csv = require('csv-parser');
         const fs = require('fs');
-        const { category_id, vendor_id } = stockUploadDto;
+        const { category_id, vendor_id, hmo_id } = stockUploadDto;
         const content = [];
         // find category
         const category = await this.inventoryCategoryRepository.findOne(category_id);
@@ -228,6 +228,8 @@ export class InventoryService {
         if (vendor_id) {
             vendor = await this.vendorRepository.findOne(vendor_id);
         }
+
+        const hmo = await this.hmoRepository.findOne(hmo_id);
 
         try {
             // read uploaded file
@@ -241,7 +243,6 @@ export class InventoryService {
                         quantity: row['QUANTITY ON HAND'],
                         sales_price: row['SALES PRICE'],
                         expiry_date: row['EXPIRY DATE'],
-                        hmo: row.Hmo,
                         stock_code: 'STU-' + (Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5)).toUpperCase(),
                     };
                     content.push(data);
@@ -256,17 +257,6 @@ export class InventoryService {
                             if (!subCategory) {
                                 subCategory = await this.inventorySubCategoryRepository.save({ name: item.category, category });
                             }
-                        }
-
-                        let hmo;
-                        if (item.hmo && item.hmo !== '') {
-                            hmo = await this.hmoRepository.findOne({ where: { name: item.hmo } });
-
-                            if (!hmo) {
-                                hmo = await this.hmoRepository.save({ name: item.hmo.trim() });
-                            }
-                        } else {
-                            hmo = await this.hmoRepository.findOne({ where: { name: 'Private' } });
                         }
 
                         if (item.name && item.name !== '') {
@@ -296,7 +286,7 @@ export class InventoryService {
                                 stock.name = item.name;
                                 stock.generic_name = item.generic_name;
                                 stock.sales_price = item.sales_price.replace(',', '');
-                                stock.quantity = parseInt(item.quantity.replace(',', ''), 10);
+                                stock.quantity = stock.quantity + parseInt(item.quantity.replace(',', ''), 10);
                                 stock.category = category;
                                 stock.subCategory = subCategory;
                                 stock.expiry_date = expiryDate;

@@ -1,4 +1,3 @@
-import { Type } from 'class-transformer';
 import { Column, Entity, OneToMany } from 'typeorm';
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 import { Service } from './service.entity';
@@ -14,10 +13,10 @@ export class ServiceCategory extends CustomBaseEntity {
 
   @OneToMany(
     () => ServiceSubCategory,
-    subCateogries => subCateogries.category,
+    subCategories => subCategories.category,
     { onDelete: 'CASCADE' },
   )
-  subCateogries: ServiceSubCategory[];
+  subCategories: ServiceSubCategory[];
 
   @OneToMany(
     () => Service,
