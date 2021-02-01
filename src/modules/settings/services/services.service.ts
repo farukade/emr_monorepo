@@ -329,7 +329,7 @@ export class ServicesService {
         return this.serviceCategoryRepository.createCategory(serviceCategoryDto);
     }
 
-    async updateServiceCategory(id: string, serviceCategoryDto: ServiceCategoryDto): Promise<ServiceCategory> {
+    async updateServiceCategory(id: number, serviceCategoryDto: ServiceCategoryDto): Promise<ServiceCategory> {
         const { name, notes } = serviceCategoryDto;
         const category = await this.serviceCategoryRepository.findOne(id);
         category.name = name;

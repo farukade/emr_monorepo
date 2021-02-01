@@ -41,7 +41,7 @@ export class ServicesController {
         return this.servicesService.getAllServices({ page, limit }, urlParams);
     }
 
-    @Get('/:id')
+    @Get('/category/:id')
     getServicesByCategory(
         @Param('id') id: number,
         @Request() req,
@@ -125,7 +125,7 @@ export class ServicesController {
     @Patch('categories/:id/update')
     @UsePipes(ValidationPipe)
     updateCategory(
-        @Param('id') id: string,
+        @Param('id') id: number,
         @Body() serviceCategoryDto: ServiceCategoryDto,
     ): Promise<ServiceCategory> {
         return this.servicesService.updateServiceCategory(id, serviceCategoryDto);
