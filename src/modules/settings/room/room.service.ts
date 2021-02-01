@@ -68,9 +68,21 @@ export class RoomService {
     /*
         ROOM CATEGORY SERVICES
     */
-
-    async getRoomsCategory(): Promise<RoomCategory[]> {
-        return this.roomCategoryRepository.find({relations: ['rooms', 'hmo']});
+    async getRoomsCategory(hmo_id: number): Promise<RoomCategory[]> {
+        if(hmo_id)
+        {
+             const query = this.roomCategoryRepository.createQueryBuilder('q')
+            .innerJoin(Room, 'rooms', 'room.id = q.id')
+            .select('q.id, q.name, q.price, q.discount, q.hmo_id')
+            .addSelect('rooms.id as room_id, rooms.name as room_name')
+            .where('q.hmo_id = :hmo_id', { hmo_id }).getMany();
+            return query;
+        }
+        else
+        {
+            return this.roomCategoryRepository.find({relations: ['rooms', 'hmo']});
+        }
+        
     }
 
     async createRoomCategory(roomCategoryDto: RoomCategoryDto): Promise<RoomCategory> {

@@ -104,8 +104,9 @@ export class ServicesController {
     @Get('/categories/:id')
     getServicesByCategory(
         @Param('id') id: string,
+        @Request() req
     ): Promise<Service[]> {
-        return this.servicesService.getServicesByCategory(id);
+        return this.servicesService.getServicesByCategory(id, req.query.hmo_id);
     }
 
     @Post('/categories')

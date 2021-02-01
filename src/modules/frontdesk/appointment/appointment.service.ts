@@ -153,11 +153,11 @@ export class AppointmentService {
 
         if (startDate && startDate !== '') {
             const start = moment(startDate).startOf('day').toISOString();
-            query.andWhere(`q.createdAt >= '${start}'`);
+            query.andWhere(`q.appointment_date >= '${start}'`);
         }
         if (endDate && endDate !== '') {
             const end = moment(endDate).endOf('day').toISOString();
-            query.andWhere(`q.createdAt <= '${end}'`);
+            query.andWhere(`q.appointment_date <= '${end}'`);
         }
 
         const result = await query.getMany();

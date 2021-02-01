@@ -603,22 +603,17 @@ export class PatientService {
             .select('patient_request.id, patient_request.requestType, patient_request.code, patient_request.requestBody, patient_request.createdAt, patient_request.status, patient_request.isFilled, patient_request.urgent, patient_request.requestNote')
             .addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
             .addSelect('transaction.status as transaction_status')
-            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id, patient.fileNumber, patient.hmo_id as patient_hmo_id')
+            .addSelect('CONCAT(patient.other_names || \' \' || patient.surname) as patient_name, patient.id as patient_id, patient.fileNumber, patient.hmo_id as patient_hmo_id')
             .andWhere('patient_request.requestType = :requestType', { requestType });
 
-        if (startDate && startDate !== '') {
-            if (endDate && endDate !== '') {
-                const start = moment(startDate).startOf('day').format('YYYY-MM-DD HH:mm:ss');
+            if (startDate && startDate !== '') {
+                const start = moment(startDate).startOf('day').toISOString();
                 query.andWhere(`patient_request.createdAt >= '${start}'`);
-            } else {
-                query.andWhere(`DATE(patient_request.createdAt) = '${moment(startDate).format('YYYY-MM-DD')}'`);
             }
-        }
-
-        if (endDate && endDate !== '') {
-            const end = moment(endDate).endOf('day').format('YYYY-MM-DD HH:mm:ss');
-            query.andWhere(`patient_request.createdAt <= '${end}'`);
-        }
+            if (endDate && endDate !== '') {
+                const end = moment(endDate).endOf('day').toISOString();
+                query.andWhere(`patient_request.createdAt <= '${end}'`);
+            }
 
         if (filled) {
             query.andWhere('patient_request.isFilled = :filled', { filled: true });

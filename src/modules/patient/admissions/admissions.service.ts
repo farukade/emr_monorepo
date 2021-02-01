@@ -40,7 +40,7 @@ export class AdmissionsService {
             .leftJoinAndSelect('q.patient', 'patient')
             .leftJoinAndSelect('q.room', 'room')
             .select('q.createdAt as admission_date, q.createdBy as admitted_by, q.reason')
-            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id, patient.fileNumber as patient_fileNumber, patient.gender as patient_gender')
+            .addSelect('CONCAT(patient.other_names || \' \' || patient.surname) as patient_name, patient.id as patient_id, patient.fileNumber as patient_fileNumber, patient.gender as patient_gender')
             .addSelect('room.name as suite, room.floor as floor');
 
         if (type === 'in-admission') {
@@ -71,7 +71,15 @@ export class AdmissionsService {
             query.where('q.patient_name like :name', { name: `%${name}%` });
         }
 
-        return await query.take(options.limit).skip(options.page * options.limit).getRawMany();
+        const admissions = await query.take(options.limit).skip(options.page * options.limit).getRawMany();
+
+        for (const item of admissions) {
+            if (item.patient_id) {
+                item.patient = await this.patientRepository.findOne(item.patient_id, { relations: ['nextOfKin', 'immunization', 'hmo'] });
+            }
+        }
+
+        return admissions;
     }
 
     async saveAdmission(id: string, createDto: CreateAdmissionDto, createdById): Promise<any> {
@@ -112,6 +120,13 @@ export class AdmissionsService {
         try {
             // find room
             const room = await this.roomRepository.findOne(room_id);
+            if(room.status === "Occupied"){
+                return { success: false, message: 'room is already occupied' }
+            }
+
+            room.status = "Occupied";
+            await room.save();
+
             // find admission
             const admission = await this.admissionRepository.findOne(admission_id);
             admission.room = room;
