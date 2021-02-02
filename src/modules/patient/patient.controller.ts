@@ -318,7 +318,7 @@ export class PatientController {
         @UploadedFile() file,
         @Request() req,
     ): Promise<any> {
-        return this.patientService.doUploadDocument(id, param, (file) ? `${file.filename}` : '', req.user.username);
+        return this.patientService.doUploadDocument(id, param, file?.filename || '', req.user.username);
     }
 
     @Post(':requestId/upload-request-document')
@@ -335,10 +335,10 @@ export class PatientController {
     uploadRequestDocument(
         @Param('requestId') id: string,
         @Body() param,
-        @UploadedFiles() files,
+        @UploadedFiles() file,
         @Request() req,
     ) {
-        return this.patientService.doUploadRequestDocument(id, param, files, req.user.username);
+        return this.patientService.doUploadRequestDocument(id, param, file?.filename || '', req.user.username);
     }
 
     @Get('download/:filename')
