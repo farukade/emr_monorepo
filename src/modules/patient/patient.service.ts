@@ -501,7 +501,7 @@ export class PatientService {
     }
 
     async doFillRequest(param, requestId, updatedBy) {
-        const { patient_id, requests, total_amount } = param;
+        const { patient_id, requestBody, total_amount } = param;
         try {
             const request = await this.patientRequestRepository.findOne(requestId);
             request.requestBody = requestBody;
