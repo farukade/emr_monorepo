@@ -501,7 +501,7 @@ export class PatientService {
     }
 
     async doFillRequest(param, requestId, updatedBy) {
-        const { patient_id, requestBody, total_amount } = param;
+        const { patient_id, requests, total_amount } = param;
         try {
             const request = await this.patientRequestRepository.findOne(requestId);
             request.requestBody = requestBody;
@@ -857,19 +857,20 @@ export class PatientService {
     }
 
     async doUploadRequestDocument(id, param, files, createdBy) {
+        console.log(files);
         const request = await this.patientRequestRepository.findOne(id);
-        for (const file of files) {
+        // for (const file of files) {
             try {
                 const doc = new PatientRequestDocument();
                 doc.request = request;
                 doc.document_type = param.document_type;
-                doc.document_name = file.filename;
+                doc.document_name = files.filename;
                 doc.createdBy = createdBy;
                 await doc.save();
             } catch (error) {
                 return { success: false, message: error.message };
             }
-        }
-        return { success: true };
+        // }
+        // return { success: true };
     }
 }
