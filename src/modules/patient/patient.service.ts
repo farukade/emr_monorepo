@@ -870,6 +870,7 @@ export class PatientService {
 
                 return { success: true, document: doc };
             } catch (error) {
+                console.log(error);
                 return { success: false, message: error.message };
             }
         // }
