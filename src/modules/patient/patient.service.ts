@@ -867,6 +867,8 @@ export class PatientService {
                 doc.document_name = files.filename;
                 doc.createdBy = createdBy;
                 await doc.save();
+
+                return { success: true, document: doc };
             } catch (error) {
                 return { success: false, message: error.message };
             }
