@@ -856,24 +856,21 @@ export class PatientService {
         }
     }
 
-    async doUploadRequestDocument(id, param, files, createdBy) {
-        console.log(files);
+    async doUploadRequestDocument(id, param, fileName, createdBy) {
+        console.log(fileName);
         const request = await this.patientRequestRepository.findOne(id);
-        // for (const file of files) {
-            try {
-                const doc = new PatientRequestDocument();
-                doc.request = request;
-                doc.document_type = param.document_type;
-                doc.document_name = files.filename;
-                doc.createdBy = createdBy;
-                await doc.save();
+        try {
+            const doc = new PatientRequestDocument();
+            doc.request = request;
+            doc.document_type = param.document_type;
+            doc.document_name = fileName;
+            doc.createdBy = createdBy;
+            const rs = await doc.save();
 
-                return { success: true, document: doc };
-            } catch (error) {
-                console.log(error);
-                return { success: false, message: error.message };
-            }
-        // }
-        // return { success: true };
+            return { success: true, document: rs };
+        } catch (error) {
+            console.log(error);
+            return { success: false, message: error.message };
+        }
     }
 }
