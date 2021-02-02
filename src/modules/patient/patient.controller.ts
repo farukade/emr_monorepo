@@ -328,6 +328,8 @@ export class PatientController {
             destination: './uploads',
             filename: (req, file, cb) => {
                 const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('');
+                console.log(randomName);
+                console.log(`${randomName}${extname(file.originalname)}`);
                 return cb(null, `${randomName}${extname(file.originalname)}`);
             },
         }),
