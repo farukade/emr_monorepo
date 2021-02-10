@@ -38,7 +38,7 @@ export class RoomController {
     }
 
     @Get('/categories')
-    getCategories(@Request() req): Promise<RoomCategory[]> {
+    getCategories(@Request() req,): Promise<RoomCategory[]> {
         return this.roomService.getRoomsCategory(req.query.hmo_id);
     }
 

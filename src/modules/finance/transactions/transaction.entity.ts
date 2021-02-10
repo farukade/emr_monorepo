@@ -7,6 +7,7 @@ import { Voucher } from '../vouchers/voucher.entity';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 import { PatientRequest } from '../../patient/entities/patient_requests.entity';
 
+
 @Entity({ name: 'transactions'})
 export class Transactions extends CustomBaseEntity {
 

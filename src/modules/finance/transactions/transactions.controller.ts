@@ -4,6 +4,7 @@ import { Transactions } from './transaction.entity';
 import { TransactionDto } from './dto/transaction.dto';
 import { ProcessTransactionDto } from './dto/process-transaction.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { Pagination } from '../../../common/paginate/paginate.interface';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('transactions')
@@ -15,20 +16,20 @@ export class TransactionsController {
     getTransactions(
         @Query() urlParams,
         @Request() request,
-    ) {
-        const limit = 50;
-        const page = request.query.hasOwnProperty('page') ? request.query.page : 1;
-        return this.transactionsService.fetchList({ page, limit }, urlParams);
+    ): Promise<Pagination> {
+        const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
+        const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page,10)-1 : 0;
+        return this.transactionsService.fetchList({ page: page - 1, limit }, urlParams);
     }
 
     @Get('list/pending')
     getPendingTransactions(
         @Query() urlParams,
         @Request() request,
-    ) {
-        const limit = 50;
-        const page = request.query.hasOwnProperty('page') ? request.query.page : 1;
-        return this.transactionsService.fetchPending({ page, limit }, urlParams);
+    ): Promise<Pagination> {
+        const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
+        const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page,10)-1 : 0;
+        return this.transactionsService.fetchPending({ page: page - 1, limit }, urlParams);
     }
 
     @Get('show/:id')
@@ -78,7 +79,7 @@ export class TransactionsController {
         @Body() transactionDto: TransactionDto,
         @Request() req,
     ): Promise<any> {
-        return this.transactionsService.update(id, transactionDto, req.user.username);
+        return this.transactionsService.update(id, transactionDto, req.user.username, req.query.hmo_approval_code);
     }
 
     @Patch('/:id/process')
@@ -95,7 +96,7 @@ export class TransactionsController {
     deleteTransaction(
         @Param('id') id: number,
         @Request() req,
-    ): Promise<void> {
-        return this.transactionsService.delete(id, req.user.username);
+    ): Promise<any> {
+        return this.transactionsService.deleteTransaction(id, req.user.username);
     }
 }

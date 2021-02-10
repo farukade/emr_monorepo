@@ -37,6 +37,9 @@ import { AdmissionClinicalTask } from './admissions/entities/admission-clinical-
 import { AdmissionsRepository } from './admissions/repositories/admissions.repository';
 import { Immunization } from './immunization/entities/immunization.entity';
 import { Specimen } from '../settings/entities/specimen.entity';
+import { Pagination } from '../../common/paginate/paginate.interface';
+import { PaginationOptionsInterface } from '../../common/paginate';
+import { ImmunizationRepository } from './immunization/repositories/immunization.repository'
 
 @Injectable()
 export class PatientService {
@@ -73,11 +76,58 @@ export class PatientService {
         private admissionRepository: AdmissionsRepository,
         @InjectRepository(AdmissionClinicalTaskRepository)
         private clinicalTaskRepository: AdmissionClinicalTaskRepository,
+        @InjectRepository(PatientNOKRepository)
+        private nextOfKinRepository: PatientNOKRepository,
+        @InjectRepository(ImmunizationRepository)
+        private immunizationRepository: ImmunizationRepository,
+                
     ) {
     }
 
-    async listAllPatients(): Promise<Patient[]> {
-        return await this.patientRepository.find({ relations: ['nextOfKin', 'immunization', 'hmo'] });
+    async listAllPatients(options: PaginationOptionsInterface, params): Promise<Pagination>  {
+            const { startDate, endDate, patient_id } = params;
+            const query = this.patientRepository.createQueryBuilder('q').select('q.*');
+
+            if (startDate && startDate !== '') {
+                const start = moment(startDate).endOf('day').toISOString();
+                query.andWhere(`q.createdAt >= '${start}'`);
+            }
+            if (endDate && endDate !== '') {
+                const end = moment(endDate).endOf('day').toISOString();
+                query.andWhere(`q.createdAt <= '${end}'`);
+            }
+
+            if (patient_id && patient_id !== '') {
+                query.andWhere('q.id = :id', {id: patient_id});
+            }
+
+            const patients = await query.offset(options.page * options.limit)
+            .limit(options.limit)
+            .orderBy('q.createdAt', 'DESC')
+            .getRawMany();
+
+        const total = await query.getCount();
+
+        for (const patient of patients) {
+
+            patient.immunization = await this.immunizationRepository.find({where:{patient}});
+
+            if (patient.hmo_id) {
+                patient.hmo = await this.hmoRepository.findOne(patient.hmo_id);
+            }
+
+            if (patient.nextOfKin_id) {
+                patient.nextOfKin = await this.nextOfKinRepository.findOne(patient.nextOfKin_id);
+            }
+        }
+        
+        return {
+            result: patients,
+            lastPage: Math.ceil(total / options.limit),
+            itemsPerPage: options.limit,
+            totalPages: total,
+            currentPage: options.page + 1,
+        };
     }
 
     async findPatient(param: string): Promise<Patient[]> {

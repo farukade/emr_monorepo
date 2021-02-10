@@ -53,6 +53,7 @@ export class LeavemgtController {
         @Param('id') id: number,
         @Request() req,
     ) {
-        return this.leaveService.deleteApplication(id, req.user.username);
+        console.log(req);
+        return this.leaveService.deleteApplication(id, req?.user?.username);
     }
 }

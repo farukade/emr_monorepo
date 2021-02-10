@@ -18,6 +18,9 @@ import { AppGateway } from '../../../app.gateway';
 import { getRepository } from 'typeorm';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 import { HmoRepository } from '../../hmo/hmo.repository';
+import { Pagination } from '../../../common/paginate/paginate.interface';
+import { PaginationOptionsInterface } from '../../../common/paginate';
+
 
 @Injectable()
 export class AppointmentService {
@@ -69,6 +72,7 @@ export class AppointmentService {
     async saveNewAppointment(appointmentDto: AppointmentDto): Promise<any> {
         try {
             const { patient_id, consulting_room_id, doctor_id, sendToQueue, serviceType, serviceCategory, amount } = appointmentDto;
+            console.log(amount)
             // find patient details
             const patient = await this.patientRepository.findOne(patient_id);
             if (!patient) {
@@ -117,7 +121,7 @@ export class AppointmentService {
                     // save payment
                     const payment = await this.saveTransaction(patient, service, amount, paymentType, hmoApprovalStatus);
                     appointment.transaction = payment;
-
+                    await appointment.save();
                     // send queue message
                     this.appGateway.server.emit('paypoint-queue', { queue, payment });
                 } else {
@@ -126,6 +130,8 @@ export class AppointmentService {
                 }
 
                 this.appGateway.server.emit('all-queues', { queue });
+
+                console.log(appointment.transaction);
             }
             const resp = { success: true, appointment };
 
@@ -137,7 +143,7 @@ export class AppointmentService {
         }
     }
 
-    async listAppointments(params) {
+    async listAppointments(options: PaginationOptionsInterface, params): Promise<Pagination> {
         const { startDate, endDate } = params;
         let type = params.type;
         if (!type) {
@@ -160,9 +166,21 @@ export class AppointmentService {
             query.andWhere(`q.appointment_date <= '${end}'`);
         }
 
-        const result = await query.getMany();
-
-        return result;
+        const appointments = await query.offset(options.page * options.limit)
+        .limit(options.limit)
+        .orderBy('q.createdAt', 'DESC')
+        .getMany();
+        
+        const total = await query.getCount();
+       
+      
+        return {
+            result: appointments,
+            lastPage: Math.ceil(total / options.limit),
+            itemsPerPage: options.limit,
+            totalPages: total,
+            currentPage: options.page + 1,
+        };
     }
 
     async getActivePatientAppointment(patient_id) {

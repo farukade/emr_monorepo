@@ -26,6 +26,20 @@ export class StaffService {
     ) {}
 
     async getStaffs(): Promise<StaffDetails[]> {
+        const staffs = await this.staffRepository.find({
+            where: {
+                isActive: true,
+            },
+            relations: ['department', 'user', 'user.role', 'specialization']});
+        for (const staff of staffs) {
+            if (staff.profile_pic) {
+                staff.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${staff.profile_pic}`;
+            }
+        }
+        return staffs;
+    }
+
+    async getAllStaffs(): Promise<StaffDetails[]> {
         const staffs = await this.staffRepository.find({relations: ['department', 'user', 'user.role', 'specialization']});
         for (const staff of staffs) {
             if (staff.profile_pic) {
@@ -45,6 +59,7 @@ export class StaffService {
     }
 
     async addNewStaff(staffDto: StaffDto, pic): Promise<any> {
+        console.log(staffDto);
         // find role
         const role = await this.roleRepository.findOne(staffDto.role_id);
         // find department
@@ -138,11 +153,27 @@ export class StaffService {
         }
     }
 
-    async deleteStaff(id: string) {
-        const result = await this.staffRepository.delete(id);
+    async deleteStaff(id: number) {
+        try{
+            const result = await this.staffRepository.findOne(id);
+            result.isActive = false;
+            await result.save();
+            return {success: true, result};
+        }
+        catch(e){
+            return {success: false, message:e.message };
+        } 
+    }
 
-        if (result.affected === 0) {
-            throw new NotFoundException(`Staff with ID '${id}' not found`);
+    async enableStaff(id: number) {
+        try{
+            const result = await this.staffRepository.findOne(id);
+            result.isActive = true;
+            await result.save();
+            return {success: true, result};
+        }
+        catch(e){
+            return {success: false, message:e.message};
         }
     }
 

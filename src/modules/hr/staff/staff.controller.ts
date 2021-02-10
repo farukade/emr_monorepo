@@ -30,11 +30,23 @@ export class StaffController {
         return this.staffService.getStaffs();
     }
 
+    @Get('all-staffs')
+    listAllStaffs() {
+        return this.staffService.getAllStaffs();
+    }
+
     @Get('find')
     findStaffDetails(
         @Query() param,
     ): Promise<StaffDetails[]> {
         return this.staffService.findStaffs(param);
+    }
+
+    @Patch('enable')
+    enableStaff(
+        @Request() req,
+    ) {
+        return this.staffService.enableStaff(req.query.id);
     }
 
     @Post()
@@ -89,8 +101,8 @@ export class StaffController {
 
     @Delete(':id')
     deleteStaff(
-        @Param('id') id: string,
-    ): Promise<void> {
+        @Param('id') id: number,
+    ) {
         return this.staffService.deleteStaff(id);
     }
 }
