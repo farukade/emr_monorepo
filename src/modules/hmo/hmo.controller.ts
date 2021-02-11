@@ -26,6 +26,7 @@ import { HmoUploadRateDto } from './dto/hmo.upload-rate.dto';
 import { HmoRate } from './entities/hmo-rate.entity';
 import { Transactions } from '../finance/transactions/transaction.entity';
 import { AuthGuard } from '@nestjs/passport';
+import { Pagination } from '../../common/paginate/paginate.interface';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('hmos')
@@ -44,9 +45,9 @@ export class HmoController {
     getHmoTransactions(
         @Query() params,
         @Request() request,
-    ): Promise<Transactions[]> {
+    ): Promise<Pagination> {
         const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 10;
-        const page = request.query.hasOwnProperty('page') ? request.query.page : 0;
+        const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page,10)-1 : 0;
         return this.hmoService.fetchTransactions({ page, limit }, params);
     }
 
@@ -54,9 +55,9 @@ export class HmoController {
     getHmoPendingTransactions(
         @Query() params,
         @Request() request,
-    ): Promise<Transactions[]> {
+    ): Promise<Pagination> {
         const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 10;
-        const page = request.query.hasOwnProperty('page') ? request.query.page : 0;
+        const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page,10)-1 : 0;
         return this.hmoService.fetchPendingTransactions({ page, limit }, params);
     }
 
@@ -64,8 +65,11 @@ export class HmoController {
     getHmoTariff(
         @Param('id') id: string,
         @Query() params,
-    ): Promise<HmoRate[]> {
-        return this.hmoService.getHmoTariff(id, params);
+        @Request() request,
+    ): Promise<Pagination> {
+        const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
+        const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
+        return this.hmoService.getHmoTariff(id, params, { page: page - 1, limit });
     }
 
     @Post()

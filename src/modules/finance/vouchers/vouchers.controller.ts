@@ -3,6 +3,7 @@ import { VouchersService } from './vouchers.service';
 import { Voucher } from './voucher.entity';
 import { VoucherDto } from './dto/voucher.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { Pagination } from '../../../common/paginate/paginate.interface';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('vouchers')
@@ -13,9 +14,15 @@ export class VouchersController {
     @Get('list')
     getVouchers(
         @Query() urlParams,
-    ): Promise<Voucher[]> {
-        return this.voucherService.fetchList(urlParams);
+        @Request() request,
+    ): Promise<Pagination> {
+        const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
+        const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page,10)-1 : 0;
+        return this.voucherService.fetchList({ page: page - 1, limit }, urlParams);
     }
+
+ 
+
 
     @Get(':code')
     getVoucher(

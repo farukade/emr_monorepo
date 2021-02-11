@@ -32,6 +32,8 @@ import { PatientDocument } from './entities/patient_documents.entity';
 import { PatientRequestDocument } from './entities/patient_request_documents.entity';
 import { AuthGuard } from '@nestjs/passport';
 import { OpdPatientDto } from './dto/opd-patient.dto';
+import { Pagination } from '../../common/paginate/paginate.interface';
+
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('patient')
@@ -40,8 +42,13 @@ export class PatientController {
     }
 
     @Get('list')
-    listAllPatients(): Promise<Patient[]> {
-        return this.patientService.listAllPatients();
+    listAllPatients(
+        @Query() urlParams,
+        @Request() request,
+    ): Promise<Pagination> {
+        const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
+        const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
+        return this.patientService.listAllPatients({ page: page - 1, limit }, urlParams);
     }
 
     @Get('find')

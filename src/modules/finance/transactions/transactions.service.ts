@@ -10,10 +10,11 @@ import { Patient } from '../../patient/entities/patient.entity';
 import { ProcessTransactionDto } from './dto/process-transaction.dto';
 import { VoucherRepository } from '../vouchers/voucher.repository';
 import { StaffRepository } from '../../hr/staff/staff.repository';
-import { Pagination, PaginationOptionsInterface } from '../../../common/paginate';
+import { PaginationOptionsInterface } from '../../../common/paginate';
 import { QueueSystemRepository } from '../../frontdesk/queue-system/queue-system.repository';
 import { AppointmentRepository } from '../../frontdesk/appointment/appointment.repository';
 import { AppGateway } from '../../../app.gateway';
+import { Pagination } from '../../../common/paginate/paginate.interface';
 
 @Injectable()
 export class TransactionsService {
@@ -37,8 +38,8 @@ export class TransactionsService {
     ) {
     }
 
-    async fetchList(options: PaginationOptionsInterface, params): Promise<Transactions[]> {
-        const { startDate, endDate, patient_id, staff_id, status, payment_type, transaction_type } = params;
+    async fetchList(options: PaginationOptionsInterface, params): Promise<Pagination> {
+        const { startDate, endDate, patient_id, staff_id, payment_type, transaction_type } = params;
 
         const query = this.transactionsRepository.createQueryBuilder('q').select('q.*');
 
@@ -70,11 +71,13 @@ export class TransactionsService {
         // if (status) {
         //     query.andWhere('q.status = :status', {status});
         // }
-
-        const transactions = await query.skip((options.page * options.limit) - options.page)
+        
+        const transactions = await query.offset(options.page * options.limit)
             .limit(options.limit)
             .orderBy('q.createdAt', 'DESC')
             .getRawMany();
+
+        const total = await query.getCount();
 
         for (const transaction of transactions) {
 
@@ -90,12 +93,62 @@ export class TransactionsService {
                 transaction.service = await this.serviceRepository.findOne(transaction.service_id);
             }
         }
-
-        return transactions;
+        
+        return {
+            result: transactions,
+            lastPage: Math.ceil(total / options.limit),
+            itemsPerPage: options.limit,
+            totalPages: total,
+            currentPage: options.page + 1,
+        };
     }
 
-    async fetchPending(options: PaginationOptionsInterface, params) {
-        return await this.transactionsRepository.find({ where: { status: 0 }, relations: ['patient', 'serviceType'] });
+    async fetchPending(options: PaginationOptionsInterface, params): Promise<Pagination> {
+        
+        const { startDate, endDate, patient_id } = params;
+
+        const query = this.transactionsRepository.createQueryBuilder('q').select('q.*');
+        const status = 0;
+        query.andWhere('q.status = :status', { status });
+        if (startDate && startDate !== '') {
+            const start = moment(startDate).endOf('day').toISOString();
+            query.andWhere(`q.createdAt >= '${start}'`);
+        }
+        if (endDate && endDate !== '') {
+            const end = moment(endDate).endOf('day').toISOString();
+            query.andWhere(`q.createdAt <= '${end}'`);
+        }
+
+        if (patient_id && patient_id !== '') {
+            query.andWhere('q.patient_id = :patient_id', { patient_id });
+        }
+
+        const transactions = await query.offset(options.page * options.limit)
+            .limit(options.limit)
+            .orderBy('q.createdAt', 'DESC')
+            .getRawMany();
+
+        const total = await query.getCount();
+
+        for (const transaction of transactions) {
+
+            if (transaction.patient_id) {
+                transaction.patient = await this.patientRepository.findOne(transaction.patient_id);
+            }
+
+            if (transaction.service_id) {
+                transaction.service = await this.serviceRepository.findOne(transaction.service_id);
+            }
+        }
+
+        return {
+            result: transactions,
+            lastPage: Math.ceil(total / options.limit),
+            itemsPerPage: options.limit,
+            totalPages: total,
+            currentPage: options.page + 1,
+        };
+       // return await this.transactionsRepository.find({ where: { status: 0 }, relations: ['patient', 'serviceType'] });
     }
 
     async fetchDashboardTransactions() {
@@ -220,7 +273,7 @@ export class TransactionsService {
         }
 
         let date = new Date();
-        date.setDate(date.getDate() - 3);
+        date.setDate(date.getDate() - 1);
 
         try {
             const transaction = await this.transactionsRepository.save({
@@ -234,7 +287,6 @@ export class TransactionsService {
                 createdBy,
                 lastChangedBy: createdBy,
                 status: 1,
-                createdAt: date,
             });
             return { success: true, transaction };
         } catch (error) {
@@ -242,9 +294,19 @@ export class TransactionsService {
         }
     }
 
-    async update(id: string, transactionDto: TransactionDto, createdBy): Promise<any> {
+    async update(id: string, transactionDto: TransactionDto, createdBy, hmo_approval_code: string): Promise<any> {
+        
+        if(hmo_approval_code){
+            const transaction = await this.transactionsRepository.findOne(id);
+            transaction.hmo_approval_code = hmo_approval_code
+            transaction.save();
+            return { success: true, transaction };
+
+        }
+        
         const { patient_id, serviceType, amount, description, payment_type } = transactionDto;
         // find patient record
+        
         const patient = await this.patientRepository.findOne(patient_id);
         const items = [];
         for (const serviceId of serviceType) {
@@ -261,6 +323,7 @@ export class TransactionsService {
             transaction.payment_type = payment_type;
             transaction.transaction_details = items;
             transaction.lastChangedBy = createdBy;
+            transaction.hmo_approval_code = hmo_approval_code;
             await transaction.save();
 
             return { success: true, transaction };
@@ -299,6 +362,7 @@ export class TransactionsService {
             let queue;
             if (transaction.next_location && transaction.next_location === 'vitals') {
                 // find appointment
+                console.log(transaction.id)
                 const appointment = await this.appointmentRepository.findOne({
                     where: { transaction: transaction.id },
                     relations: ['patient', 'whomToSee', 'consultingRoom', 'serviceCategory', 'serviceType'],
@@ -323,13 +387,12 @@ export class TransactionsService {
         }
     }
 
-    async delete(id: number, username: string): Promise<any> {
+    async deleteTransaction(id: number, username: string): Promise<any> {
         const transaction = await this.transactionsRepository.findOne(id);
 
         if (!transaction) {
             throw new NotFoundException(`Transaction with ID '${id}' not found`);
         }
-
         transaction.deletedBy = username;
         await transaction.save();
 

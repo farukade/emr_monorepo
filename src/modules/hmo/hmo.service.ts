@@ -17,6 +17,7 @@ import { Appointment } from '../frontdesk/appointment/appointment.entity';
 import { QueueSystemRepository } from '../frontdesk/queue-system/queue-system.repository';
 import { PaginationOptionsInterface } from '../../common/paginate';
 import { AppGateway } from '../../app.gateway';
+import { Pagination } from '../../common/paginate/paginate.interface';
 
 @Injectable()
 export class HmoService {
@@ -50,21 +51,52 @@ export class HmoService {
         return this.hmoRepository.find(searchParam);
     }
 
-    async getHmoTariff(id, urlParams): Promise<HmoRate[]> {
-        const {listType } = urlParams;
+    async getHmoTariff(id, urlParams, options: PaginationOptionsInterface): Promise<Pagination> {
+        const { listType } = urlParams;
         if  (listType === 'services') {
-            return await this.hmoRateRepository.createQueryBuilder('q')
-                .leftJoinAndSelect('q.service', 'service')
-                .select('q.rate, q.percentage, service.tariff, service.name, service.discount')
-                .where('q.hmo_id = :id', {id}).getRawMany();
+          const query = await this.serviceRepository.createQueryBuilder('q').select('q.*')
+           .where('q.hmo_id = :id', {id});
+
+            const services = await query.offset(options.page * options.limit)
+            .limit(options.limit)
+            .orderBy('q.createdAt', 'DESC')
+            .getRawMany();
+            for (const s of services) {
+                    s.hmo = await this.hmoRateRepository.findOne(s.hmo_id);
+             }
+
+             const total = await query.getCount();
+            return {
+                result: services,
+                lastPage: Math.ceil(total / options.limit),
+                itemsPerPage: options.limit,
+                totalPages: total,
+                currentPage: options.page + 1,
+            };
+
         } else {
-            return await this.hmoRateRepository.createQueryBuilder('q')
-                .leftJoinAndSelect('q.stock', 'stock')
-                .select('q.rate, q.percentage, stock.sales_price as tariff, stock.name')
-                .where('q.hmo_id = :id', {id}).getRawMany();
+
+            const query = await this.stockRepository.createQueryBuilder('q').select('q.*')
+           .where('q.hmo_id = :id', {id});
+
+           const stocks = await query.offset(options.page * options.limit)
+            .limit(options.limit)
+            .orderBy('q.createdAt', 'DESC')
+            .getRawMany();
+
+           for (const s of stocks) {
+                s.hmo = await this.hmoRateRepository.findOne(s.hmo_id);
+            }
+            const total = await query.getCount();
+            return {
+                result: stocks,
+                lastPage: Math.ceil(total / options.limit),
+                itemsPerPage: options.limit,
+                totalPages: total,
+                currentPage: options.page + 1,
+            };
         }
     }
-
     async createHmo(hmoDto: HmoDto): Promise<Hmo> {
         return this.hmoRepository.saveHmo(hmoDto);
     }
@@ -276,24 +308,26 @@ export class HmoService {
         }
     }
 
-    async fetchTransactions(options: PaginationOptionsInterface, params): Promise<Transactions[]> {
-        const {startDate, endDate, patient_id, hmo_id, status, page, limit } = params;
+    async fetchTransactions(options: PaginationOptionsInterface, params): Promise<Pagination> {
+        const {startDate, endDate, patient_id, hmo_id, status } = params;
 
         const query = this.transactionsRepository.createQueryBuilder('q')
                             .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
                             .leftJoin(Hmo, 'hmo', `"patient"."hmo_id" = "hmo"."id"`)
-                            .where('q.payment_type = :type', {type: 'HMO'})
+                            .where('q.payment_type = :type', {type: 'Hmo'})
                             .select('q.*')
                             .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.fileNumber, hmo.name as hmo_name, hmo.id as hmo_id');
 
+
         if (startDate && startDate !== '') {
-            const start = moment(startDate).startOf('day').toISOString();
+            const start = moment(startDate).endOf('day').toISOString();
             query.andWhere(`q.createdAt >= '${start}'`);
         }
         if (endDate && endDate !== '') {
             const end = moment(endDate).endOf('day').toISOString();
             query.andWhere(`q.createdAt <= '${end}'`);
         }
+
         if (hmo_id && hmo_id !== '') {
             query.andWhere('hmo.id = :hmo_id', {hmo_id});
         }
@@ -305,12 +339,22 @@ export class HmoService {
             query.andWhere('q.status = :status', {status});
         }
 
-        const transactions = await query.take(options.limit).skip((options.page === 1) ? options.page : options.page * options.limit).getRawMany();
-
-        return transactions;
+        const transactions = await query.offset(options.page * options.limit)
+        .limit(options.limit)
+        .orderBy('q.createdAt', 'DESC')
+        .getRawMany();
+        console.log(transactions);
+         const total = await query.getCount();
+        return {
+            result: transactions,
+            lastPage: Math.ceil(total / options.limit),
+            itemsPerPage: options.limit,
+            totalPages: total,
+            currentPage: options.page + 1,
+        };
     }
 
-    async fetchPendingTransactions(options: PaginationOptionsInterface, params): Promise<Transactions[]> {
+    async fetchPendingTransactions(options: PaginationOptionsInterface, params): Promise<Pagination> {
         const {startDate, endDate, hmo_id } = params;
 
         const query = this.transactionsRepository.createQueryBuilder('q')
@@ -329,13 +373,25 @@ export class HmoService {
             const end = moment(endDate).endOf('day').toISOString();
             query.andWhere(`q.createdAt <= '${end}'`);
         }
+
+        
         if (hmo_id && hmo_id !== '') {
             query.andWhere('hmo.id = :hmo_id', {hmo_id});
         }
 
-        const transactions = await query.take(options.limit).skip((options.page === 1) ? options.page : options.page * options.limit).getRawMany();
+        const transactions = await query.offset(options.page * options.limit)
+        .limit(options.limit)
+        .orderBy('q.createdAt', 'DESC')
+        .getRawMany();
 
-        return transactions;
+         const total = await query.getCount();
+        return {
+            result: transactions,
+            lastPage: Math.ceil(total / options.limit),
+            itemsPerPage: options.limit,
+            totalPages: total,
+            currentPage: options.page + 1,
+        };
     }
 
     async processTransaction(params, {userId}) {

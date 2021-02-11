@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AdmissionsRepository } from './repositories/admissions.repository';
 import { AdmissionClinicalTaskRepository } from './repositories/admission-clinical-tasks.repository';
@@ -15,6 +15,7 @@ import { AppGateway } from '../../../app.gateway';
 import { PaginationOptionsInterface } from '../../../common/paginate';
 import { PatientVitalRepository } from '../repositories/patient_vitals.repository';
 import { PatientRequestHelper } from '../../../common/utils/PatientRequestHelper';
+import { Pagination } from '../../../common/paginate/paginate.interface';
 
 @Injectable()
 export class AdmissionsService {
@@ -35,7 +36,8 @@ export class AdmissionsService {
     ) {
     }
 
-    async getAdmissions(options: PaginationOptionsInterface, { startDate, endDate, patient_id, status, type, name }) {
+    async getAdmissions(options: PaginationOptionsInterface, params): Promise<Pagination> {
+        const { startDate, endDate, patient_id, status, type, name } = params
         const query = this.admissionRepository.createQueryBuilder('q')
             .leftJoinAndSelect('q.patient', 'patient')
             .leftJoinAndSelect('q.room', 'room')
@@ -60,7 +62,7 @@ export class AdmissionsService {
         }
 
         if (patient_id && patient_id !== '') {
-            query.andWhere('q.patient_id = :patient_id', { patient_id });
+            query.andWhere('q.patient = :patient_id', { patient_id });
         }
 
         if (status) {
@@ -71,7 +73,12 @@ export class AdmissionsService {
             query.where('q.patient_name like :name', { name: `%${name}%` });
         }
 
-        const admissions = await query.take(options.limit).skip(options.page * options.limit).getRawMany();
+        const admissions = await query.offset(options.page * options.limit)
+        .limit(options.limit)
+        .orderBy('q.createdAt', 'DESC')
+        .getRawMany();
+
+        const total = await query.getCount();
 
         for (const item of admissions) {
             if (item.patient_id) {
@@ -79,7 +86,13 @@ export class AdmissionsService {
             }
         }
 
-        return admissions;
+        return {
+            result: admissions,
+            lastPage: Math.ceil(total / options.limit),
+            itemsPerPage: options.limit,
+            totalPages: total,
+            currentPage: options.page + 1,
+        };
     }
 
     async saveAdmission(id: string, createDto: CreateAdmissionDto, createdById): Promise<any> {
@@ -202,6 +215,17 @@ export class AdmissionsService {
             totalPages: count,
             currentPage: options.page + 1,
         };
+    }
+
+    async deleteTask(id: number, username): Promise<any> {
+            const result = await this.clinicalTaskRepository.findOne(id);
+
+        if (!result) {
+            throw new NotFoundException(`Clinical Task with ID '${id}' not found`);
+        }
+        result.deletedBy = username;
+        await result.save();
+        return result.softRemove();
     }
 
     async saveClinicalTasks(patientId: number, params, createdById): Promise<any> {

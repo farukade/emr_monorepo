@@ -42,6 +42,10 @@ export class AuthService {
           {username: user.username, userId: user.id},
         );
         const staff = await this.staffRepository.findOne({where: {user}, relations: ['department']});
+        if (staff && !staff.isActive) {
+            const error = 'This account is disabled. Please Contact ICT.';
+            throw new BadRequestException(error);
+        }
         if (staff && staff.profile_pic) {
           staff.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${staff.profile_pic}`;
         }

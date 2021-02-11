@@ -116,7 +116,7 @@ export class InventoryService {
     }
 
     async updateStock(id: string, stockDto: StockDto): Promise<Stock> {
-        const { name, description, stock_code, cost_price, sales_price, quantity, category_id, sub_category_id } = stockDto;
+        const { name, description, stock_code, cost_price, sales_price, expiry_date, quantity, category_id, sub_category_id } = stockDto;
         const category = await this.inventoryCategoryRepository.findOne(category_id);
         const subCategory = await this.inventorySubCategoryRepository.findOne(sub_category_id);
         const stock = await this.stockRepository.findOne(id);
@@ -124,6 +124,7 @@ export class InventoryService {
         stock.stock_code = (stock_code !== '') ? 'STU-' + stock_code : 'STU-' + Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5);
         stock.description = description;
         stock.cost_price = cost_price;
+        stock.expiry_date = expiry_date;
         stock.sales_price = sales_price;
         stock.quantity = stock.quantity + quantity;
         stock.subCategory = subCategory;
@@ -373,7 +374,6 @@ export class InventoryService {
         if (!subCategory) {
             throw new NotFoundException(`Inventory sub category with ID '${id}' not found`);
         }
-
         subCategory.deletedBy = username;
         await subCategory.save();
 

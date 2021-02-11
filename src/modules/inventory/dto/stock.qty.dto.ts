@@ -9,4 +9,6 @@ export class StockQtyDto {
   @IsNotEmpty()
   quantity: number;
 
+  expiry_date: string;
+
 }

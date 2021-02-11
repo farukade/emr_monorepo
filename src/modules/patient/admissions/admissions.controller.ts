@@ -5,6 +5,7 @@ import {
     Param,
     Body,
     Get,
+    Delete,
     Request,
     Query,
     UsePipes,
@@ -14,6 +15,7 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { AdmissionsService } from './admissions.service';
 import { CreateAdmissionDto } from './dto/create-admission.dto';
+import { Pagination } from '../../../common/paginate/paginate.interface';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('patient/admissions')
@@ -26,10 +28,10 @@ export class AdmissionsController {
     getAdmissions(
         @Query() urlParams,
         @Request() request,
-    ) {
-        const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 2;
-        const page = request.query.hasOwnProperty('page') ? request.query.page : 0;
-        return this.admissionService.getAdmissions({page, limit}, urlParams);
+    ): Promise<Pagination> {
+        const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
+        const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
+        return this.admissionService.getAdmissions({page: page - 1, limit}, urlParams);
     }
 
     @Post(':id/save')
@@ -60,6 +62,15 @@ export class AdmissionsController {
         page = page - 1;
         return this.admissionService.getTasks({page, limit}, urlParams);
     }
+
+    @Delete('/tasks/:taskId/delete-task')
+    deleteTask(
+        @Param('taskId') taskId: number,
+        @Request() req,
+    ): Promise<any> {
+        return this.admissionService.deleteTask(taskId, req.user.username);
+    }
+
 
     @Patch('/create-task/:id')
     createTask(

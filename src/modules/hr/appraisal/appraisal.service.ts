@@ -37,6 +37,7 @@ export class AppraisalService {
     ) {}
 
     async save(createAppraisalDto: CreateAppriasalDto) {
+        console.log(createAppraisalDto);
         const { staffId, lineManagerId, indicators, departmentId } = createAppraisalDto;
         // find staff
         const staff = await this.staffRepository.findOne(staffId);
@@ -48,7 +49,7 @@ export class AppraisalService {
 
         try {
             // find department
-            const department = await this.departmentRepository.findOne(staff.department.id, {relations: ['staff']});
+            const department = await this.departmentRepository.findOne(departmentId, {relations: ['staff']});
             // save appraisal details
             const appraisal     = new PerformanceAppraisal();
             appraisal.staff         = staff;
@@ -67,7 +68,7 @@ export class AppraisalService {
         try {
             // console.log(createAppraisalPeriodDto);
             const performancePeriod = await this.performanceAppraisalPeriodRepository.save(createAppraisalPeriodDto);
-            return { success: true};
+            return { success: true, performancePeriod};
         } catch (error) {
             return {success: false, message: error.message};
         }
@@ -89,7 +90,7 @@ export class AppraisalService {
             performancePeriod.startDate = createAppriasalPeriodDto.startDate;
             performancePeriod.endDate = createAppriasalPeriodDto.endDate;
             await performancePeriod.save();
-            return { success: true };
+            return { success: true, performancePeriod };
 
         } catch (error) {
             return {success: false, message: error.message};
@@ -113,16 +114,22 @@ export class AppraisalService {
     }
 
     async getStaffAppraisalReport(staffId, periodId) {
-        // find staff record
-        const staff = await this.staffRepository.findOne(staffId);
-        // find staff appraisal
-        const appraisal = await this.performanceAppraisalRepository.findOne({where: {staff}});
-        // find performance period
-        const performancePeriod = await this.performanceAppraisalPeriodRepository.findOne(periodId);
-        // find indicator reports
-        const indicators = await this.performanceIndicatorReportRepository.find({where: {period: performancePeriod, appraisal}, relations: ['indicator']});
+        try{
+            // find staff record
+            const staff = await this.staffRepository.findOne(staffId);
+            // find staff appraisal
+            const appraisal = await this.performanceAppraisalRepository.findOne({where: {staff}});
+            // find performance period
+            const performancePeriod = await this.performanceAppraisalPeriodRepository.findOne(periodId);
+            // find indicator reports
+            const indicators = await this.performanceIndicatorReportRepository.find({where: {period: performancePeriod, appraisal}, relations: ['indicator']});
 
-        return {appraisal, indicators};
+            return {appraisal, indicators};
+        }
+            catch (error) {
+            return {success: false, message: error.message};
+         }
+        
     }
 
     saveIndicators(appraisal, indicators) {

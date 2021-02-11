@@ -32,7 +32,7 @@ export class UtilityService {
             .find({
                 select: ['id', 'first_name', 'last_name', 'room'],
                 where: {
-                    room: Not(IsNull()),
+                    room: Not(IsNull()), isActive: true,
                 },
                 relations: ['room'],
             });

@@ -28,11 +28,12 @@ import { AuthRepository } from '../auth/auth.repository';
 import { TransactionsRepository } from '../finance/transactions/transactions.repository';
 import { AdmissionClinicalTaskRepository } from './admissions/repositories/admission-clinical-tasks.repository';
 import { AdmissionsRepository } from './admissions/repositories/admissions.repository';
-// import { PatientRequestItemRepository } from './repositories/patient_request_items.repository';
+import { ImmunizationRepository } from './immunization/repositories/immunization.repository'
 
 @Module({
   imports: [TypeOrmModule.forFeature([
       PatientRepository,
+      ImmunizationRepository,
       PatientDocumentRepository,
       PatientNOKRepository,
       PatientVitalRepository,

@@ -1,9 +1,10 @@
 import {Controller, Get, Post, Body, Query, Param, Request, Patch, UseGuards} from '@nestjs/common';
-
 import { AppointmentService } from './appointment.service';
 import { AppointmentDto } from './dto/appointment.dto';
 import { Appointment } from './appointment.entity';
 import {AuthGuard} from '@nestjs/passport';
+import { Pagination } from '../../../common/paginate/paginate.interface';
+
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('front-desk/appointments')
@@ -25,9 +26,12 @@ export class AppointmentController {
 
     @Get('')
     listAppointments(
-        @Query() params: string,
-    ) {
-        return this.appointmentService.listAppointments(params);
+        @Query() urlParams,
+        @Request() request,
+    ): Promise<Pagination> {
+        const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
+        const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
+        return this.appointmentService.listAppointments({page: page - 1, limit}, urlParams);
     }
 
     @Get('view/:id')
