@@ -223,6 +223,7 @@ export class AdmissionsService {
         if (!result) {
             throw new NotFoundException(`Clinical Task with ID '${id}' not found`);
         }
+
         result.deletedBy = username;
         await result.save();
         return result.softRemove();

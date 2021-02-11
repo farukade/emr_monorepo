@@ -81,6 +81,8 @@ export class PatientService {
         private nextOfKinRepository: PatientNOKRepository,
         @InjectRepository(ImmunizationRepository)
         private immunizationRepository: ImmunizationRepository,
+        @InjectRepository(PatientRequestItemRepository)
+        private patientRequestItemRepository: PatientRequestItemRepository,
                 
         @InjectRepository(PatientRequestItemRepository)
         private patientRequestItemRepository: PatientRequestItemRepository,
