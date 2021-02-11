@@ -237,7 +237,7 @@ export class AdmissionsService {
             const staff = await this.staffRepository.findOne({ where: { user: createdById }, relations: ['user'] });
 
             let request;
-            if (prescription.requestBody && prescription.requestBody.length > 0) {
+            if (prescription.requests && prescription.requests.length > 0) {
                 request = await PatientRequestHelper.handlePharmacyRequest(prescription, patient, staff.user.username);
             }
 

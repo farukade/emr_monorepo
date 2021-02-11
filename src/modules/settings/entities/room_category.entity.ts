@@ -12,11 +12,7 @@ export class RoomCategory extends CustomBaseEntity {
     @Column({ type: 'varchar', length: 300, nullable: true })
     price: string;
 
-    @OneToMany(
-        () => Room,
-        room => room.category,
-        { eager: true, onDelete: 'CASCADE' },
-    )
+    @OneToMany(() => Room, room => room.category, { eager: true, onDelete: 'CASCADE' })
     rooms: Room[];
 
     @ManyToOne(type => Hmo, {nullable: true})

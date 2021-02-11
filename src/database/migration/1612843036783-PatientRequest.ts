@@ -1,9 +1,12 @@
 import {MigrationInterface, QueryRunner} from "typeorm";
 
-export class General1612180935500 implements MigrationInterface {
-    name = 'General1612180935500'
+export class PatientRequest1612843036783 implements MigrationInterface {
+    name = 'PatientRequest1612843036783'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(`ALTER TABLE "patient_request_items" ADD "parameters" jsonb`);
+        await queryRunner.query(`ALTER TABLE "patient_request_items" ADD "result" character varying`);
+        await queryRunner.query(`ALTER TABLE "patient_requests" ADD "isFilled" boolean NOT NULL DEFAULT false`);
         await queryRunner.query(`COMMENT ON COLUMN "patient_next_of_kins"."createdAt" IS NULL`);
         await queryRunner.query(`COMMENT ON COLUMN "patient_next_of_kins"."updated_at" IS NULL`);
         await queryRunner.query(`COMMENT ON COLUMN "consulting_rooms"."createdAt" IS NULL`);
@@ -40,6 +43,20 @@ export class General1612180935500 implements MigrationInterface {
         await queryRunner.query(`COMMENT ON COLUMN "patient_vitals"."updated_at" IS NULL`);
         await queryRunner.query(`COMMENT ON COLUMN "admission_clinical_tasks"."createdAt" IS NULL`);
         await queryRunner.query(`COMMENT ON COLUMN "admission_clinical_tasks"."updated_at" IS NULL`);
+        await queryRunner.query(`COMMENT ON COLUMN "lab_test_categories"."createdAt" IS NULL`);
+        await queryRunner.query(`COMMENT ON COLUMN "lab_test_categories"."updated_at" IS NULL`);
+        await queryRunner.query(`COMMENT ON COLUMN "lab_tests"."createdAt" IS NULL`);
+        await queryRunner.query(`COMMENT ON COLUMN "lab_tests"."updated_at" IS NULL`);
+        await queryRunner.query(`COMMENT ON COLUMN "inventory_categories"."createdAt" IS NULL`);
+        await queryRunner.query(`COMMENT ON COLUMN "inventory_categories"."updated_at" IS NULL`);
+        await queryRunner.query(`COMMENT ON COLUMN "inventory_sub_categories"."createdAt" IS NULL`);
+        await queryRunner.query(`COMMENT ON COLUMN "inventory_sub_categories"."updated_at" IS NULL`);
+        await queryRunner.query(`COMMENT ON COLUMN "vendors"."createdAt" IS NULL`);
+        await queryRunner.query(`COMMENT ON COLUMN "vendors"."updated_at" IS NULL`);
+        await queryRunner.query(`COMMENT ON COLUMN "stocks"."createdAt" IS NULL`);
+        await queryRunner.query(`COMMENT ON COLUMN "stocks"."updated_at" IS NULL`);
+        await queryRunner.query(`COMMENT ON COLUMN "patient_request_items"."createdAt" IS NULL`);
+        await queryRunner.query(`COMMENT ON COLUMN "patient_request_items"."updated_at" IS NULL`);
         await queryRunner.query(`COMMENT ON COLUMN "patient_requests"."createdAt" IS NULL`);
         await queryRunner.query(`COMMENT ON COLUMN "patient_requests"."updated_at" IS NULL`);
         await queryRunner.query(`COMMENT ON COLUMN "encounters"."createdAt" IS NULL`);
@@ -54,14 +71,6 @@ export class General1612180935500 implements MigrationInterface {
         await queryRunner.query(`COMMENT ON COLUMN "vouchers"."updated_at" IS NULL`);
         await queryRunner.query(`COMMENT ON COLUMN "transactions"."createdAt" IS NULL`);
         await queryRunner.query(`COMMENT ON COLUMN "transactions"."updated_at" IS NULL`);
-        await queryRunner.query(`COMMENT ON COLUMN "inventory_categories"."createdAt" IS NULL`);
-        await queryRunner.query(`COMMENT ON COLUMN "inventory_categories"."updated_at" IS NULL`);
-        await queryRunner.query(`COMMENT ON COLUMN "inventory_sub_categories"."createdAt" IS NULL`);
-        await queryRunner.query(`COMMENT ON COLUMN "inventory_sub_categories"."updated_at" IS NULL`);
-        await queryRunner.query(`COMMENT ON COLUMN "vendors"."createdAt" IS NULL`);
-        await queryRunner.query(`COMMENT ON COLUMN "vendors"."updated_at" IS NULL`);
-        await queryRunner.query(`COMMENT ON COLUMN "stocks"."createdAt" IS NULL`);
-        await queryRunner.query(`COMMENT ON COLUMN "stocks"."updated_at" IS NULL`);
         await queryRunner.query(`COMMENT ON COLUMN "hmo_rates"."createdAt" IS NULL`);
         await queryRunner.query(`COMMENT ON COLUMN "hmo_rates"."updated_at" IS NULL`);
         await queryRunner.query(`COMMENT ON COLUMN "performance_appraisal_periods"."createdAt" IS NULL`);
@@ -132,10 +141,8 @@ export class General1612180935500 implements MigrationInterface {
         await queryRunner.query(`COMMENT ON COLUMN "labour_vitals"."updated_at" IS NULL`);
         await queryRunner.query(`COMMENT ON COLUMN "lab_groups"."createdAt" IS NULL`);
         await queryRunner.query(`COMMENT ON COLUMN "lab_groups"."updated_at" IS NULL`);
-        await queryRunner.query(`COMMENT ON COLUMN "lab_test_categories"."createdAt" IS NULL`);
-        await queryRunner.query(`COMMENT ON COLUMN "lab_test_categories"."updated_at" IS NULL`);
-        await queryRunner.query(`COMMENT ON COLUMN "lab_tests"."createdAt" IS NULL`);
-        await queryRunner.query(`COMMENT ON COLUMN "lab_tests"."updated_at" IS NULL`);
+        await queryRunner.query(`COMMENT ON COLUMN "lab_group_tests"."createdAt" IS NULL`);
+        await queryRunner.query(`COMMENT ON COLUMN "lab_group_tests"."updated_at" IS NULL`);
         await queryRunner.query(`COMMENT ON COLUMN "lab_parameters"."createdAt" IS NULL`);
         await queryRunner.query(`COMMENT ON COLUMN "lab_parameters"."updated_at" IS NULL`);
         await queryRunner.query(`COMMENT ON COLUMN "request_types"."createdAt" IS NULL`);
@@ -151,10 +158,8 @@ export class General1612180935500 implements MigrationInterface {
         await queryRunner.query(`COMMENT ON COLUMN "request_types"."createdAt" IS NULL`);
         await queryRunner.query(`COMMENT ON COLUMN "lab_parameters"."updated_at" IS NULL`);
         await queryRunner.query(`COMMENT ON COLUMN "lab_parameters"."createdAt" IS NULL`);
-        await queryRunner.query(`COMMENT ON COLUMN "lab_tests"."updated_at" IS NULL`);
-        await queryRunner.query(`COMMENT ON COLUMN "lab_tests"."createdAt" IS NULL`);
-        await queryRunner.query(`COMMENT ON COLUMN "lab_test_categories"."updated_at" IS NULL`);
-        await queryRunner.query(`COMMENT ON COLUMN "lab_test_categories"."createdAt" IS NULL`);
+        await queryRunner.query(`COMMENT ON COLUMN "lab_group_tests"."updated_at" IS NULL`);
+        await queryRunner.query(`COMMENT ON COLUMN "lab_group_tests"."createdAt" IS NULL`);
         await queryRunner.query(`COMMENT ON COLUMN "lab_groups"."updated_at" IS NULL`);
         await queryRunner.query(`COMMENT ON COLUMN "lab_groups"."createdAt" IS NULL`);
         await queryRunner.query(`COMMENT ON COLUMN "labour_vitals"."updated_at" IS NULL`);
@@ -225,14 +230,6 @@ export class General1612180935500 implements MigrationInterface {
         await queryRunner.query(`COMMENT ON COLUMN "performance_appraisal_periods"."createdAt" IS NULL`);
         await queryRunner.query(`COMMENT ON COLUMN "hmo_rates"."updated_at" IS NULL`);
         await queryRunner.query(`COMMENT ON COLUMN "hmo_rates"."createdAt" IS NULL`);
-        await queryRunner.query(`COMMENT ON COLUMN "stocks"."updated_at" IS NULL`);
-        await queryRunner.query(`COMMENT ON COLUMN "stocks"."createdAt" IS NULL`);
-        await queryRunner.query(`COMMENT ON COLUMN "vendors"."updated_at" IS NULL`);
-        await queryRunner.query(`COMMENT ON COLUMN "vendors"."createdAt" IS NULL`);
-        await queryRunner.query(`COMMENT ON COLUMN "inventory_sub_categories"."updated_at" IS NULL`);
-        await queryRunner.query(`COMMENT ON COLUMN "inventory_sub_categories"."createdAt" IS NULL`);
-        await queryRunner.query(`COMMENT ON COLUMN "inventory_categories"."updated_at" IS NULL`);
-        await queryRunner.query(`COMMENT ON COLUMN "inventory_categories"."createdAt" IS NULL`);
         await queryRunner.query(`COMMENT ON COLUMN "transactions"."updated_at" IS NULL`);
         await queryRunner.query(`COMMENT ON COLUMN "transactions"."createdAt" IS NULL`);
         await queryRunner.query(`COMMENT ON COLUMN "vouchers"."updated_at" IS NULL`);
@@ -247,6 +244,20 @@ export class General1612180935500 implements MigrationInterface {
         await queryRunner.query(`COMMENT ON COLUMN "encounters"."createdAt" IS NULL`);
         await queryRunner.query(`COMMENT ON COLUMN "patient_requests"."updated_at" IS NULL`);
         await queryRunner.query(`COMMENT ON COLUMN "patient_requests"."createdAt" IS NULL`);
+        await queryRunner.query(`COMMENT ON COLUMN "patient_request_items"."updated_at" IS NULL`);
+        await queryRunner.query(`COMMENT ON COLUMN "patient_request_items"."createdAt" IS NULL`);
+        await queryRunner.query(`COMMENT ON COLUMN "stocks"."updated_at" IS NULL`);
+        await queryRunner.query(`COMMENT ON COLUMN "stocks"."createdAt" IS NULL`);
+        await queryRunner.query(`COMMENT ON COLUMN "vendors"."updated_at" IS NULL`);
+        await queryRunner.query(`COMMENT ON COLUMN "vendors"."createdAt" IS NULL`);
+        await queryRunner.query(`COMMENT ON COLUMN "inventory_sub_categories"."updated_at" IS NULL`);
+        await queryRunner.query(`COMMENT ON COLUMN "inventory_sub_categories"."createdAt" IS NULL`);
+        await queryRunner.query(`COMMENT ON COLUMN "inventory_categories"."updated_at" IS NULL`);
+        await queryRunner.query(`COMMENT ON COLUMN "inventory_categories"."createdAt" IS NULL`);
+        await queryRunner.query(`COMMENT ON COLUMN "lab_tests"."updated_at" IS NULL`);
+        await queryRunner.query(`COMMENT ON COLUMN "lab_tests"."createdAt" IS NULL`);
+        await queryRunner.query(`COMMENT ON COLUMN "lab_test_categories"."updated_at" IS NULL`);
+        await queryRunner.query(`COMMENT ON COLUMN "lab_test_categories"."createdAt" IS NULL`);
         await queryRunner.query(`COMMENT ON COLUMN "admission_clinical_tasks"."updated_at" IS NULL`);
         await queryRunner.query(`COMMENT ON COLUMN "admission_clinical_tasks"."createdAt" IS NULL`);
         await queryRunner.query(`COMMENT ON COLUMN "patient_vitals"."updated_at" IS NULL`);
@@ -283,6 +294,9 @@ export class General1612180935500 implements MigrationInterface {
         await queryRunner.query(`COMMENT ON COLUMN "consulting_rooms"."createdAt" IS NULL`);
         await queryRunner.query(`COMMENT ON COLUMN "patient_next_of_kins"."updated_at" IS NULL`);
         await queryRunner.query(`COMMENT ON COLUMN "patient_next_of_kins"."createdAt" IS NULL`);
+        await queryRunner.query(`ALTER TABLE "patient_requests" DROP COLUMN "isFilled"`);
+        await queryRunner.query(`ALTER TABLE "patient_request_items" DROP COLUMN "result"`);
+        await queryRunner.query(`ALTER TABLE "patient_request_items" DROP COLUMN "parameters"`);
     }
 
 }

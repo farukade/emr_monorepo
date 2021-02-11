@@ -40,6 +40,7 @@ import { Specimen } from '../settings/entities/specimen.entity';
 import { Pagination } from '../../common/paginate/paginate.interface';
 import { PaginationOptionsInterface } from '../../common/paginate';
 import { ImmunizationRepository } from './immunization/repositories/immunization.repository'
+import { PatientRequestItemRepository } from './repositories/patient_request_items.repository';
 
 @Injectable()
 export class PatientService {
@@ -81,6 +82,8 @@ export class PatientService {
         @InjectRepository(ImmunizationRepository)
         private immunizationRepository: ImmunizationRepository,
                 
+        @InjectRepository(PatientRequestItemRepository)
+        private patientRequestItemRepository: PatientRequestItemRepository,
     ) {
     }
 
@@ -489,47 +492,20 @@ export class PatientService {
                 }
                 res = pharmacyReq;
                 break;
-            case 'physiotherapy':
-                let physio = await PatientRequestHelper.handlePhysiotherapyRequest(param, patient, createdBy);
-                if (physio.success) {
-                    // save transaction
-                    const payment = await RequestPaymentHelper.physiotherapyPayment(param.requestBody, patient, createdBy);
-                    physio = { ...physio, ...payment };
-                }
-                res = physio;
-                break;
-            case 'opthalmology':
-                let req = await PatientRequestHelper.handleOpthalmolgyRequest(param, patient, createdBy);
-                if (req.success) {
-                    // save transaction
-                    const payment = await RequestPaymentHelper.opthalmologyPayment(param.requestBody, patient, createdBy);
-                    req = { ...req, ...payment };
-                }
-                res = req;
-                break;
-            case 'dentistry':
-                let dentistry = await PatientRequestHelper.handleDentistryRequest(param, patient, createdBy);
-                if (dentistry.success) {
-                    // save transaction
-                    const payment = await RequestPaymentHelper.dentistryPayment(param.requestBody, patient, createdBy);
-                    dentistry = { ...dentistry, ...payment };
-                }
-                res = dentistry;
-                break;
             case 'imaging':
                 let imaging = await PatientRequestHelper.handleImagingRequest(param, patient, createdBy);
                 if (imaging.success) {
                     // save transaction
-                    const payment = await RequestPaymentHelper.imagingPayment(param.requestBody, patient, createdBy);
+                    const payment = await RequestPaymentHelper.imagingPayment(imaging.data, patient, createdBy);
                     imaging = { ...imaging, ...payment };
                 }
                 res = imaging;
                 break;
             case 'procedure':
                 let procedure = await PatientRequestHelper.handleProcedureRequest(param, patient, createdBy);
-                if (procedure.success && param.requestBody.bill_now === true) {
+                if (procedure.success && param.bill_now === true) {
                     // save transaction
-                    const payment = await RequestPaymentHelper.procedurePayment(param.requestBody, patient, createdBy);
+                    const payment = await RequestPaymentHelper.procedurePayment(procedure.data, patient, createdBy);
                     procedure = { ...procedure, ...payment };
                 }
                 res = procedure;
@@ -551,10 +527,9 @@ export class PatientService {
     }
 
     async doFillRequest(param, requestId, updatedBy) {
-        const { patient_id, requestBody, total_amount } = param;
+        const { patient_id, total_amount } = param;
         try {
             const request = await this.patientRequestRepository.findOne(requestId);
-            request.requestBody = requestBody;
             request.isFilled = true;
             const res = await request.save();
 
@@ -568,7 +543,7 @@ export class PatientService {
                 payment_type: patient.hmo.id === 1 ? 'Private' : 'HMO',
                 hmo_approval_status: patient.hmo.id === 1 ? 2 : 0,
                 transaction_type: 'pharmacy',
-                transaction_details: requestBody,
+                // transaction_details: requestBody,
                 createdBy: updatedBy,
                 patientRequest: res,
             };
@@ -598,12 +573,10 @@ export class PatientService {
         const query = this.patientRequestRepository.createQueryBuilder('q')
             .leftJoin('q.patient', 'patient')
             .leftJoin(User, 'creator', 'q.createdBy = creator.username')
-            .leftJoin(Transactions, 'transaction', 'q.id = transaction.patient_request_id')
             .innerJoin(StaffDetails, 'staff1', 'staff1.user_id = creator.id')
-            .select('q.id, q.requestType, q.code, q.requestBody, q.createdAt, q.status, q.isFilled, q.urgent, q.requestNote')
+            .select('q.id, q.requestType, q.code, q.createdAt, q.status, q.urgent, q.requestNote, q.isFilled')
             .addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
-            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id, patient.fileNumber, patient.hmo_id as patient_hmo_id')
-            .addSelect('transaction.status as transaction_status')
+            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id, patient.hmo_id as hmo_id')
             .where('q.patient_id = :patient_id', { patient_id })
             .andWhere('q.requestType = :requestType', { requestType });
 
@@ -625,10 +598,21 @@ export class PatientService {
 
         const count = await query.getCount();
 
-        const result = await query.orderBy({
+        const items = await query.orderBy({
             'q.urgent': 'DESC',
             'q.createdAt': 'DESC',
         }).limit(queryLimit).offset(offset * queryLimit).getRawMany();
+
+        let result = [];
+        for (const item of items) {
+            item.hmo = await this.hmoRepository.findOne(item.hmo_id);
+
+            const requestItem = await this.patientRequestItemRepository.findOne({ where: { request: item } });
+            item.transaction = await this.transactionsRepository.findOne({ where: { patientRequestItem: requestItem } });
+            item.request_item = requestItem;
+
+            result = [...result, item];
+        }
 
         return {
             result,
@@ -645,36 +629,45 @@ export class PatientService {
         const queryLimit = limit ? parseInt(limit, 10) : 30;
         const offset = (page ? parseInt(page, 10) : 1) - 1;
 
-        const query = this.patientRequestRepository.createQueryBuilder('patient_request')
-            .leftJoin('patient_request.patient', 'patient')
-            .leftJoin(User, 'creator', 'patient_request.createdBy = creator.username')
-            .leftJoin(Transactions, 'transaction', 'patient_request.id = transaction.patient_request_id')
+        const query = this.patientRequestRepository.createQueryBuilder('q')
+            .leftJoin('q.patient', 'patient')
+            .leftJoin(User, 'creator', 'q.createdBy = creator.username')
             .innerJoin(StaffDetails, 'staff1', 'staff1.user_id = creator.id')
-            .select('patient_request.id, patient_request.requestType, patient_request.code, patient_request.requestBody, patient_request.createdAt, patient_request.status, patient_request.isFilled, patient_request.urgent, patient_request.requestNote')
+            .select('q.id, q.requestType, q.code, q.createdAt, q.status, q.urgent, q.requestNote, q.isFilled')
             .addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
-            .addSelect('transaction.status as transaction_status')
-            .addSelect('CONCAT(patient.other_names || \' \' || patient.surname) as patient_name, patient.id as patient_id, patient.fileNumber, patient.hmo_id as patient_hmo_id')
-            .andWhere('patient_request.requestType = :requestType', { requestType });
+            .addSelect('CONCAT(patient.other_names || \' \' || patient.surname) as patient_name, patient.id as patient_id')
+            .andWhere('q.requestType = :requestType', { requestType });
 
-            if (startDate && startDate !== '') {
-                const start = moment(startDate).startOf('day').toISOString();
-                query.andWhere(`patient_request.createdAt >= '${start}'`);
-            }
-            if (endDate && endDate !== '') {
-                const end = moment(endDate).endOf('day').toISOString();
-                query.andWhere(`patient_request.createdAt <= '${end}'`);
-            }
+        if (startDate && startDate !== '') {
+            const start = moment(startDate).startOf('day').toISOString();
+            query.andWhere(`q.createdAt >= '${start}'`);
+        }
+        if (endDate && endDate !== '') {
+            const end = moment(endDate).endOf('day').toISOString();
+            query.andWhere(`q.createdAt <= '${end}'`);
+        }
 
         if (filled) {
-            query.andWhere('patient_request.isFilled = :filled', { filled: true });
+            query.andWhere('q.isFilled = :filled', { filled: true });
         }
 
         const count = await query.getCount();
 
-        const result = await query.orderBy({
-            'patient_request.urgent': 'DESC',
-            'patient_request.createdAt': 'DESC',
+        const items = await query.orderBy({
+            'q.urgent': 'DESC',
+            'q.createdAt': 'DESC',
         }).limit(queryLimit).offset(offset * queryLimit).getRawMany();
+
+        let result = [];
+        for (const item of items) {
+            item.hmo = await this.hmoRepository.findOne(item.hmo_id);
+
+            const requestItem = await this.patientRequestItemRepository.findOne({ where: { request: item } });
+            item.transaction = await this.transactionsRepository.findOne({ where: { patientRequestItem: requestItem } });
+            item.request_item = requestItem;
+
+            result = [...result, item];
+        }
 
         return {
             result,
@@ -685,23 +678,23 @@ export class PatientService {
         };
     }
 
-    async doApproveResult(id: string, params, username) {
-        const { type } = params;
+    async doApproveResult(id: number, params, username) {
+        const { type, request_id } = params;
 
-        const result = await this.patientRequestRepository.findOne({ where: { id }, relations: ['patient'] });
+        const result = await this.patientRequestRepository.findOne({ where: { id: request_id }, relations: ['patient'] });
 
         switch (type) {
             case 'lab':
                 try {
-                    const body = Object.assign({}, result.requestBody);
-                    result.requestBody = {
-                        ...body,
-                        approvedAt: moment().format('YYYY-MM-DD HH:mm:ss'),
-                        approvedBy: username,
-                    };
-                    result.lastChangedBy = username;
+                    const request = await this.patientRequestItemRepository.findOne(id);
+                    request.approved = 1;
+                    request.approvedBy = username;
+                    request.approvedAt = moment().format('YYYY-MM-DD HH:mm:ss');
+                    request.lastChangedBy = username;
+                    const res = await request.save();
+
                     result.status = 1;
-                    const res = await result.save();
+                    await result.save();
 
                     return { success: true, data: res };
                 } catch (e) {
@@ -713,32 +706,32 @@ export class PatientService {
                     const patient = result.patient;
                     const admission = await this.admissionRepository.findOne({ where: { patientId: patient.id } });
 
-                    let results = [];
-                    for (const drug of result.requestBody) {
-                        // @ts-ignore
-                        const { vaccine } = drug;
-                        if (vaccine) {
-                            const newTask = new AdmissionClinicalTask();
-
-                            newTask.task = 'Immunization';
-                            newTask.title = `Give ${drug.drug_name} Immediately`;
-                            newTask.taskType = 'regimen';
-                            newTask.drug = drug;
-                            newTask.dose = 1;
-                            newTask.interval = 1;
-                            newTask.intervalType = 'immediately';
-                            newTask.frequency = 'Immediately';
-                            newTask.taskCount = 1;
-                            newTask.startTime = moment().format('YYYY-MM-DD HH:mm:ss');
-                            newTask.nextTime = moment().format('YYYY-MM-DD HH:mm:ss');
-                            newTask.patient = patient;
-                            newTask.admission = admission;
-                            newTask.createdBy = username;
-                            newTask.request = result;
-
-                            const rs = await newTask.save();
-                            results = [...results, rs];
-                        }
+                    const results = [];
+                    for (const drug of result.items) {
+                        //     // @ts-ignore
+                        //     const { vaccine } = drug;
+                        //     if (vaccine) {
+                        //         const newTask = new AdmissionClinicalTask();
+                        //
+                        //         newTask.task = 'Immunization';
+                        //         newTask.title = `Give ${drug.drug_name} Immediately`;
+                        //         newTask.taskType = 'regimen';
+                        //         newTask.drug = drug;
+                        //         newTask.dose = 1;
+                        //         newTask.interval = 1;
+                        //         newTask.intervalType = 'immediately';
+                        //         newTask.frequency = 'Immediately';
+                        //         newTask.taskCount = 1;
+                        //         newTask.startTime = moment().format('YYYY-MM-DD HH:mm:ss');
+                        //         newTask.nextTime = moment().format('YYYY-MM-DD HH:mm:ss');
+                        //         newTask.patient = patient;
+                        //         newTask.admission = admission;
+                        //         newTask.createdBy = username;
+                        //         newTask.request = result;
+                        //
+                        //         const rs = await newTask.save();
+                        //         results = [...results, rs];
+                        //     }
                     }
 
                     result.status = 1;
@@ -752,16 +745,12 @@ export class PatientService {
         }
     }
 
-    async receiveSpecimen(id: string, username: string) {
+    async receiveSpecimen(id: number, username: string) {
         try {
-            const request = await this.patientRequestRepository.findOne(id);
-            const body = Object.assign({}, request.requestBody);
-            request.requestBody = {
-                ...body,
-                received: 1,
-                receivedAt: moment().format('YYYY-MM-DD HH:mm:ss'),
-                receivedBy: username,
-            };
+            const request = await this.patientRequestItemRepository.findOne(id);
+            request.received = 1;
+            request.receivedBy = username;
+            request.receivedAt = moment().format('YYYY-MM-DD HH:mm:ss');
             request.lastChangedBy = username;
             const res = await request.save();
 
@@ -774,17 +763,13 @@ export class PatientService {
     async fillResult(id: string, param, username: string) {
         try {
             const { parameters, note, result } = param;
-            const request = await this.patientRequestRepository.findOne(id);
-            const body = Object.assign({}, request.requestBody);
-            request.requestBody = {
-                ...body,
-                filled: 1,
-                filledAt: moment().format('YYYY-MM-DD HH:mm:ss'),
-                filledBy: username,
-                parameters,
-                note,
-                result,
-            };
+            const request = await this.patientRequestItemRepository.findOne(id);
+            request.filled = 1;
+            request.filledBy = username;
+            request.filledAt = moment().format('YYYY-MM-DD HH:mm:ss');
+            request.parameters = parameters;
+            request.note = note;
+            request.result = result;
             request.lastChangedBy = username;
             const res = await request.save();
 
@@ -796,19 +781,16 @@ export class PatientService {
 
     async rejectResult(id: string, username: string) {
         try {
-            const request = await this.patientRequestRepository.findOne(id);
-            const body = Object.assign({}, request.requestBody);
-            request.requestBody = {
-                ...body,
-                filled: 0,
-                filledAt: null,
-                filledBy: null,
-                parameters: request.requestBody.parameters.map(p => ({
-                    ...p,
-                    inference: '',
-                    value: '',
-                })),
-            };
+            const request = await this.patientRequestItemRepository.findOne(id);
+            request.filled = 0;
+            request.filledBy = null;
+            request.filledAt = null;
+            request.parameters = request.parameters.map(p => ({
+                ...p,
+                inference: '',
+                value: '',
+            }));
+            request.result = null;
             request.lastChangedBy = username;
             const res = await request.save();
 
@@ -821,59 +803,49 @@ export class PatientService {
     async deleteRequest(id: string, params, username: string) {
         const { type } = params;
         let res;
-        const request = await this.patientRequestRepository.findOne(id);
+        const request = await this.patientRequestItemRepository.findOne(id);
         switch (type) {
             case 'lab':
-                const body = Object.assign({}, request.requestBody);
-                request.requestBody = {
-                    ...body,
-                    cancelled: true,
-                    cancelledAt: moment().format('YYYY-MM-DD HH:mm:ss'),
-                    cancelledBy: username,
-                };
+                request.cancelled = 1;
+                request.cancelledBy = username;
+                request.cancelledAt = moment().format('YYYY-MM-DD HH:mm:ss');
                 request.lastChangedBy = username;
                 res = await request.save();
                 break;
             default:
-                const result = await this.patientRequestRepository.delete(id);
-
-                if (result.affected === 0) {
-                    throw new NotFoundException(`Patient request with ID '${id}' not found`);
-                }
                 break;
         }
 
         return { success: true, data: res };
     }
 
-    async printResult(id: string, params) {
+    async printResult(id: number, params) {
         try {
-            const { print_group } = params;
+            const { print_group, type } = params;
 
-            const request = await this.patientRequestRepository.findOne({ where: { id }, relations: ['patient'] });
+            const request = await this.patientRequestRepository.findOne(id, { relations: ['patient', 'items'] });
 
             const patient = request.patient;
 
+            // tslint:disable-next-line:prefer-const
             let results;
             const printGroup = parseInt(print_group, 10);
             if (printGroup === 1) {
-                results = await this.patientRequestRepository.find({ where: { code: request.code } });
+                results = await this.patientRequestRepository.find({ where: { code: request.code }, relations: ['patient', 'items'] });
             } else {
                 results = [request];
             }
 
-            const specimen = [...results.map(r => r.requestBody.specimens.map(s => s.label))];
+            const specimen = [...results.map(r => r.items.map(i => i.labTest.specimens.map(s => s.label)))];
 
             const date = new Date();
-            const filename = 'LAB-' + date.getTime() + '.pdf';
+            const filename = `${type}-${date.getTime()}.pdf`;
             const filepath = path.resolve(__dirname, `../../../public/result/${filename}`);
 
             const dob = moment(patient.date_of_birth, 'YYYY-MM-DD HH:mm:ss').format('YYYY-MM-DD');
 
             const data = {
                 patient,
-                lab_id: request.code,
-                specimen: specimen.join(', '),
                 date: moment(request.createdAt, 'YYYY-MM-DD HH:mm:ss').format('DD-MMM-YYYY'),
                 age: moment().diff(dob, 'years'),
                 filepath,
@@ -881,7 +853,24 @@ export class PatientService {
                 logo: `${process.env.ENDPOINT}/public/images/logo.png`,
             };
 
-            await generatePDF('lab-result', data);
+            let content;
+            switch (type) {
+                case 'regimen':
+                    content = { ...data};
+
+                    await generatePDF('regimen-prescription', content);
+                    break;
+                case 'lab':
+                default:
+                    content = {
+                        ...data,
+                        lab_id: request.code,
+                        specimen: specimen.join(', '),
+                    };
+
+                    await generatePDF('lab-result', content);
+                    break;
+            }
 
             return { success: true, file: `${process.env.ENDPOINT}/public/result/${filename}` };
         } catch (error) {
@@ -907,9 +896,8 @@ export class PatientService {
     }
 
     async doUploadRequestDocument(id, param, fileName, createdBy) {
-        console.log(fileName);
-        const request = await this.patientRequestRepository.findOne(id);
         try {
+            const request = await this.patientRequestRepository.findOne(id);
             const doc = new PatientRequestDocument();
             doc.request = request;
             doc.document_type = param.document_type;

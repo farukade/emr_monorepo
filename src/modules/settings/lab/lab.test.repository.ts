@@ -45,9 +45,7 @@ export class LabTestRepository extends Repository<LabTest> {
         labTest.hasParameters = hasParameters;
         labTest.specimens = specimens;
         labTest.hmo = hmo;
-        if (labTest.hmo.id !== hmo.id) {
-            labTest.hmoPrice = hmoPrice;
-        }
+        labTest.hmoPrice = hmoPrice;
         labTest = await this.manager.save(labTest);
 
         return labTest;

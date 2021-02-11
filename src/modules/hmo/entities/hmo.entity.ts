@@ -19,11 +19,7 @@ export class Hmo extends CustomBaseEntity {
   @Column({ type: 'varchar', length: 300, nullable: true })
   email: string;
 
-  @OneToMany(
-    () => RoomCategory,
-    roomCategory => roomCategory.hmo,
-    { eager: true, onDelete: 'CASCADE' },
-)
+  @OneToMany(() => RoomCategory, category => category.hmo, { onDelete: 'CASCADE' })
   roomCategories: RoomCategory[];
 
 }

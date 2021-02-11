@@ -55,8 +55,11 @@ export class LabController {
     }
 
     @Delete(':id')
-    deleteLabTest(@Param('id') id: number): Promise<LabTest> {
-        return this.labService.deleteLabTest(id);
+    deleteLabTest(
+        @Param('id') id: number,
+        @Request() req,
+    ): Promise<LabTest> {
+        return this.labService.deleteLabTest(id, req.user.username);
     }
 
     /**
@@ -64,9 +67,9 @@ export class LabController {
      */
     @Get('/categories')
     getCategories(
-        @Query('hasTest') hasTest: string,
+        @Query() param,
     ): Promise<any[]> {
-        return this.labService.getCategories(hasTest === '1');
+        return this.labService.getCategories(param);
     }
 
     @Post('/categories')
@@ -89,8 +92,11 @@ export class LabController {
     }
 
     @Delete('categories/:id')
-    deleteServiceCategory(@Param('id') id: number): Promise<LabTestCategory> {
-        return this.labService.deleteCategory(id);
+    deleteServiceCategory(
+        @Param('id') id: number,
+        @Request() req,
+    ): Promise<LabTestCategory> {
+        return this.labService.deleteCategory(id, req.user.username);
     }
 
     /**
@@ -119,8 +125,11 @@ export class LabController {
     }
 
     @Delete('parameters/:id')
-    deleteParameter(@Param('id') id: string): Promise<void> {
-        return this.labService.deleteParameter(id);
+    deleteParameter(
+        @Param('id') id: number,
+        @Request() req,
+    ): Promise<Parameter> {
+        return this.labService.deleteParameter(id, req.user.username);
     }
 
     /**
@@ -162,8 +171,10 @@ export class LabController {
      * LAB TEST GROUP
      */
     @Get('/groups')
-    getGroups(): Promise<any[]> {
-        return this.labService.getGroups();
+    getGroups(
+        @Query() param,
+    ): Promise<any[]> {
+        return this.labService.getGroups(param);
     }
 
     @Post('/groups')
@@ -178,7 +189,7 @@ export class LabController {
     @Patch('/groups/:id')
     @UsePipes(ValidationPipe)
     updateGroup(
-        @Param('id') id: string,
+        @Param('id') id: number,
         @Body() groupDto: GroupDto,
         @Request() req,
     ): Promise<any> {
@@ -186,7 +197,10 @@ export class LabController {
     }
 
     @Delete('/groups/:id')
-    deleteGroup(@Param('id') id: number): Promise<Group> {
-        return this.labService.deleteGroup(id);
+    deleteGroup(
+        @Param('id') id: number,
+        @Request() req,
+    ): Promise<Group> {
+        return this.labService.deleteGroup(id, req.user.username);
     }
 }

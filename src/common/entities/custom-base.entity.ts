@@ -3,11 +3,9 @@ import {
     Column,
     CreateDateColumn,
     DeleteDateColumn,
-    ManyToOne,
     PrimaryGeneratedColumn,
     UpdateDateColumn,
 } from 'typeorm';
-import { StaffDetails } from '../../modules/hr/staff/entities/staff_details.entity';
 
 export abstract class CustomBaseEntity extends BaseEntity {
     @PrimaryGeneratedColumn('increment')

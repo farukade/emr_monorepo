@@ -18,8 +18,10 @@ import { GroupDto } from './dto/group.dto';
 import { slugify } from '../../../common/utils/utils';
 import { PaginationOptionsInterface } from '../../../common/paginate';
 import { Pagination } from '../../../common/paginate/paginate.interface';
-import { Like, Raw } from 'typeorm';
+import { getConnection, Like, Raw } from 'typeorm';
 import { HmoRepository } from '../../hmo/hmo.repository';
+import { GroupTest } from '../entities/group_tests.entity';
+import { GroupTestRepository } from './group_tests.repository';
 
 @Injectable()
 export class LabService {
@@ -36,6 +38,8 @@ export class LabService {
         private groupRepository: GroupRepository,
         @InjectRepository(HmoRepository)
         private hmoRepository: HmoRepository,
+        @InjectRepository(HmoRepository)
+        private groupTestRepository: GroupTestRepository,
     ) {
     }
 
@@ -44,15 +48,17 @@ export class LabService {
     */
 
     async getTests(options: PaginationOptionsInterface, params): Promise<Pagination> {
-        const { q } = params;
+        const { q, hmo_id } = params;
 
         const page = options.page - 1;
+
+        const hmo = await this.hmoRepository.findOne(hmo_id);
 
         let result;
         let total = 0;
         if (q && q.length > 0) {
             [result, total] = await this.labTestRepository.findAndCount({
-                where: { name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`) },
+                where: { name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`), hmo },
                 relations: ['category', 'hmo'],
                 order: { name: 'ASC' },
                 take: options.limit,
@@ -60,6 +66,7 @@ export class LabService {
             });
         } else {
             [result, total] = await this.labTestRepository.findAndCount({
+                where: { hmo },
                 relations: ['category', 'hmo'],
                 order: { name: 'ASC' },
                 take: options.limit,
@@ -97,41 +104,38 @@ export class LabService {
         }
     }
 
-    async deleteLabTest(id: number): Promise<LabTest> {
-        // // delete previous parameters
-        // await getConnection()
-        //     .createQueryBuilder()
-        //     .delete()
-        //     .from(LabTestParameter)
-        //     .where('lab_test_parameters.lab_test_id = :id', {id})
-        //     .execute();
+    async deleteLabTest(id: number, username): Promise<LabTest> {
+        const test = await this.labTestRepository.findOne(id, { relations: ['hmo'] });
 
-        const result = await this.labTestRepository.delete(id);
-
-        if (result.affected === 0) {
+        if (!test) {
             throw new NotFoundException(`Lab test with ID '${id}' not found`);
         }
 
-        const test = new LabTest();
-        test.id = id;
-        return test;
+        test.deletedBy = username;
+        await test.save();
+
+        return test.softRemove();
     }
 
     /*
         LAB TEST CATEGORIES
     */
 
-    async getCategories(hasTest: boolean): Promise<any[]> {
+    async getCategories(param): Promise<any[]> {
         const categories = await this.labTestCategoryRepo.find();
 
-        if (!hasTest) {
+        const { hasTest, hmo_id } = param;
+
+        if (hasTest !== '1') {
             return categories;
         }
+
+        const hmo = await this.hmoRepository.findOne(hmo_id);
 
         let results = [];
         for (const category of categories) {
             const tests = await this.labTestRepository.find({
-                where: { category },
+                where: { category, hmo },
                 relations: ['category', 'hmo'],
                 order: { name: 'ASC' },
             });
@@ -157,16 +161,17 @@ export class LabService {
         return category;
     }
 
-    async deleteCategory(id: number): Promise<LabTestCategory> {
-        const result = await this.labTestCategoryRepo.delete(id);
+    async deleteCategory(id: number, username): Promise<LabTestCategory> {
+        const category = await this.labTestCategoryRepo.findOne(id);
 
-        if (result.affected === 0) {
+        if (!category) {
             throw new NotFoundException(`Lab test category with ID '${id}' not found`);
         }
 
-        const category = new LabTestCategory();
-        category.id = id;
-        return category;
+        category.deletedBy = username;
+        await category.save();
+
+        return category.softRemove();
     }
 
     /*
@@ -196,12 +201,17 @@ export class LabService {
         return parameter;
     }
 
-    async deleteParameter(id: string): Promise<void> {
-        const result = await this.parameterRepository.delete(id);
+    async deleteParameter(id: number, username): Promise<Parameter> {
+        const parameter = await this.parameterRepository.findOne(id);
 
-        if (result.affected === 0) {
+        if (!parameter) {
             throw new NotFoundException(`Lab parameter with ID '${id}' not found`);
         }
+
+        parameter.deletedBy = username;
+        await parameter.save();
+
+        return parameter.softRemove();
     }
 
     /*
@@ -242,72 +252,83 @@ export class LabService {
         LAB GROUPS
     */
 
-    async getGroups(): Promise<any[]> {
-        const rs = await this.groupRepository.find();
+    async getGroups(param): Promise<any[]> {
+        const { hmo_id } = param;
 
-        let groups = [];
-        for (const group of rs) {
-            let tests = [];
-            for (const test of group.lab_tests) {
-                const labTest = await this.labTestRepository.findOne({
-                    where: { id: test.id },
-                    relations: ['category', 'hmo'],
-                });
-                tests = [...tests, labTest];
-            }
-            groups = [...groups, { ...group, tests }];
+        let result = [];
+
+        if (hmo_id && hmo_id !== '') {
+            const hmo = await this.hmoRepository.findOne(hmo_id);
+            result = await this.groupRepository.find({ where: { hmo }, relations: ['hmo', 'tests'] });
+        } else {
+            result = await this.groupRepository.find({ relations: ['hmo', 'tests'] });
         }
 
-        return groups;
+        return result;
     }
 
     async createGroup(groupDto: GroupDto, createdBy: string): Promise<any> {
-        const group = await this.groupRepository.saveGroup(groupDto, createdBy);
+        try {
+            const hmo = await this.hmoRepository.findOne(groupDto.hmo_id);
 
-        let tests = [];
-        for (const test of group.lab_tests) {
-            const rs = await this.labTestRepository.findOne({
-                where: { id: test.id },
-                relations: ['category', 'hmo'],
-            });
-            tests = [...tests, rs];
+            const group = await this.groupRepository.saveGroup(groupDto, createdBy, hmo);
+
+            let tests = [];
+            for (const item of groupDto.lab_tests) {
+                const test = await this.labTestRepository.findOne(item.id);
+
+                const groupTest = new GroupTest();
+                groupTest.labTest = test;
+                groupTest.group = group;
+                const rs = await groupTest.save();
+
+                tests = [...tests, rs];
+            }
+
+            return { ...group, tests };
+        } catch (e) {
+            console.log(e);
+            throw new NotFoundException('could not group');
         }
-        group.tests = tests;
-
-        return group;
     }
 
-    async updateGroup(id: string, groupDto: GroupDto, updatedBy: string): Promise<any> {
+    async updateGroup(id: number, groupDto: GroupDto, updatedBy: string): Promise<any> {
         const { name, lab_tests, description } = groupDto;
+
         const group = await this.groupRepository.findOne(id);
         group.name = name;
         group.slug = slugify(name);
-        group.lab_tests = lab_tests;
         group.description = description;
         group.lastChangedBy = updatedBy;
         await group.save();
 
+        await getConnection().createQueryBuilder().delete().from(GroupTest).where('group_id = :id', { id }).execute();
+
         let tests = [];
-        for (const test of lab_tests) {
-            const rs = await this.labTestRepository.findOne({
-                where: { id: test.id },
-                relations: ['category', 'hmo'],
-            });
+        for (const item of lab_tests) {
+            const test = await this.labTestRepository.findOne(item.id);
+
+            const groupTest = new GroupTest();
+            groupTest.labTest = test;
+            groupTest.group = group;
+            const rs = await groupTest.save();
+
             tests = [...tests, rs];
         }
 
         return { ...group, tests };
     }
 
-    async deleteGroup(id: number): Promise<Group> {
-        const result = await this.groupRepository.delete(id);
+    async deleteGroup(id: number, username: string): Promise<Group> {
+        const group = await this.groupRepository.findOne(id);
 
-        if (result.affected === 0) {
+        if (!group) {
             throw new NotFoundException(`Lab parameter with ID '${id}' not found`);
         }
 
-        const group = new Group();
-        group.id = id;
-        return group;
+        group.deletedBy = username;
+        await group.save();
+
+        return group.softRemove();
     }
 }

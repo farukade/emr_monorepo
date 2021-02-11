@@ -79,43 +79,45 @@ export class ConsultationService {
             encounter.physicalExamination = param.physicalExamination;
             encounter.physicalExaminationSummary = param.physicalExaminationSummary;
             encounter.diagnosis = param.diagnosis;
+
             const labRequest    = param.investigations.labRequest;
             const imagingRequest = param.investigations.imagingRequest;
             const pharmacyRequest = plan.pharmacyRequests;
             const procedureRequest = plan.procedureRequest;
+
             // save request
-            if (labRequest && labRequest.requestBody) {
+            if (labRequest) {
                 const labRequestRes = await PatientRequestHelper.handleLabRequest(labRequest, patient, createdBy);
                 if (labRequestRes.success) {
                     // save transaction
-                    await RequestPaymentHelper.clinicalLabPayment(labRequestRes.data, patient, createdBy);
+                    await RequestPaymentHelper.clinicalLabPayment(labRequest.items, patient, createdBy);
                     encounter.labRequest = labRequestRes.data;
                 }
             }
 
-            if (pharmacyRequest && pharmacyRequest.requestBody) {
+            if (pharmacyRequest) {
                 const pharmacyReqRes = await PatientRequestHelper.handlePharmacyRequest(pharmacyRequest, patient, createdBy);
                 if (pharmacyReqRes.success) {
                     // save transaction
-                    await RequestPaymentHelper.pharmacyPayment(pharmacyRequest.requestBody, patient, createdBy);
+                    await RequestPaymentHelper.pharmacyPayment(pharmacyRequest.items, patient, createdBy);
                     encounter.pharmacyRequest = pharmacyReqRes.data;
                 }
             }
 
-            if (imagingRequest && imagingRequest.requestBody) {
+            if (imagingRequest) {
                 const radiologyRes = await PatientRequestHelper.handleImagingRequest(imagingRequest, patient, createdBy);
                 if (radiologyRes.success) {
                     // save transaction
-                    await RequestPaymentHelper.imagingPayment(imagingRequest.requestBody, patient, createdBy);
+                    await RequestPaymentHelper.imagingPayment(imagingRequest.items, patient, createdBy);
                     encounter.imagingRequest = radiologyRes.data;
                 }
             }
 
-            if (procedureRequest && procedureRequest.requestBody) {
+            if (procedureRequest && procedureRequest.requests) {
                 const procedure = await PatientRequestHelper.handleImagingRequest(procedureRequest, patient, createdBy);
                 if (procedure.success) {
                     // save transaction
-                    await RequestPaymentHelper.imagingPayment(procedureRequest.requestBody, patient, createdBy);
+                    await RequestPaymentHelper.imagingPayment(procedureRequest.items, patient, createdBy);
                     encounter.procedure = procedure.data;
                 }
             }
@@ -140,7 +142,6 @@ export class ConsultationService {
     }
 
     async getEncounter(id: string) {
-
         return await this.encounterRepository.findOne(id);
     }
 

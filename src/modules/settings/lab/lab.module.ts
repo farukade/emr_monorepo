@@ -8,6 +8,7 @@ import { ParameterRepository } from './parameter.repository';
 import { SpecimenRepository } from './specimen.repository';
 import { GroupRepository } from './group.repository';
 import { HmoRepository } from '../../hmo/hmo.repository';
+import { GroupTestRepository } from './group_tests.repository';
 
 @Module({
     imports: [
@@ -17,6 +18,7 @@ import { HmoRepository } from '../../hmo/hmo.repository';
             ParameterRepository,
             SpecimenRepository,
             GroupRepository,
+            GroupTestRepository,
             HmoRepository,
         ]),
     ],

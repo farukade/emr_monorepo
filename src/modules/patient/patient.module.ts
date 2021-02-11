@@ -29,6 +29,7 @@ import { TransactionsRepository } from '../finance/transactions/transactions.rep
 import { AdmissionClinicalTaskRepository } from './admissions/repositories/admission-clinical-tasks.repository';
 import { AdmissionsRepository } from './admissions/repositories/admissions.repository';
 import { ImmunizationRepository } from './immunization/repositories/immunization.repository'
+import { PatientRequestItemRepository } from './repositories/patient_request_items.repository';
 
 @Module({
   imports: [TypeOrmModule.forFeature([
@@ -39,7 +40,7 @@ import { ImmunizationRepository } from './immunization/repositories/immunization
       PatientVitalRepository,
       PatientAntenatalRepository,
       PatientRequestRepository,
-      // PatientRequestItemRepository,
+      PatientRequestItemRepository,
       PatientAllergyRepository,
       HmoRepository,
       ServiceRepository,
