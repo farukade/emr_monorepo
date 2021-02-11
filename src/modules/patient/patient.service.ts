@@ -39,7 +39,7 @@ import { Immunization } from './immunization/entities/immunization.entity';
 import { Specimen } from '../settings/entities/specimen.entity';
 import { Pagination } from '../../common/paginate/paginate.interface';
 import { PaginationOptionsInterface } from '../../common/paginate';
-import { ImmunizationRepository } from './immunization/repositories/immunization.repository'
+import { ImmunizationRepository } from './immunization/repositories/immunization.repository';
 import { PatientRequestItemRepository } from './repositories/patient_request_items.repository';
 
 @Injectable()
@@ -83,30 +83,27 @@ export class PatientService {
         private immunizationRepository: ImmunizationRepository,
         @InjectRepository(PatientRequestItemRepository)
         private patientRequestItemRepository: PatientRequestItemRepository,
-                
-        @InjectRepository(PatientRequestItemRepository)
-        private patientRequestItemRepository: PatientRequestItemRepository,
     ) {
     }
 
-    async listAllPatients(options: PaginationOptionsInterface, params): Promise<Pagination>  {
-            const { startDate, endDate, patient_id } = params;
-            const query = this.patientRepository.createQueryBuilder('q').select('q.*');
+    async listAllPatients(options: PaginationOptionsInterface, params): Promise<Pagination> {
+        const { startDate, endDate, patient_id } = params;
+        const query = this.patientRepository.createQueryBuilder('q').select('q.*');
 
-            if (startDate && startDate !== '') {
-                const start = moment(startDate).endOf('day').toISOString();
-                query.andWhere(`q.createdAt >= '${start}'`);
-            }
-            if (endDate && endDate !== '') {
-                const end = moment(endDate).endOf('day').toISOString();
-                query.andWhere(`q.createdAt <= '${end}'`);
-            }
+        if (startDate && startDate !== '') {
+            const start = moment(startDate).endOf('day').toISOString();
+            query.andWhere(`q.createdAt >= '${start}'`);
+        }
+        if (endDate && endDate !== '') {
+            const end = moment(endDate).endOf('day').toISOString();
+            query.andWhere(`q.createdAt <= '${end}'`);
+        }
 
-            if (patient_id && patient_id !== '') {
-                query.andWhere('q.id = :id', {id: patient_id});
-            }
+        if (patient_id && patient_id !== '') {
+            query.andWhere('q.id = :id', { id: patient_id });
+        }
 
-            const patients = await query.offset(options.page * options.limit)
+        const patients = await query.offset(options.page * options.limit)
             .limit(options.limit)
             .orderBy('q.createdAt', 'DESC')
             .getRawMany();
@@ -115,7 +112,7 @@ export class PatientService {
 
         for (const patient of patients) {
 
-            patient.immunization = await this.immunizationRepository.find({where:{patient}});
+            patient.immunization = await this.immunizationRepository.find({ where: { patient } });
 
             if (patient.hmo_id) {
                 patient.hmo = await this.hmoRepository.findOne(patient.hmo_id);
@@ -125,7 +122,7 @@ export class PatientService {
                 patient.nextOfKin = await this.nextOfKinRepository.findOne(patient.nextOfKin_id);
             }
         }
-        
+
         return {
             result: patients,
             lastPage: Math.ceil(total / options.limit),
@@ -858,7 +855,7 @@ export class PatientService {
             let content;
             switch (type) {
                 case 'regimen':
-                    content = { ...data};
+                    content = { ...data };
 
                     await generatePDF('regimen-prescription', content);
                     break;

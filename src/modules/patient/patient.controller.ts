@@ -274,32 +274,6 @@ export class PatientController {
         return this.patientService.fillResult(requestId, param, req.user.username);
     }
 
-    @Patch(':requestId/receive-specimen')
-    receiveLabSpecimen(
-        @Param('requestId') requestId: number,
-        @Request() req,
-    ) {
-        return this.patientService.receiveSpecimen(requestId, req.user.username);
-    }
-
-    @Post('fill-request/:id')
-    fillRequest(
-        @Param('id') requestId: string,
-        @Body() param,
-        @Request() req,
-    ) {
-        return this.patientService.doFillRequest(param, requestId, req.user.username);
-    }
-
-    @Patch(':requestId/fill-result')
-    fillLabResult(
-        @Param('requestId') requestId: string,
-        @Request() req,
-        @Body() param,
-    ) {
-        return this.patientService.fillResult(requestId, param, req.user.username);
-    }
-
     @Patch('request/:requestId/approve-result')
     approveResult(
         @Param('requestId') requestId: number,
@@ -332,23 +306,6 @@ export class PatientController {
         @Query() urlParams,
     ): Promise<any> {
         return this.patientService.printResult(requestId, urlParams);
-    }
-
-    @Patch(':requestId/receive-specimen')
-    receiveLabSpecimen(
-        @Param('requestId') requestId: string,
-        @Request() req,
-    ) {
-        return this.patientService.receiveSpecimen(requestId, req.user.username);
-    }
-
-    @Patch(':requestId/fill-result')
-    fillLabResult(
-        @Param('requestId') requestId: string,
-        @Request() req,
-        @Body() param,
-    ) {
-        return this.patientService.fillResult(requestId, param, req.user.username);
     }
 
     @Post(':id/upload-document')
