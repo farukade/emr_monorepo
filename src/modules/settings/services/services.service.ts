@@ -181,9 +181,9 @@ export class ServicesService {
                         let subCategory;
 
                         // check if category exists
-                        category = await this.serviceCategoryRepository.findOne({ where: { name: item.category.trim() } });
+                        category = await this.serviceCategoryRepository.findOne({ where: { slug: slugify(item.category) } });
                         if (!category) {
-                            category = await this.serviceCategoryRepository.save({ name: item.category.trim() });
+                            category = await this.serviceCategoryRepository.save({ name: item.category.trim(), slug: slugify(item.category) });
                         }
                         if (item.subCategory) {
                             // console.log(category.id);
@@ -321,8 +321,8 @@ export class ServicesService {
         return this.serviceCategoryRepository.find({ relations: ['services', 'subCategories'] });
     }
 
-    async getServicesCategoryByName(name: string): Promise<ServiceCategory> {
-        return await this.serviceCategoryRepository.findOne({ where: { name } });
+    async getServicesCategoryBySlug(slug: string): Promise<ServiceCategory> {
+        return await this.serviceCategoryRepository.findOne({ where: { slug } });
     }
 
     async createServiceCategory(serviceCategoryDto: ServiceCategoryDto): Promise<ServiceCategory> {
@@ -333,6 +333,7 @@ export class ServicesService {
         const { name, notes } = serviceCategoryDto;
         const category = await this.serviceCategoryRepository.findOne(id);
         category.name = name;
+        category.slug = slugify(name);
         category.notes = notes;
         await category.save();
         return category;

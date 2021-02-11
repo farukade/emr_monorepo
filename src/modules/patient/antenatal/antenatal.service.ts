@@ -83,54 +83,54 @@ export class AntenatalService {
     }
 
     async saveAntenatalVisits(antenatalVisitDto: AntenatalVisitDto, createdBy) {
-        const { labRequest, imagingRequest, pharmacyRequest } = antenatalVisitDto;
-        const patient = await this.patientRepository.findOne(antenatalVisitDto.patient_id);
-        try {
-            const visit = new AntenatalVisits();
-            visit.heightOfFunds = antenatalVisitDto.heightOfFunds;
-            visit.fetalHeartRate = antenatalVisitDto.fetalHeartRate;
-            visit.fetalLie = antenatalVisitDto.fetalLie;
-            visit.positionOfFetus = antenatalVisitDto.positionOfFetus;
-            visit.relationshipToBrim = antenatalVisitDto.relationshipToBrim;
-            visit.comment = antenatalVisitDto.comment;
-            visit.patient = patient;
-            visit.createdBy = createdBy;
-            visit.lastChangedBy = createdBy;
-            visit.nextAppointment = antenatalVisitDto.nextAppointment;
-            // save request
-            if (labRequest && labRequest.requestBody) {
-                const labRequestRes = await PatientRequestHelper.handleLabRequest(labRequest, patient, createdBy);
-                if (labRequestRes.success) {
-                    // save transaction
-                    await RequestPaymentHelper.clinicalLabPayment(labRequestRes.data, patient, createdBy);
-                }
-
-                visit.labRequests = labRequestRes.data;
-            }
-
-            if (pharmacyRequest && pharmacyRequest.requestBody) {
-                const pharmacyReqRes = await PatientRequestHelper.handlePharmacyRequest(pharmacyRequest, patient, createdBy);
-                if (pharmacyReqRes.success) {
-                    // save transaction
-                    await RequestPaymentHelper.pharmacyPayment(pharmacyRequest.requestBody, patient, createdBy);
-                }
-
-                visit.pharmacyRequest = pharmacyReqRes.data;
-            }
-
-            if (imagingRequest && imagingRequest.requestBody) {
-                const radiologyRes = await PatientRequestHelper.handleImagingRequest(imagingRequest, patient, createdBy);
-                if (radiologyRes.success) {
-                    // save transaction
-                    await RequestPaymentHelper.imagingPayment(imagingRequest.requestBody, patient, createdBy);
-                }
-                visit.radiologyRequest = radiologyRes.data;
-            }
-            await visit.save();
-            return {success: true, visit};
-        } catch (err) {
-            return {success: false, message: err.message};
-        }
+        // const { labRequest, imagingRequest, pharmacyRequest } = antenatalVisitDto;
+        // const patient = await this.patientRepository.findOne(antenatalVisitDto.patient_id);
+        // try {
+        //     const visit = new AntenatalVisits();
+        //     visit.heightOfFunds = antenatalVisitDto.heightOfFunds;
+        //     visit.fetalHeartRate = antenatalVisitDto.fetalHeartRate;
+        //     visit.fetalLie = antenatalVisitDto.fetalLie;
+        //     visit.positionOfFetus = antenatalVisitDto.positionOfFetus;
+        //     visit.relationshipToBrim = antenatalVisitDto.relationshipToBrim;
+        //     visit.comment = antenatalVisitDto.comment;
+        //     visit.patient = patient;
+        //     visit.createdBy = createdBy;
+        //     visit.lastChangedBy = createdBy;
+        //     visit.nextAppointment = antenatalVisitDto.nextAppointment;
+        //     // save request
+        //     if (labRequest && labRequest.requests) {
+        //         const labRequestRes = await PatientRequestHelper.handleLabRequest(labRequest, patient, createdBy);
+        //         if (labRequestRes.success) {
+        //             // save transaction
+        //             await RequestPaymentHelper.clinicalLabPayment(labRequestRes.data, patient, createdBy);
+        //         }
+        //
+        //         visit.labRequests = labRequestRes.data;
+        //     }
+        //
+        //     if (pharmacyRequest && pharmacyRequest.requests) {
+        //         const pharmacyReqRes = await PatientRequestHelper.handlePharmacyRequest(pharmacyRequest, patient, createdBy);
+        //         if (pharmacyReqRes.success) {
+        //             // save transaction
+        //             await RequestPaymentHelper.pharmacyPayment(pharmacyRequest.requests, patient, createdBy);
+        //         }
+        //
+        //         visit.pharmacyRequest = pharmacyReqRes.data;
+        //     }
+        //
+        //     if (imagingRequest && imagingRequest.requests) {
+        //         const radiologyRes = await PatientRequestHelper.handleImagingRequest(imagingRequest, patient, createdBy);
+        //         if (radiologyRes.success) {
+        //             // save transaction
+        //             await RequestPaymentHelper.imagingPayment(imagingRequest.requests, patient, createdBy);
+        //         }
+        //         visit.radiologyRequest = radiologyRes.data;
+        //     }
+        //     await visit.save();
+        //     return {success: true, visit};
+        // } catch (err) {
+        //     return {success: false, message: err.message};
+        // }
     }
 
     async getPatientAntenatalVisits(options: PaginationOptionsInterface, {patient_id, startDate, endDate}) {

@@ -2,7 +2,7 @@ import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 import { Entity, Column, ManyToOne, JoinColumn, OneToOne, OneToMany } from 'typeorm';
 import { Patient } from './patient.entity';
 import { AdmissionClinicalTask } from '../admissions/entities/admission-clinical-task.entity';
-import { PatientVital } from './patient_vitals.entity';
+import { PatientRequestItem } from './patient_request_items.entity';
 
 @Entity({name: 'patient_requests'})
 export class PatientRequest extends CustomBaseEntity {
@@ -12,9 +12,6 @@ export class PatientRequest extends CustomBaseEntity {
 
     @Column()
     requestType: string;
-
-    @Column({ type: 'jsonb'})
-    requestBody: any;
 
     @Column({ nullable: true })
     requestNote: string;
@@ -34,4 +31,7 @@ export class PatientRequest extends CustomBaseEntity {
 
     @OneToMany(type => AdmissionClinicalTask, task => task.request)
     task: AdmissionClinicalTask;
+
+    @OneToMany(type => PatientRequestItem, items => items.request)
+    items: PatientRequestItem[];
 }

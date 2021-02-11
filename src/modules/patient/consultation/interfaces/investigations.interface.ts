@@ -2,14 +2,13 @@ export interface IInvestigationInterface {
     labRequest: {
         requestType: string,
         request_note: string,
-        requestBody: {
-            groups: string[],
-            tests: string[],
-        },
+        items: string[],
+        urgent: boolean,
     };
     imagingRequest: {
         requestType: string,
         request_note: string,
-        requestBody: string[],
+        items: string[],
+        urgent: boolean,
     };
 }

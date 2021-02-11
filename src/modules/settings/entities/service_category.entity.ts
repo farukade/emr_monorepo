@@ -5,23 +5,26 @@ import { ServiceSubCategory } from './service_sub_category.entity';
 
 @Entity({ name: 'service_categories' })
 export class ServiceCategory extends CustomBaseEntity {
-  @Column({ type: 'varchar', length: 300 })
-  name: string;
+    @Column({ type: 'varchar', length: 300 })
+    name: string;
 
-  @Column({ type: 'varchar', nullable: true })
-  notes: string;
+    @Column({ type: 'varchar', length: 300, nullable: true })
+    slug: string;
 
-  @OneToMany(
-    () => ServiceSubCategory,
-    subCategories => subCategories.category,
-    { onDelete: 'CASCADE' },
-  )
-  subCategories: ServiceSubCategory[];
+    @Column({ type: 'varchar', nullable: true })
+    notes: string;
 
-  @OneToMany(
-    () => Service,
-    service => service.subCategory,
-    { onDelete: 'CASCADE' },
-  )
-  services: Service[];
+    @OneToMany(
+        () => ServiceSubCategory,
+        subCategories => subCategories.category,
+        { onDelete: 'CASCADE' },
+    )
+    subCategories: ServiceSubCategory[];
+
+    @OneToMany(
+        () => Service,
+        service => service.subCategory,
+        { onDelete: 'CASCADE' },
+    )
+    services: Service[];
 }

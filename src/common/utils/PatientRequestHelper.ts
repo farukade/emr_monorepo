@@ -1,41 +1,53 @@
 import { PatientRequestRepository } from '../../modules/patient/repositories/patient_request.repository';
-import { getConnection, Like } from 'typeorm';
+import { getConnection } from 'typeorm';
 import { PatientRequest } from '../../modules/patient/entities/patient_requests.entity';
 import { Immunization } from '../../modules/patient/immunization/entities/immunization.entity';
-import { Stock } from '../../modules/inventory/entities/stock.entity';
 import * as moment from 'moment';
+import { PatientRequestItem } from '../../modules/patient/entities/patient_request_items.entity';
+import { LabTest } from '../../modules/settings/entities/lab_test.entity';
 
 export class PatientRequestHelper {
     constructor(private patientRequestRepo: PatientRequestRepository) {
     }
 
     static async handleLabRequest(param, patient, createdBy) {
-        const { requestBody, request_note, urgent } = param;
+        const { requestType, request_note, tests, urgent } = param;
 
         try {
             const requestCount = await getConnection()
                 .createQueryBuilder()
                 .select('*')
                 .from(PatientRequest, 'q')
-                .where('q.requestType = :type', {type: 'lab'})
+                .where('q.requestType = :type', { type: 'lab' })
                 .getCount();
 
             const nextId = `00000${requestCount + 1}`;
             const code = `DH/${moment().format('MM')}/${nextId.slice(-5)}`;
 
             let result = [];
-            for (const request of requestBody) {
+            for (const item of tests) {
                 const data = {
                     code,
-                    requestType: 'lab',
-                    requestBody: request,
+                    requestType,
                     patient,
                     requestNote: request_note,
                     createdBy,
                     urgent,
                 };
                 const res = await this.save(data);
-                result = [...result, res.generatedMaps[0]];
+                const lab = res.generatedMaps[0];
+
+                const labTest = await getConnection().getRepository(LabTest).findOne(item.id);
+
+                const requestItem = {
+                    request: lab,
+                    labTest,
+                };
+                const rs = await this.saveItem(requestItem);
+
+                lab.items = [rs.generatedMaps[0]];
+
+                result = [...result, lab];
             }
 
             return { success: true, data: result };
@@ -46,15 +58,16 @@ export class PatientRequestHelper {
     }
 
     static async handlePharmacyRequest(param, patient, createdBy) {
-        const { requestType, requestBody, request_note, id } = param;
+        const { requestType, request_note, items, id } = param;
         const data = {
-            requestType: 'pharmacy',
-            requestBody,
+            requestType,
             patient,
-            createdBy: '',
+            createdBy,
             lastChangedBy: '',
             requestNote: request_note,
         };
+
+        console.log(items);
 
         let res;
         try {
@@ -72,9 +85,9 @@ export class PatientRequestHelper {
     }
 
     static async handleVaccinationRequest(param, patient, createdBy) {
-        const { requestType, requestBody, request_note } = param;
+        const { requestType, request, request_note } = param;
 
-        const dateDue = requestBody.due_date;
+        const dateDue = request.due_date;
         const vaccines = await getConnection()
             .getRepository(Immunization)
             .find({ date_due: dateDue, patient });
@@ -112,7 +125,6 @@ export class PatientRequestHelper {
 
         const data = {
             requestType: 'pharmacy',
-            requestBody: body,
             patient,
             createdBy,
         };
@@ -126,89 +138,10 @@ export class PatientRequestHelper {
         }
     }
 
-    static async handlePhysiotherapyRequest(param, patient, createdBy) {
-        const { requestType, requestBody, request_note, id } = param;
-        const data = {
-            requestType: 'physiotherapy',
-            requestBody,
-            patient,
-            createdBy: '',
-            lastChangedBy: '',
-            requestNote: request_note,
-        };
-
-        let res;
-        try {
-            if (id && id !== '') {
-                data.lastChangedBy = createdBy;
-                res = await this.update(data, id);
-            } else {
-                data.createdBy = createdBy;
-                res = await this.save(data);
-            }
-            return { success: true, data: res.generatedMaps[0] };
-        } catch (error) {
-            return { success: false, message: error.message };
-        }
-    }
-
-    static async handleOpthalmolgyRequest(param, patient, createdBy) {
-        const { requestType, requestBody, request_note, id } = param;
-        const data = {
-            requestType: 'opthalmology',
-            requestBody,
-            patient,
-            createdBy: '',
-            lastChangedBy: '',
-            requestNote: request_note,
-        };
-
-        let res;
-        try {
-            if (id && id !== '') {
-                data.lastChangedBy = createdBy;
-                res = await this.update(data, id);
-            } else {
-                data.createdBy = createdBy;
-                res = await this.save(data);
-            }
-            return { success: true, data: res.generatedMaps[0] };
-        } catch (error) {
-            return { success: false, message: error.message };
-        }
-    }
-
-    static async handleDentistryRequest(param, patient, createdBy) {
-        const { requestType, requestBody, request_note, id } = param;
-        const data = {
-            requestType: 'dentistry',
-            requestBody,
-            patient,
-            createdBy: '',
-            lastChangedBy: '',
-            requestNote: request_note,
-        };
-
-        let res;
-        try {
-            if (id && id !== '') {
-                data.lastChangedBy = createdBy;
-                res = await this.update(data, id);
-            } else {
-                data.createdBy = createdBy;
-                res = await this.save(data);
-            }
-            return { success: true, data: res.generatedMaps[0] };
-        } catch (error) {
-            return { success: false, message: error.message };
-        }
-    }
-
     static async handleImagingRequest(param, patient, createdBy) {
-        const { requestType, requestBody, request_note, id } = param;
+        const { requestType, requests, request_note, id } = param;
         const data = {
             requestType: 'imaging',
-            requestBody,
             patient,
             createdBy: '',
             lastChangedBy: '',
@@ -231,10 +164,9 @@ export class PatientRequestHelper {
     }
 
     static async handleProcedureRequest(param, patient, createdBy) {
-        const { requestType, requestBody, request_note, id } = param;
+        const { requestType, requests, request_note, id } = param;
         const data = {
             requestType: 'procedure',
-            requestBody,
             patient,
             createdBy: '',
             lastChangedBy: '',
@@ -254,6 +186,16 @@ export class PatientRequestHelper {
         } catch (error) {
             return { success: false, message: error.message };
         }
+    }
+
+    static async saveItem(data): Promise<any> {
+        return await getConnection()
+            .createQueryBuilder()
+            .insert()
+            .into(PatientRequestItem)
+            .values(data)
+            .returning('*')
+            .execute();
     }
 
     static async save(data): Promise<any> {
