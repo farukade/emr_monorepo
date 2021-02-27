@@ -248,6 +248,7 @@ export class PatientController {
         return this.patientService.listPatientRequests(requestType, id, urlParams);
     }
 
+
     @Patch(':requestId/receive-specimen')
     receiveLabSpecimen(
         @Param('requestId') requestId: number,

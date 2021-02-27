@@ -22,6 +22,6 @@ export class LabourRiskAssessment extends CustomBaseEntity {
     note: string;
 
     @ManyToOne(() => LabourEnrollment)
-    enrollement: LabourEnrollment;
-
+    @JoinColumn({name: 'enrollementId'})
+    enrollment: LabourEnrollment;
 }

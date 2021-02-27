@@ -13,6 +13,8 @@ import { AntenatalVisits } from './entities/antenatal-visits.entity';
 import { PaginationOptionsInterface } from '../../../common/paginate';
 import { AntenatalVisitRepository } from './antenatal-visits.repository';
 import { PatientRequestRepository } from '../repositories/patient_request.repository';
+import { Pagination } from '../../../common/paginate/paginate.interface';
+
 
 @Injectable()
 export class AntenatalService {
@@ -42,26 +44,47 @@ export class AntenatalService {
         }
     }
 
-    async getAntenatals(options: PaginationOptionsInterface, urlParams): Promise<PatientAntenatal[]> {
-        const {startDate, endDate} = urlParams;
+    async getAntenatals(options: PaginationOptionsInterface, urlParams): Promise<Pagination> {
+        const {startDate, endDate, patient_id } = urlParams;
 
-        const query = this.enrollmentRepository.createQueryBuilder('e')
-                            .innerJoinAndSelect('e.patient', 'patient')
-                            .select('e.*')
-                            .addSelect('patient.surname, patient.other_names');
+        const query = this.enrollmentRepository.createQueryBuilder('q')
+                            .select('q.*');
         if (startDate && startDate !== '') {
             const start = moment(startDate).endOf('day').toISOString();
-            query.where(`e.createdAt >= '${start}'`);
+            query.andWhere(`q.createdAt >= '${start}'`);
         }
         if (endDate && endDate !== '') {
             const end = moment(endDate).endOf('day').toISOString();
-            query.andWhere(`e.createdAt <= '${end}'`);
+            query.andWhere(`q.createdAt <= '${end}'`);
         }
 
-        return await query.take(options.limit)
-                            .skip(options.page * options.limit)
-                            .orderBy('e.createdAt', 'DESC')
-                            .getRawMany();
+        if (patient_id && patient_id !== '') {
+            query.andWhere('q.patientId = :patient_id', { patient_id });
+        }
+
+        const antennatals = await query.offset(options.page * options.limit)
+            .limit(options.limit)
+            .orderBy('q.createdAt', 'DESC')
+            .getRawMany();
+
+        const total = await query.getCount();
+
+        for (const antennatal of antennatals) {
+
+            if (antennatal.patient_id) {
+                antennatal.patient = await this.patientRepository.findOne(antennatal.patient_id);
+            }
+        }
+
+        return {
+            result: antennatals,
+            lastPage: Math.ceil(total / options.limit),
+            itemsPerPage: options.limit,
+            totalPages: total,
+            currentPage: options.page + 1,
+        };
+
+      
     }
 
     async deleteAntenatal(id: string) {

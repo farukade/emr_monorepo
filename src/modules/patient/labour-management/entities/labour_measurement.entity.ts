@@ -66,4 +66,6 @@ export class LabourMeasurement extends CustomBaseEntity {
 
     @ManyToOne(() => LabourEnrollment)
     enrollment: LabourEnrollment;
+
+    
 }

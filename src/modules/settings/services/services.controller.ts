@@ -41,7 +41,7 @@ export class ServicesController {
         return this.servicesService.getAllServices({ page, limit }, urlParams);
     }
 
-    @Get('/category/:id')
+    @Get('/categories/:id')
     getServicesByCategory(
         @Param('id') id: number,
         @Request() req,

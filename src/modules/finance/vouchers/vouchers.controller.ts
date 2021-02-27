@@ -17,12 +17,9 @@ export class VouchersController {
         @Request() request,
     ): Promise<Pagination> {
         const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
-        const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page,10)-1 : 0;
+        const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page,10) : 0;
         return this.voucherService.fetchList({ page: page - 1, limit }, urlParams);
     }
-
- 
-
 
     @Get(':code')
     getVoucher(
