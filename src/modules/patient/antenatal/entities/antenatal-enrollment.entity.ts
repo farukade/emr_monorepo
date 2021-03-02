@@ -6,7 +6,7 @@ import { Patient } from '../../entities/patient.entity';
 export class AntenatalEnrollment extends CustomBaseEntity {
 
     @ManyToOne(() => Patient)
-    @JoinColumn({ name: 'patientId' })
+    @JoinColumn({ name: 'patient_id' })
     patient: Patient;
 
     @Column()

@@ -5,11 +5,11 @@ import { IvfEnrollmentDto } from './dto/ivf_enrollment.dto';
 import { StaffRepository } from '../../hr/staff/staff.repository';
 import { PatientRepository } from '../repositories/patient.repository';
 import { IvfEnrollment } from './entities/ivf_enrollment.entity';
-import {IvfDownRegulationChartDto} from './dto/ivf-down-regulation-chart.dto';
-import {IvfDownRegulationChartEntity} from './entities/ivf_down_regulation_chart.entity';
-import {IvfHcgAdministrationChartEntity} from './entities/ivf_hcg_administration_chart.entity';
-import {getRepository} from 'typeorm';
-import {IvfTheaterProcedureListEntity} from './entities/ivf_theater_procedure_lists.entity';
+import { IvfDownRegulationChartDto } from './dto/ivf-down-regulation-chart.dto';
+import { IvfDownRegulationChartEntity } from './entities/ivf_down_regulation_chart.entity';
+import { IvfHcgAdministrationChartEntity } from './entities/ivf_hcg_administration_chart.entity';
+import { getRepository } from 'typeorm';
+import { IvfTheaterProcedureListEntity } from './entities/ivf_theater_procedure_lists.entity';
 import { PaginationOptionsInterface } from '../../../common/paginate';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import * as moment from 'moment';
@@ -30,37 +30,43 @@ export class IvfService {
         @InjectRepository(LabTestRepository)
         private labTestRepository: LabTestRepository,
         private readonly appGateway: AppGateway,
-    ) {}
+    ) {
+    }
 
     async saveEnrollment(ivfEnrollmentDto: IvfEnrollmentDto, userId): Promise<any> {
-        const { wife_id, husband_id, labTests } = ivfEnrollmentDto;
-        // find user
-        const user  = await this.staffRepository.findOne(userId);
         try {
+            const { wife_id, husband_id, labTests } = ivfEnrollmentDto;
+
+            // find user
+            const user = await this.staffRepository.findOne(userId);
+
             // wife patient details
             const patient = await this.patientRepository.findOne(wife_id, { relations: ['hmo'] });
-            ivfEnrollmentDto.wife = patient;
-            // husband patient details
-            ivfEnrollmentDto.husband = await this.patientRepository.findOne(husband_id);
-            // save enrollment details
-            const data = await this.ivfEnrollmentRepo.save(ivfEnrollmentDto);
-            let mappedIds = []
-            if(labTests.length > 0 ){
-                mappedIds = labTests.map(id => {id});
-                let labRequest = await PatientRequestHelper.handleLabRequest({requestBody:mappedIds, request_note:"IVF enrollment lab tests"}, patient, user);
-                if (labRequest.success) {
-                    // save transaction
-                    const payment = await RequestPaymentHelper.clinicalLabPayment(labRequest.data, patient, user);
-                    // @ts-ignore
-                    labRequest = { ...payment.labRequest };
-    
-                    this.appGateway.server.emit('paypoint-queue', { payment: payment.transactions });
-                }  
-            } 
-                     
-            return {success: true, data};
+
+            const enrol = new IvfEnrollment();
+            enrol.wife = patient;
+            enrol.husband = await this.patientRepository.findOne(husband_id); // husband
+            const data = await this.ivfEnrollmentRepo.save(enrol);
+
+            // TODO: add lab tests
+            // let mappedIds = []
+            // if(labTests.length > 0 ){
+            //     mappedIds = labTests.map(id => {id});
+            //     let labRequest = await PatientRequestHelper.handleLabRequest
+            //     ({requestBody:mappedIds, request_note:"IVF enrollment lab tests"}, patient, user);
+            //     if (labRequest.success) {
+            //         // save transaction
+            //         const payment = await RequestPaymentHelper.clinicalLabPayment(labRequest.data, patient, user);
+            //         // @ts-ignore
+            //         labRequest = { ...payment.labRequest };
+            //
+            //         this.appGateway.server.emit('paypoint-queue', { payment: payment.transactions });
+            //     }
+            // }
+
+            return { success: true, data };
         } catch (err) {
-            return {success: false, message: err.message};
+            return { success: false, message: err.message };
         }
     }
 
@@ -69,16 +75,16 @@ export class IvfService {
         const patient = await this.patientRepository.findOne(patientId);
 
         if (patient.gender === 'Female') {
-            return await this.ivfEnrollmentRepo.find({where: {wife: patient}, relations: ['wife']});
-        }  else {
-            return await this.ivfEnrollmentRepo.find({where: {husband: patient}, relations: ['husband']});
+            return await this.ivfEnrollmentRepo.find({ where: { wife: patient }, relations: ['wife'] });
+        } else {
+            return await this.ivfEnrollmentRepo.find({ where: { husband: patient }, relations: ['husband'] });
         }
     }
 
     async getEnrollments(options: PaginationOptionsInterface, params): Promise<Pagination> {
         const { startDate, endDate, patient_id } = params;
         const query = this.ivfEnrollmentRepo.createQueryBuilder('q').select('q.*');
-        
+
         if (startDate && startDate !== '') {
             const start = moment(startDate).endOf('day').toISOString();
             query.andWhere(`q.createdAt >= '${start}'`);
@@ -90,47 +96,49 @@ export class IvfService {
         if (patient_id && patient_id !== '') {
             query.andWhere('q.wife_patient_id = :wife_patient_id', { wife_patient_id: patient_id });
         }
-       
+
         const ivfs = await query.offset(options.page * options.limit)
-        .limit(options.limit)
-        .orderBy('q.createdAt', 'DESC')
-        .getRawMany();
+            .limit(options.limit)
+            .orderBy('q.createdAt', 'DESC')
+            .getRawMany();
 
-    const total = await query.getCount();
+        const total = await query.getCount();
 
-    for (const ivf of ivfs) {
+        for (const ivf of ivfs) {
 
-        if (ivf.husband_patient_id) {
-            ivf.husband = await this.patientRepository.findOne(ivf.husband_patient_id);
-        }
-
-        if (ivf.wife_patient_id) {
-            ivf.wife = await this.patientRepository.findOne(ivf.wife_patient_id);
-        }
-        const enrollment_lab_tests = [];
-        if( ivf.labTests !== null){
-            const iterators = String(ivf.labTests).split(',');
-            for (const labTestId of iterators) {
-                // find service record
-                const sertest = await this.labTestRepository.findOne(labTestId);
-                enrollment_lab_tests.push(sertest);
+            if (ivf.husband_patient_id) {
+                ivf.husband = await this.patientRepository.findOne(ivf.husband_patient_id);
             }
+
+            if (ivf.wife_patient_id) {
+                ivf.wife = await this.patientRepository.findOne(ivf.wife_patient_id);
+            }
+
+            // tslint:disable-next-line:variable-name
+            const enrollment_lab_tests = [];
+            // if (ivf.labTests !== null) {
+            //     const iterators = String(ivf.labTests).split(',');
+            //     for (const labTestId of iterators) {
+            //         // find service record
+            //         const sertest = await this.labTestRepository.findOne(labTestId);
+            //         enrollment_lab_tests.push(sertest);
+            //     }
+            // }
+
+            ivf.labTests = enrollment_lab_tests;
         }
-       
-        ivf.labTests = enrollment_lab_tests;
+
+        return {
+            result: ivfs,
+            lastPage: Math.ceil(total / options.limit),
+            itemsPerPage: options.limit,
+            totalPages: total,
+            currentPage: options.page + 1,
+        };
     }
-    
-    return {
-        result: ivfs,
-        lastPage: Math.ceil(total / options.limit),
-        itemsPerPage: options.limit,
-        totalPages: total,
-        currentPage: options.page + 1,
-    };
- }
 
     async doSaveDownRegulationChart(param: IvfDownRegulationChartDto, user) {
-        const {ivf_enrollment_id, agent, charts, cycle} = param;
+        const { ivf_enrollment_id, agent, charts, cycle } = param;
 
         try {
             // find ivf enrollment
@@ -145,14 +153,14 @@ export class IvfService {
             downRegulationChart.lastChangedBy = user.id;
             await downRegulationChart.save();
 
-            return {success: true};
+            return { success: true };
         } catch (e) {
-            return {success: false, message: e.message};
+            return { success: false, message: e.message };
         }
     }
 
     async doSaveHCGAdministration(params, user) {
-        const {patient_id, ivf_enrollment_id, timeOfEntry, timeOfAdmin, typeOfDosage, typeOfHcg, routeOfAdmin, nurse_id, remarks, id } = params;
+        const { patient_id, ivf_enrollment_id, timeOfEntry, timeOfAdmin, typeOfDosage, typeOfHcg, routeOfAdmin, nurse_id, remarks, id } = params;
 
         try {
             // find patient
@@ -190,14 +198,14 @@ export class IvfService {
                 await hcgAdministration.save();
             }
 
-            return {success: true};
+            return { success: true };
         } catch (e) {
-            return {success: false, message: e.message};
+            return { success: false, message: e.message };
         }
     }
 
     async doSaveTheatreProcedure(params, user) {
-        const {patient_id, ivf_enrollment_id, schedule, remarks, procedure, folicile, id } = params;
+        const { patient_id, ivf_enrollment_id, schedule, remarks, procedure, folicile, id } = params;
 
         try {
             // find patient
@@ -210,28 +218,28 @@ export class IvfService {
             // const staffDetails = await this.staffRepository.findOne(nurse_id);
             if (!id) {
                 // save new hcg administration
-                const theaterProcedure          = new IvfTheaterProcedureListEntity();
-                theaterProcedure.patient        = patient;
-                theaterProcedure.ivfEnrollment  = ivfEnrollment;
-                theaterProcedure.schedule       = schedule;
-                theaterProcedure.procedure      = procedure;
-                theaterProcedure.folicile       = folicile;
-                theaterProcedure.remarks        = remarks;
+                const theaterProcedure = new IvfTheaterProcedureListEntity();
+                theaterProcedure.patient = patient;
+                theaterProcedure.ivfEnrollment = ivfEnrollment;
+                theaterProcedure.schedule = schedule;
+                theaterProcedure.procedure = procedure;
+                theaterProcedure.folicile = folicile;
+                theaterProcedure.remarks = remarks;
                 await theaterProcedure.save();
             } else { // update existing hcg administration
                 const theaterProcedure = await getRepository(IvfTheaterProcedureListEntity).findOne(id);
-                theaterProcedure.patient        = patient;
-                theaterProcedure.ivfEnrollment  = ivfEnrollment;
-                theaterProcedure.schedule       = schedule;
-                theaterProcedure.procedure      = procedure;
-                theaterProcedure.folicile       = folicile;
-                theaterProcedure.remarks        = remarks;
-                await theaterProcedure .save();
+                theaterProcedure.patient = patient;
+                theaterProcedure.ivfEnrollment = ivfEnrollment;
+                theaterProcedure.schedule = schedule;
+                theaterProcedure.procedure = procedure;
+                theaterProcedure.folicile = folicile;
+                theaterProcedure.remarks = remarks;
+                await theaterProcedure.save();
             }
 
-            return {success: true};
+            return { success: true };
         } catch (e) {
-            return {success: false, message: e.message};
+            return { success: false, message: e.message };
         }
     }
 

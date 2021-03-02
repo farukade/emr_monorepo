@@ -1,6 +1,5 @@
 import { CustomBaseEntity } from '../../../../common/entities/custom-base.entity';
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { Patient } from '../../entities/patient.entity';
 import { LabourEnrollment } from './labour_enrollment.entity';
 
 @Entity({name: 'labour_risk_assessments'})
@@ -22,6 +21,6 @@ export class LabourRiskAssessment extends CustomBaseEntity {
     note: string;
 
     @ManyToOne(() => LabourEnrollment)
-    @JoinColumn({name: 'enrollementId'})
+    @JoinColumn({name: 'enrollment_id'})
     enrollment: LabourEnrollment;
 }

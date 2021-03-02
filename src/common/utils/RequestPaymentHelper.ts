@@ -6,7 +6,8 @@ import { Patient } from '../../modules/patient/entities/patient.entity';
 import { StockRepository } from '../../modules/inventory/stock.repository';
 import { Service } from '../../modules/settings/entities/service.entity';
 import { Stock } from '../../modules/inventory/entities/stock.entity';
-import { LabTest } from '../../modules/settings/entities/lab_test.entity';
+import { PatientRequestItem } from '../../modules/patient/entities/patient_request_items.entity';
+import { PatientRequest } from '../../modules/patient/entities/patient_requests.entity';
 
 export class RequestPaymentHelper {
 
@@ -17,9 +18,13 @@ export class RequestPaymentHelper {
     static async clinicalLabPayment(labRequests, patient: Patient, createdBy) {
         let requests = [];
         let payments = [];
+
         for (const request of labRequests) {
-            // get test
-            const labTest = await getConnection().getRepository(LabTest).findOne(request.requestBody.id);
+            const labRequest = await getConnection().getRepository(PatientRequest).findOne(request.id, { relations: ['items'] });
+
+            const labRequestItem = await getConnection().getRepository(PatientRequestItem).findOne(labRequest.items[0].id);
+
+            const labTest = labRequestItem.labTest;
 
             const data = {
                 patient,
@@ -135,7 +140,7 @@ export class RequestPaymentHelper {
     }
 
     static async imagingPayment(requestBody, patient: Patient, createdBy) {
-        let totalAmount = 0;
+        const totalAmount = 0;
         const items = [];
         for (const body of requestBody) {
             items.push({ name: body.service_name, amount: body.amount });

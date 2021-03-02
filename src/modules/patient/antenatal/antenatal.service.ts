@@ -15,7 +15,6 @@ import { AntenatalVisitRepository } from './antenatal-visits.repository';
 import { PatientRequestRepository } from '../repositories/patient_request.repository';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 
-
 @Injectable()
 export class AntenatalService {
     constructor(
@@ -59,32 +58,29 @@ export class AntenatalService {
         }
 
         if (patient_id && patient_id !== '') {
-            query.andWhere('q.patientId = :patient_id', { patient_id });
+            query.andWhere('q.patient_id = :patient_id', { patient_id });
         }
 
-        const antennatals = await query.offset(options.page * options.limit)
+        const antenatals = await query.offset(options.page * options.limit)
             .limit(options.limit)
             .orderBy('q.createdAt', 'DESC')
             .getRawMany();
 
         const total = await query.getCount();
 
-        for (const antennatal of antennatals) {
-
-            if (antennatal.patient_id) {
-                antennatal.patient = await this.patientRepository.findOne(antennatal.patient_id);
+        for (const antenatal of antenatals) {
+            if (antenatal.patient_id) {
+                antenatal.patient = await this.patientRepository.findOne(antenatal.patient_id);
             }
         }
 
         return {
-            result: antennatals,
+            result: antenatals,
             lastPage: Math.ceil(total / options.limit),
             itemsPerPage: options.limit,
             totalPages: total,
             currentPage: options.page + 1,
         };
-
-      
     }
 
     async deleteAntenatal(id: string) {

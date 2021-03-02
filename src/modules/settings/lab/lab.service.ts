@@ -122,33 +122,17 @@ export class LabService {
     */
 
     async getCategories(param): Promise<any[]> {
+        const { hasTest, hmo_id } = param;
+
         const categories = await this.labTestCategoryRepo.find();
-        console.log(param);
-        const { hasTest, hmo_id, loadOnce } = param;
-        let results = [];
-
-        if(loadOnce && loadOnce === 'true'){        
-            for (const category of categories) {
-                const tests = await this.labTestRepository.find({
-                    where: { category },
-                    relations: ['category', 'hmo'],
-                    order: { name: 'ASC' },
-                });
-    
-                results = [...results, { ...category, lab_tests: tests }];
-            }
-    
-            return results;
-        }
-
 
         if (hasTest !== '1') {
             return categories;
         }
-       
+
+        let results = [];
         const hmo = await this.hmoRepository.findOne(hmo_id);
 
-        
         for (const category of categories) {
             const tests = await this.labTestRepository.find({
                 where: { category, hmo },

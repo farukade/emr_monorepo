@@ -1,4 +1,4 @@
-import { Column, DeleteDateColumn, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 import { LabTest } from '../../settings/entities/lab_test.entity';
 import { Stock } from '../../inventory/entities/stock.entity';
@@ -67,4 +67,7 @@ export class PatientRequestItem extends CustomBaseEntity {
 
     @Column({ nullable: true })
     note: string;
+
+    @Column({ default: false })
+    forIVF: boolean;
 }

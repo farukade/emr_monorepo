@@ -13,9 +13,6 @@ export class PatientRequest extends CustomBaseEntity {
     @Column()
     requestType: string;
 
-    @Column({ type: 'jsonb'})
-    requestBody: any;
-
     @Column({ nullable: true })
     requestNote: string;
 

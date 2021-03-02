@@ -45,8 +45,6 @@ export class LabourManagementService {
         @InjectRepository(LabTestRepository)
         private labTestRepository: LabTestRepository,
         private readonly appGateway: AppGateway,
-
-        
     ) {
     }
 
@@ -77,7 +75,7 @@ export class LabourManagementService {
             .limit(options.limit)
             .orderBy('enrollment.createdAt', 'DESC')
             .getRawMany();
-        
+
         const total = await query.getCount();
 
         return {
@@ -112,29 +110,40 @@ export class LabourManagementService {
         }
     }
 
-    async doSaveMeasurement(id: string, dto: LabourMeasurementDto, createdBy): Promise<any> {
-        const { labTests } = dto;
+    async doSaveMeasurement(id: number, dto: LabourMeasurementDto, createdBy): Promise<any> {
         try {
-            const enrollment = await this.labourEnrollmentRepository.findOne(id);
-            dto.createdBy = createdBy;
-            dto.lastChangedBy = createdBy;
-            dto.enrollment = enrollment;
-            dto.examiner = await this.staffRepository.findOne(dto.examiner_id);
-            const measurement = await this.labourMeasurementRepo.save(dto);
-            let mappedIds = []
-            if(labTests.length >0 ){
-                mappedIds = labTests.map(id => {id});
-                let labRequest = await PatientRequestHelper.handleLabRequest({requestBody:mappedIds, request_note:"IVF enrollment lab tests"}, enrollment.patient, createdBy);
-                if (labRequest.success) {
-                    // save transaction
-                    const payment = await RequestPaymentHelper.clinicalLabPayment(labRequest.data, enrollment.patient, createdBy);
-                    // @ts-ignore
-                    labRequest = { ...payment.labRequest };
+            const { labTests, examiner_id } = dto;
 
-                    this.appGateway.server.emit('paypoint-queue', { payment: payment.transactions });
-                } 
-            }         
-           
+            const enrollment = await this.labourEnrollmentRepository.findOne(id);
+
+            const measure = new LabourMeasurement();
+            measure.lastChangedBy = createdBy;
+            measure.enrollment = enrollment;
+            measure.examiner = await this.staffRepository.findOne(examiner_id);
+
+            const measurement = await this.labourMeasurementRepo.save(measure);
+
+            // TODO: request for lab tests
+
+            // let mappedIds = [];
+            //
+            // if (labTests.length > 0) {
+            //     mappedIds = labTests.map(id => {
+            //         id;
+            //     });
+            //     let labRequest = await PatientRequestHelper.handleLabRequest({
+            //         requestBody: mappedIds,
+            //         request_note: 'IVF enrollment lab tests',
+            //     }, enrollment.patient, createdBy);
+            //     if (labRequest.success) {
+            //         // save transaction
+            //         const payment = await RequestPaymentHelper.clinicalLabPayment(labRequest.data, enrollment.patient, createdBy);
+            //         // @ts-ignore
+            //         labRequest = { ...payment.labRequest };
+            //
+            //         this.appGateway.server.emit('paypoint-queue', { payment: payment.transactions });
+            //     }
+            // }
 
             return { success: true, data: measurement };
         } catch (err) {
@@ -182,20 +191,21 @@ export class LabourManagementService {
     async fetchMeasurement(id: number): Promise<LabourMeasurement[]> {
         const enrollment = await this.labourEnrollmentRepository.findOne(id);
         const results = await this.labourMeasurementRepo.find({ where: { enrollment } });
-        
+
         for (const result of results) {
             // find service record
-            const enrollment_lab_tests = [];
-            if( result.labTests !== null){
-                const iterators = String(result.labTests).split(',');
-                for (const labTestId of iterators) {
-                    // find service record
-                    const sertest = await this.labTestRepository.findOne(labTestId);
-                    enrollment_lab_tests.push(sertest);
-                }
-            }
-        
-            result.labTests = enrollment_lab_tests;
+            // const enrollment_lab_tests = [];
+            // TODO: pick labs from request
+            // if (result.labTests !== null) {
+            //     const iterators = String(result.labTests).split(',');
+            //     for (const labTestId of iterators) {
+            //         // find service record
+            //         const sertest = await this.labTestRepository.findOne(labTestId);
+            //         enrollment_lab_tests.push(sertest);
+            //     }
+            // }
+            //
+            // result.labTests = enrollment_lab_tests;
         }
         return results;
     }

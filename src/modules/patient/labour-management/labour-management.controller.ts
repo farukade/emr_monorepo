@@ -24,8 +24,8 @@ export class LabourManagementController {
         @Request() request,
         ): Promise<Pagination> {
             const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
-            const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page,10) : 0;
-        return this.labourManagementService.listEnrollments({ page: page - 1, limit }, params);
+            const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 0;
+            return this.labourManagementService.listEnrollments({ page: page - 1, limit }, params);
     }
 
     @Get('/enrollments/:id')
@@ -50,7 +50,7 @@ export class LabourManagementController {
     saveMeasurement(
         @Body() param: LabourMeasurementDto,
         @Request() req,
-        @Param('id') id: string,
+        @Param('id') id: number,
     ) {
         return this.labourManagementService.doSaveMeasurement(id, param, req.user.username);
     }
