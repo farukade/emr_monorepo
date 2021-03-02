@@ -34,8 +34,6 @@ export class ImmunizationService {
 
             const patient = await this.patientRepository.findOne(patient_id);
             if (patient) {
-                const staff = await this.staffRepository.findOne({ where: { username: createdBy } });
-
                 const immunizations = await this.immunizationRepository.createQueryBuilder('i')
                     .where('i.patient_id = :patient_id', { patient_id })
                     .getMany();
@@ -194,7 +192,9 @@ export class ImmunizationService {
                         }
                     }
 
-                    return { success: true, records };
+                    patient.immunization = await this.immunizationRepository.find({ where: { patient } });
+
+                    return { success: true, patient };
                 }
 
                 return { success: false, message: 'Patient already enrolled on immunization' };
