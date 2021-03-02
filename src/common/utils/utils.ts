@@ -50,3 +50,5 @@ export const sentenceCase = (text) => {
         return word.replace(word[0], word[0].toUpperCase());
     }).join(' ');
 };
+
+export const alphabets = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];

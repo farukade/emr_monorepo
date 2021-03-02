@@ -34,7 +34,6 @@ import { AuthGuard } from '@nestjs/passport';
 import { OpdPatientDto } from './dto/opd-patient.dto';
 import { Pagination } from '../../common/paginate/paginate.interface';
 
-
 @UseGuards(AuthGuard('jwt'))
 @Controller('patient')
 export class PatientController {

@@ -170,13 +170,13 @@ export class InventoryController {
     }
 
     @Get('categories/:id/sub-categories')
-    getSubCategories(@Param('id') id: string): Promise<InventoryCategory[]> {
+    getSubCategories(@Param('id') id: string): Promise<InventorySubCategory[]> {
         return this.inventoryService.getSubCategories(id);
     }
 
     @Post('sub-categories')
     @UsePipes(ValidationPipe)
-    createSubCategories(@Body() inventorySubCategoryDto: InventorySubCategoryDto): Promise<InventoryCategory> {
+    createSubCategories(@Body() inventorySubCategoryDto: InventorySubCategoryDto): Promise<InventorySubCategory> {
         return this.inventoryService.createSubCategory(inventorySubCategoryDto);
     }
 
@@ -185,7 +185,7 @@ export class InventoryController {
     updateSubCategory(
         @Param('id') id: string,
         @Body() inventorySubCategoryDto: InventorySubCategoryDto,
-    ): Promise<InventoryCategory> {
+    ): Promise<InventorySubCategory> {
         return this.inventoryService.updateSubCategory(id, inventorySubCategoryDto);
     }
 

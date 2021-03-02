@@ -358,7 +358,7 @@ export class InventoryService {
         return this.inventorySubCategoryRepository.saveCategory(inventorySubCategoryDto, category);
     }
 
-    async updateSubCategory(id: string, inventorySubCategoryDto: InventorySubCategoryDto): Promise<InventoryCategory> {
+    async updateSubCategory(id: string, inventorySubCategoryDto: InventorySubCategoryDto): Promise<InventorySubCategory> {
         const { name, inventory_category_id } = inventorySubCategoryDto;
         const category = await this.inventoryCategoryRepository.findOne(inventory_category_id);
         const subCategory = await this.inventorySubCategoryRepository.findOne(id);

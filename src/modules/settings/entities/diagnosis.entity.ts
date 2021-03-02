@@ -1,5 +1,4 @@
-import { Type } from 'class-transformer';
-import { Column, Entity, OneToOne, JoinColumn } from 'typeorm';
+import { Column, Entity } from 'typeorm';
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 
 @Entity({ name: 'diagnosis' })

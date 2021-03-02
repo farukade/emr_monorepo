@@ -5,8 +5,7 @@ import { DiagnosisUpdateDto } from './dto/diagnosis-update.dto';
 import { Diagnosis } from '../entities/diagnosis.entity';
 import { Brackets, Raw } from 'typeorm';
 import { DiagnosisPaginationDto } from './dto/diagnosis-pagination.dto';
-
-const alphabets = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
+import { alphabets } from '../../../common/utils/utils';
 
 @Injectable()
 export class DiagnosisService {
