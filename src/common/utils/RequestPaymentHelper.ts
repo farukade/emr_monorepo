@@ -28,7 +28,7 @@ export class RequestPaymentHelper {
 
             const data = {
                 patient,
-                amount: parseFloat(labTest.price),
+                amount: parseFloat(labTest.hmoPrice),
                 description: 'Payment for clinical lab',
                 payment_type: (patient.hmo.name !== 'Private') ? 'HMO' : '',
                 hmo_approval_status: (patient.hmo.name !== 'Private') ? 1 : 0,
