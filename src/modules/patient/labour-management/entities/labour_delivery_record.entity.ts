@@ -62,6 +62,7 @@ export class LabourDeliveryRecord extends CustomBaseEntity {
     pediatrician: StaffDetails;
 
     @ManyToOne(() => LabourEnrollment)
-    enrollement: LabourEnrollment;
+    @JoinColumn({name: 'enrollementId'})
+    enrollment: LabourEnrollment;
 
 }

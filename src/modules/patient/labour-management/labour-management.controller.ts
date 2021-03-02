@@ -11,6 +11,7 @@ import { LabourMeasurement } from './entities/labour_measurement.entity';
 import { LabourRiskAssessment } from './entities/labour_risk_assessment.entity';
 import { LabourDeliveryRecord } from './entities/labour_delivery_record.entity';
 import { LabourEnrollment } from './entities/labour_enrollment.entity';
+import { Pagination } from '../../../common/paginate/paginate.interface';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('labour-management')
@@ -20,8 +21,11 @@ export class LabourManagementController {
     @Get('/enrollments')
     getEnrollments(
         @Query() params,
-    ) {
-        return this.labourManagementService.listEnrollments(params);
+        @Request() request,
+        ): Promise<Pagination> {
+            const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
+            const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page,10) : 0;
+        return this.labourManagementService.listEnrollments({ page: page - 1, limit }, params);
     }
 
     @Get('/enrollments/:id')

@@ -493,9 +493,10 @@ export class PatientService {
                 break;
             case 'imaging':
                 let imaging = await PatientRequestHelper.handleImagingRequest(param, patient, createdBy);
+                console.log(imaging)
                 if (imaging.success) {
                     // save transaction
-                    const payment = await RequestPaymentHelper.imagingPayment(imaging.data, patient, createdBy);
+                    const payment = await RequestPaymentHelper.imagingPayment(param.requestBody, patient, createdBy);
                     imaging = { ...imaging, ...payment };
                 }
                 res = imaging;
@@ -573,7 +574,7 @@ export class PatientService {
             .leftJoin('q.patient', 'patient')
             .leftJoin(User, 'creator', 'q.createdBy = creator.username')
             .innerJoin(StaffDetails, 'staff1', 'staff1.user_id = creator.id')
-            .select('q.id, q.requestType, q.code, q.createdAt, q.status, q.urgent, q.requestNote, q.isFilled')
+            .select('q.id, q.requestType, q.requestBody, q.code, q.createdAt, q.status, q.urgent, q.requestNote, q.isFilled')
             .addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
             .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id, patient.hmo_id as hmo_id')
             .where('q.patient_id = :patient_id', { patient_id })
@@ -621,6 +622,7 @@ export class PatientService {
             currentPage: page,
         };
     }
+
 
     async listRequests(requestType, urlParams): Promise<any> {
         const { startDate, endDate, filled, page, limit } = urlParams;
@@ -803,6 +805,9 @@ export class PatientService {
         const { type } = params;
         let res;
         const request = await this.patientRequestItemRepository.findOne(id);
+        if (!request) {
+            throw new NotFoundException(`Request with ID '${id}' not found`);
+        }
         switch (type) {
             case 'lab':
                 request.cancelled = 1;
@@ -811,6 +816,10 @@ export class PatientService {
                 request.lastChangedBy = username;
                 res = await request.save();
                 break;
+            case 'imaging':
+                request.deletedBy = username;
+                await request.save();
+                return await request.softRemove();
             default:
                 break;
         }

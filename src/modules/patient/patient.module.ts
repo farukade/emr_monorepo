@@ -30,6 +30,7 @@ import { AdmissionClinicalTaskRepository } from './admissions/repositories/admis
 import { AdmissionsRepository } from './admissions/repositories/admissions.repository';
 import { ImmunizationRepository } from './immunization/repositories/immunization.repository'
 import { PatientRequestItemRepository } from './repositories/patient_request_items.repository';
+import { LabTestRepository } from '../settings/lab/lab.test.repository';
 
 @Module({
   imports: [TypeOrmModule.forFeature([
@@ -52,6 +53,7 @@ import { PatientRequestItemRepository } from './repositories/patient_request_ite
       TransactionsRepository,
       AdmissionClinicalTaskRepository,
       AdmissionsRepository,
+      LabTestRepository,
   ]), AntenatalModule, AdmissionsModule, ConsultationModule, LabourManagementModule, ImmunizationModule, NicuModule],
   controllers: [PatientController, IvfController],
   providers: [AppGateway, PatientService, IvfService],

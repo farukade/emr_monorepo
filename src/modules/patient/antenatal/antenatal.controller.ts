@@ -3,6 +3,7 @@ import { AntenatalService } from './antenatal.service';
 import { EnrollmentDto } from './dto/enrollment.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { AntenatalVisitDto } from './dto/antenatal-visits.dto';
+import { Pagination } from '../../../common/paginate/paginate.interface';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('patient/antenatal')
@@ -29,11 +30,12 @@ export class AntenatalController {
     getEnrollments(
         @Query() urlParams,
         @Request() request,
-    ) {
-        const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 2;
-        const page = request.query.hasOwnProperty('page') ? request.query.page : 0;
-        return this.antenatalService.getAntenatals({page, limit}, urlParams);
+    ): Promise<Pagination> {
+        const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
+        const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page,10) : 0;
+        return this.antenatalService.getAntenatals({page: page - 1, limit}, urlParams);
     }
+
 
     @Post('visits')
     @UsePipes(ValidationPipe)

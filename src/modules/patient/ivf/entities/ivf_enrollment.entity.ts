@@ -48,4 +48,7 @@ export class IvfEnrollment extends CustomBaseEntity {
     @ManyToOne(() => Patient)
     @JoinColumn({name: 'husband_patient_id'})
     husband: Patient;
+
+    @Column('simple-array', {nullable: true})
+    labTests: string[];
 }
