@@ -62,7 +62,7 @@ export class DeletedAt1610675591396 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "patient_request_documents" ADD "deleted_at" TIMESTAMP`);
         await queryRunner.query(`ALTER TABLE "ivf_enrollments" ADD "deleted_at" TIMESTAMP`);
         await queryRunner.query(`ALTER TABLE "ivf_down_regulation_charts" ADD "deleted_at" TIMESTAMP`);
-        await queryRunner.query(`ALTER TABLE "labour_enrollemnts" ADD "deleted_at" TIMESTAMP`);
+        await queryRunner.query(`ALTER TABLE "labour_enrollments" ADD "deleted_at" TIMESTAMP`);
         await queryRunner.query(`ALTER TABLE "labour_delivery_records" ADD "deleted_at" TIMESTAMP`);
         await queryRunner.query(`ALTER TABLE "labour_measurements" ADD "deleted_at" TIMESTAMP`);
         await queryRunner.query(`ALTER TABLE "labour_risk_assessments" ADD "deleted_at" TIMESTAMP`);
@@ -86,7 +86,7 @@ export class DeletedAt1610675591396 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "labour_risk_assessments" DROP COLUMN "deleted_at"`);
         await queryRunner.query(`ALTER TABLE "labour_measurements" DROP COLUMN "deleted_at"`);
         await queryRunner.query(`ALTER TABLE "labour_delivery_records" DROP COLUMN "deleted_at"`);
-        await queryRunner.query(`ALTER TABLE "labour_enrollemnts" DROP COLUMN "deleted_at"`);
+        await queryRunner.query(`ALTER TABLE "labour_enrollments" DROP COLUMN "deleted_at"`);
         await queryRunner.query(`ALTER TABLE "ivf_down_regulation_charts" DROP COLUMN "deleted_at"`);
         await queryRunner.query(`ALTER TABLE "ivf_enrollments" DROP COLUMN "deleted_at"`);
         await queryRunner.query(`ALTER TABLE "patient_request_documents" DROP COLUMN "deleted_at"`);

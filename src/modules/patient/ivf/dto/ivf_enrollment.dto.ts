@@ -28,4 +28,5 @@ export class IvfEnrollmentDto {
     wife: Patient;
     husband: Patient;
     husband_id: string;
+    labTests: string[];
 }

@@ -493,9 +493,10 @@ export class PatientService {
                 break;
             case 'imaging':
                 let imaging = await PatientRequestHelper.handleImagingRequest(param, patient, createdBy);
+                console.log(imaging);
                 if (imaging.success) {
                     // save transaction
-                    const payment = await RequestPaymentHelper.imagingPayment(imaging.data, patient, createdBy);
+                    const payment = await RequestPaymentHelper.imagingPayment(param.requestBody, patient, createdBy);
                     imaging = { ...imaging, ...payment };
                 }
                 res = imaging;
@@ -800,20 +801,34 @@ export class PatientService {
     }
 
     async deleteRequest(id: string, params, username: string) {
-        const { type } = params;
-        let res;
-        const request = await this.patientRequestItemRepository.findOne(id);
-        switch (type) {
-            case 'lab':
-                request.cancelled = 1;
-                request.cancelledBy = username;
-                request.cancelledAt = moment().format('YYYY-MM-DD HH:mm:ss');
-                request.lastChangedBy = username;
-                res = await request.save();
-                break;
-            default:
-                break;
+        // const { type } = params;
+        const requestItem = await this.patientRequestItemRepository.findOne(id);
+        if (!requestItem) {
+            throw new NotFoundException(`Request with ID '${id}' not found`);
         }
+
+        requestItem.cancelled = 1;
+        requestItem.cancelledBy = username;
+        requestItem.cancelledAt = moment().format('YYYY-MM-DD HH:mm:ss');
+        requestItem.lastChangedBy = username;
+        requestItem.deletedBy = username;
+        await requestItem.save();
+
+        const res = await requestItem.softRemove();
+
+        const request = await this.patientRequestRepository.findOne(requestItem.request);
+        request.deletedBy = username;
+        await request.save();
+
+        await request.softRemove();
+
+        // switch (type) {
+        //     case 'lab':
+        //         break;
+        //     case 'imaging':
+        //     default:
+        //         break;
+        // }
 
         return { success: true, data: res };
     }

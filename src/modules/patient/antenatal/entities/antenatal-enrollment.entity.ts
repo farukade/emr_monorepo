@@ -1,11 +1,12 @@
 import { CustomBaseEntity } from '../../../../common/entities/custom-base.entity';
-import { Entity, ManyToOne, Column } from 'typeorm';
+import { Entity, ManyToOne, Column, JoinColumn } from 'typeorm';
 import { Patient } from '../../entities/patient.entity';
 
 @Entity({name: 'antenatal_enrollments'})
 export class AntenatalEnrollment extends CustomBaseEntity {
 
     @ManyToOne(() => Patient)
+    @JoinColumn({ name: 'patient_id' })
     patient: Patient;
 
     @Column()

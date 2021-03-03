@@ -1,14 +1,23 @@
-import { Controller, UseGuards, Post, Body, Request, Param, Get, Query } from '@nestjs/common';
+import { Controller, UseGuards, Post, Body, Request, Param, Get, Query, Delete } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { IvfService } from './ivf.service';
 import { IvfEnrollmentDto } from './dto/ivf_enrollment.dto';
 import { IvfEnrollment } from './entities/ivf_enrollment.entity';
 import {IvfDownRegulationChartDto} from './dto/ivf-down-regulation-chart.dto';
+import { Pagination } from '../../../common/paginate/paginate.interface';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('ivf')
 export class IvfController {
     constructor(private ivfService: IvfService) {}
+
+    @Delete('/:id')
+    deleteIVF(
+        @Param('id') id: number,
+        @Request() req,
+    ): Promise<any> {
+        return this.ivfService.deleteIVF(id, req.user.username);
+    }
 
     @Post('enroll')
     saveEnrollment(
@@ -25,10 +34,15 @@ export class IvfController {
 
     @Get('enrollments')
     listEnrollments(
-        @Query() params,
-    ) {
-        return this.ivfService.getEnrollments(params);
+        @Query() urlParams,
+        @Request() request,
+    ): Promise<Pagination> {
+        const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
+        const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page,10) : 0;
+        return this.ivfService.getEnrollments({ page: page - 1, limit }, urlParams);
     }
+
+ 
 
     @Post('save/down-regulation')
     saveDownRegulationChart(

@@ -1,8 +1,8 @@
 import { CustomBaseEntity } from '../../../../common/entities/custom-base.entity';
-import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { Patient } from '../../entities/patient.entity';
+import { Entity, Column, ManyToOne, JoinColumn, OneToOne } from 'typeorm';
 import { StaffDetails } from '../../../hr/staff/entities/staff_details.entity';
 import { LabourEnrollment } from './labour_enrollment.entity';
+import { PatientRequest } from '../../entities/patient_requests.entity';
 
 @Entity({name: 'labour_measurements'})
 export class LabourMeasurement extends CustomBaseEntity {
@@ -14,7 +14,7 @@ export class LabourMeasurement extends CustomBaseEntity {
     presentation: string;
 
     @Column({nullable: true})
-    positionOfFestus: string;
+    positionOfFoetus: string;
 
     @Column({nullable: true})
     fetalLies: string;
@@ -32,7 +32,7 @@ export class LabourMeasurement extends CustomBaseEntity {
     cervicalPosition: string;
 
     @Column({nullable: true})
-    membrances: string;
+    membranes: string;
 
     @Column({nullable: true})
     moulding: string;
@@ -56,9 +56,6 @@ export class LabourMeasurement extends CustomBaseEntity {
     dateOfMeasurement: string;
 
     @Column('simple-array', {nullable: true})
-    labTests: string[];
-
-    @Column('simple-array', {nullable: true})
     measurements: string[];
 
     @ManyToOne(() => StaffDetails)
@@ -66,4 +63,8 @@ export class LabourMeasurement extends CustomBaseEntity {
 
     @ManyToOne(() => LabourEnrollment)
     enrollment: LabourEnrollment;
+
+    @OneToOne(type => PatientRequest)
+    @JoinColumn({ name: 'request_id' })
+    request: PatientRequest;
 }

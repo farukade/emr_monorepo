@@ -2,7 +2,7 @@ import { CustomBaseEntity } from '../../../../common/entities/custom-base.entity
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { Patient } from '../../entities/patient.entity';
 
-@Entity({name: 'labour_enrollemnts'})
+@Entity({name: 'labour_enrollments'})
 export class LabourEnrollment extends CustomBaseEntity {
 
     @Column()
