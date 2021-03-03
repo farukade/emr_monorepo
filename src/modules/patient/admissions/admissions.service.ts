@@ -82,7 +82,11 @@ export class AdmissionsService {
 
         for (const item of admissions) {
             if (item.patient_id) {
-                item.patient = await this.patientRepository.findOne(item.patient_id, { relations: ['nextOfKin', 'immunization', 'hmo'] });
+                let patient = await this.patientRepository.findOne(item.patient_id, { relations: ['nextOfKin', 'immunization', 'hmo'] });
+                if (patient.profile_pic) {
+                    patient.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${patient.profile_pic}`;
+                }
+                item.patient = patient;
             }
         }
 

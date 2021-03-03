@@ -112,6 +112,10 @@ export class PatientService {
 
         for (const patient of patients) {
 
+            if (patient.profile_pic) {
+                patient.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${patient.profile_pic}`;
+            }
+
             patient.immunization = await this.immunizationRepository.find({ where: { patient } });
 
             if (patient.hmo_id) {
@@ -142,14 +146,16 @@ export class PatientService {
         });
     }
 
-    async saveNewPatient(patientDto: PatientDto, createdBy: string): Promise<any> {
+    async saveNewPatient(patientDto: PatientDto, createdBy: string, pic): Promise<any> {
+        console.log(pic);
+        console.log(patientDto);
         try {
             const { hmoId } = patientDto;
 
             const hmo = await this.hmoRepository.findOne(hmoId);
             const nok = await this.patientNOKRepository.saveNOK(patientDto);
 
-            const patient = await this.patientRepository.savePatient(patientDto, nok, hmo, createdBy);
+            const patient = await this.patientRepository.savePatient(patientDto, nok, hmo, createdBy, pic);
 
             return { success: true, patient };
         } catch (err) {
@@ -157,7 +163,7 @@ export class PatientService {
         }
     }
 
-    async saveNewOpdPatient(patientDto: OpdPatientDto, createdBy: string): Promise<any> {
+    async saveNewOpdPatient(patientDto: OpdPatientDto, createdBy: string, pic): Promise<any> {
         try {
             const patient = new Patient();
             patient.fileNumber = 'DH' + Math.floor(Math.random() * 90000);
@@ -169,6 +175,9 @@ export class PatientService {
             patient.email = patientDto.email;
             patient.phoneNumber = patientDto.phoneNumber;
             patient.createdBy = createdBy;
+            if (pic) {
+                patient.profile_pic = pic.filename;
+            }
             await patient.save();
             // save appointment
             const appointment = await this.appointmentRepository.saveOPDAppointment(patient, patientDto.opdType);
@@ -181,7 +190,7 @@ export class PatientService {
         }
     }
 
-    async updatePatientRecord(id: string, patientDto: PatientDto, updatedBy: string): Promise<any> {
+    async updatePatientRecord(id: string, patientDto: PatientDto, updatedBy: string, pic): Promise<any> {
         try {
             const patient = await this.patientRepository.findOne(id, { relations: ['nextOfKin'] });
             patient.surname = patientDto.surname.toLocaleLowerCase();
@@ -208,7 +217,9 @@ export class PatientService {
             patient.nextOfKin.maritalStatus = patientDto.nok_maritalStatus;
             patient.nextOfKin.ethnicity = patientDto.nok_ethnicity;
             patient.hmo = await this.hmoRepository.findOne(patientDto.hmoId);
-
+            if (pic) {
+                patient.profile_pic = pic.filename;
+            }
             const rs = patient.save();
 
             return { success: true, patient: rs };

@@ -98,6 +98,8 @@ export class AppointmentService {
             let queue;
             let paymentType = '';
             let hmoApprovalStatus = 0;
+            // add patient
+            appointment.patient = patient;
 
             if (sendToQueue) {
                 if (amount) {
@@ -107,6 +109,7 @@ export class AppointmentService {
                         hmoApprovalStatus = 1;
                         // update appointment status
                         appointment.status = 'Pending HMO Approval';
+
                         await appointment.save();
                         // save HMO queue
                         queue = await this.queueSystemRepository.saveQueue(appointment, 'hmo');
@@ -129,7 +132,7 @@ export class AppointmentService {
                     this.appGateway.server.emit('nursing-queue', { queue });
                 }
 
-                this.appGateway.server.emit('all-queues', { queue });
+               //this.appGateway.server.emit('all-queues', { queue });
 
                 console.log(appointment.transaction);
             }

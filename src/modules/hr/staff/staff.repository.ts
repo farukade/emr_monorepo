@@ -45,6 +45,7 @@ export class StaffRepository extends Repository<StaffDetails> {
             staff.emp_code = 'DHS ' + Math.floor(Math.random() * 90000),
 
                 await staff.save();
+                console.log(staff);
 
             return {success: true, staff};
         } catch (e) {

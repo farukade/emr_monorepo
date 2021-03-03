@@ -46,6 +46,7 @@ export class AuthService {
             const error = 'This account is disabled. Please Contact ICT.';
             throw new BadRequestException(error);
         }
+        console.log(staff);
         if (staff && staff.profile_pic) {
           staff.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${staff.profile_pic}`;
         }
