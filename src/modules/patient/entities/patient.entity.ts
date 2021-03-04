@@ -16,6 +16,9 @@ export class Patient extends CustomBaseEntity {
     @Column({ type: 'varchar'})
     surname: string;
 
+    @Column({ type: 'varchar', length: 300, nullable: true })
+        profile_pic: string;
+
     @Column({ type: 'varchar'})
     other_names: string;
 

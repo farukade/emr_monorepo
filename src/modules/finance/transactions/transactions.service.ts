@@ -367,6 +367,8 @@ export class TransactionsService {
                     where: { transaction: transaction.id },
                     relations: ['patient', 'whomToSee', 'consultingRoom', 'serviceCategory', 'serviceType'],
                 });
+                appointment.status = 'Approved';
+                appointment.save();
                 console.log(appointment);
                 // create new queue
                 if (!appointment) {

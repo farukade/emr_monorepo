@@ -59,30 +59,60 @@ export class PatientController {
 
     @Post('save')
     @UsePipes(ValidationPipe)
-    saveNewPatient(
+    @UseInterceptors(FileInterceptor('avatar', {
+        storage: diskStorage({
+            destination: './uploads/avatars',
+            filename: (req, file, cb) => {
+                const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('');
+                return cb(null, `${randomName}${extname(file.originalname)}`);
+            },
+        }),
+    }))
+    saveNewPatientCall(
         @Body() patientDto: PatientDto,
+        @UploadedFile() pic,
         @Request() req,
-    ) {
-        return this.patientService.saveNewPatient(patientDto, req.user.username);
+    ): Promise<any> {
+        return this.patientService.saveNewPatient(patientDto, req.user.username, pic);
     }
 
     @Post('opd')
     @UsePipes(ValidationPipe)
-    saveOpdPatient(
+    @UseInterceptors(FileInterceptor('avatar', {
+        storage: diskStorage({
+            destination: './uploads/avatars',
+            filename: (req, file, cb) => {
+                const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('');
+                return cb(null, `${randomName}${extname(file.originalname)}`);
+            },
+        }),
+    }))
+    saveNewOpdCall(
         @Body() opdPatientDto: OpdPatientDto,
+        @UploadedFile() pic,
         @Request() req,
-    ) {
-        return this.patientService.saveNewOpdPatient(opdPatientDto, req.user.username);
+    ): Promise<any> {
+        return this.patientService.saveNewOpdPatient(opdPatientDto, req.user.username, pic);
     }
 
-    @Patch(':id/update')
+    @Post(':id/update')
     @UsePipes(ValidationPipe)
-    updatePatient(
+    @UseInterceptors(FileInterceptor('avatar', {
+        storage: diskStorage({
+            destination: './uploads/avatars',
+            filename: (req, file, cb) => {
+                const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('');
+                return cb(null, `${randomName}${extname(file.originalname)}`);
+            },
+        }),
+    }))
+    updatePatientCall(
         @Param('id') id: string,
         @Body() patientDto: PatientDto,
+        @UploadedFile() pic,
         @Request() req,
-    ) {
-        return this.patientService.updatePatientRecord(id, patientDto, req.user.username);
+    ): Promise<any> {
+        return this.patientService.updatePatientRecord(id, patientDto, req.user.username, pic);
     }
 
     @Delete(':id')

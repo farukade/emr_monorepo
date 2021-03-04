@@ -59,6 +59,7 @@ export class StaffService {
     }
 
     async addNewStaff(staffDto: StaffDto, pic): Promise<any> {
+        console.log(pic);
         console.log(staffDto);
         // find role
         const role = await this.roleRepository.findOne(staffDto.role_id);
@@ -146,6 +147,10 @@ export class StaffService {
                 staff.profile_pic = pic.filename;
             }
             await staff.save();
+
+            if (staff && staff.profile_pic) {
+                staff.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${staff.profile_pic}`;
+              }
 
             return {success: true, staff};
         } catch (err) {
