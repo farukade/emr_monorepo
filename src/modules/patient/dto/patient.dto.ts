@@ -28,6 +28,8 @@ export class PatientDto {
 
     hmoId: string;
 
+    avatar: string;
+
     referredBy: string;
 
     @IsNotEmpty()

@@ -16,7 +16,7 @@ export class Appointment extends CustomBaseEntity {
         patient => patient.appointments,
     )
     @JoinColumn({name: 'patient_id'})
-    patient!: Patient;
+    patient: Patient;
 
     // @ManyToOne(type => Department)
     // @JoinColumn({ name: 'department_id'})
