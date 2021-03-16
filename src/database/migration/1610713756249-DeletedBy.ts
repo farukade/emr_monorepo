@@ -62,7 +62,6 @@ export class DeletedBy1610713756249 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "patient_request_documents" ADD "deletedBy" character varying(300)`);
         await queryRunner.query(`ALTER TABLE "ivf_enrollments" ADD "deletedBy" character varying(300)`);
         await queryRunner.query(`ALTER TABLE "ivf_down_regulation_charts" ADD "deletedBy" character varying(300)`);
-        await queryRunner.query(`ALTER TABLE "labour_enrollments" ADD "deletedBy" character varying(300)`);
         await queryRunner.query(`ALTER TABLE "labour_delivery_records" ADD "deletedBy" character varying(300)`);
         await queryRunner.query(`ALTER TABLE "labour_measurements" ADD "deletedBy" character varying(300)`);
         await queryRunner.query(`ALTER TABLE "labour_risk_assessments" ADD "deletedBy" character varying(300)`);
@@ -86,7 +85,6 @@ export class DeletedBy1610713756249 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "labour_risk_assessments" DROP COLUMN "deletedBy"`);
         await queryRunner.query(`ALTER TABLE "labour_measurements" DROP COLUMN "deletedBy"`);
         await queryRunner.query(`ALTER TABLE "labour_delivery_records" DROP COLUMN "deletedBy"`);
-        await queryRunner.query(`ALTER TABLE "labour_enrollments" DROP COLUMN "deletedBy"`);
         await queryRunner.query(`ALTER TABLE "ivf_down_regulation_charts" DROP COLUMN "deletedBy"`);
         await queryRunner.query(`ALTER TABLE "ivf_enrollments" DROP COLUMN "deletedBy"`);
         await queryRunner.query(`ALTER TABLE "patient_request_documents" DROP COLUMN "deletedBy"`);

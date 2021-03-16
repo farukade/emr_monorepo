@@ -43,5 +43,6 @@ export class LabourVital extends CustomBaseEntity {
     nextAction: string;
 
     @ManyToOne(() => LabourEnrollment)
-    enrollement: LabourEnrollment;
+    @JoinColumn({name: 'enrollmentId'})
+    enrollment: LabourEnrollment;
 }

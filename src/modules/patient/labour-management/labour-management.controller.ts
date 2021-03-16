@@ -1,6 +1,6 @@
 import { Controller, Post, Body, Request, UseGuards, Param, Get, Query, UsePipes, ValidationPipe } from '@nestjs/common';
 import { LabourManagementService } from './labour-management.service';
-import { LabourEnrollmentDto } from './dto/labour-enrollement.dto';
+import { LabourEnrollmentDto } from './dto/labour-enrollment.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { LabourMeasurementDto } from './dto/labour-measurement.dto';
 import { LabourVitalDto } from './dto/labour-vital.dto';
@@ -37,7 +37,7 @@ export class LabourManagementController {
 
     @Post('enrollment/:id/save')
     @UsePipes(ValidationPipe)
-    saveEnrollement(
+    saveEnrollment(
         @Body() param: LabourEnrollmentDto,
         @Request() req,
         @Param('id') id: number,
@@ -55,8 +55,8 @@ export class LabourManagementController {
         return this.labourManagementService.doSaveMeasurement(id, param, req.user.username);
     }
 
-    @Get(':enrollementId/measurement')
-    getMeasurement(@Param('enrollementId') id: number): Promise<LabourMeasurement[]> {
+    @Get(':enrollmentId/measurement')
+    getMeasurement(@Param('enrollmentId') id: number): Promise<LabourMeasurement[]> {
         return this.labourManagementService.fetchMeasurement(id);
     }
 
@@ -70,8 +70,8 @@ export class LabourManagementController {
         return this.labourManagementService.doSaveVital(id, param, req.user.username);
     }
 
-    @Get(':enrollementId/vitals')
-    getVitals(@Param('enrollementId') id: string): Promise<LabourVital[]> {
+    @Get(':enrollemntId/vitals')
+    getVitals(@Param('enrollmentId') id: string): Promise<LabourVital[]> {
         return this.labourManagementService.fetchVital(id);
     }
 
@@ -85,8 +85,8 @@ export class LabourManagementController {
         return this.labourManagementService.doSaveRiskAssessment(id, param, req.user.username);
     }
 
-    @Get(':enrollementId/risk-assessment')
-    getRiskAssessment(@Param('enrollementId') id: string): Promise<LabourRiskAssessment[]> {
+    @Get(':enrollmentId/risk-assessment')
+    getRiskAssessment(@Param('enrollmentId') id: string): Promise<LabourRiskAssessment[]> {
         return this.labourManagementService.fetchRiskAssessment(id);
     }
 
@@ -100,8 +100,8 @@ export class LabourManagementController {
         return this.labourManagementService.doSaveDeliveryRecord(id, param, req.user.username);
     }
 
-    @Get(':enrollementId/delivery-record')
-    getDeliveryRecord(@Param('enrollementId') id: string): Promise<LabourDeliveryRecord[]> {
+    @Get(':enrollmentId/delivery-record')
+    getDeliveryRecord(@Param('enrollmentId') id: string): Promise<LabourDeliveryRecord[]> {
         return this.labourManagementService.fetchDeliveryRecord(id);
     }
 }

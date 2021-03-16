@@ -5,7 +5,7 @@ import { LabourMeasurementRepository } from './repositories/labour-measurement.r
 import { LabourVitalRepository } from './repositories/labour-vital.repository';
 import { LabourRiskAssessmentRepository } from './repositories/labour-risk-assessment.repository';
 import { LabourDeliveryRecordRepository } from './repositories/labour-delivery-record.repository';
-import { LabourEnrollmentDto } from './dto/labour-enrollement.dto';
+import { LabourEnrollmentDto } from './dto/labour-enrollment.dto';
 import { PatientRepository } from '../repositories/patient.repository';
 import { Patient } from '../entities/patient.entity';
 import * as moment from 'moment';
@@ -103,8 +103,8 @@ export class LabourManagementService {
             dto.createdBy = createdBy;
             dto.lastChangedBy = createdBy;
             dto.patient = await this.patientRepository.findOne(id);
-            const enrollement = await this.labourEnrollmentRepository.save(dto);
-            return { success: true, data: enrollement };
+            const enrollment = await this.labourEnrollmentRepository.save(dto);
+            return { success: true, data: enrollment };
         } catch (err) {
             return { success: false, message: err.message };
         }
