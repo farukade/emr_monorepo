@@ -41,6 +41,7 @@ export class ServicesController {
         return this.servicesService.getAllServices({ page, limit }, urlParams);
     }
 
+    // get services by category id
     @Get('/category/:id')
     getServicesByCategory(
         @Param('id') id: number,
@@ -74,6 +75,7 @@ export class ServicesController {
         @Param('id') id: number,
         @Request() req,
     ): Promise<any> {
+        console.log(req.user)
         return this.servicesService.deleteService(id, req.user.username);
     }
 

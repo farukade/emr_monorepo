@@ -41,6 +41,8 @@ export class TransactionsService {
     async fetchList(options: PaginationOptionsInterface, params): Promise<Pagination> {
         const { startDate, endDate, patient_id, staff_id, payment_type, transaction_type } = params;
 
+        const page = options.page - 1;
+
         const query = this.transactionsRepository.createQueryBuilder('q').select('q.*');
 
         if (transaction_type && transaction_type !== '') {
@@ -71,8 +73,8 @@ export class TransactionsService {
         // if (status) {
         //     query.andWhere('q.status = :status', {status});
         // }
-        
-        const transactions = await query.offset(options.page * options.limit)
+
+        const transactions = await query.offset(page * options.limit)
             .limit(options.limit)
             .orderBy('q.createdAt', 'DESC')
             .getRawMany();
@@ -80,7 +82,6 @@ export class TransactionsService {
         const total = await query.getCount();
 
         for (const transaction of transactions) {
-
             if (transaction.staff_id) {
                 transaction.staff = await this.staffRepository.findOne(transaction.staff_id);
             }
@@ -93,18 +94,17 @@ export class TransactionsService {
                 transaction.service = await this.serviceRepository.findOne(transaction.service_id);
             }
         }
-        
+
         return {
             result: transactions,
             lastPage: Math.ceil(total / options.limit),
             itemsPerPage: options.limit,
             totalPages: total,
-            currentPage: options.page + 1,
+            currentPage: options.page,
         };
     }
 
     async fetchPending(options: PaginationOptionsInterface, params): Promise<Pagination> {
-        
         const { startDate, endDate, patient_id } = params;
 
         const query = this.transactionsRepository.createQueryBuilder('q').select('q.*');

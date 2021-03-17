@@ -37,15 +37,17 @@ export class ServicesService {
     }
 
     async getAllServices(options: PaginationOptionsInterface, params): Promise<Pagination> {
-        const { q } = params;
+        const { q, hmo_id } = params;
 
         const page = options.page - 1;
+
+        const hmo = await this.hmoRepository.findOne(hmo_id);
 
         let result;
         let total = 0;
         if (q && q.length > 0) {
             [result, total] = await this.serviceRepository.findAndCount({
-                where: { name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`) },
+                where: { name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`), hmo },
                 relations: ['category', 'subCategory', 'hmo'],
                 order: { name: 'ASC' },
                 take: options.limit,
@@ -84,9 +86,7 @@ export class ServicesService {
         const category = await this.serviceCategoryRepository.findOne({ where: { name: 'Consultation' } });
 
         // find services
-        const services = await this.serviceRepository.find({ where: { category } });
-
-        return services;
+        return await this.serviceRepository.find({ where: { category } });
     }
 
     async getServicesByCategory(category_id: number, hmo_id: number): Promise<Service[]> {
@@ -316,7 +316,6 @@ export class ServicesService {
     /*
         Service CATEGORY SERVICES
     */
-
     async getServicesCategory(): Promise<ServiceCategory[]> {
         return this.serviceCategoryRepository.find({ relations: ['services', 'subCategories'] });
     }
