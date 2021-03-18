@@ -34,6 +34,15 @@ export class LabController {
         return this.labService.getTests({ page, limit }, urlParams);
     }
 
+    @Get('/unpaginated')
+    getLabTestsUnPaginated(
+        @Request() request,
+        @Query() urlParams,
+    ): Promise<any> {
+
+        return this.labService.getTestsUnpaginated(urlParams);
+    }
+
     @Post()
     @UsePipes(ValidationPipe)
     createLabTest(

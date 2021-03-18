@@ -83,6 +83,29 @@ export class LabService {
         };
     }
 
+
+    async getTestsUnpaginated(params): Promise<any> {
+        const { q, hmo_id } = params;
+        const hmo = await this.hmoRepository.findOne(hmo_id);
+
+        let result;
+        if (q && q.length > 0) {
+            result = await this.labTestRepository.find({
+                where: { name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`), hmo },
+                relations: ['category', 'hmo'],
+                order: { name: 'ASC' },
+            });
+        } else {
+            result = await this.labTestRepository.find({
+                where: { hmo },
+                relations: ['category', 'hmo'],
+                order: { name: 'ASC' },
+            });
+        }
+
+        return {success: true, result};
+    }
+
     async createLabTest(labTestDto: LabTestDto, createdBy: string): Promise<LabTest> {
         const { lab_category_id, hmo_id } = labTestDto;
         const category = await this.labTestCategoryRepo.findOne(lab_category_id);

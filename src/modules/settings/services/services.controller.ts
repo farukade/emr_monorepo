@@ -46,6 +46,7 @@ export class ServicesController {
         @Param('id') id: number,
         @Request() req,
     ): Promise<Service[]> {
+        console.log(id)
         return this.servicesService.getServicesByCategory(id, req.query.hmo_id);
     }
 
