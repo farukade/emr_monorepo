@@ -132,7 +132,7 @@ export class AppointmentService {
                     this.appGateway.server.emit('nursing-queue', { queue });
                 }
 
-               //this.appGateway.server.emit('all-queues', { queue });
+               this.appGateway.server.emit('all-queues', { queue });
 
                 console.log(appointment.transaction);
             }
@@ -199,10 +199,8 @@ export class AppointmentService {
         const { patient_id, service_id } = params;
         // find service
         const service = await this.serviceRepository.findOne(service_id);
-
         let resGracePeriod;
         let resNoOfVisits;
-
         if (service.gracePeriod) {
             const gracePeriodParams = service.gracePeriod.split(' ');
             resGracePeriod = await this.verifyGracePeriod(gracePeriodParams, patient_id, service_id);
@@ -227,7 +225,6 @@ export class AppointmentService {
         await appointment.save();
         // remove from queue
         await this.queueSystemRepository.delete({ appointment });
-
         return appointment;
     }
 
@@ -239,7 +236,6 @@ export class AppointmentService {
         await appointment.save();
         // remove from queue
         await this.queueSystemRepository.delete({ appointment });
-
         return await appointment.softRemove();
     }
 

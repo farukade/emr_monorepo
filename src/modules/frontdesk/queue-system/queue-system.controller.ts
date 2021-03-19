@@ -11,6 +11,11 @@ export class QueueSystemController {
         return this.queueSystemService.fetchQueueList();
     }
 
+    @Get('get-vitals-queue-lists')
+    fetchVitalsQueueList(): Promise<Queue[]> {
+        return this.queueSystemService.fetchVitalsQueueList();
+    }
+
     @Post('add')
     addToQueue(
         @Body() params,

@@ -90,6 +90,7 @@ export class ServicesService {
     }
 
     async getServicesByCategory(category_id: number, hmo_id: number): Promise<Service[]> {
+        console.log(category_id)
         const hmo = await this.hmoRepository.findOne(hmo_id);
 
         // find consultation category
