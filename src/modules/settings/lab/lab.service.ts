@@ -162,10 +162,10 @@ export class LabService {
                 relations: ['category', 'hmo'],
                 order: { name: 'ASC' },
             });
-
+            console.log("lab_tests");
+            console.log(tests);
             results = [...results, { ...category, lab_tests: tests }];
         }
-
         return results;
     }
 

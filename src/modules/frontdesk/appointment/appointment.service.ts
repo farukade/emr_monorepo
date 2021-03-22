@@ -54,18 +54,58 @@ export class AppointmentService {
             type = 'in-patient';
         }
         const today = moment().format('YYYY-MM-DD');
-        return await this.appointmentRepository.find({
+        const appointments = await this.appointmentRepository.find({
             where: { appointment_date: today, appointmentType: type, canSeeDoctor: 1 },
             relations: ['patient', 'whomToSee', 'consultingRoom', 'encounter', 'transaction'],
         });
 
+        for (const item of appointments) {
+            if (item.patient) {
+                let patient = item.patient;
+                if (patient.profile_pic) {
+                    patient.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${patient.profile_pic}`;
+                }
+                item.patient = patient;
+            }
+        }
+        return appointments;
+    }
+
+    async patientsAppointments({ type }): Promise<Appointment[]> {
+        if (!type) {
+            type = 'in-patient';
+        const appointments = await this.appointmentRepository.find({
+            where: { appointmentType: type, canSeeDoctor: 1 },
+            relations: ['patient', 'whomToSee', 'consultingRoom', 'encounter', 'transaction'],
+        });
+        for (const item of appointments) {
+            if (item.patient) {
+                let patient = item.patient;
+                if (patient.profile_pic) {
+                    patient.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${patient.profile_pic}`;
+                }
+                item.patient = patient;
+            }
+        }
+        return appointments;
+    }
     }
 
     async getAppointment(id: string): Promise<Appointment> {
-        return await this.appointmentRepository.findOne({
+        const appointment = await this.appointmentRepository.findOne({
             where: { id },
             relations: ['patient', 'whomToSee', 'consultingRoom', 'encounter', 'transaction'],
         });
+
+        if (appointment.patient) {
+            let patient = appointment.patient;
+            if (patient.profile_pic) {
+                patient.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${patient.profile_pic}`;
+            }
+            appointment.patient = patient;
+        }
+
+        return appointment;
 
     }
 
@@ -147,7 +187,7 @@ export class AppointmentService {
     }
 
     async listAppointments(options: PaginationOptionsInterface, params): Promise<Pagination> {
-        const { startDate, endDate } = params;
+        const { startDate, endDate, patient_id } = params;
         let type = params.type;
         if (!type) {
             type = 'in-patient';
@@ -169,14 +209,27 @@ export class AppointmentService {
             query.andWhere(`q.appointment_date <= '${end}'`);
         }
 
+        if (patient_id && patient_id !== '') {
+            query.andWhere('q.patient_id = :patient_id', { patient_id });
+        }
+
         const appointments = await query.offset(options.page * options.limit)
         .limit(options.limit)
         .orderBy('q.createdAt', 'DESC')
         .getMany();
         
         const total = await query.getCount();
+
+        for (const item of appointments) {
+            if (item.patient) {
+                let patient = item.patient;
+                if (patient.profile_pic) {
+                    patient.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${patient.profile_pic}`;
+                }
+                item.patient = patient;
+            }
+        }
        
-      
         return {
             result: appointments,
             lastPage: Math.ceil(total / options.limit),

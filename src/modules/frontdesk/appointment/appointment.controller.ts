@@ -24,6 +24,13 @@ export class AppointmentController {
         return this.appointmentService.todaysAppointments(params);
     }
 
+    @Get('patient-list')
+    getPatientAppointment(
+        @Param() params,
+    ): Promise<Appointment[]> {
+        return this.appointmentService.patientsAppointments(params);
+    }
+
     @Get('')
     listAppointments(
         @Query() urlParams,

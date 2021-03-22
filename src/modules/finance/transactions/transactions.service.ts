@@ -128,6 +128,8 @@ export class TransactionsService {
             .orderBy('q.createdAt', 'DESC')
             .getRawMany();
 
+        console.log(transactions)
+
         const total = await query.getCount();
 
         for (const transaction of transactions) {
