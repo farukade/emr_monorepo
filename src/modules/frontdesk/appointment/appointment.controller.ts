@@ -24,13 +24,6 @@ export class AppointmentController {
         return this.appointmentService.todaysAppointments(params);
     }
 
-    @Get('patient-list')
-    getPatientAppointment(
-        @Param() params,
-    ): Promise<Appointment[]> {
-        return this.appointmentService.patientsAppointments(params);
-    }
-
     @Get('')
     listAppointments(
         @Query() urlParams,
@@ -38,28 +31,28 @@ export class AppointmentController {
     ): Promise<Pagination> {
         const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
         const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
-        return this.appointmentService.listAppointments({page: page - 1, limit}, urlParams);
+        return this.appointmentService.listAppointments({page, limit}, urlParams);
     }
 
     @Get('/patient/:id')
     patientAppointments(
-        @Param('patient_id') patient_id: number,
+        @Param('patient_id') id: number,
     ): Promise<Appointment[]> {
-        return this.appointmentService.patientAppointments(patient_id);
+        return this.appointmentService.patientAppointments(id);
     }
 
     @Get('view/:id')
     getAppointment(
-        @Param('id') id: string,
+        @Param('id') id: number,
     ) {
         return this.appointmentService.getAppointment(id);
     }
 
     @Get('/:patient_id/active')
     getActiveAppointment(
-        @Param('patient_id') patient_id: string,
+        @Param('patient_id') id: number,
     ) {
-        return this.appointmentService.getActivePatientAppointment(patient_id);
+        return this.appointmentService.getActivePatientAppointment(id);
     }
 
     @Get('validate')

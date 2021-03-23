@@ -123,12 +123,14 @@ export class TransactionsService {
             query.andWhere('q.patient_id = :patient_id', { patient_id });
         }
 
-        const transactions = await query.offset(options.page * options.limit)
+        const page = options.page - 1;
+
+        const transactions = await query.offset(page * options.limit)
             .limit(options.limit)
             .orderBy('q.createdAt', 'DESC')
             .getRawMany();
 
-        console.log(transactions)
+        console.log(transactions);
 
         const total = await query.getCount();
 
@@ -148,7 +150,7 @@ export class TransactionsService {
             lastPage: Math.ceil(total / options.limit),
             itemsPerPage: options.limit,
             totalPages: total,
-            currentPage: options.page + 1,
+            currentPage: options.page,
         };
        // return await this.transactionsRepository.find({ where: { status: 0 }, relations: ['patient', 'serviceType'] });
     }
@@ -274,7 +276,7 @@ export class TransactionsService {
             items.push({ name: service.name, amount: service.tariff });
         }
 
-        let date = new Date();
+        const date = new Date();
         date.setDate(date.getDate() - 1);
 
         try {
@@ -297,18 +299,18 @@ export class TransactionsService {
     }
 
     async update(id: string, transactionDto: TransactionDto, createdBy, hmo_approval_code: string): Promise<any> {
-        
-        if(hmo_approval_code){
+
+        if (hmo_approval_code) {
             const transaction = await this.transactionsRepository.findOne(id);
-            transaction.hmo_approval_code = hmo_approval_code
+            transaction.hmo_approval_code = hmo_approval_code;
             transaction.save();
             return { success: true, transaction };
 
         }
-        
+
         const { patient_id, serviceType, amount, description, payment_type } = transactionDto;
         // find patient record
-        
+
         const patient = await this.patientRepository.findOne(patient_id);
         const items = [];
         for (const serviceId of serviceType) {
@@ -364,7 +366,7 @@ export class TransactionsService {
             let queue;
             if (transaction.next_location && transaction.next_location === 'vitals') {
                 // find appointment
-                console.log(transaction.id)
+                console.log(transaction.id);
                 const appointment = await this.appointmentRepository.findOne({
                     where: { transaction: transaction.id },
                     relations: ['patient', 'whomToSee', 'consultingRoom', 'serviceCategory', 'serviceType'],

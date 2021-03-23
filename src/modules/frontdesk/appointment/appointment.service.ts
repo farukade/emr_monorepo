@@ -52,11 +52,23 @@ export class AppointmentService {
         if (!type) {
             type = 'in-patient';
         }
+
         const today = moment().format('YYYY-MM-DD');
         const appointments = await this.appointmentRepository.find({
             where: { appointment_date: today, appointmentType: type, canSeeDoctor: 1 },
             relations: ['patient', 'whomToSee', 'consultingRoom', 'encounter', 'transaction'],
         });
+
+        for (const item of appointments) {
+            if (item.patient) {
+                const pat = item.patient;
+                if (pat.profile_pic) {
+                    pat.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${pat.profile_pic}`;
+                }
+                item.patient = pat;
+            }
+        }
+        return appointments;
     }
 
     async patientAppointments(id: number): Promise<Appointment[]> {
@@ -69,45 +81,25 @@ export class AppointmentService {
 
         for (const item of appointments) {
             if (item.patient) {
-                let patient = item.patient;
-                if (patient.profile_pic) {
-                    patient.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${patient.profile_pic}`;
+                const pat = item.patient;
+                if (pat.profile_pic) {
+                    pat.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${pat.profile_pic}`;
                 }
-                item.patient = patient;
+                item.patient = pat;
             }
         }
+
         return appointments;
     }
 
-    async patientsAppointments({ type }): Promise<Appointment[]> {
-        if (!type) {
-            type = 'in-patient';
-            
-        const appointments = await this.appointmentRepository.find({
-            where: { appointmentType: type, canSeeDoctor: 1 },
-            relations: ['patient', 'whomToSee', 'consultingRoom', 'encounter', 'transaction'],
-        });
-
-        for (const item of appointments) {
-            if (item.patient) {
-                let patient = item.patient;
-                if (patient.profile_pic) {
-                    patient.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${patient.profile_pic}`;
-                }
-                item.patient = patient;
-            }
-        }
-        return appointments;
-    }
-
-    async getAppointment(id: string): Promise<Appointment> {
+    async getAppointment(id: number): Promise<Appointment> {
         const appointment = await this.appointmentRepository.findOne({
             where: { id },
             relations: ['patient', 'whomToSee', 'consultingRoom', 'encounter', 'transaction'],
         });
 
         if (appointment.patient) {
-            let patient = appointment.patient;
+            const patient = appointment.patient;
             if (patient.profile_pic) {
                 patient.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${patient.profile_pic}`;
             }
@@ -222,37 +214,38 @@ export class AppointmentService {
             query.andWhere('q.patient_id = :patient_id', { patient_id });
         }
 
-        const appointments = await query.offset(options.page * options.limit)
-        .limit(options.limit)
-        .orderBy('q.createdAt', 'DESC')
-        .getMany();
+        const page = options.page
+        const appointments = await query.offset(page * options.limit)
+            .limit(options.limit)
+            .orderBy('q.createdAt', 'DESC')
+            .getMany();
 
         const total = await query.getCount();
 
         for (const item of appointments) {
             if (item.patient) {
-                let patient = item.patient;
+                const patient = item.patient;
                 if (patient.profile_pic) {
                     patient.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${patient.profile_pic}`;
                 }
                 item.patient = patient;
             }
         }
-       
+
         return {
             result: appointments,
             lastPage: Math.ceil(total / options.limit),
             itemsPerPage: options.limit,
             totalPages: total,
-            currentPage: options.page + 1,
+            currentPage: options.page,
         };
     }
 
-    async getActivePatientAppointment(patient_id) {
+    async getActivePatientAppointment(patientId) {
         return await this.appointmentRepository
             .createQueryBuilder('appointment')
             .leftJoinAndSelect('appointment.patient', 'patient')
-            .where('appointment.patient_id = :patient_id', { patient_id })
+            .where('appointment.patient_id = :patient_id', { patientId })
             .andWhere('appointment.isActive = :status', { status: true })
             .getOne();
     }
