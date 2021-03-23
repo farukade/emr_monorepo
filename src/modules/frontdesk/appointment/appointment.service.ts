@@ -21,7 +21,6 @@ import { HmoRepository } from '../../hmo/hmo.repository';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import { PaginationOptionsInterface } from '../../../common/paginate';
 
-
 @Injectable()
 export class AppointmentService {
     constructor(
@@ -58,6 +57,15 @@ export class AppointmentService {
             where: { appointment_date: today, appointmentType: type, canSeeDoctor: 1 },
             relations: ['patient', 'whomToSee', 'consultingRoom', 'encounter', 'transaction'],
         });
+    }
+
+    async patientAppointments(id: number): Promise<Appointment[]> {
+        const patient = await this.patientRepository.findOne(id);
+
+        const appointments = await this.appointmentRepository.find({
+            where: { patient },
+            relations: ['patient', 'whomToSee', 'consultingRoom', 'encounter', 'transaction'],
+        });
 
         for (const item of appointments) {
             if (item.patient) {
@@ -74,10 +82,12 @@ export class AppointmentService {
     async patientsAppointments({ type }): Promise<Appointment[]> {
         if (!type) {
             type = 'in-patient';
+            
         const appointments = await this.appointmentRepository.find({
             where: { appointmentType: type, canSeeDoctor: 1 },
             relations: ['patient', 'whomToSee', 'consultingRoom', 'encounter', 'transaction'],
         });
+
         for (const item of appointments) {
             if (item.patient) {
                 let patient = item.patient;
@@ -88,7 +98,6 @@ export class AppointmentService {
             }
         }
         return appointments;
-    }
     }
 
     async getAppointment(id: string): Promise<Appointment> {
@@ -112,7 +121,7 @@ export class AppointmentService {
     async saveNewAppointment(appointmentDto: AppointmentDto): Promise<any> {
         try {
             const { patient_id, consulting_room_id, doctor_id, sendToQueue, serviceType, serviceCategory, amount } = appointmentDto;
-            console.log(amount)
+            console.log(amount);
             // find patient details
             const patient = await this.patientRepository.findOne(patient_id);
             if (!patient) {
@@ -172,7 +181,7 @@ export class AppointmentService {
                     this.appGateway.server.emit('nursing-queue', { queue });
                 }
 
-               this.appGateway.server.emit('all-queues', { queue });
+                this.appGateway.server.emit('all-queues', { queue });
 
                 console.log(appointment.transaction);
             }
@@ -217,7 +226,7 @@ export class AppointmentService {
         .limit(options.limit)
         .orderBy('q.createdAt', 'DESC')
         .getMany();
-        
+
         const total = await query.getCount();
 
         for (const item of appointments) {

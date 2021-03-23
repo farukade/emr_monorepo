@@ -41,6 +41,13 @@ export class AppointmentController {
         return this.appointmentService.listAppointments({page: page - 1, limit}, urlParams);
     }
 
+    @Get('/patient/:id')
+    patientAppointments(
+        @Param('patient_id') patient_id: number,
+    ): Promise<Appointment[]> {
+        return this.appointmentService.patientAppointments(patient_id);
+    }
+
     @Get('view/:id')
     getAppointment(
         @Param('id') id: string,
