@@ -144,10 +144,4 @@ export class ConsultationService {
     async getEncounter(id: string) {
         return await this.encounterRepository.findOne(id);
     }
-
-    async getEncounterByAppointment(appointment_id: string) {
-        const appointment = await this.appointmentRepository.findOne(appointment_id);
-
-        return await this.encounterRepository.findOne({where: {appointment}});
-    }
 }

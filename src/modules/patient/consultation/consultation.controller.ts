@@ -35,11 +35,4 @@ export class ConsultationController {
         return this.consultationService.getEncounter(id);
     }
 
-    @Get('appointment/:appointment_id')
-    getEncounterByAppointment(
-        @Param('appointment_id') appointment_id: string,
-    ) {
-        return this.consultationService.getEncounterByAppointment(appointment_id);
-    }
-
 }

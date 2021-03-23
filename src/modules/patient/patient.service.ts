@@ -395,8 +395,8 @@ export class PatientService {
         const { startDate, endDate } = urlParams;
 
         const query = this.patientVitalRepository.createQueryBuilder('q')
-            .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
-            .where('q.patient_id = :id', { id });
+            .innerJoin(Patient, 'patient', 'q.patient = patient.id')
+            .where('q.patient = :id', { id });
         if (startDate && startDate !== '') {
             const start = moment(startDate).endOf('day').toISOString();
             query.andWhere(`q.createdAt >= '${start}'`);
