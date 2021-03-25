@@ -1,8 +1,11 @@
 import { CustomBaseEntity } from '../../../../common/entities/custom-base.entity';
-import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, OneToOne, OneToMany} from 'typeorm';
 import { IWifeLabDetails } from '../interfaces/wifeLabDetails.interface';
 import { IHusbandLabDetails } from '../interfaces/husbandLabDetails.interface';
 import { Patient } from '../../entities/patient.entity';
+import { PatientRequest } from '../../entities/patient_requests.entity';
+import { PatientRequestItem } from '../../entities/patient_request_items.entity';
+
 
 @Entity({name: 'ivf_enrollments'})
 export class IvfEnrollment extends CustomBaseEntity {
@@ -49,6 +52,4 @@ export class IvfEnrollment extends CustomBaseEntity {
     @JoinColumn({name: 'husband_patient_id'})
     husband: Patient;
 
-    @Column('simple-array', {nullable: true})
-    labTests: string[];
 }

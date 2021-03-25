@@ -67,7 +67,4 @@ export class PatientRequestItem extends CustomBaseEntity {
 
     @Column({ nullable: true })
     note: string;
-
-    @Column({ default: false })
-    forIVF: boolean;
 }
