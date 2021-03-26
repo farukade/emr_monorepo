@@ -24,7 +24,7 @@ export class IvfController {
         @Body() ivfEnrollmentDto: IvfEnrollmentDto,
         @Request() req,
     ) {
-        return this.ivfService.saveEnrollment(ivfEnrollmentDto, req.user.userId);
+        return this.ivfService.saveEnrollment(ivfEnrollmentDto, req.user.userId, req.user.username);
     }
 
     @Get(':patientId/history')
@@ -41,8 +41,6 @@ export class IvfController {
         const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page,10) : 0;
         return this.ivfService.getEnrollments({ page: page - 1, limit }, urlParams);
     }
-
- 
 
     @Post('save/down-regulation')
     saveDownRegulationChart(

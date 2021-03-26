@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { getConnection, getRepository } from 'typeorm';
 import { IvfEnrollmentRepository } from './ivf_enrollment.repository';
 import { IvfEnrollmentDto } from './dto/ivf_enrollment.dto';
 import { StaffRepository } from '../../hr/staff/staff.repository';
@@ -8,32 +9,38 @@ import { IvfEnrollment } from './entities/ivf_enrollment.entity';
 import { IvfDownRegulationChartDto } from './dto/ivf-down-regulation-chart.dto';
 import { IvfDownRegulationChartEntity } from './entities/ivf_down_regulation_chart.entity';
 import { IvfHcgAdministrationChartEntity } from './entities/ivf_hcg_administration_chart.entity';
-import { getRepository } from 'typeorm';
 import { IvfTheaterProcedureListEntity } from './entities/ivf_theater_procedure_lists.entity';
 import { PaginationOptionsInterface } from '../../../common/paginate';
 import { Pagination } from '../../../common/paginate/paginate.interface';
+import { PatientRequest } from '../entities/patient_requests.entity';
 import * as moment from 'moment';
-import { LabTestRepository } from '../../settings/lab/lab.test.repository';
 import { RequestPaymentHelper } from '../../../common/utils/RequestPaymentHelper';
 import { PatientRequestHelper } from '../../../common/utils/PatientRequestHelper';
 import { AppGateway } from '../../../app.gateway';
+import { PatientRequestItem } from '../entities/patient_request_items.entity';
+import { User } from '../../hr/entities/user.entity';
+import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
+import { PatientRequestItemRepository } from '../repositories/patient_request_items.repository';
+import { PatientRequestRepository } from '../repositories/patient_request.repository';
 
 @Injectable()
 export class IvfService {
     constructor(
+        @InjectRepository(PatientRequestRepository)
+        private patientRequestRepository: PatientRequestRepository,
+        @InjectRepository(PatientRequestItemRepository)
+        private patientRequestItemRepository: PatientRequestItemRepository,
         @InjectRepository(IvfEnrollmentRepository)
         private ivfEnrollmentRepo: IvfEnrollmentRepository,
         @InjectRepository(StaffRepository)
         private staffRepository: StaffRepository,
         @InjectRepository(PatientRepository)
         private patientRepository: PatientRepository,
-        @InjectRepository(LabTestRepository)
-        private labTestRepository: LabTestRepository,
         private readonly appGateway: AppGateway,
     ) {
     }
 
-    async saveEnrollment(ivfEnrollmentDto: IvfEnrollmentDto, userId): Promise<any> {
+    async saveEnrollment(ivfEnrollmentDto: IvfEnrollmentDto, userId, createdBy): Promise<any> {
         try {
             const { wife_id, husband_id, labTests } = ivfEnrollmentDto;
 
@@ -42,29 +49,35 @@ export class IvfService {
 
             // wife patient details
             const patient = await this.patientRepository.findOne(wife_id, { relations: ['hmo'] });
-
-            const enrol = new IvfEnrollment();
-            enrol.wife = patient;
-            enrol.husband = await this.patientRepository.findOne(husband_id); // husband
-            const data = await this.ivfEnrollmentRepo.save(enrol);
+            ivfEnrollmentDto.wife = patient;
+            // husband patient details
+            ivfEnrollmentDto.husband = await this.patientRepository.findOne(husband_id);
+            // save enrollment details
+            const data = await this.ivfEnrollmentRepo.save(ivfEnrollmentDto);
 
             // TODO: add lab tests
-            // let mappedIds = []
-            // if(labTests.length > 0 ){
-            //     mappedIds = labTests.map(id => {id});
-            //     let labRequest = await PatientRequestHelper.handleLabRequest
-            //     ({requestBody:mappedIds, request_note:"IVF enrollment lab tests"}, patient, user);
-            //     if (labRequest.success) {
-            //         // save transaction
-            //         const payment = await RequestPaymentHelper.clinicalLabPayment(labRequest.data, patient, user);
-            //         // @ts-ignore
-            //         labRequest = { ...payment.labRequest };
-            //
-            //         this.appGateway.server.emit('paypoint-queue', { payment: payment.transactions });
-            //     }
-            // }
-
-            return { success: true, data };
+            let mappedIds = []
+            let requests = [];
+            if(labTests.length > 0 ){
+                labTests.forEach(id=>mappedIds.push({id}))
+                console.log(mappedIds)
+                let labRequest = await PatientRequestHelper.handleLabRequest({tests:mappedIds, 
+                    request_note:"IVF enrollment lab tests", requestType:'ivf'}, patient, createdBy);
+                if (labRequest.success) {
+                    // save transaction
+                    const payment = await RequestPaymentHelper.clinicalLabPayment(labRequest.data, patient, createdBy);
+                    
+                    for (const request of labRequest.data) {
+                        const labRequest = await getConnection().getRepository(PatientRequest).findOne(request.id, { relations: ['items'] });
+                        
+                        labRequest.ivf = data;
+                        await labRequest.save();
+                        requests = [...requests, labRequest]
+                    }            
+                    this.appGateway.server.emit('paypoint-queue', { payment: payment.transactions });
+                }
+            }
+            return { success: true, data: {...data, requests} };
         } catch (err) {
             return { success: false, message: err.message };
         }
@@ -103,7 +116,7 @@ export class IvfService {
             .getRawMany();
 
         const total = await query.getCount();
-
+        let objInplace = [];
         for (const ivf of ivfs) {
 
             if (ivf.husband_patient_id) {
@@ -113,23 +126,17 @@ export class IvfService {
             if (ivf.wife_patient_id) {
                 ivf.wife = await this.patientRepository.findOne(ivf.wife_patient_id);
             }
-
-            // tslint:disable-next-line:variable-name
-            const enrollment_lab_tests = [];
-            // if (ivf.labTests !== null) {
-            //     const iterators = String(ivf.labTests).split(',');
-            //     for (const labTestId of iterators) {
-            //         // find service record
-            //         const sertest = await this.labTestRepository.findOne(labTestId);
-            //         enrollment_lab_tests.push(sertest);
-            //     }
-            // }
-
-            ivf.labTests = enrollment_lab_tests;
+            const requests = await this.patientRequestRepository.find({ where: { ivf }, relations: ['items'] });
+            objInplace = [...objInplace, {id: ivf.id, requests}]
         }
 
+        const collection = ivfs.map(ivf=>{
+            const obj = objInplace.find(obj=>obj.id === ivf.id);
+            return({...ivf, requests: obj.requests});
+        })
+
         return {
-            result: ivfs,
+            result: collection,
             lastPage: Math.ceil(total / options.limit),
             itemsPerPage: options.limit,
             totalPages: total,

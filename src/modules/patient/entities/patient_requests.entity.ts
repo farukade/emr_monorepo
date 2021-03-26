@@ -3,6 +3,7 @@ import { Entity, Column, ManyToOne, JoinColumn, OneToOne, OneToMany } from 'type
 import { Patient } from './patient.entity';
 import { AdmissionClinicalTask } from '../admissions/entities/admission-clinical-task.entity';
 import { PatientRequestItem } from './patient_request_items.entity';
+import { IvfEnrollment } from '../ivf/entities/ivf_enrollment.entity';
 
 @Entity({name: 'patient_requests'})
 export class PatientRequest extends CustomBaseEntity {
@@ -34,4 +35,8 @@ export class PatientRequest extends CustomBaseEntity {
 
     @OneToMany(type => PatientRequestItem, items => items.request)
     items: PatientRequestItem[];
+
+    @ManyToOne(type => IvfEnrollment)
+    @JoinColumn({name: 'ivf_id'})
+    ivf: IvfEnrollment;
 }
