@@ -5,6 +5,7 @@ import { Immunization } from '../../modules/patient/immunization/entities/immuni
 import * as moment from 'moment';
 import { PatientRequestItem } from '../../modules/patient/entities/patient_request_items.entity';
 import { LabTest } from '../../modules/settings/entities/lab_test.entity';
+import { Service } from '../../modules/settings/entities/service.entity';
 
 export class PatientRequestHelper {
     constructor(private patientRequestRepo: PatientRequestRepository) {
@@ -138,27 +139,49 @@ export class PatientRequestHelper {
         }
     }
 
-    static async handleImagingRequest(param, patient, createdBy) {
-        const { requestType, requests, request_note, id } = param;
-        const data = {
-            requestType: 'imaging',
-            patient,
-            createdBy: '',
-            lastChangedBy: '',
-            requestNote: request_note,
-        };
+    static async handleServiceRequest(param, patient, createdBy, type) {
+        const { requestType, request_note, tests, urgent } = param;
 
-        let res;
         try {
-            if (id && id !== '') {
-                data.lastChangedBy = createdBy;
-                res = await this.update(data, id);
-            } else {
-                data.createdBy = createdBy;
-                res = await this.save(data);
+            const requestCount = await getConnection()
+                .createQueryBuilder()
+                .select('*')
+                .from(PatientRequest, 'q')
+                .where('q.requestType = :type', { type })
+                .getCount();
+
+            const nextId = `00000${requestCount + 1}`;
+            const code = `DH/${moment().format('MM')}/${nextId.slice(-5)}`;
+
+            let result = [];
+            for (const item of tests) {
+                const data = {
+                    code,
+                    requestType,
+                    patient,
+                    urgent,
+                    requestNote: request_note,
+                    createdBy,
+                };
+                const res = await this.save(data);
+                const request = res.generatedMaps[0];
+
+                const service = await getConnection().getRepository(Service).findOne(item.id);
+
+                const requestItem = {
+                    request,
+                    service,
+                };
+                const rs = await this.saveItem(requestItem);
+
+                request.items = [rs.generatedMaps[0]];
+
+                result = [...result, request];
             }
-            return { success: true, data: res.generatedMaps[0] };
+
+            return { success: true, data: result };
         } catch (error) {
+            console.log(error);
             return { success: false, message: error.message };
         }
     }

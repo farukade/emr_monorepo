@@ -104,23 +104,23 @@ export class ConsultationService {
                 }
             }
 
-            if (imagingRequest) {
-                const radiologyRes = await PatientRequestHelper.handleImagingRequest(imagingRequest, patient, createdBy);
-                if (radiologyRes.success) {
-                    // save transaction
-                    await RequestPaymentHelper.imagingPayment(imagingRequest.items, patient, createdBy);
-                    encounter.imagingRequest = radiologyRes.data;
-                }
-            }
-
-            if (procedureRequest && procedureRequest.requests) {
-                const procedure = await PatientRequestHelper.handleImagingRequest(procedureRequest, patient, createdBy);
-                if (procedure.success) {
-                    // save transaction
-                    await RequestPaymentHelper.imagingPayment(procedureRequest.items, patient, createdBy);
-                    encounter.procedure = procedure.data;
-                }
-            }
+            // if (imagingRequest) {
+            //     const radiologyRes = await PatientRequestHelper.handleImagingRequest(imagingRequest, patient, createdBy);
+            //     if (radiologyRes.success) {
+            //         // save transaction
+            //         await RequestPaymentHelper.imagingPayment(imagingRequest.items, patient, createdBy);
+            //         encounter.imagingRequest = radiologyRes.data;
+            //     }
+            // }
+            //
+            // if (procedureRequest && procedureRequest.requests) {
+            //     const procedure = await PatientRequestHelper.handleImagingRequest(procedureRequest, patient, createdBy);
+            //     if (procedure.success) {
+            //         // save transaction
+            //         await RequestPaymentHelper.imagingPayment(procedureRequest.items, patient, createdBy);
+            //         encounter.procedure = procedure.data;
+            //     }
+            // }
 
             if (param.consumable.items && param.consumable.items.length) {
                 encounter.consumable = param.consumable.items;

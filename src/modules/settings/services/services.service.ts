@@ -89,24 +89,21 @@ export class ServicesService {
         return await this.serviceRepository.find({ where: { category } });
     }
 
-    async getServicesByCategory(category_id: number, hmo_id: number): Promise<Service[]> {
-        console.log(category_id)
-        const hmo = await this.hmoRepository.findOne(hmo_id);
+    async getServicesByCategory(id: number, hmoId: number): Promise<Service[]> {
+        const hmo = await this.hmoRepository.findOne(hmoId);
+        const category = await this.serviceCategoryRepository.findOne(id);
 
-        // find consultation category
-        const category = await this.serviceCategoryRepository.findOne(category_id);
-
-        // find services
         return await this.serviceRepository.find({ where: { category, hmo } });
     }
 
     async createService(serviceDto: ServiceDto): Promise<Service> {
         const { category_id, sub_category_id, hmo_id } = serviceDto;
+
         const category = await this.serviceCategoryRepository.findOne(category_id);
         const subCategory = await this.serviceSubCategoryRepository.findOne(sub_category_id);
         const hmo = await this.hmoRepository.findOne(hmo_id);
-        return this.serviceRepository.createService(serviceDto, category, subCategory, hmo);
 
+        return this.serviceRepository.createService(serviceDto, category, subCategory, hmo);
     }
 
     async updateService(id: string, serviceDto: ServiceDto): Promise<Service> {
@@ -318,11 +315,11 @@ export class ServicesService {
         Service CATEGORY SERVICES
     */
     async getServicesCategory(): Promise<ServiceCategory[]> {
-        return this.serviceCategoryRepository.find({ relations: ['services', 'subCategories'] });
+        return this.serviceCategoryRepository.find({ relations: ['subCategories'] });
     }
 
     async getServicesCategoryBySlug(slug: string): Promise<ServiceCategory> {
-        return await this.serviceCategoryRepository.findOne({ where: { slug } });
+        return this.serviceCategoryRepository.findOne({ where: { slug } });
     }
 
     async createServiceCategory(serviceCategoryDto: ServiceCategoryDto): Promise<ServiceCategory> {

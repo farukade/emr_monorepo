@@ -5,8 +5,8 @@ import { CountryRepository } from '../../common/repositories/country.repository'
 import { StateRepository } from '../../common/repositories/state.repository';
 import { Country } from '../../common/entities/country.entity';
 import { Bank } from '../../common/entities/bank.entity';
-import {StaffDetails} from "../hr/staff/entities/staff_details.entity";
-import {getRepository, IsNull, Not} from "typeorm";
+import { StaffDetails } from '../hr/staff/entities/staff_details.entity';
+import { getRepository, IsNull, Not } from 'typeorm';
 
 @Injectable()
 export class UtilityService {
@@ -17,7 +17,8 @@ export class UtilityService {
         private countryRepository: CountryRepository,
         @InjectRepository(StateRepository)
         private stateRepository: StateRepository,
-    ) {}
+    ) {
+    }
 
     async getCountries(): Promise<Country[]> {
         return await this.countryRepository.find();

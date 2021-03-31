@@ -19,7 +19,6 @@ import { HmoRepository } from '../hmo/hmo.repository';
 import { VoucherRepository } from '../finance/vouchers/voucher.repository';
 import { Voucher } from '../finance/vouchers/voucher.entity';
 import { PatientDocument } from './entities/patient_documents.entity';
-import { PatientRequestDocument } from './entities/patient_request_documents.entity';
 import { PatientDocumentRepository } from './repositories/patient_document.repository';
 import { User } from '../hr/entities/user.entity';
 import { StaffDetails } from '../hr/staff/entities/staff_details.entity';
@@ -350,12 +349,7 @@ export class PatientService {
             query.andWhere(`q.createdAt <= '${end}'`);
         }
         if (status && status !== '') {
-            let stat;
-            if (status === 'active') {
-                stat = true;
-            } else {
-                stat = false;
-            }
+            const stat = status === 'active';
             query.andWhere('q.isActive = :status', { status: stat });
         }
         return await query.orderBy('q.createdAt', 'DESC').getMany();
@@ -379,16 +373,6 @@ export class PatientService {
             query.andWhere('q.document_type = :document_type', { document_type: documentType });
         }
         return await query.orderBy('q.createdAt', 'DESC').getMany();
-    }
-
-    async getRequestDocuments(id, urlParams): Promise<PatientRequestDocument[]> {
-        const { startDate, endDate, documentType } = urlParams;
-
-        return await this.connection.getRepository(PatientRequestDocument).createQueryBuilder('d')
-            .select(['document_name'])
-            .where('d.id = :id', { id })
-            .getMany();
-
     }
 
     async getVitals(id, urlParams): Promise<PatientVital[]> {
@@ -473,106 +457,73 @@ export class PatientService {
         return { success: true };
     }
 
-    async doSaveRequest(param, createdBy) {
-        const { requestType, patient_id } = param;
-        if (!requestType && requestType === '') {
-            return { success: false, message: 'Request Type cannot be empty' };
+    async listRequests(requestType, urlParams): Promise<any> {
+        const { startDate, endDate, status, page, limit } = urlParams;
+
+        const queryLimit = limit ? parseInt(limit, 10) : 30;
+        const offset = (page ? parseInt(page, 10) : 1) - 1;
+
+        const query = this.patientRequestRepository.createQueryBuilder('q')
+            .leftJoin('q.patient', 'patient')
+            .leftJoin(User, 'creator', 'q.createdBy = creator.username')
+            .innerJoin(StaffDetails, 'staff1', 'staff1.user_id = creator.id')
+            .select('q.id, q.requestType, q.code, q.createdAt, q.status, q.urgent, q.requestNote, q.isFilled')
+            .addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
+            .addSelect('CONCAT(patient.other_names || \' \' || patient.surname) as patient_name, patient.id as patient_id')
+            .andWhere('q.requestType = :requestType', { requestType });
+
+        if (startDate && startDate !== '') {
+            const start = moment(startDate).startOf('day').toISOString();
+            query.andWhere(`q.createdAt >= '${start}'`);
         }
-        let res = {};
-        const patient = await this.patientRepository.findOne(patient_id, { relations: ['hmo'] });
-        switch (requestType) {
-            case 'lab':
-                // save request
-                let labRequest = await PatientRequestHelper.handleLabRequest(param, patient, createdBy);
-                if (labRequest.success) {
-                    // save transaction
-                    const payment = await RequestPaymentHelper.clinicalLabPayment(labRequest.data, patient, createdBy);
-                    // @ts-ignore
-                    labRequest = { ...payment.labRequest };
-
-                    this.appGateway.server.emit('paypoint-queue', { payment: payment.transactions });
-                }
-                res = labRequest;
-
-                break;
-            case 'pharmacy':
-                let pharmacyReq = await PatientRequestHelper.handlePharmacyRequest(param, patient, createdBy);
-                if (pharmacyReq.success) {
-                    pharmacyReq = { ...pharmacyReq };
-                }
-                res = pharmacyReq;
-                break;
-            case 'imaging':
-                let imaging = await PatientRequestHelper.handleImagingRequest(param, patient, createdBy);
-                console.log(imaging);
-                if (imaging.success) {
-                    // save transaction
-                    const payment = await RequestPaymentHelper.imagingPayment(param.requestBody, patient, createdBy);
-                    imaging = { ...imaging, ...payment };
-                }
-                res = imaging;
-                break;
-            case 'procedure':
-                let procedure = await PatientRequestHelper.handleProcedureRequest(param, patient, createdBy);
-                if (procedure.success && param.bill_now === true) {
-                    // save transaction
-                    const payment = await RequestPaymentHelper.procedurePayment(procedure.data, patient, createdBy);
-                    procedure = { ...procedure, ...payment };
-                }
-                res = procedure;
-                break;
-
-            case 'immunization':
-                let immunizationReq = await PatientRequestHelper.handleVaccinationRequest(param, patient, createdBy);
-                if (immunizationReq.success) {
-                    // save transaction
-                    immunizationReq = { ...immunizationReq };
-                }
-                res = immunizationReq;
-                break;
-            default:
-                res = { success: false, message: 'No data' };
-                break;
+        if (endDate && endDate !== '') {
+            const end = moment(endDate).endOf('day').toISOString();
+            query.andWhere(`q.createdAt <= '${end}'`);
         }
-        return res;
-    }
 
-    async doFillRequest(param, requestId, updatedBy) {
-        const { patient_id, total_amount } = param;
-        try {
-            const request = await this.patientRequestRepository.findOne(requestId);
-            request.isFilled = true;
-            const res = await request.save();
-
-            const patient = await this.patientRepository.findOne(patient_id, { relations: ['hmo'] });
-
-            // save transaction
-            const data = {
-                patient,
-                amount: total_amount,
-                description: 'Payment for pharmacy request',
-                payment_type: patient.hmo.id === 1 ? 'Private' : 'HMO',
-                hmo_approval_status: patient.hmo.id === 1 ? 2 : 0,
-                transaction_type: 'pharmacy',
-                // transaction_details: requestBody,
-                createdBy: updatedBy,
-                patientRequest: res,
-            };
-
-            const payment = await getConnection()
-                .createQueryBuilder()
-                .insert()
-                .into(Transactions)
-                .values(data)
-                .execute();
-
-            this.appGateway.server.emit('paypoint-queue', { payment });
-
-            return { success: true, data: { ...res, transaction_status: 0, payment } };
-        } catch (e) {
-            // console.log(e.message)
-            return { success: false, message: e.message };
+        if (status === 'Filled') {
+            query.andWhere('q.isFilled = :filled', { filled: true });
         }
+
+        if (status === 'Completed') {
+            query.andWhere('q.status = :status', { status: 1 });
+        }
+
+        const count = await query.getCount();
+
+        const items = await query.orderBy({
+            'q.urgent': 'DESC',
+            'q.createdAt': 'DESC',
+        }).limit(queryLimit).offset(offset * queryLimit).getRawMany();
+
+        let result = [];
+        for (const item of items) {
+            item.hmo = await this.hmoRepository.findOne(item.hmo_id);
+
+            const requestItem = await this.patientRequestItemRepository.findOne({ where: { request: item } });
+            item.transaction = await this.transactionsRepository.findOne({ where: { patientRequestItem: requestItem } });
+            item.request_item = requestItem;
+
+            const patient = await this.patientRepository.findOne(item.patient, {
+                relations: ['nextOfKin', 'immunization', 'hmo'],
+            });
+
+            if (patient.profile_pic) {
+                patient.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${patient.profile_pic}`;
+            }
+
+            item.patient = patient;
+
+            result = [...result, item];
+        }
+
+        return {
+            result,
+            lastPage: Math.ceil(count / queryLimit),
+            itemsPerPage: queryLimit,
+            totalPages: count,
+            currentPage: page,
+        };
     }
 
     async listPatientRequests(requestType, patient_id, urlParams): Promise<any> {
@@ -622,6 +573,16 @@ export class PatientService {
             item.transaction = await this.transactionsRepository.findOne({ where: { patientRequestItem: requestItem } });
             item.request_item = requestItem;
 
+            const patient = await this.patientRepository.findOne(item.patient, {
+                relations: ['nextOfKin', 'immunization', 'hmo'],
+            });
+
+            if (patient.profile_pic) {
+                patient.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${patient.profile_pic}`;
+            }
+
+            item.patient = patient;
+
             result = [...result, item];
         }
 
@@ -634,59 +595,122 @@ export class PatientService {
         };
     }
 
-    async listRequests(requestType, urlParams): Promise<any> {
-        const { startDate, endDate, filled, page, limit } = urlParams;
-
-        const queryLimit = limit ? parseInt(limit, 10) : 30;
-        const offset = (page ? parseInt(page, 10) : 1) - 1;
-
-        const query = this.patientRequestRepository.createQueryBuilder('q')
-            .leftJoin('q.patient', 'patient')
-            .leftJoin(User, 'creator', 'q.createdBy = creator.username')
-            .innerJoin(StaffDetails, 'staff1', 'staff1.user_id = creator.id')
-            .select('q.id, q.requestType, q.code, q.createdAt, q.status, q.urgent, q.requestNote, q.isFilled')
-            .addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
-            .addSelect('CONCAT(patient.other_names || \' \' || patient.surname) as patient_name, patient.id as patient_id')
-            .andWhere('q.requestType = :requestType', { requestType });
-
-        if (startDate && startDate !== '') {
-            const start = moment(startDate).startOf('day').toISOString();
-            query.andWhere(`q.createdAt >= '${start}'`);
+    async doSaveRequest(param, createdBy) {
+        const { requestType, patient_id } = param;
+        if (!requestType && requestType === '') {
+            return { success: false, message: 'Request Type cannot be empty' };
         }
-        if (endDate && endDate !== '') {
-            const end = moment(endDate).endOf('day').toISOString();
-            query.andWhere(`q.createdAt <= '${end}'`);
+        let res = {};
+        const patient = await this.patientRepository.findOne(patient_id, { relations: ['hmo'] });
+        switch (requestType) {
+            case 'lab':
+                // save request
+                let labRequest = await PatientRequestHelper.handleLabRequest(param, patient, createdBy);
+                if (labRequest.success) {
+                    // save transaction
+                    const payment = await RequestPaymentHelper.clinicalLabPayment(labRequest.data, patient, createdBy);
+                    // @ts-ignore
+                    labRequest = { ...payment.labRequest };
+
+                    this.appGateway.server.emit('paypoint-queue', { payment: payment.transactions });
+                }
+                res = labRequest;
+                break;
+            case 'pharmacy':
+                let pharmacyReq = await PatientRequestHelper.handlePharmacyRequest(param, patient, createdBy);
+                if (pharmacyReq.success) {
+                    pharmacyReq = { ...pharmacyReq };
+                }
+                res = pharmacyReq;
+                break;
+            case 'radiology':
+                let request = await PatientRequestHelper.handleServiceRequest(param, patient, createdBy, requestType);
+                if (request.success) {
+                    // save transaction
+                    const payment = await RequestPaymentHelper.servicePayment(request.data, patient, createdBy);
+                    // @ts-ignore
+                    request = { ...payment.request };
+
+                    this.appGateway.server.emit('paypoint-queue', { payment: payment.transactions });
+                }
+                res = request;
+                break;
+            case 'procedure':
+                let procedure = await PatientRequestHelper.handleProcedureRequest(param, patient, createdBy);
+                if (procedure.success && param.bill_now === true) {
+                    // save transaction
+                    const payment = await RequestPaymentHelper.procedurePayment(procedure.data, patient, createdBy);
+                    procedure = { ...procedure, ...payment };
+                }
+                res = procedure;
+                break;
+
+            case 'immunization':
+                let immunizationReq = await PatientRequestHelper.handleVaccinationRequest(param, patient, createdBy);
+                if (immunizationReq.success) {
+                    // save transaction
+                    immunizationReq = { ...immunizationReq };
+                }
+                res = immunizationReq;
+                break;
+            default:
+                res = { success: false, message: 'No data' };
+                break;
         }
+        return res;
+    }
 
-        if (filled) {
-            query.andWhere('q.isFilled = :filled', { filled: true });
+    async receiveSpecimen(id: number, username: string) {
+        try {
+            const request = await this.patientRequestItemRepository.findOne(id);
+            request.received = 1;
+            request.receivedBy = username;
+            request.receivedAt = moment().format('YYYY-MM-DD HH:mm:ss');
+            request.lastChangedBy = username;
+            const res = await request.save();
+
+            return { success: true, data: res };
+        } catch (e) {
+            return { success: false, message: e.message };
         }
+    }
 
-        const count = await query.getCount();
+    async doFillRequest(param, requestId, updatedBy) {
+        const { patient_id, total_amount } = param;
+        try {
+            const request = await this.patientRequestRepository.findOne(requestId);
+            request.isFilled = true;
+            const res = await request.save();
 
-        const items = await query.orderBy({
-            'q.urgent': 'DESC',
-            'q.createdAt': 'DESC',
-        }).limit(queryLimit).offset(offset * queryLimit).getRawMany();
+            const patient = await this.patientRepository.findOne(patient_id, { relations: ['hmo'] });
 
-        let result = [];
-        for (const item of items) {
-            item.hmo = await this.hmoRepository.findOne(item.hmo_id);
+            // save transaction
+            const data = {
+                patient,
+                amount: total_amount,
+                description: 'Payment for pharmacy request',
+                payment_type: patient.hmo.id === 1 ? 'Private' : 'HMO',
+                hmo_approval_status: patient.hmo.id === 1 ? 2 : 0,
+                transaction_type: 'pharmacy',
+                // transaction_details: requestBody,
+                createdBy: updatedBy,
+                patientRequest: res,
+            };
 
-            const requestItem = await this.patientRequestItemRepository.findOne({ where: { request: item } });
-            item.transaction = await this.transactionsRepository.findOne({ where: { patientRequestItem: requestItem } });
-            item.request_item = requestItem;
+            const payment = await getConnection()
+                .createQueryBuilder()
+                .insert()
+                .into(Transactions)
+                .values(data)
+                .execute();
 
-            result = [...result, item];
+            this.appGateway.server.emit('paypoint-queue', { payment });
+
+            return { success: true, data: { ...res, transaction_status: 0, payment } };
+        } catch (e) {
+            // console.log(e.message)
+            return { success: false, message: e.message };
         }
-
-        return {
-            result,
-            lastPage: Math.ceil(count / queryLimit),
-            itemsPerPage: queryLimit,
-            totalPages: count,
-            currentPage: page,
-        };
     }
 
     async doApproveResult(id: number, params, username) {
@@ -696,6 +720,7 @@ export class PatientService {
 
         switch (type) {
             case 'lab':
+            case 'radiology':
                 try {
                     const request = await this.patientRequestItemRepository.findOne(id);
                     request.approved = 1;
@@ -753,21 +778,6 @@ export class PatientService {
                 } catch (e) {
                     return { success: false, message: e.message };
                 }
-        }
-    }
-
-    async receiveSpecimen(id: number, username: string) {
-        try {
-            const request = await this.patientRequestItemRepository.findOne(id);
-            request.received = 1;
-            request.receivedBy = username;
-            request.receivedAt = moment().format('YYYY-MM-DD HH:mm:ss');
-            request.lastChangedBy = username;
-            const res = await request.save();
-
-            return { success: true, data: res };
-        } catch (e) {
-            return { success: false, message: e.message };
         }
     }
 
@@ -904,35 +914,31 @@ export class PatientService {
     }
 
     async doUploadDocument(id, param, fileName, createdBy) {
-
-        const patient = await this.patientRepository.findOne(id);
         try {
+            const patient = await this.patientRepository.findOne(id);
+
+            const requestItem = await this.patientRequestItemRepository.findOne(param.id);
+
             const doc = new PatientDocument();
             doc.patient = patient;
             doc.document_type = param.document_type;
             doc.document_name = fileName;
             doc.createdBy = createdBy;
-            await doc.save();
-
-            return { success: true };
-        } catch (error) {
-            return { success: false, message: error.message };
-        }
-    }
-
-    async doUploadRequestDocument(id, param, fileName, createdBy) {
-        try {
-            const request = await this.patientRequestRepository.findOne(id);
-            const doc = new PatientRequestDocument();
-            doc.request = request;
-            doc.document_type = param.document_type;
-            doc.document_name = fileName;
-            doc.createdBy = createdBy;
             const rs = await doc.save();
+
+            if (param.document_type === 'radiology') {
+                requestItem.filled = 1;
+                requestItem.filledBy = createdBy;
+                requestItem.filledAt = moment().format('YYYY-MM-DD HH:mm:ss');
+                requestItem.lastChangedBy = createdBy;
+                requestItem.document = rs;
+                const saved = await requestItem.save();
+
+                return { success: true, request_item: saved };
+            }
 
             return { success: true, document: rs };
         } catch (error) {
-            console.log(error);
             return { success: false, message: error.message };
         }
     }

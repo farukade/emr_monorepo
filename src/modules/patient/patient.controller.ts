@@ -23,13 +23,11 @@ import { PatientDto } from './dto/patient.dto';
 import { PatientAllergyDto } from './dto/patient.allergy.dto';
 import { PatientVital } from './entities/patient_vitals.entity';
 import { PatientAllergy } from './entities/patient_allergies.entity';
-import { PatientRequest } from './entities/patient_requests.entity';
 import { Voucher } from '../finance/vouchers/voucher.entity';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import { PatientDocument } from './entities/patient_documents.entity';
-import { PatientRequestDocument } from './entities/patient_request_documents.entity';
 import { AuthGuard } from '@nestjs/passport';
 import { OpdPatientDto } from './dto/opd-patient.dto';
 import { Pagination } from '../../common/paginate/paginate.interface';
@@ -146,14 +144,6 @@ export class PatientController {
         return this.patientService.getDocuments(id, urlParams);
     }
 
-    @Get(':requestId/request-document')
-    getRequestDocument(
-        @Param('id') id: string,
-        @Query() urlParams,
-    ): Promise<PatientRequestDocument[]> {
-        return this.patientService.getRequestDocuments(id, urlParams);
-    }
-
     @Get(':id/vitals')
     getVitals(
         @Param('id') id: string,
@@ -252,14 +242,6 @@ export class PatientController {
         return this.patientService.deleteAllergy(allergyId);
     }
 
-    @Post('save-request')
-    saveRequest(
-        @Body() param,
-        @Request() req,
-    ) {
-        return this.patientService.doSaveRequest(param, req.user.username);
-    }
-
     @Get('/requests/:requestType')
     getRequests(
         @Param('requestType') requestType: string,
@@ -277,6 +259,13 @@ export class PatientController {
         return this.patientService.listPatientRequests(requestType, id, urlParams);
     }
 
+    @Post('save-request')
+    saveRequest(
+        @Body() param,
+        @Request() req,
+    ) {
+        return this.patientService.doSaveRequest(param, req.user.username);
+    }
 
     @Patch(':requestId/receive-specimen')
     receiveLabSpecimen(
@@ -286,6 +275,7 @@ export class PatientController {
         return this.patientService.receiveSpecimen(requestId, req.user.username);
     }
 
+    // fill request for pharmacy
     @Post('fill-request/:id')
     fillRequest(
         @Param('id') requestId: string,
@@ -295,6 +285,7 @@ export class PatientController {
         return this.patientService.doFillRequest(param, requestId, req.user.username);
     }
 
+    // fill request for others
     @Patch(':requestId/fill-result')
     fillLabResult(
         @Param('requestId') requestId: string,
@@ -342,7 +333,7 @@ export class PatientController {
     @UsePipes(ValidationPipe)
     @UseInterceptors(FileInterceptor('file', {
         storage: diskStorage({
-            destination: './uploads',
+            destination: './uploads/docs',
             filename: (req, file, cb) => {
                 const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('');
                 return cb(null, `${randomName}${extname(file.originalname)}`);
@@ -355,27 +346,7 @@ export class PatientController {
         @UploadedFile() file,
         @Request() req,
     ): Promise<any> {
-        return this.patientService.doUploadDocument(id, param, file?.filename || '', req.user.username);
-    }
-
-    @Post(':requestId/upload-request-document')
-    @UsePipes(ValidationPipe)
-    @UseInterceptors(FilesInterceptor('files', 20, {
-        storage: diskStorage({
-            destination: './uploads',
-            filename: (req, file, cb) => {
-                const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('');
-                return cb(null, `${randomName}${extname(file.originalname)}`);
-            },
-        }),
-    }))
-    uploadRequestDocument(
-        @Param('requestId') id: string,
-        @Body() param,
-        @UploadedFiles() file,
-        @Request() req,
-    ) {
-        return this.patientService.doUploadRequestDocument(id, param, file?.filename || '', req.user.username);
+        return this.patientService.doUploadDocument(id, param, file.filename, req.user.username);
     }
 
     @Get('download/:filename')

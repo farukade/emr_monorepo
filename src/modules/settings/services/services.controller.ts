@@ -47,7 +47,6 @@ export class ServicesController {
         @Param('id') id: number,
         @Request() req,
     ): Promise<Service[]> {
-        console.log(id)
         return this.servicesService.getServicesByCategory(id, req.query.hmo_id);
     }
 
@@ -76,7 +75,6 @@ export class ServicesController {
         @Param('id') id: number,
         @Request() req,
     ): Promise<any> {
-        console.log(req.user)
         return this.servicesService.deleteService(id, req.user.username);
     }
 

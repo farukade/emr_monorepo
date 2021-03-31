@@ -1,9 +1,10 @@
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 import { LabTest } from '../../settings/entities/lab_test.entity';
 import { Stock } from '../../inventory/entities/stock.entity';
 import { PatientRequest } from './patient_requests.entity';
 import { Service } from '../../settings/entities/service.entity';
+import { PatientDocument } from './patient_documents.entity';
 
 @Entity({ name: 'patient_request_items' })
 export class PatientRequestItem extends CustomBaseEntity {
@@ -17,11 +18,11 @@ export class PatientRequestItem extends CustomBaseEntity {
 
     @ManyToOne(type => Stock, { nullable: true, eager: true })
     @JoinColumn({ name: 'drug_id' })
-    drugId: Stock;
+    drug: Stock;
 
     @ManyToOne(type => Service, { nullable: true, eager: true })
     @JoinColumn({ name: 'service_id' })
-    serviceId: Service;
+    service: Service;
 
     @Column({ type: 'smallint', default: 0 })
     filled: number;
@@ -67,4 +68,8 @@ export class PatientRequestItem extends CustomBaseEntity {
 
     @Column({ nullable: true })
     note: string;
+
+    @OneToOne(type => PatientDocument, doc => doc.item, { nullable: true, eager: true })
+    @JoinColumn({ name: 'document_id' })
+    document: PatientDocument;
 }
