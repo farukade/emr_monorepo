@@ -32,6 +32,7 @@ import { ImmunizationRepository } from './immunization/repositories/immunization
 import { PatientRequestItemRepository } from './repositories/patient_request_items.repository';
 import { LabTestRepository } from '../settings/lab/lab.test.repository';
 
+
 @Module({
   imports: [TypeOrmModule.forFeature([
       PatientRepository,
