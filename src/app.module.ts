@@ -16,6 +16,7 @@ import fs = require('fs');
 import { AuthModule } from './modules/auth/auth.module';
 import { JwtStrategy } from './common/utils/jwt.strategy';
 import { AppGateway } from './app.gateway';
+import { MailModule } from './modules/mail/mail.module';
 
 fs.writeFileSync(
   './ormconfig.json',
@@ -35,6 +36,7 @@ fs.writeFileSync(
     SettingsModule,
     FrontdeskModule,
     UtilityModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppGateway, JwtStrategy],
