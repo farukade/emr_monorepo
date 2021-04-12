@@ -1,29 +1,21 @@
-import { IsNotEmpty } from "class-validator";
+import { IsNotEmpty } from 'class-validator';
 
 export class AppointmentDto {
-    @IsNotEmpty()
-    patient_id: string;
-
-    // @IsNotEmpty()
-    // department_id: string;
-
-    @IsNotEmpty()
-    serviceCategory: string;
-
-    @IsNotEmpty()
-    serviceType: string;
-
     appointment_date: string;
+
+    @IsNotEmpty()
+    consultation_id: string;
+
+    @IsNotEmpty()
+    department_id: string;
+
+    description: string;
 
     @IsNotEmpty()
     doctor_id: string;
 
     @IsNotEmpty()
-    consulting_room_id: string;
-
-    duration: string;
-
-    description: string;
+    patient_id: string;
 
     referredBy: string;
 
@@ -31,5 +23,11 @@ export class AppointmentDto {
 
     sendToQueue: boolean;
 
-    amount: string;
+    @IsNotEmpty()
+    service_id: string;
+
+    @IsNotEmpty()
+    consulting_room_id: string;
+
+    duration: string;
 }

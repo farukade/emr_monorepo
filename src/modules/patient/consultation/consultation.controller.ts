@@ -23,8 +23,8 @@ export class ConsultationController {
         @Query() urlParams,
         @Request() request,
     ) {
-        const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 2;
-        const page = request.query.hasOwnProperty('page') ? request.query.page : 0;
+        const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 10;
+        const page = request.query.hasOwnProperty('page') ? request.query.page : 1;
         return this.consultationService.getEncounters({page, limit}, urlParams);
     }
 

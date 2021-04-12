@@ -159,26 +159,24 @@ export class StaffService {
     }
 
     async deleteStaff(id: number) {
-        try{
+        try {
             const result = await this.staffRepository.findOne(id);
             result.isActive = false;
             await result.save();
             return {success: true, result};
+        } catch (e) {
+            return {success: false, message: e.message };
         }
-        catch(e){
-            return {success: false, message:e.message };
-        } 
     }
 
     async enableStaff(id: number) {
-        try{
+        try {
             const result = await this.staffRepository.findOne(id);
             result.isActive = true;
             await result.save();
             return {success: true, result};
-        }
-        catch(e){
-            return {success: false, message:e.message};
+        } catch (e) {
+            return {success: false, message: e.message};
         }
     }
 
@@ -187,12 +185,12 @@ export class StaffService {
             // find room
             const room = await getRepository(ConsultingRoom).findOne(roomId);
             // update staff detail
-            await this.staffRepository.createQueryBuilder()
+            const staff = await this.staffRepository.createQueryBuilder()
                 .update(StaffDetails)
                 .set({ room })
                 .where('id = :id', { id: userId })
                 .execute();
-            return {success: true};
+            return {success: true, room};
         } catch (e) {
             return {success: false, message: e.message};
         }

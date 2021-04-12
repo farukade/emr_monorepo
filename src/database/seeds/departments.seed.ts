@@ -3,7 +3,7 @@ import { Connection } from 'typeorm';
 import { Factory, Seeder } from 'typeorm-seeding';
 import {Department} from '../../modules/settings/entities/department.entity';
 
-export default class CreateBanks implements Seeder {
+export default class CreateDepartments implements Seeder {
   public async run(factory: Factory, connection: Connection): Promise<any> {
     const departments = JSON.parse(
       fs.readFileSync('src/database/seeds/dumbs/departments.json', 'utf8'),

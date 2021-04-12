@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import * as moment from 'moment';
+
 import { QueueSystemRepository } from './queue-system.repository';
 import { Queue } from './queue.entity';
-import * as moment from 'moment';
-import {AppointmentRepository} from "../appointment/appointment.repository";
-import {DepartmentRepository} from "../../settings/departments/department.repository";
-import {AppGateway} from "../../../app.gateway";
+import {AppointmentRepository} from '../appointment/appointment.repository';
+import {DepartmentRepository} from '../../settings/departments/department.repository';
+import {AppGateway} from '../../../app.gateway';
 
 @Injectable()
 export class QueueSystemService {
@@ -23,7 +24,7 @@ export class QueueSystemService {
         const today = moment().format('YYYY-MM-DD');
 
         return await this.queueSystemRepository.find({
-            where: {createdAt: today, status: 1},
+            where: {queueDate: today, status: 1},
             relations: ['appointment', 'appointment.patient', 'appointment.whomToSee',
                 'appointment.consultingRoom', 'appointment.serviceCategory', 'appointment.serviceType'],
             // take: 10,
@@ -37,7 +38,7 @@ export class QueueSystemService {
         const today = moment().format('YYYY-MM-DD');
 
         return await this.queueSystemRepository.find({
-            where: {createdAt: today, status: 1, queueType:'vitals'},
+            where: {queueDate: today, status: 1, queueType: 'vitals'},
             relations: ['appointment', 'appointment.patient', 'appointment.whomToSee',
                 'appointment.consultingRoom', 'appointment.serviceCategory', 'appointment.serviceType'],
             // take: 10,
@@ -59,9 +60,9 @@ export class QueueSystemService {
 
             appointment.canSeeDoctor = 1;
             await appointment.save();
-            const oldQueue = await this.queueSystemRepository.findOne(queue_id)
-            console.log("OldQueue")
-            console.log(oldQueue)
+            const oldQueue = await this.queueSystemRepository.findOne(queue_id);
+            console.log('OldQueue');
+            console.log(oldQueue);
             oldQueue.status = 2;
             await oldQueue.save();
             // save queue

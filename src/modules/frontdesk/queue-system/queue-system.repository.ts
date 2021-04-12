@@ -12,7 +12,7 @@ export class QueueSystemRepository extends Repository<Queue> {
             let queueNumber;
             const today = moment().format('YYYY-MM-DD');
             const lastQueueRes = await this.find({
-                where: {createdAt: today, queueType: type},
+                where: {queueDate: today, queueType: type},
                 take: 1,
                 order: {queueNumber: 'DESC'},
             });
@@ -28,7 +28,7 @@ export class QueueSystemRepository extends Repository<Queue> {
             queue.patientName   = appointment.patient.surname + ', ' + appointment.patient.other_names;
             queue.appointment   = appointment;
             queue.status        = 1;
-            queue.createdAt     = today;
+            queue.queueDate     = today;
             queue.queueType     = type;
             await queue.save();
 

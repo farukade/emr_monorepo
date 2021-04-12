@@ -10,8 +10,8 @@ import { Nicu } from '../nicu/entities/nicu.entity';
 @Entity({ name: 'patients' })
 export class Patient extends CustomBaseEntity {
 
-    @Column({ type: 'varchar'})
-    fileNumber: string;
+    @Column({ type: 'varchar', nullable: true })
+    folderNumber: string;
 
     @Column({ type: 'varchar'})
     surname: string;

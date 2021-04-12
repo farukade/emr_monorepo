@@ -6,6 +6,8 @@ import * as moment from 'moment';
 import { PatientRequestItem } from '../../modules/patient/entities/patient_request_items.entity';
 import { LabTest } from '../../modules/settings/entities/lab_test.entity';
 import { Service } from '../../modules/settings/entities/service.entity';
+import { PatientDiagnosis } from '../../modules/patient/entities/patient_diagnosis.entity';
+import { Stock } from '../../modules/inventory/entities/stock.entity';
 
 export class PatientRequestHelper {
     constructor(private patientRequestRepo: PatientRequestRepository) {
@@ -60,15 +62,14 @@ export class PatientRequestHelper {
 
     static async handlePharmacyRequest(param, patient, createdBy) {
         const { requestType, request_note, items, id } = param;
+
         const data = {
             requestType,
             patient,
-            createdBy,
-            lastChangedBy: '',
             requestNote: request_note,
+            createdBy,
+            lastChangedBy: null,
         };
-
-        console.log(items);
 
         let res;
         try {
@@ -79,8 +80,59 @@ export class PatientRequestHelper {
                 data.createdBy = createdBy;
                 res = await this.save(data);
             }
-            return { success: true, data: res.generatedMaps[0] };
+
+            const regimen = res.generatedMaps[0];
+
+            let result = [];
+            // tslint:disable-next-line:no-empty
+            if (id && id !== '') {
+            } else {
+                let regimenItems = [];
+                for (const item of items) {
+                    const drug = await getConnection().getRepository(Stock).findOne(item.drug_id);
+
+                    const refills = item.refills ? parseInt(item.refills, 10) : 0;
+
+                    const requestItem = {
+                        request: regimen,
+                        drug,
+                        doseQuantity: item.dose_quantity,
+                        refillable: refills > 0,
+                        refills,
+                        frequency: item.frequency,
+                        frequencyType: item.frequencyType,
+                        duration: item.duration,
+                        externalPrescription: item.prescription,
+                        note: item.regimenNote,
+                    };
+
+                    const rs = await this.saveItem(requestItem);
+                    const reqItem = rs.generatedMaps[0];
+
+                    let diags = [];
+                    if (item.diagnosis) {
+                        for (const diag of item.diagnosis) {
+                            const i = new PatientDiagnosis();
+                            i.request = reqItem;
+                            i.patient = patient;
+                            i.item = diag;
+                            await i.save();
+
+                            diags = [...diags, i];
+                        }
+                    }
+
+                    regimenItems = [...regimenItems, { ...reqItem, diagnosis: diags }];
+                }
+
+                regimen.items = regimenItems;
+            }
+
+            result = [...result, regimen];
+
+            return { success: true, data: result };
         } catch (error) {
+            console.log(error);
             return { success: false, message: error.message };
         }
     }
@@ -130,17 +182,43 @@ export class PatientRequestHelper {
             createdBy,
         };
 
-        let res;
         try {
-            res = await this.save(data);
-            return { success: true, data: res.generatedMaps[0] };
+            const res = await this.save(data);
+            const regimen = res.generatedMaps[0];
+
+            let result = [];
+
+            let regimenItems = [];
+            for (const item of body) {
+                const requestItem = {
+                    request: regimen,
+                    doseQuantity: item.dose_quantity,
+                    refillable: false,
+                    refills: 0,
+                    frequency: item.frequency,
+                    frequencyType: item.frequencyType,
+                    duration: item.duration,
+                    externalPrescription: 'No',
+                };
+
+                const rs = await this.saveItem(requestItem);
+                const reqItem = rs.generatedMaps[0];
+
+                regimenItems = [...regimenItems, reqItem];
+            }
+
+            regimen.items = regimenItems;
+
+            result = [...result, regimen];
+
+            return { success: true, data: result };
         } catch (error) {
             return { success: false, message: error.message };
         }
     }
 
     static async handleServiceRequest(param, patient, createdBy, type) {
-        const { requestType, request_note, tests, urgent } = param;
+        const { requestType, request_note, tests, diagnosis, urgent } = param;
 
         try {
             const requestCount = await getConnection()
@@ -174,7 +252,27 @@ export class PatientRequestHelper {
                 };
                 const rs = await this.saveItem(requestItem);
 
-                request.items = [rs.generatedMaps[0]];
+                const requestItems = [rs.generatedMaps[0]];
+
+                let items = [];
+                if (diagnosis) {
+                    for (const reqItem of requestItems) {
+                        let diags = [];
+                        for (const diag of diagnosis) {
+                            const i = new PatientDiagnosis();
+                            i.request = reqItem;
+                            i.patient = patient;
+                            i.item = diag;
+                            await i.save();
+
+                            diags = [...diags, i];
+                        }
+
+                        items = [...items, { ...reqItem, diagnosis: diags }];
+                    }
+                }
+
+                request.items = items;
 
                 result = [...result, request];
             }
@@ -182,31 +280,6 @@ export class PatientRequestHelper {
             return { success: true, data: result };
         } catch (error) {
             console.log(error);
-            return { success: false, message: error.message };
-        }
-    }
-
-    static async handleProcedureRequest(param, patient, createdBy) {
-        const { requestType, requests, request_note, id } = param;
-        const data = {
-            requestType: 'procedure',
-            patient,
-            createdBy: '',
-            lastChangedBy: '',
-            requestNote: request_note,
-        };
-
-        let res;
-        try {
-            if (id && id !== '') {
-                data.lastChangedBy = createdBy;
-                res = await this.update(data, id);
-            } else {
-                data.createdBy = createdBy;
-                res = await this.save(data);
-            }
-            return { success: true, data: res.generatedMaps[0] };
-        } catch (error) {
             return { success: false, message: error.message };
         }
     }

@@ -37,12 +37,12 @@ export class AdmissionsService {
     }
 
     async getAdmissions(options: PaginationOptionsInterface, params): Promise<Pagination> {
-        const { startDate, endDate, patient_id, status, type, name } = params
+        const { startDate, endDate, patient_id, status, type, name } = params;
         const query = this.admissionRepository.createQueryBuilder('q')
             .leftJoinAndSelect('q.patient', 'patient')
             .leftJoinAndSelect('q.room', 'room')
             .select('q.createdAt as admission_date, q.createdBy as admitted_by, q.reason')
-            .addSelect('CONCAT(patient.other_names || \' \' || patient.surname) as patient_name, patient.id as patient_id, patient.fileNumber as patient_fileNumber, patient.gender as patient_gender')
+            .addSelect('CONCAT(patient.other_names || \' \' || patient.surname) as patient_name, patient.id as patient_id, patient.folderNumber as patient_folderNumber, patient.gender as patient_gender')
             .addSelect('room.name as suite, room.floor as floor');
 
         if (type === 'in-admission') {
@@ -82,7 +82,7 @@ export class AdmissionsService {
 
         for (const item of admissions) {
             if (item.patient_id) {
-                let patient = await this.patientRepository.findOne(item.patient_id, { relations: ['nextOfKin', 'immunization', 'hmo'] });
+                const patient = await this.patientRepository.findOne(item.patient_id, { relations: ['nextOfKin', 'immunization', 'hmo'] });
                 if (patient.profile_pic) {
                     patient.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${patient.profile_pic}`;
                 }
@@ -137,11 +137,11 @@ export class AdmissionsService {
         try {
             // find room
             const room = await this.roomRepository.findOne(room_id);
-            if(room.status === "Occupied"){
-                return { success: false, message: 'room is already occupied' }
+            if (room.status === 'Occupied') {
+                return { success: false, message: 'room is already occupied' };
             }
 
-            room.status = "Occupied";
+            room.status = 'Occupied';
             await room.save();
 
             // find admission
@@ -182,9 +182,11 @@ export class AdmissionsService {
 
         query.orderBy({ 'q.completed': 'ASC', 'q.nextTime': 'ASC' });
 
+        const page = options.page - 1;
+
         // const getSql = query.take(options.limit).skip(options.page * options.limit).getSql();
         // console.log(getSql);
-        const result = await query.take(options.limit).skip(options.page * options.limit).getRawMany();
+        const result = await query.take(options.limit).skip(page * options.limit).getRawMany();
 
         let results = [];
         for (const request of result) {
@@ -200,7 +202,7 @@ export class AdmissionsService {
 
             const patient = await this.patientRepository.findOne({
                 where: { id: request.patient_id },
-                relations: ['nextOfKin', 'immunization', 'hmo']
+                relations: ['nextOfKin', 'immunization', 'hmo'],
             });
 
             const data = {
@@ -217,20 +219,20 @@ export class AdmissionsService {
             lastPage: Math.ceil(count / options.limit),
             itemsPerPage: options.limit,
             totalPages: count,
-            currentPage: options.page + 1,
+            currentPage: options.page,
         };
     }
 
     async deleteTask(id: number, username): Promise<any> {
             const result = await this.clinicalTaskRepository.findOne(id);
 
-        if (!result) {
+            if (!result) {
             throw new NotFoundException(`Clinical Task with ID '${id}' not found`);
         }
 
-        result.deletedBy = username;
-        await result.save();
-        return result.softRemove();
+            result.deletedBy = username;
+            await result.save();
+            return result.softRemove();
     }
 
     async saveClinicalTasks(patientId: number, params, createdById): Promise<any> {

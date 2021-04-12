@@ -79,18 +79,30 @@ export class DiagnosisService {
         const { q, diagnosisType } = urlParam;
         const search = q || '';
 
-        if (diagnosisType === '10') {
-            return this.diagnosisRepository.find({
-                where: [
-                    { icd10Code: Raw(alias => `LOWER(${alias}) Like '%${search.toLowerCase()}%'`) },
-                    { description: Raw(alias => `LOWER(${alias}) Like '%${search.toLowerCase()}%'`) },
-                ],
-            });
+        if (diagnosisType && diagnosisType !== '') {
+            if (diagnosisType === '10') {
+                return this.diagnosisRepository.createQueryBuilder('d')
+                    .where('"diagnosisType" = :type', { type: diagnosisType })
+                    .andWhere(new Brackets(qb => {
+                        qb.where('UPPER(d.icd10Code) Like :icd10Code', { icd10Code: `%${search.toUpperCase()}%` })
+                            .orWhere('LOWER(d.description) Like :description', { description: `%${search.toLowerCase()}%` });
+                    }))
+                    .getMany();
+            }
+
+            return this.diagnosisRepository.createQueryBuilder('d')
+                .where('"diagnosisType" = :type', { type: diagnosisType })
+                .andWhere(new Brackets(qb => {
+                    qb.where('UPPER(d.procedureCode) Like :procedureCode', { procedureCode: `%${search.toUpperCase()}%` })
+                        .orWhere('LOWER(d.description) Like :description', { description: `%${search.toLowerCase()}%` });
+                }))
+                .getMany();
         }
 
-        return this.diagnosisRepository.find({
+        return await this.diagnosisRepository.find({
             where: [
                 { procedureCode: Raw(alias => `LOWER(${alias}) Like '%${search.toLowerCase()}%'`) },
+                { icd10Code: Raw(alias => `LOWER(${alias}) Like '%${search.toLowerCase()}%'`) },
                 { description: Raw(alias => `LOWER(${alias}) Like '%${search.toLowerCase()}%'`) },
             ],
         });

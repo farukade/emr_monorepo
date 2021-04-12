@@ -58,4 +58,6 @@ export class PatientDto {
     nok_ethnicity: string;
 
     admitTo: string;
+
+    folderNumber: string;
 }

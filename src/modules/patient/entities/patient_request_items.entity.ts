@@ -1,10 +1,14 @@
-import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne } from 'typeorm';
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 import { LabTest } from '../../settings/entities/lab_test.entity';
 import { Stock } from '../../inventory/entities/stock.entity';
 import { PatientRequest } from './patient_requests.entity';
 import { Service } from '../../settings/entities/service.entity';
 import { PatientDocument } from './patient_documents.entity';
+import { PatientVital } from './patient_vitals.entity';
+import { PatientDiagnosis } from './patient_diagnosis.entity';
+import { Immunization } from '../immunization/entities/immunization.entity';
+import { Transactions } from '../../finance/transactions/transaction.entity';
 
 @Entity({ name: 'patient_request_items' })
 export class PatientRequestItem extends CustomBaseEntity {
@@ -26,6 +30,9 @@ export class PatientRequestItem extends CustomBaseEntity {
 
     @Column({ type: 'smallint', default: 0 })
     filled: number;
+
+    @Column({ type: 'smallint', default: 0, name: 'fill_quantity' })
+    fillQuantity: number;
 
     @Column({ type: 'varchar', length: 300, nullable: true, name: 'filled_by' })
     filledBy: string;
@@ -69,7 +76,40 @@ export class PatientRequestItem extends CustomBaseEntity {
     @Column({ nullable: true })
     note: string;
 
+    @Column({ nullable: true, name: 'dose_quantity' })
+    doseQuantity: number;
+
+    @Column({ default: false })
+    refillable: boolean;
+
+    @Column({ default: 0 })
+    refills: number;
+
+    @Column({ nullable: true })
+    frequency: number;
+
+    @Column({ nullable: true })
+    frequencyType: string;
+
+    @Column({ nullable: true })
+    duration: number;
+
+    @Column({ nullable: true, name: 'external_prescription' })
+    externalPrescription: string;
+
+    @ManyToOne(type => Immunization, { nullable: true, eager: true })
+    @JoinColumn({ name: 'vaccine_id' })
+    vaccine: Immunization;
+
     @OneToOne(type => PatientDocument, doc => doc.item, { nullable: true, eager: true })
     @JoinColumn({ name: 'document_id' })
     document: PatientDocument;
+
+    @OneToMany(type => PatientDiagnosis, data => data.request, { eager: true })
+    @JoinColumn({ name: 'patient_diagnosis_id' })
+    diagnosis: PatientDiagnosis;
+
+    @OneToOne(type => Transactions, data => data.patientRequestItem)
+    @JoinColumn({ name: 'transaction_id' })
+    transaction: Transactions;
 }

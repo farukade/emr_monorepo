@@ -17,13 +17,6 @@ export class AppointmentController {
         return this.appointmentService.saveNewAppointment(appointmentDto);
     }
 
-    @Get('today')
-    getTodayAppointment(
-        @Param() params,
-    ): Promise<Appointment[]> {
-        return this.appointmentService.todaysAppointments(params);
-    }
-
     @Get('')
     listAppointments(
         @Query() urlParams,

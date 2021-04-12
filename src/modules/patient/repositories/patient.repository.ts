@@ -10,7 +10,7 @@ export class PatientRepository extends Repository<Patient> {
     async savePatient(patientDto: PatientDto, nextOfkin: PatientNOK, hmo: Hmo, createdBy, pic) {
 
         const patient = new Patient();
-        patient.fileNumber          = 'DH' + Math.floor(Math.random() * 90000);
+        patient.folderNumber        = patientDto.folderNumber;
         patient.surname             = patientDto.surname.toLocaleLowerCase();
         patient.other_names         = patientDto.other_names.toLocaleLowerCase();
         patient.address             = patientDto.address.toLocaleLowerCase();
@@ -26,9 +26,6 @@ export class PatientRepository extends Repository<Patient> {
         patient.nextOfKin           = nextOfkin;
         patient.profile_pic         = (pic) ? pic.filename : '';
         patient.hmo                 = hmo;
-        const rs = await patient.save();
-        console.log(rs);
-
-        return rs;
+        return await patient.save();
     }
 }

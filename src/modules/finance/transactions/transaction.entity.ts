@@ -5,6 +5,7 @@ import { Service } from '../../settings/entities/service.entity';
 import { Voucher } from '../vouchers/voucher.entity';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 import { PatientRequestItem } from '../../patient/entities/patient_request_items.entity';
+import { PatientRequest } from '../../patient/entities/patient_requests.entity';
 
 @Entity({ name: 'transactions' })
 export class Transactions extends CustomBaseEntity {
@@ -69,7 +70,11 @@ export class Transactions extends CustomBaseEntity {
     @Column({ type: 'jsonb', nullable: true })
     transaction_details: any;
 
-    @OneToOne(type => PatientRequestItem, { nullable: true, eager: true })
+    @OneToOne(type => PatientRequestItem, item => item.transaction, { nullable: true, eager: true })
     @JoinColumn({ name: 'patient_request_item_id' })
     patientRequestItem: PatientRequestItem;
+
+    @OneToOne(type => PatientRequest, { nullable: true })
+    @JoinColumn({ name: 'patient_request_id' })
+    request: PatientRequest;
 }

@@ -316,7 +316,7 @@ export class HmoService {
                             .leftJoin(Hmo, 'hmo', `"patient"."hmo_id" = "hmo"."id"`)
                             .where('q.payment_type = :type', {type: 'Hmo'})
                             .select('q.*')
-                            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.fileNumber, hmo.name as hmo_name, hmo.id as hmo_id');
+                            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.folderNumber, hmo.name as hmo_name, hmo.id as hmo_id');
 
 
         if (startDate && startDate !== '') {
@@ -363,7 +363,7 @@ export class HmoService {
                         .where('q.payment_type = :type', {type: 'HMO'})
                         .andWhere('q.hmo_approval_status = :status', {status: 0})
                         .select('q.*')
-                        .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.fileNumber, hmo.name as hmo_name, hmo.id as hmo_id');
+                        .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.folderNumber, hmo.name as hmo_name, hmo.id as hmo_id');
 
         if (startDate && startDate !== '') {
             const start = moment(startDate).startOf('day').toISOString();

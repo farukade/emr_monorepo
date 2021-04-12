@@ -24,7 +24,7 @@ export class ConsultationService {
         private appointmentRepository: AppointmentRepository,
     ) {}
 
-    async getEncounters(options: PaginationOptionsInterface, urlParams): Promise<Encounter[]> {
+    async getEncounters(options: PaginationOptionsInterface, urlParams): Promise<any> {
         const {startDate, endDate, patient_id} = urlParams;
 
         const query = this.encounterRepository.createQueryBuilder('e');
@@ -39,13 +39,41 @@ export class ConsultationService {
         }
 
         if (patient_id && patient_id !== '') {
-            query.andWhere('q.patientId = :patient_id', {patient_id});
+            query.andWhere('e.patientId = :patient_id', {patient_id});
         }
 
-        return await query.take(options.limit)
-                            .skip(options.page * options.limit)
-                            .orderBy('e.createdAt', 'DESC')
-                            .getRawMany();
+        const page = options.page - 1;
+
+        const total = await query.getCount();
+
+        const items = await query.orderBy('e.createdAt', 'DESC')
+            .take(options.limit)
+            .skip(page * options.limit)
+            .getRawMany();
+
+        let result = [];
+        for (const item of items) {
+            console.log(item);
+            // const patient = await this.patientRepository.findOne(item.patient, {
+            //     relations: ['nextOfKin', 'immunization', 'hmo'],
+            // });
+            //
+            // if (patient.profile_pic) {
+            //     patient.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${patient.profile_pic}`;
+            // }
+            //
+            // item.patient = patient;
+
+            result = [...result, item];
+        }
+
+        return {
+            result,
+            lastPage: Math.ceil(total / options.limit),
+            itemsPerPage: options.limit,
+            totalPages: total,
+            currentPage: options.page,
+        };
     }
 
     async saveEncounter(patient_id: string, param: EncounterDto, createdBy) {
@@ -56,53 +84,53 @@ export class ConsultationService {
             const appointment = await this.appointmentRepository.findOne(appointment_id);
 
             const encounter = new Encounter();
-            encounter.complaints = param.complaints;
-            encounter.reviewOfSystem = param.reviewOfSystem;
-            encounter.patientHistory = param.patientHistory;
-            encounter.medicalHistory = param.medicalHistory;
-            encounter.patient        = patient;
-            // encounter.appointment    = appointment;
-            // save allergy if any
-            if (param.allergies.length) {
-                encounter.allergies = param.allergies;
-                for (const allergy of param.allergies) {
-                    const data = {
-                        category: allergy.category,
-                        allergen: allergy.allergen,
-                        severity: allergy.severity,
-                        reaction: allergy.reaction,
-                        patient,
-                    };
-                    this.allergyRepository.save(data);
-                }
-            }
-            encounter.physicalExamination = param.physicalExamination;
-            encounter.physicalExaminationSummary = param.physicalExaminationSummary;
-            encounter.diagnosis = param.diagnosis;
+            // encounter.complaints = param.complaints;
+            // encounter.reviewOfSystem = param.reviewOfSystem;
+            // encounter.patientHistory = param.patientHistory;
+            // encounter.medicalHistory = param.medicalHistory;
+            // encounter.patient        = patient;
+            // // encounter.appointment    = appointment;
+            // // save allergy if any
+            // if (param.allergies.length) {
+            //     encounter.allergies = param.allergies;
+            //     for (const allergy of param.allergies) {
+            //         const data = {
+            //             category: allergy.category,
+            //             allergen: allergy.allergen,
+            //             severity: allergy.severity,
+            //             reaction: allergy.reaction,
+            //             patient,
+            //         };
+            //         this.allergyRepository.save(data);
+            //     }
+            // }
+            // encounter.physicalExamination = param.physicalExamination;
+            // encounter.physicalExaminationSummary = param.physicalExaminationSummary;
+            // encounter.diagnosis = param.diagnosis;
+            //
+            // const labRequest    = param.investigations.labRequest;
+            // const imagingRequest = param.investigations.imagingRequest;
+            // const pharmacyRequest = plan.pharmacyRequests;
+            // const procedureRequest = plan.procedureRequest;
+            //
+            // // save request
+            // if (labRequest) {
+            //     const labRequestRes = await PatientRequestHelper.handleLabRequest(labRequest, patient, createdBy);
+            //     if (labRequestRes.success) {
+            //         // save transaction
+            //         await RequestPaymentHelper.clinicalLabPayment(labRequest.items, patient, createdBy);
+            //         encounter.labRequest = labRequestRes.data;
+            //     }
+            // }
 
-            const labRequest    = param.investigations.labRequest;
-            const imagingRequest = param.investigations.imagingRequest;
-            const pharmacyRequest = plan.pharmacyRequests;
-            const procedureRequest = plan.procedureRequest;
-
-            // save request
-            if (labRequest) {
-                const labRequestRes = await PatientRequestHelper.handleLabRequest(labRequest, patient, createdBy);
-                if (labRequestRes.success) {
-                    // save transaction
-                    await RequestPaymentHelper.clinicalLabPayment(labRequest.items, patient, createdBy);
-                    encounter.labRequest = labRequestRes.data;
-                }
-            }
-
-            if (pharmacyRequest) {
-                const pharmacyReqRes = await PatientRequestHelper.handlePharmacyRequest(pharmacyRequest, patient, createdBy);
-                if (pharmacyReqRes.success) {
-                    // save transaction
-                    await RequestPaymentHelper.pharmacyPayment(pharmacyRequest.items, patient, createdBy);
-                    encounter.pharmacyRequest = pharmacyReqRes.data;
-                }
-            }
+            // if (pharmacyRequest) {
+            //     const pharmacyReqRes = await PatientRequestHelper.handlePharmacyRequest(pharmacyRequest, patient, createdBy);
+            //     if (pharmacyReqRes.success) {
+            //         // save transaction
+            //         await RequestPaymentHelper.pharmacyPayment(pharmacyRequest.items, patient, createdBy);
+            //         encounter.pharmacyRequest = pharmacyReqRes.data;
+            //     }
+            // }
 
             // if (imagingRequest) {
             //     const radiologyRes = await PatientRequestHelper.handleImagingRequest(imagingRequest, patient, createdBy);
@@ -122,15 +150,15 @@ export class ConsultationService {
             //     }
             // }
 
-            if (param.consumable.items && param.consumable.items.length) {
-                encounter.consumable = param.consumable.items;
-            }
-            encounter.note = param.consumable.note;
-            encounter.instructions = param.consumable.instruction;
-            encounter.plan = plan.treatmentPlan;
-            encounter.nextAppointment = plan.nextAppointment;
-
-            await encounter.save();
+            // if (param.consumable.items && param.consumable.items.length) {
+            //     encounter.consumable = param.consumable.items;
+            // }
+            // encounter.note = param.consumable.note;
+            // encounter.instructions = param.consumable.instruction;
+            // encounter.plan = plan.treatmentPlan;
+            // encounter.nextAppointment = plan.nextAppointment;
+            //
+            // await encounter.save();
             // save appointment
             // appointment.encounter = encounter;
             // await appointment.save();

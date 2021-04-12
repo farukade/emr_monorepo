@@ -22,8 +22,19 @@ export class AuthService {
     return await this.authRepository.find();
   }
 
-  async getUser(user_id: string): Promise<User> {
-    return await this.authRepository.findOne(user_id);
+  async getUser(username: string): Promise<User> {
+    const user = await this.getUserByUsername(username);
+
+    const staff = await this.staffRepository.findOne({where: {user}, relations: ['department', 'room']});
+    if (staff && staff.profile_pic) {
+      staff.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${staff.profile_pic}`;
+    }
+    const newUser = JSON.parse(JSON.stringify(user));
+    newUser.details = staff;
+    newUser.permissions = await this.setPermissions(newUser.role.permissions);
+    delete newUser.role.permissions;
+    delete newUser.password;
+    return newUser;
   }
 
   async getUserByUsername(username: string): Promise<User> {
@@ -41,12 +52,11 @@ export class AuthService {
         const { expires_in, token } = await JWTHelper.createToken(
           {username: user.username, userId: user.id},
         );
-        const staff = await this.staffRepository.findOne({where: {user}, relations: ['department']});
+        const staff = await this.staffRepository.findOne({where: {user}, relations: ['department', 'room']});
         if (staff && !staff.isActive) {
             const error = 'This account is disabled. Please Contact ICT.';
             throw new BadRequestException(error);
         }
-        console.log(staff);
         if (staff && staff.profile_pic) {
           staff.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${staff.profile_pic}`;
         }

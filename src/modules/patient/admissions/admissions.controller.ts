@@ -58,8 +58,7 @@ export class AdmissionsController {
         @Request() request,
     ) {
         const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 20;
-        let page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
-        page = page - 1;
+        const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
         return this.admissionService.getTasks({page, limit}, urlParams);
     }
 

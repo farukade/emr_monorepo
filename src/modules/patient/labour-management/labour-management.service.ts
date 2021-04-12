@@ -55,7 +55,7 @@ export class LabourManagementService {
         const query = this.labourEnrollmentRepository.createQueryBuilder('enrollment')
             .innerJoinAndSelect('enrollment.patient', 'patient')
             .select('enrollment.*')
-            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.fileNumber, patient.date_of_birth');
+            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.folderNumber, patient.date_of_birth');
 
         if (startDate && startDate !== '') {
             const start = moment(startDate).startOf('day').toISOString();
@@ -91,7 +91,7 @@ export class LabourManagementService {
         const enrollment = this.labourEnrollmentRepository.createQueryBuilder('enrollment')
             .innerJoinAndSelect('enrollment.patient', 'patient')
             .select('enrollment.*')
-            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.fileNumber, patient.hmo_id, patient.date_of_birth')
+            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.folderNumber, patient.hmo_id, patient.date_of_birth')
             .where('enrollment.id = :id', { id })
             .getRawOne();
 

@@ -13,28 +13,41 @@ export class RequestPaymentHelper {
         for (const request of labRequests) {
             const labRequest = await getConnection().getRepository(PatientRequest).findOne(request.id, { relations: ['items'] });
 
-            const labRequestItem = await getConnection().getRepository(PatientRequestItem).findOne(labRequest.items[0].id);
+            let results = [];
+            for (const item of labRequest.items) {
+                const labRequestItem = await getConnection().getRepository(PatientRequestItem).findOne(item.id);
 
-            const labTest = labRequestItem.labTest;
+                const labTest = labRequestItem.labTest;
 
-            const data = {
-                patient,
-                amount: parseFloat(labTest.hmoPrice),
-                description: 'Payment for clinical lab',
-                payment_type: (patient.hmo.name !== 'Private') ? 'HMO' : '',
-                hmo_approval_status: (patient.hmo.name !== 'Private') ? 1 : 0,
-                transaction_type: 'lab',
-                transaction_details: labTest,
-                createdBy,
-                status: 0,
-                patientRequestItem: labRequestItem,
-            };
+                const data = {
+                    patient,
+                    amount: parseFloat(labTest.hmoPrice),
+                    description: 'Payment for clinical lab',
+                    payment_type: (patient.hmo.name !== 'Private') ? 'HMO' : '',
+                    hmo_approval_status: (patient.hmo.name !== 'Private') ? 1 : 0,
+                    transaction_type: 'lab',
+                    transaction_details: labTest,
+                    createdBy,
+                    status: 0,
+                    patientRequestItem: labRequestItem,
+                };
 
-            const result = await this.save(data);
-            const payment = result.generatedMaps[0];
+                const result = await this.save(data);
+                const payment = result.generatedMaps[0];
 
-            payments = [...payments, payment];
-            requests = [...requests, { ...request, transaction: payment }];
+                const transaction = await getConnection().getRepository(Transactions).findOne(payment.id);
+
+                labRequestItem.transaction = transaction;
+                await labRequestItem.save();
+
+                payments = [...payments, transaction];
+
+                item.transaction = transaction;
+
+                results = [...results, item];
+            }
+
+            requests = [...requests, { ...request, items: results }];
         }
 
         return { labRequest: requests, transactions: payments };
@@ -62,60 +75,51 @@ export class RequestPaymentHelper {
         return { payment: payment.generatedMaps[0] };
     }
 
-    static async servicePayment(patientRequests, patient: Patient, createdBy) {
+    static async servicePayment(patientRequests, patient: Patient, createdBy, requestType, bill) {
         let requests = [];
         let payments = [];
 
         for (const request of patientRequests) {
-            const radiologyRequest = await getConnection().getRepository(PatientRequest).findOne(request.id, { relations: ['items'] });
+            const serviceRequest = await getConnection().getRepository(PatientRequest).findOne(request.id, { relations: ['items'] });
 
-            const radiologyRequestItem = await getConnection().getRepository(PatientRequestItem).findOne(radiologyRequest.items[0].id);
+            let results = [];
+            for (const item of serviceRequest.items) {
+                const patientRequestItem = await getConnection().getRepository(PatientRequestItem).findOne(item.id);
 
-            const service = radiologyRequestItem.service;
+                const service = patientRequestItem.service;
 
-            const data = {
-                patient,
-                amount: parseFloat(service.hmoTarrif),
-                description: 'Payment for radiology',
-                payment_type: (patient.hmo.name !== 'Private') ? 'HMO' : '',
-                hmo_approval_status: (patient.hmo.name !== 'Private') ? 1 : 0,
-                transaction_type: 'radiology',
-                transaction_details: service,
-                createdBy,
-                status: 0,
-                patientRequestItem: radiologyRequestItem,
-            };
+                const data = {
+                    patient,
+                    amount: parseFloat(service.hmoTarrif),
+                    description: `Payment for ${requestType}`,
+                    payment_type: (patient.hmo.name !== 'Private') ? 'HMO' : '',
+                    hmo_approval_status: (patient.hmo.name !== 'Private') ? 1 : 0,
+                    transaction_type: requestType,
+                    transaction_details: service,
+                    createdBy,
+                    status: requestType === 'procedure' && bill === 'later' ? -1 : 0,
+                    patientRequestItem,
+                };
 
-            const result = await this.save(data);
-            const payment = result.generatedMaps[0];
+                const result = await this.save(data);
+                const payment = result.generatedMaps[0];
 
-            payments = [...payments, payment];
-            requests = [...requests, { ...request, transaction: payment }];
-        }
+                const transaction = await getConnection().getRepository(Transactions).findOne(payment.id);
+
+                patientRequestItem.transaction = transaction;
+                await patientRequestItem.save();
+
+                payments = [...payments, transaction];
+
+                item.transaction = transaction;
+
+                results = [...results, item];
+            }
+
+            requests = [...requests, { ...request, items: results }];
+         }
 
         return { request: requests, transactions: payments };
-    }
-
-    static async procedurePayment(requestBody, patient: Patient, createdBy) {
-        let totalAmount = 0;
-        const items = [];
-        for (const body of requestBody) {
-            items.push({ name: body.service_name, amount: body.amount });
-            totalAmount += parseFloat(body.amount);
-        }
-
-        const data = {
-            patient,
-            amount: totalAmount,
-            description: 'Payment for procedure',
-            payment_type: (patient.hmo.name !== 'Private') ? 'HMO' : '',
-            hmo_approval_status: (patient.hmo.name !== 'Private') ? 1 : 0,
-            transaction_type: 'billing',
-            transaction_details: items,
-            createdBy,
-        };
-        const payment = await this.save(data);
-        return { payment: payment.generatedMaps[0] };
     }
 
     static async save(data) {

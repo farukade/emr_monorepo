@@ -45,7 +45,7 @@ export class PatientController {
     ): Promise<Pagination> {
         const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
         const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
-        return this.patientService.listAllPatients({ page: page - 1, limit }, urlParams);
+        return this.patientService.listAllPatients({ page, limit }, urlParams);
     }
 
     @Get('find')
@@ -307,9 +307,10 @@ export class PatientController {
     @Patch(':requestId/reject-result')
     rejectLabResult(
         @Param('requestId') requestId: string,
+        @Query() urlParams,
         @Request() req,
     ) {
-        return this.patientService.rejectResult(requestId, req.user.username);
+        return this.patientService.rejectResult(requestId, urlParams, req.user.username);
     }
 
     @Delete(':requestId/delete-request')

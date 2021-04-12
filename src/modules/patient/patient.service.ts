@@ -4,7 +4,7 @@ import { PatientRepository } from './repositories/patient.repository';
 import { PatientNOKRepository } from './repositories/patient.nok.repository';
 import { Patient } from './entities/patient.entity';
 import { PatientDto } from './dto/patient.dto';
-import { Like, Connection, getConnection } from 'typeorm';
+import { Connection, getConnection, Brackets } from 'typeorm';
 import { ServiceRepository } from '../settings/services/service.repository';
 import { PatientVitalRepository } from './repositories/patient_vitals.repository';
 import { PatientAntenatalRepository } from './repositories/patient_antenatal.repository';
@@ -29,17 +29,17 @@ import { AppointmentRepository } from '../frontdesk/appointment/appointment.repo
 import { Transactions } from '../finance/transactions/transaction.entity';
 import { AuthRepository } from '../auth/auth.repository';
 import { TransactionsRepository } from '../finance/transactions/transactions.repository';
-import { generatePDF } from '../../common/utils/utils';
+import { generatePDF, sendSMS } from '../../common/utils/utils';
 import * as path from 'path';
 import { AdmissionClinicalTaskRepository } from './admissions/repositories/admission-clinical-tasks.repository';
-import { AdmissionClinicalTask } from './admissions/entities/admission-clinical-task.entity';
 import { AdmissionsRepository } from './admissions/repositories/admissions.repository';
 import { Immunization } from './immunization/entities/immunization.entity';
-import { Specimen } from '../settings/entities/specimen.entity';
 import { Pagination } from '../../common/paginate/paginate.interface';
 import { PaginationOptionsInterface } from '../../common/paginate';
 import { ImmunizationRepository } from './immunization/repositories/immunization.repository';
 import { PatientRequestItemRepository } from './repositories/patient_request_items.repository';
+import { PatientDiagnosisRepository } from './repositories/patient_diagnosis.repository';
+import { AdmissionClinicalTask } from './admissions/entities/admission-clinical-task.entity';
 
 @Injectable()
 export class PatientService {
@@ -82,35 +82,88 @@ export class PatientService {
         private immunizationRepository: ImmunizationRepository,
         @InjectRepository(PatientRequestItemRepository)
         private patientRequestItemRepository: PatientRequestItemRepository,
+        @InjectRepository(PatientDiagnosisRepository)
+        private patientDiagnosisRepository: PatientDiagnosisRepository,
     ) {
     }
 
     async listAllPatients(options: PaginationOptionsInterface, params): Promise<Pagination> {
-        const { startDate, endDate, patient_id } = params;
-        const query = this.patientRepository.createQueryBuilder('q').select('q.*');
+        const { startDate, endDate, q, status } = params;
+        const query = this.patientRepository.createQueryBuilder('p').select('p.*');
+
+        const page = options.page - 1;
+
+        if (q && q !== '') {
+            query.andWhere(new Brackets(qb => {
+                qb.where('LOWER(p.surname) Like :surname', { surname: `%${q.toLowerCase()}%` })
+                    .orWhere('LOWER(p.other_names) Like :other_names', { other_names: `%${q.toLowerCase()}%` })
+                    .orWhere('p.folderNumber Like :folderNumber', { folderNumber: `%${q}%` })
+                    .orWhere('CAST(p.id AS text) = :id', { id: `%${q}%` });
+            }));
+        }
 
         if (startDate && startDate !== '') {
             const start = moment(startDate).endOf('day').toISOString();
-            query.andWhere(`q.createdAt >= '${start}'`);
+            query.andWhere(`p.createdAt >= '${start}'`);
         }
         if (endDate && endDate !== '') {
             const end = moment(endDate).endOf('day').toISOString();
-            query.andWhere(`q.createdAt <= '${end}'`);
+            query.andWhere(`p.createdAt <= '${end}'`);
         }
 
-        if (patient_id && patient_id !== '') {
-            query.andWhere('q.id = :id', { id: patient_id });
+        if (status && status !== '') {
+            query.andWhere('p.isActive = :status', { status: status === '1' });
         }
 
-        const patients = await query.offset(options.page * options.limit)
+        const patients = await query.offset(page * options.limit)
             .limit(options.limit)
-            .orderBy('q.createdAt', 'DESC')
+            .orderBy('p.createdAt', 'DESC')
             .getRawMany();
 
         const total = await query.getCount();
 
         for (const patient of patients) {
+            if (patient.profile_pic) {
+                patient.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${patient.profile_pic}`;
+            }
 
+            patient.immunization = await this.immunizationRepository.find({ where: { patient } });
+
+            if (patient.hmo_id) {
+                patient.hmo = await this.hmoRepository.findOne(patient.hmo_id);
+            }
+
+            if (patient.nextOfKin_id) {
+                patient.nextOfKin = await this.nextOfKinRepository.findOne(patient.nextOfKin_id);
+            }
+
+            const transactions = await this.transactionsRepository.find({ where: { patient, status: 0 } });
+
+            // tslint:disable-next-line:no-shadowed-variable
+            patient.wallet = transactions.reduce((total, item) => total + item.amount, 0);
+        }
+
+        return {
+            result: patients,
+            lastPage: Math.ceil(total / options.limit),
+            itemsPerPage: options.limit,
+            totalPages: total,
+            currentPage: options.page,
+        };
+    }
+
+    async findPatient(param: string): Promise<Patient[]> {
+        const patients = await this.patientRepository.createQueryBuilder('p')
+            .select('p.*')
+            .andWhere(new Brackets(qb => {
+                qb.where('LOWER(p.surname) Like :surname', { surname: `%${param.toLowerCase()}%` })
+                    .orWhere('LOWER(p.other_names) Like :other_names', { other_names: `%${param.toLowerCase()}%` })
+                    .orWhere('p.folderNumber Like :folderNumber', { folderNumber: `%${param}%` })
+                    .orWhere('CAST(p.id AS text) LIKE :id', { id: `%${param}%` });
+            }))
+            .getRawMany();
+
+        for (const patient of patients) {
             if (patient.profile_pic) {
                 patient.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${patient.profile_pic}`;
             }
@@ -126,23 +179,7 @@ export class PatientService {
             }
         }
 
-        return {
-            result: patients,
-            lastPage: Math.ceil(total / options.limit),
-            itemsPerPage: options.limit,
-            totalPages: total,
-            currentPage: options.page + 1,
-        };
-    }
-
-    async findPatient(param: string): Promise<Patient[]> {
-        return await this.patientRepository.find({
-            where: [
-                { surname: Like(`%${param.toLocaleLowerCase()}%`) },
-                { other_names: Like(`%${param.toLocaleLowerCase()}%`) },
-                { fileNumber: Like(`%${param}%`) },
-            ], relations: ['nextOfKin', 'immunization', 'hmo'],
-        });
+        return patients;
     }
 
     async saveNewPatient(patientDto: PatientDto, createdBy: string, pic): Promise<any> {
@@ -156,6 +193,10 @@ export class PatientService {
 
             const patient = await this.patientRepository.savePatient(patientDto, nok, hmo, createdBy, pic);
 
+            const splits = patient.other_names.split(' ');
+            const message = `Dear ${patient.surname} ${splits.length > 0 ? splits[0] : patient.other_names}, welcome to the DEDA Family. Your ID/Folder number is ${patient.id}. Kindly save the number and provide it at all uyour appointment visits. Thank you.`;
+            await sendSMS(patient.phoneNumber, message);
+
             return { success: true, patient };
         } catch (err) {
             return { success: false, message: err.message };
@@ -165,7 +206,7 @@ export class PatientService {
     async saveNewOpdPatient(patientDto: OpdPatientDto, createdBy: string, pic): Promise<any> {
         try {
             const patient = new Patient();
-            patient.fileNumber = 'DH' + Math.floor(Math.random() * 90000);
+            patient.folderNumber = patientDto.folderNumber;
             patient.surname = patientDto.surname.toLocaleLowerCase();
             patient.other_names = patientDto.other_names.toLocaleLowerCase();
             patient.address = patientDto.address.toLocaleLowerCase();
@@ -458,7 +499,7 @@ export class PatientService {
     }
 
     async listRequests(requestType, urlParams): Promise<any> {
-        const { startDate, endDate, status, page, limit } = urlParams;
+        const { startDate, endDate, status, page, limit, today } = urlParams;
 
         const queryLimit = limit ? parseInt(limit, 10) : 30;
         const offset = (page ? parseInt(page, 10) : 1) - 1;
@@ -473,12 +514,16 @@ export class PatientService {
             .andWhere('q.requestType = :requestType', { requestType });
 
         if (startDate && startDate !== '') {
-            const start = moment(startDate).startOf('day').toISOString();
+            const start = moment(startDate).startOf('day').format('YYYY-MM-DD HH:mm:ss');
             query.andWhere(`q.createdAt >= '${start}'`);
         }
         if (endDate && endDate !== '') {
-            const end = moment(endDate).endOf('day').toISOString();
+            const end = moment(endDate).endOf('day').format('YYYY-MM-DD HH:mm:ss');
             query.andWhere(`q.createdAt <= '${end}'`);
+        }
+
+        if (today && today !== '') {
+            query.andWhere(`CAST(q.createdAt as text) LIKE '%${today}%'`);
         }
 
         if (status === 'Filled') {
@@ -500,9 +545,7 @@ export class PatientService {
         for (const item of items) {
             item.hmo = await this.hmoRepository.findOne(item.hmo_id);
 
-            const requestItem = await this.patientRequestItemRepository.findOne({ where: { request: item } });
-            item.transaction = await this.transactionsRepository.findOne({ where: { patientRequestItem: requestItem } });
-            item.request_item = requestItem;
+            item.items = await this.patientRequestItemRepository.find({ where: { request: item }, relations: ['diagnosis', 'transaction'] });
 
             const patient = await this.patientRepository.findOne(item.patient, {
                 relations: ['nextOfKin', 'immunization', 'hmo'],
@@ -513,6 +556,8 @@ export class PatientService {
             }
 
             item.patient = patient;
+
+            item.transaction = await this.transactionsRepository.findOne({ where: { request: item } });
 
             result = [...result, item];
         }
@@ -527,7 +572,7 @@ export class PatientService {
     }
 
     async listPatientRequests(requestType, patient_id, urlParams): Promise<any> {
-        const { startDate, endDate, filled, page, limit } = urlParams;
+        const { startDate, endDate, filled, page, limit, today } = urlParams;
 
         const queryLimit = limit ? parseInt(limit, 10) : 30;
         const offset = (page ? parseInt(page, 10) : 1) - 1;
@@ -543,17 +588,18 @@ export class PatientService {
             .andWhere('q.requestType = :requestType', { requestType });
 
         if (startDate && startDate !== '') {
-            if (endDate && endDate !== '') {
-                const start = moment(startDate).startOf('day').format('YYYY-MM-DD HH:mm:ss');
-                query.andWhere(`q.createdAt >= '${start}'`);
-            } else {
-                query.andWhere(`DATE(q.createdAt) = '${moment(startDate).format('YYYY-MM-DD')}'`);
-            }
+            const start = moment(startDate).startOf('day').format('YYYY-MM-DD HH:mm:ss');
+            query.andWhere(`q.createdAt >= '${start}'`);
         }
         if (endDate && endDate !== '') {
             const end = moment(endDate).endOf('day').format('YYYY-MM-DD HH:mm:ss');
             query.andWhere(`q.createdAt <= '${end}'`);
         }
+
+        if (today && today !== '') {
+            query.andWhere(`CAST(q.createdAt as text) LIKE '%${today}%'`);
+        }
+
         if (filled) {
             query.andWhere(`q.isFilled = ${true}`);
         }
@@ -569,9 +615,7 @@ export class PatientService {
         for (const item of items) {
             item.hmo = await this.hmoRepository.findOne(item.hmo_id);
 
-            const requestItem = await this.patientRequestItemRepository.findOne({ where: { request: item } });
-            item.transaction = await this.transactionsRepository.findOne({ where: { patientRequestItem: requestItem } });
-            item.request_item = requestItem;
+            item.items = await this.patientRequestItemRepository.find({ where: { request: item }, relations: ['diagnosis', 'transaction'] });
 
             const patient = await this.patientRepository.findOne(item.patient, {
                 relations: ['nextOfKin', 'immunization', 'hmo'],
@@ -582,6 +626,8 @@ export class PatientService {
             }
 
             item.patient = patient;
+
+            item.transaction = await this.transactionsRepository.findOne({ where: { request: item } });
 
             result = [...result, item];
         }
@@ -627,7 +673,8 @@ export class PatientService {
                 let request = await PatientRequestHelper.handleServiceRequest(param, patient, createdBy, requestType);
                 if (request.success) {
                     // save transaction
-                    const payment = await RequestPaymentHelper.servicePayment(request.data, patient, createdBy);
+                    const payment = await RequestPaymentHelper.servicePayment(request.data, patient, createdBy, requestType, 'now');
+
                     // @ts-ignore
                     request = { ...payment.request };
 
@@ -636,11 +683,13 @@ export class PatientService {
                 res = request;
                 break;
             case 'procedure':
-                let procedure = await PatientRequestHelper.handleProcedureRequest(param, patient, createdBy);
-                if (procedure.success && param.bill_now === true) {
+                let procedure = await PatientRequestHelper.handleServiceRequest(param, patient, createdBy, requestType);
+                if (procedure.success) {
                     // save transaction
-                    const payment = await RequestPaymentHelper.procedurePayment(procedure.data, patient, createdBy);
-                    procedure = { ...procedure, ...payment };
+                    const payment = await RequestPaymentHelper.servicePayment(procedure.data, patient, createdBy, requestType, param.bill);
+
+                    // @ts-ignore
+                    procedure = { ...payment.request };
                 }
                 res = procedure;
                 break;
@@ -667,22 +716,33 @@ export class PatientService {
             request.receivedBy = username;
             request.receivedAt = moment().format('YYYY-MM-DD HH:mm:ss');
             request.lastChangedBy = username;
-            const res = await request.save();
+            await request.save();
 
-            return { success: true, data: res };
+            const rs = await this.patientRequestItemRepository.findOne({ where: { id }, relations: ['diagnosis', 'transaction'] });
+
+            return { success: true, data: rs };
         } catch (e) {
             return { success: false, message: e.message };
         }
     }
 
     async doFillRequest(param, requestId, updatedBy) {
-        const { patient_id, total_amount } = param;
+        const { patient_id, total_amount, items } = param;
         try {
             const request = await this.patientRequestRepository.findOne(requestId);
-            request.isFilled = true;
-            const res = await request.save();
 
-            const patient = await this.patientRepository.findOne(patient_id, { relations: ['hmo'] });
+            const patient = await this.patientRepository.findOne(patient_id, {
+                relations: ['nextOfKin', 'immunization', 'hmo'],
+            });
+
+            for (const item of items) {
+                const requestItem = await this.patientRequestItemRepository.findOne(item.id);
+                requestItem.filled = 1;
+                requestItem.fillQuantity = item.fillQuantity;
+                requestItem.filledAt = moment().format('YYYY-MM-DD HH:mm:ss');
+                requestItem.filledBy = updatedBy;
+                await requestItem.save();
+            }
 
             // save transaction
             const data = {
@@ -692,9 +752,21 @@ export class PatientService {
                 payment_type: patient.hmo.id === 1 ? 'Private' : 'HMO',
                 hmo_approval_status: patient.hmo.id === 1 ? 2 : 0,
                 transaction_type: 'pharmacy',
-                // transaction_details: requestBody,
+                // tslint:disable-next-line:max-line-length
+                transaction_details: items.map(i => ({
+                    id: i.id,
+                    drug: i.drug,
+                    note: i.note,
+                    dose_quantity: i.dose_quantity,
+                    refills: i.refills,
+                    frequency: i.frequency,
+                    frequencyType: i.frequencyType,
+                    duration: i.duration,
+                    external_prescription: i.external_prescription,
+                    vaccine: i.vaccine,
+                })),
                 createdBy: updatedBy,
-                patientRequest: res,
+                request,
             };
 
             const payment = await getConnection()
@@ -704,9 +776,17 @@ export class PatientService {
                 .values(data)
                 .execute();
 
-            this.appGateway.server.emit('paypoint-queue', { payment });
+            const transaction = { ...payment.generatedMaps[0] };
 
-            return { success: true, data: { ...res, transaction_status: 0, payment } };
+            request.isFilled = true;
+            request.transaction = await this.transactionsRepository.findOne(transaction.id);
+            const res = await request.save();
+
+            this.appGateway.server.emit('paypoint-queue', transaction);
+
+            const reqItems = await this.patientRequestItemRepository.find({ where: { request: res }, relations: ['diagnosis'] });
+
+            return { success: true, data: { ...res, items: reqItems, transaction: payment.generatedMaps[0] } };
         } catch (e) {
             // console.log(e.message)
             return { success: false, message: e.message };
@@ -714,20 +794,23 @@ export class PatientService {
     }
 
     async doApproveResult(id: number, params, username) {
-        const { type, request_id } = params;
+        const { type, request_item_id } = params;
 
-        const result = await this.patientRequestRepository.findOne({ where: { id: request_id }, relations: ['patient'] });
+        const result = await this.patientRequestRepository.findOne({ where: { id }, relations: ['patient', 'items', 'transaction'] });
 
         switch (type) {
             case 'lab':
             case 'radiology':
                 try {
-                    const request = await this.patientRequestItemRepository.findOne(id);
-                    request.approved = 1;
-                    request.approvedBy = username;
-                    request.approvedAt = moment().format('YYYY-MM-DD HH:mm:ss');
-                    request.lastChangedBy = username;
-                    const res = await request.save();
+                    const item = await this.patientRequestItemRepository.findOne({
+                        where: { id: request_item_id },
+                        relations: ['diagnosis', 'transaction'],
+                    });
+                    item.approved = 1;
+                    item.approvedBy = username;
+                    item.approvedAt = moment().format('YYYY-MM-DD HH:mm:ss');
+                    item.lastChangedBy = username;
+                    const res = await item.save();
 
                     result.status = 1;
                     await result.save();
@@ -740,41 +823,54 @@ export class PatientService {
             default:
                 try {
                     const patient = result.patient;
-                    const admission = await this.admissionRepository.findOne({ where: { patientId: patient.id } });
+                    const admission = await this.admissionRepository.findOne({ where: { patient } });
 
-                    const results = [];
-                    for (const drug of result.items) {
-                        //     // @ts-ignore
-                        //     const { vaccine } = drug;
-                        //     if (vaccine) {
-                        //         const newTask = new AdmissionClinicalTask();
-                        //
-                        //         newTask.task = 'Immunization';
-                        //         newTask.title = `Give ${drug.drug_name} Immediately`;
-                        //         newTask.taskType = 'regimen';
-                        //         newTask.drug = drug;
-                        //         newTask.dose = 1;
-                        //         newTask.interval = 1;
-                        //         newTask.intervalType = 'immediately';
-                        //         newTask.frequency = 'Immediately';
-                        //         newTask.taskCount = 1;
-                        //         newTask.startTime = moment().format('YYYY-MM-DD HH:mm:ss');
-                        //         newTask.nextTime = moment().format('YYYY-MM-DD HH:mm:ss');
-                        //         newTask.patient = patient;
-                        //         newTask.admission = admission;
-                        //         newTask.createdBy = username;
-                        //         newTask.request = result;
-                        //
-                        //         const rs = await newTask.save();
-                        //         results = [...results, rs];
-                        //     }
+                    let resultItems = [];
+                    for (const item of result.items) {
+                        const requestItem = await this.patientRequestItemRepository.findOne(item.id, { relations: ['diagnosis'] });
+
+                        requestItem.approved = 1;
+                        requestItem.approvedBy = username;
+                        requestItem.approvedAt = moment().format('YYYY-MM-DD HH:mm:ss');
+                        requestItem.lastChangedBy = username;
+                        const rs = await requestItem.save();
+
+                        resultItems = [...resultItems, rs];
+                    }
+
+                    let results = [];
+                    for (const item of result.items) {
+                        // @ts-ignore
+                        const { vaccine } = item;
+                        if (vaccine) {
+                            const newTask = new AdmissionClinicalTask();
+
+                            newTask.task = 'Immunization';
+                            newTask.title = `Give ${item.drug.name} Immediately`;
+                            newTask.taskType = 'regimen';
+                            newTask.drug = item.drug;
+                            newTask.dose = 1;
+                            newTask.interval = 1;
+                            newTask.intervalType = 'immediately';
+                            newTask.frequency = 'Immediately';
+                            newTask.taskCount = 1;
+                            newTask.startTime = moment().format('YYYY-MM-DD HH:mm:ss');
+                            newTask.nextTime = moment().format('YYYY-MM-DD HH:mm:ss');
+                            newTask.patient = patient;
+                            newTask.admission = admission;
+                            newTask.createdBy = username;
+                            newTask.request = result;
+
+                            const rs = await newTask.save();
+                            results = [...results, rs];
+                        }
                     }
 
                     result.status = 1;
                     result.lastChangedBy = username;
                     const res = await result.save();
 
-                    return { success: true, data: res };
+                    return { success: true, data: { ...res, items: resultItems } };
                 } catch (e) {
                     return { success: false, message: e.message };
                 }
@@ -792,15 +888,17 @@ export class PatientService {
             request.note = note;
             request.result = result;
             request.lastChangedBy = username;
-            const res = await request.save();
+            await request.save();
 
-            return { success: true, data: res };
+            const rs = await this.patientRequestItemRepository.findOne({ where: { id }, relations: ['diagnosis', 'transaction'] });
+
+            return { success: true, data: rs };
         } catch (e) {
             return { success: false, message: e.message };
         }
     }
 
-    async rejectResult(id: string, username: string) {
+    async rejectResult(id: string, params, username: string) {
         try {
             const request = await this.patientRequestItemRepository.findOne(id);
             request.filled = 0;
@@ -813,9 +911,16 @@ export class PatientService {
             }));
             request.result = null;
             request.lastChangedBy = username;
-            const res = await request.save();
 
-            return { success: true, data: res };
+            if (params.type === 'radiology') {
+                request.document = null;
+            }
+
+            await request.save();
+
+            const rs = await this.patientRequestItemRepository.findOne({ where: { id }, relations: ['diagnosis', 'transaction'] });
+
+            return { success: true, data: rs };
         } catch (e) {
             return { success: false, message: e.message };
         }
@@ -835,23 +940,36 @@ export class PatientService {
         requestItem.deletedBy = username;
         await requestItem.save();
 
-        const res = await requestItem.softRemove();
-
-        const request = await this.patientRequestRepository.findOne(requestItem.request);
+        const request = await this.patientRequestRepository.findOne(params.request_id);
         request.deletedBy = username;
         await request.save();
 
+        try {
+            const transaction = await this.transactionsRepository.findOne({ where: { patientRequestItem: requestItem } });
+            transaction.deletedBy = username;
+            await transaction.save();
+            await transaction.softRemove();
+        } catch (e) {
+            console.log(e);
+        }
+
+        try {
+            const transaction = await this.transactionsRepository.findOne({ where: { request } });
+            transaction.deletedBy = username;
+            await transaction.save();
+            await transaction.softRemove();
+        } catch (e) {
+            console.log(e);
+        }
+
+        await requestItem.softRemove();
+
         await request.softRemove();
 
-        // switch (type) {
-        //     case 'lab':
-        //         break;
-        //     case 'imaging':
-        //     default:
-        //         break;
-        // }
+        const rs = await this.patientRequestRepository.findOne(params.request_id, { withDeleted: true });
+        rs.items = await this.patientRequestItemRepository.find({ where: { id }, withDeleted: true, relations: ['diagnosis', 'transaction'] });
 
-        return { success: true, data: res };
+        return { success: true, data: rs };
     }
 
     async printResult(id: number, params) {
@@ -932,9 +1050,11 @@ export class PatientService {
                 requestItem.filledAt = moment().format('YYYY-MM-DD HH:mm:ss');
                 requestItem.lastChangedBy = createdBy;
                 requestItem.document = rs;
-                const saved = await requestItem.save();
+                await requestItem.save();
 
-                return { success: true, request_item: saved };
+                const item = await this.patientRequestItemRepository.findOne({ where: { id: param.id }, relations: ['diagnosis', 'transaction'] });
+
+                return { success: true, data: item };
             }
 
             return { success: true, document: rs };

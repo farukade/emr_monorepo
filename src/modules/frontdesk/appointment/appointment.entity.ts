@@ -7,6 +7,7 @@ import { ServiceCategory } from '../../settings/entities/service_category.entity
 import {Encounter} from '../../patient/consultation/encouter.entity';
 import {StaffDetails} from '../../hr/staff/entities/staff_details.entity';
 import {Transactions} from '../../finance/transactions/transaction.entity';
+import { Department } from '../../settings/entities/department.entity';
 
 @Entity({ name: 'appointments'})
 export class Appointment extends CustomBaseEntity {
@@ -18,9 +19,9 @@ export class Appointment extends CustomBaseEntity {
     @JoinColumn({name: 'patient_id'})
     patient: Patient;
 
-    // @ManyToOne(type => Department)
-    // @JoinColumn({ name: 'department_id'})
-    // department: Department;
+    @ManyToOne(type => Department, {nullable: true})
+    @JoinColumn({ name: 'department_id'})
+    department: Department;
 
     @ManyToOne(type => StaffDetails)
     @JoinColumn({ name: 'doctor_id'})
@@ -56,7 +57,7 @@ export class Appointment extends CustomBaseEntity {
     @Column({type: 'varchar', default: 'Pending'})
     status: string;
 
-    @Column({type: 'varchar', default: 'in-patient'})
+    @Column({type: 'varchar', default: 'patient'})
     appointmentType: string;
 
     @Column({type: 'smallint', default: 0})

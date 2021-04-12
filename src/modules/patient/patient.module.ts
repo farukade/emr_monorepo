@@ -31,6 +31,7 @@ import { AdmissionsRepository } from './admissions/repositories/admissions.repos
 import { ImmunizationRepository } from './immunization/repositories/immunization.repository'
 import { PatientRequestItemRepository } from './repositories/patient_request_items.repository';
 import { LabTestRepository } from '../settings/lab/lab.test.repository';
+import { PatientDiagnosisRepository } from './repositories/patient_diagnosis.repository';
 
 
 @Module({
@@ -55,6 +56,7 @@ import { LabTestRepository } from '../settings/lab/lab.test.repository';
       AdmissionClinicalTaskRepository,
       AdmissionsRepository,
       LabTestRepository,
+      PatientDiagnosisRepository,
   ]), AntenatalModule, AdmissionsModule, ConsultationModule, LabourManagementModule, ImmunizationModule, NicuModule],
   controllers: [PatientController, IvfController],
   providers: [AppGateway, PatientService, IvfService],

@@ -4,14 +4,19 @@ import {
   Entity,
   JoinColumn,
   PrimaryGeneratedColumn,
-  ManyToOne,
+  ManyToOne, DeleteDateColumn, CreateDateColumn, UpdateDateColumn,
 } from 'typeorm';
 import { Appointment } from '../appointment/appointment.entity';
+import { Patient } from '../../patient/entities/patient.entity';
 
 @Entity({ name: 'queues' })
 export class Queue extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
+
+  @ManyToOne(() => Patient, {nullable: true})
+  @JoinColumn({name: 'patient_id'})
+  patient: Patient;
 
   @Column({type: 'integer', nullable: true})
   queueNumber: number;
@@ -30,6 +35,18 @@ export class Queue extends BaseEntity {
   status: number;
 
   @Column()
-  createdAt: string;
+  queueDate: string;
+
+  @DeleteDateColumn({ type: 'timestamp', nullable: true, name: 'deleted_at' })
+  deletedAt: Date;
+
+  @Column({ type: 'varchar', length: 300, nullable: true })
+  deletedBy: string;
+
+  @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ type: 'timestamp', name: 'updated_at', default: () => 'CURRENT_TIMESTAMP' })
+  updatedAt: Date;
 
 }
