@@ -195,7 +195,10 @@ export class PatientService {
 
             const splits = patient.other_names.split(' ');
             const message = `Dear ${patient.surname} ${splits.length > 0 ? splits[0] : patient.other_names}, welcome to the DEDA Family. Your ID/Folder number is ${formatPID(patient.id)}. Kindly save the number and provide it at all your appointment visits. Thank you.`;
-            await sendSMS(patient.phoneNumber, message);
+
+            if (process.env.DEBUG === 'false') {
+                await sendSMS(patient.phoneNumber, message);
+            }
 
             return { success: true, patient };
         } catch (err) {
