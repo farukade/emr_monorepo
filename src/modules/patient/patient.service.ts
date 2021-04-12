@@ -29,7 +29,7 @@ import { AppointmentRepository } from '../frontdesk/appointment/appointment.repo
 import { Transactions } from '../finance/transactions/transaction.entity';
 import { AuthRepository } from '../auth/auth.repository';
 import { TransactionsRepository } from '../finance/transactions/transactions.repository';
-import { generatePDF, sendSMS } from '../../common/utils/utils';
+import { formatPID, generatePDF, sendSMS } from '../../common/utils/utils';
 import * as path from 'path';
 import { AdmissionClinicalTaskRepository } from './admissions/repositories/admission-clinical-tasks.repository';
 import { AdmissionsRepository } from './admissions/repositories/admissions.repository';
@@ -194,7 +194,7 @@ export class PatientService {
             const patient = await this.patientRepository.savePatient(patientDto, nok, hmo, createdBy, pic);
 
             const splits = patient.other_names.split(' ');
-            const message = `Dear ${patient.surname} ${splits.length > 0 ? splits[0] : patient.other_names}, welcome to the DEDA Family. Your ID/Folder number is ${patient.id}. Kindly save the number and provide it at all uyour appointment visits. Thank you.`;
+            const message = `Dear ${patient.surname} ${splits.length > 0 ? splits[0] : patient.other_names}, welcome to the DEDA Family. Your ID/Folder number is ${formatPID(patient.id)}. Kindly save the number and provide it at all your appointment visits. Thank you.`;
             await sendSMS(patient.phoneNumber, message);
 
             return { success: true, patient };
