@@ -5,7 +5,6 @@ import { Appointment } from './appointment.entity';
 import {AuthGuard} from '@nestjs/passport';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 
-
 @UseGuards(AuthGuard('jwt'))
 @Controller('front-desk/appointments')
 export class AppointmentController {
@@ -27,7 +26,7 @@ export class AppointmentController {
         return this.appointmentService.listAppointments({page, limit}, urlParams);
     }
 
-    @Get('/patient/:id')
+    @Get('/patient/:patient_id')
     patientAppointments(
         @Param('patient_id') id: number,
     ): Promise<Appointment[]> {

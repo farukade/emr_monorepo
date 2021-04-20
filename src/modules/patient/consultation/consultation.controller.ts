@@ -6,16 +6,18 @@ import { AuthGuard } from '@nestjs/passport';
 @UseGuards(AuthGuard('jwt'))
 @Controller('consultation')
 export class ConsultationController {
-    constructor(private consultationService: ConsultationService) {}
+    constructor(private consultationService: ConsultationService) {
+    }
 
     @Post(':patient_id/save')
     @UsePipes(ValidationPipe)
     saveEncounter(
-        @Param('patient_id') patient_id: string,
+        @Param('patient_id') patientId: number,
         @Body() param: EncounterDto,
+        @Query() urlParams,
         @Request() req,
     ) {
-        return this.consultationService.saveEncounter(patient_id, param, req.user.username);
+        return this.consultationService.saveEncounter(patientId, param, urlParams, req.user.username);
     }
 
     @Get('/encounters')
@@ -25,7 +27,7 @@ export class ConsultationController {
     ) {
         const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 10;
         const page = request.query.hasOwnProperty('page') ? request.query.page : 1;
-        return this.consultationService.getEncounters({page, limit}, urlParams);
+        return this.consultationService.getEncounters({ page, limit }, urlParams);
     }
 
     @Get(':id')

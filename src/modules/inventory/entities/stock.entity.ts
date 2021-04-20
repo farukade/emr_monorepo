@@ -4,6 +4,8 @@ import { InventorySubCategory } from './inventory.sub-category.entity';
 import { InventoryCategory } from './inventory.category.entity';
 import { Vendor } from '../vendor/vendor.entity';
 import { Hmo } from '../../hmo/entities/hmo.entity';
+import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
+import { PatientAllergen } from '../../patient/entities/patient_allergens.entity';
 
 @Entity({ name: 'stocks' })
 export class Stock extends CustomBaseEntity {

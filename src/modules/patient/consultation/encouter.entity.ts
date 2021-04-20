@@ -1,67 +1,48 @@
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
-import { Entity, Column, ManyToOne, OneToOne } from 'typeorm';
-import { IDiagnosisInterface } from './interfaces/diagnosis.interface';
-import { IAllergyInterface } from './interfaces/allergy.interface';
+import { Entity, ManyToOne, OneToOne, OneToMany, JoinColumn } from 'typeorm';
 import { Patient } from '../entities/patient.entity';
 import { PatientRequest } from '../entities/patient_requests.entity';
-import {Appointment} from '../../frontdesk/appointment/appointment.entity';
+import { Appointment } from '../../frontdesk/appointment/appointment.entity';
+import { PatientDiagnosis } from '../entities/patient_diagnosis.entity';
+import { PatientConsumable } from '../entities/patient_consumable.entity';
+import { PatientAllergen } from '../entities/patient_allergens.entity';
+import { PatientNote } from '../entities/patient_note.entity';
+import { PatientHistory } from '../entities/patient_history.entity';
+import { PatientPastDiagnosis } from '../entities/patient_past_diagnosis.entity';
+import { PatientPhysicalExam } from '../entities/patient_physical_exam.entity';
 
-@Entity({name: 'encounters'})
+@Entity({ name: 'encounters' })
 export class Encounter extends CustomBaseEntity {
-    @Column({type: 'text'})
-    complaints: string;
-
-    @Column('simple-array', {nullable: true})
-    reviewOfSystem: string[];
-
-    @Column('simple-json', {nullable: true})
-    patientHistory: string[];
-
-    @Column('simple-json', {nullable: true})
-    medicalHistory: string[];
-
-    @Column('simple-json', {nullable: true})
-    allergies: IAllergyInterface[];
-
-    @Column('json', {nullable: true})
-    physicalExamination: string[];
-
-    @Column({nullable: true})
-    physicalExaminationSummary: string;
-
-    @Column('simple-json', {nullable: true})
-    diagnosis: IDiagnosisInterface[];
-
-    @Column('simple-json', {nullable: true})
-    plan: any;
-
-    @Column('simple-json', {nullable: true})
-    nextAppointment: object;
-
-    @Column('simple-json', {nullable: true})
-    consumable: string;
-
-    @Column('text', {nullable: true})
-    note: string;
-
-    @Column('text', {nullable: true})
-    instructions: string;
-
-    @OneToOne(type => Appointment)
-    appointment: Appointment;
 
     @ManyToOne(type => Patient)
+    @JoinColumn({ name: 'patient_id' })
     patient: Patient;
 
-    @Column({type: 'jsonb', nullable: true})
-    labRequest?: any;
+    @OneToOne(type => Appointment, item => item.encounter)
+    @JoinColumn({ name: 'appointment_id' })
+    appointment: Appointment;
 
-    @OneToOne(() => PatientRequest)
-    procedure?: PatientRequest;
+    @OneToMany(() => PatientNote, item => item.encounter)
+    notes: PatientNote[];
 
-    @OneToOne(() => PatientRequest)
-    imagingRequest?: PatientRequest;
+    @OneToMany(() => PatientHistory, item => item.encounter)
+    history: PatientHistory[];
 
-    @OneToOne(() => PatientRequest)
-    pharmacyRequest?: PatientRequest;
+    @OneToMany(() => PatientDiagnosis, item => item.encounter)
+    diagnoses: PatientDiagnosis[];
+
+    @OneToMany(() => PatientPastDiagnosis, item => item.encounter)
+    pastDiagnoses: PatientPastDiagnosis[];
+
+    @OneToMany(() => PatientAllergen, item => item.encounter)
+    allergens: PatientAllergen[];
+
+    @OneToMany(() => PatientPhysicalExam, item => item.encounter)
+    physicalExams: PatientPhysicalExam[];
+
+    @OneToMany(() => PatientRequest, item => item.encounter)
+    requests: PatientRequest[];
+
+    @OneToMany(() => PatientConsumable, item => item.encounter)
+    consumables: PatientConsumable[];
 }

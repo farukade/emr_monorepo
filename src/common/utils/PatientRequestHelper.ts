@@ -91,7 +91,12 @@ export class PatientRequestHelper {
                 for (const item of items) {
                     const drug = await getConnection().getRepository(Stock).findOne(item.drug_id);
 
-                    const refills = item.refills ? parseInt(item.refills, 10) : 0;
+                    let refills = 0;
+                    try {
+                        refills = item.refills ? parseInt(item.refills, 10) : 0;
+                    } catch (e) {
+                        refills = 0;
+                    }
 
                     const requestItem = {
                         request: regimen,
@@ -103,7 +108,7 @@ export class PatientRequestHelper {
                         frequencyType: item.frequencyType,
                         duration: item.duration,
                         externalPrescription: item.prescription,
-                        note: item.regimenNote,
+                        note: item.regimenInstruction,
                     };
 
                     const rs = await this.saveItem(requestItem);

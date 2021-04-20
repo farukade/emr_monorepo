@@ -5,6 +5,7 @@ import { AdmissionClinicalTask } from '../admissions/entities/admission-clinical
 import { PatientRequestItem } from './patient_request_items.entity';
 import { IvfEnrollment } from '../ivf/entities/ivf_enrollment.entity';
 import { Transactions } from '../../finance/transactions/transaction.entity';
+import { Encounter } from '../consultation/encouter.entity';
 
 @Entity({name: 'patient_requests'})
 export class PatientRequest extends CustomBaseEntity {
@@ -44,4 +45,8 @@ export class PatientRequest extends CustomBaseEntity {
     @OneToOne(type => Transactions, data => data.request)
     @JoinColumn({ name: 'transaction_id' })
     transaction: Transactions;
+
+    @ManyToOne(() => Encounter, item => item.requests, { nullable: true, eager: true })
+    @JoinColumn({ name: 'encounter_id' })
+    encounter: Encounter;
 }

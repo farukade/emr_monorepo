@@ -10,7 +10,7 @@ import { VoucherRepository } from '../vouchers/voucher.repository';
 import { StaffRepository } from '../../hr/staff/staff.repository';
 import { QueueSystemRepository } from '../../frontdesk/queue-system/queue-system.repository';
 import { AppointmentRepository } from '../../frontdesk/appointment/appointment.repository';
-import {AppGateway} from "../../../app.gateway";
+import { AppGateway } from '../../../app.gateway';
 
 @Module({
     imports: [TypeOrmModule.forFeature([
@@ -26,4 +26,5 @@ import {AppGateway} from "../../../app.gateway";
     controllers: [TransactionsController],
     providers: [AppGateway, TransactionsService],
 })
-export class TransactionModule {}
+export class TransactionModule {
+}

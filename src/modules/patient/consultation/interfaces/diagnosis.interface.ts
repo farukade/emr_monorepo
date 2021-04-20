@@ -1,5 +1,5 @@
 export interface IDiagnosisInterface {
-    diagnosis: string;
-    type: string;
+    diagnosis: any;
+    type: any;
     comment: string;
 }

@@ -6,6 +6,7 @@ import { Voucher } from '../vouchers/voucher.entity';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 import { PatientRequestItem } from '../../patient/entities/patient_request_items.entity';
 import { PatientRequest } from '../../patient/entities/patient_requests.entity';
+import { Appointment } from '../../frontdesk/appointment/appointment.entity';
 
 @Entity({ name: 'transactions' })
 export class Transactions extends CustomBaseEntity {
@@ -77,4 +78,8 @@ export class Transactions extends CustomBaseEntity {
     @OneToOne(type => PatientRequest, { nullable: true })
     @JoinColumn({ name: 'patient_request_id' })
     request: PatientRequest;
+
+    @OneToOne(type => Appointment, { nullable: true })
+    @JoinColumn({ name: 'appointment_id' })
+    appointment: Appointment;
 }

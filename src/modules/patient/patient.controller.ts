@@ -20,17 +20,16 @@ import {
 import { PatientService } from './patient.service';
 import { Patient } from './entities/patient.entity';
 import { PatientDto } from './dto/patient.dto';
-import { PatientAllergyDto } from './dto/patient.allergy.dto';
 import { PatientVital } from './entities/patient_vitals.entity';
-import { PatientAllergy } from './entities/patient_allergies.entity';
 import { Voucher } from '../finance/vouchers/voucher.entity';
-import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import { PatientDocument } from './entities/patient_documents.entity';
 import { AuthGuard } from '@nestjs/passport';
 import { OpdPatientDto } from './dto/opd-patient.dto';
 import { Pagination } from '../../common/paginate/paginate.interface';
+import { PatientDiagnosis } from './entities/patient_diagnosis.entity';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('patient')
@@ -176,158 +175,12 @@ export class PatientController {
         return this.patientService.deleteVital(vitalId);
     }
 
-    // @Get(':id/antenatals')
-    // getAntenatals(
-    //     @Param('id') id: string,
-    //     @Query() urlParams,
-    // ): Promise <PatientAntenatal[]> {
-    //     return this.patientService.getAntenatals(id, urlParams);
-    // }
-
-    // @Post('save-antenatal')
-    // saveAntenatal(
-    //     @Body() param: PatientAntenatalDto,
-    //     @Request() req,
-    // ) {
-    //     return this.patientService.doSaveAntenatal(param, req.user.username);
-    // }
-
-    // @Patch(':antenatalId/update-antenatal')
-    // updateAntenatal(
-    //     @Param('antenatalId') antenatalId: string,
-    //     @Body() param: PatientAntenatalDto,
-    //     @Request() req,
-    // ) {
-    //     return this.patientService.doUpdateAntenatal(antenatalId, param, req.user.username);
-    // }
-
-    // @Delete(':antenatalId/delete-antenatal')
-    // deletePatientAntenatal(
-    //     @Param('antenatalId') antenatalId: string,
-    // ) {
-    //     return this.patientService.deleteAntenatal(antenatalId);
-    // }
-
-    @Get(':id/allergies')
-    getAllergies(
+    @Get(':id/diagnoses')
+    getDiagnoses(
         @Param('id') id: string,
         @Query() urlParams,
-    ): Promise<PatientAllergy[]> {
-        return this.patientService.getAllergies(id, urlParams);
-    }
-
-    @Post('save-allergies')
-    @UsePipes(ValidationPipe)
-    saveAllergies(
-        @Body() param: PatientAllergyDto,
-        @Request() req,
-    ) {
-        return this.patientService.doSaveAllergies(param, req.user.username);
-    }
-
-    @Patch(':allergyId/update-allergy')
-    @UsePipes(ValidationPipe)
-    updateAllergy(
-        @Param('allergyId') allergyId: string,
-        @Body() param: PatientAllergyDto,
-        @Request() req,
-    ) {
-        return this.patientService.doUpdateAllergy(allergyId, param, req.user.username);
-    }
-
-    @Delete(':allergyId/delete-allergy')
-    deletePatientAllergy(
-        @Param('allergyId') allergyId: string,
-    ) {
-        return this.patientService.deleteAllergy(allergyId);
-    }
-
-    @Get('/requests/:requestType')
-    getRequests(
-        @Param('requestType') requestType: string,
-        @Query() urlParams,
-    ): Promise<any> {
-        return this.patientService.listRequests(requestType, urlParams);
-    }
-
-    @Get(':patientId/request/:requestType')
-    getPatientRequests(
-        @Param('patientId') id: string,
-        @Param('requestType') requestType: string,
-        @Query() urlParams,
-    ): Promise<any> {
-        return this.patientService.listPatientRequests(requestType, id, urlParams);
-    }
-
-    @Post('save-request')
-    saveRequest(
-        @Body() param,
-        @Request() req,
-    ) {
-        return this.patientService.doSaveRequest(param, req.user.username);
-    }
-
-    @Patch(':requestId/receive-specimen')
-    receiveLabSpecimen(
-        @Param('requestId') requestId: number,
-        @Request() req,
-    ) {
-        return this.patientService.receiveSpecimen(requestId, req.user.username);
-    }
-
-    // fill request for pharmacy
-    @Post('fill-request/:id')
-    fillRequest(
-        @Param('id') requestId: string,
-        @Body() param,
-        @Request() req,
-    ) {
-        return this.patientService.doFillRequest(param, requestId, req.user.username);
-    }
-
-    // fill request for others
-    @Patch(':requestId/fill-result')
-    fillLabResult(
-        @Param('requestId') requestId: string,
-        @Request() req,
-        @Body() param,
-    ) {
-        return this.patientService.fillResult(requestId, param, req.user.username);
-    }
-
-    @Patch('request/:requestId/approve-result')
-    approveResult(
-        @Param('requestId') requestId: number,
-        @Query() urlParams,
-        @Request() req,
-    ) {
-        return this.patientService.doApproveResult(requestId, urlParams, req.user.username);
-    }
-
-    @Patch(':requestId/reject-result')
-    rejectLabResult(
-        @Param('requestId') requestId: string,
-        @Query() urlParams,
-        @Request() req,
-    ) {
-        return this.patientService.rejectResult(requestId, urlParams, req.user.username);
-    }
-
-    @Delete(':requestId/delete-request')
-    deletePatientRequest(
-        @Param('requestId') requestId: string,
-        @Query() urlParams,
-        @Request() req,
-    ) {
-        return this.patientService.deleteRequest(requestId, urlParams, req.user.username);
-    }
-
-    @Get(':requestId/print')
-    printResult(
-        @Param('requestId') requestId: number,
-        @Query() urlParams,
-    ): Promise<any> {
-        return this.patientService.printResult(requestId, urlParams);
+    ): Promise<PatientDiagnosis[]> {
+        return this.patientService.getDiagnoses(id, urlParams);
     }
 
     @Post(':id/upload-document')

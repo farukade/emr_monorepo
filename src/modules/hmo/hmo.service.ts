@@ -35,7 +35,8 @@ export class HmoService {
         @InjectRepository(QueueSystemRepository)
         private queueSystemRepository: QueueSystemRepository,
         private readonly appGateway: AppGateway,
-    ) {}
+    ) {
+    }
 
     async getHmos(urlParams): Promise<Hmo[]> {
         const { name } = urlParams;
@@ -53,38 +54,39 @@ export class HmoService {
 
     async getHmoTariff(id, urlParams, options: PaginationOptionsInterface): Promise<Pagination> {
         const { listType } = urlParams;
-        if  (listType === 'services') {
-          const query = await this.serviceRepository.createQueryBuilder('q').select('q.*')
-           .where('q.hmo_id = :id', {id});
 
-            const services = await query.offset(options.page * options.limit)
-            .limit(options.limit)
-            .orderBy('q.createdAt', 'DESC')
-            .getRawMany();
+        const page = options.page - 1;
+
+        if (listType === 'services') {
+            const query = await this.serviceRepository.createQueryBuilder('q').select('q.*')
+                .where('q.hmo_id = :id', { id });
+
+            const services = await query.offset(page * options.limit)
+                .limit(options.limit)
+                .orderBy('q.createdAt', 'DESC')
+                .getRawMany();
             for (const s of services) {
-                    s.hmo = await this.hmoRateRepository.findOne(s.hmo_id);
-             }
+                s.hmo = await this.hmoRateRepository.findOne(s.hmo_id);
+            }
 
-             const total = await query.getCount();
+            const total = await query.getCount();
             return {
                 result: services,
                 lastPage: Math.ceil(total / options.limit),
                 itemsPerPage: options.limit,
                 totalPages: total,
-                currentPage: options.page + 1,
+                currentPage: options.page,
             };
-
         } else {
-
             const query = await this.stockRepository.createQueryBuilder('q').select('q.*')
-           .where('q.hmo_id = :id', {id});
+                .where('q.hmo_id = :id', { id });
 
-           const stocks = await query.offset(options.page * options.limit)
-            .limit(options.limit)
-            .orderBy('q.createdAt', 'DESC')
-            .getRawMany();
+            const stocks = await query.offset(page * options.limit)
+                .limit(options.limit)
+                .orderBy('q.createdAt', 'DESC')
+                .getRawMany();
 
-           for (const s of stocks) {
+            for (const s of stocks) {
                 s.hmo = await this.hmoRateRepository.findOne(s.hmo_id);
             }
             const total = await query.getCount();
@@ -93,25 +95,26 @@ export class HmoService {
                 lastPage: Math.ceil(total / options.limit),
                 itemsPerPage: options.limit,
                 totalPages: total,
-                currentPage: options.page + 1,
+                currentPage: options.page,
             };
         }
     }
+
     async createHmo(hmoDto: HmoDto): Promise<Hmo> {
         return this.hmoRepository.saveHmo(hmoDto);
     }
 
     async updateHmo(id: string, hmoDto: HmoDto): Promise<any> {
-        const { name, address, phoneNumber, email }  = hmoDto;
+        const { name, address, phoneNumber, email } = hmoDto;
         const hmo = await this.hmoRepository.findOne(id);
         if (!hmo) {
-            return { success: false, message: `HMO with ${id} was not found`};
+            return { success: false, message: `HMO with ${id} was not found` };
         }
-        hmo.name        = name.toLocaleLowerCase();
+        hmo.name = name.toLocaleLowerCase();
         // hmo.logo        = logo;
-        hmo.address     = address;
+        hmo.address = address;
         hmo.phoneNumber = phoneNumber;
-        hmo.email       = email;
+        hmo.email = email;
         await hmo.save();
         return hmo;
     }
@@ -138,7 +141,7 @@ export class HmoService {
     }
 
     async downloadHmoRate(query) {
-        const {downloadType} = query;
+        const { downloadType } = query;
         if (downloadType === 'services') {
             return this.downloadHmoServices();
         } else {
@@ -152,18 +155,18 @@ export class HmoService {
         const csvWriter = createCsvWriter({
             path: 'hmo-rate-sample.csv',
             header: [
-                {id: 'category', title: 'CATEGORY'},
-                {id: 'sub_category', title: 'SUB CATEGORY'},
-                {id: 'slug', title: 'SLUG'},
-                {id: 'name', title: 'SERVICE'},
-                {id: 'amount', title: 'TARIFF'},
-                {id: 'hmo_rate', title: 'HMO TARIFF'},
-                {id: 'comment', title: 'COMMENT'},
-                {id: 'percentage', title: 'PERCENTAGE'},
+                { id: 'category', title: 'CATEGORY' },
+                { id: 'sub_category', title: 'SUB CATEGORY' },
+                { id: 'slug', title: 'SLUG' },
+                { id: 'name', title: 'SERVICE' },
+                { id: 'amount', title: 'TARIFF' },
+                { id: 'hmo_rate', title: 'HMO TARIFF' },
+                { id: 'comment', title: 'COMMENT' },
+                { id: 'percentage', title: 'PERCENTAGE' },
             ],
         });
 
-        const services = await this.serviceRepository.find({relations: ['subCategory', 'category', 'hmo']});
+        const services = await this.serviceRepository.find({ relations: ['subCategory', 'category', 'hmo'] });
 
         if (services.length) {
             for (const service of services) {
@@ -206,20 +209,20 @@ export class HmoService {
         const csvWriter = createCsvWriter({
             path: 'hmo-rate-sample.csv',
             header: [
-                {id: 'category', title: 'DRUG CLASS'},
-                {id: 'stock_code', title: 'STOCK CODE'},
-                {id: 'name', title: 'BRAND NAME'},
-                {id: 'generic_name', title: 'GENERIC NAME'},
-                {id: 'quantity', title: 'QUANTITY ON HAND'},
-                {id: 'sales_price', title: 'SALES PRICE'},
-                {id: 'hmo_rate', title: 'HMO TARIFF'},
-                {id: 'percentage', title: 'PERCENTAGE'},
-                {id: 'comment', title: 'COMMENT'},
+                { id: 'category', title: 'DRUG CLASS' },
+                { id: 'stock_code', title: 'STOCK CODE' },
+                { id: 'name', title: 'BRAND NAME' },
+                { id: 'generic_name', title: 'GENERIC NAME' },
+                { id: 'quantity', title: 'QUANTITY ON HAND' },
+                { id: 'sales_price', title: 'SALES PRICE' },
+                { id: 'hmo_rate', title: 'HMO TARIFF' },
+                { id: 'percentage', title: 'PERCENTAGE' },
+                { id: 'comment', title: 'COMMENT' },
             ],
         });
 
         try {
-            const stocks = await this.stockRepository.find({relations: ['subCategory']});
+            const stocks = await this.stockRepository.find({ relations: ['subCategory'] });
 
             if (stocks.length) {
                 for (const stock of stocks) {
@@ -253,12 +256,12 @@ export class HmoService {
                         percentage: '',
                     },
                 ];
-                await csvWriter.writeRecords({data});
+                await csvWriter.writeRecords({ data });
 
             }
-            return {success: true};
+            return { success: true };
         } catch (error) {
-            return {success: false, message: error.message };
+            return { success: false, message: error.message };
         }
     }
 
@@ -272,52 +275,51 @@ export class HmoService {
         try {
             // read uploaded file
             fs.createReadStream(file.path)
-            .pipe(csv())
-            .on('data', async (row) => {
-                const data = {
-                    code: row.CODE,
-                    hmo_rate: row['HMO TARIFF'],
-                    percentage: row.PERCENTAGE,
-                    comment: row.COMMENT,
-                };
-                content.push(data);
-            })
-            .on('end', async () => {
-                await this.hmoRateRepository.delete({});
-                for (const item of content) {
-                    let service;
-                    let stock;
-                    if (uploadType === 'services') {
-                        service = await this.serviceRepository.findOne({ where: {slug: item.slug}});
-                    } else {
-                        stock = await this.stockRepository.findOne({ where: {stock_code: item.code }});
+                .pipe(csv())
+                .on('data', async (row) => {
+                    const data = {
+                        code: row.CODE,
+                        hmo_rate: row['HMO TARIFF'],
+                        percentage: row.PERCENTAGE,
+                        comment: row.COMMENT,
+                    };
+                    content.push(data);
+                })
+                .on('end', async () => {
+                    await this.hmoRateRepository.delete({});
+                    for (const item of content) {
+                        let service;
+                        let stock;
+                        if (uploadType === 'services') {
+                            service = await this.serviceRepository.findOne({ where: { slug: item.slug } });
+                        } else {
+                            stock = await this.stockRepository.findOne({ where: { stock_code: item.code } });
+                        }
+                        const hmoRate = new HmoRate();
+                        hmoRate.hom = hmo;
+                        hmoRate.service = service;
+                        hmoRate.stock = stock;
+                        hmoRate.rate = item.hmo_rate;
+                        hmoRate.percentage = item.percentage;
+                        hmoRate.comment = item.comment;
+                        await hmoRate.save();
                     }
-                    const hmoRate       = new HmoRate();
-                    hmoRate.hom         = hmo;
-                    hmoRate.service     = service;
-                    hmoRate.stock       = stock;
-                    hmoRate.rate        = item.hmo_rate;
-                    hmoRate.percentage  = item.percentage;
-                    hmoRate.comment     = item.comment;
-                    await hmoRate.save();
-                }
-            });
-            return {success: true};
+                });
+            return { success: true };
         } catch (err) {
-            return {success: false, message: err.message};
+            return { success: false, message: err.message };
         }
     }
 
     async fetchTransactions(options: PaginationOptionsInterface, params): Promise<Pagination> {
-        const {startDate, endDate, patient_id, hmo_id, status } = params;
+        const { startDate, endDate, patient_id, hmo_id, status } = params;
 
         const query = this.transactionsRepository.createQueryBuilder('q')
-                            .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
-                            .leftJoin(Hmo, 'hmo', `"patient"."hmo_id" = "hmo"."id"`)
-                            .where('q.payment_type = :type', {type: 'Hmo'})
-                            .select('q.*')
-                            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.folderNumber, hmo.name as hmo_name, hmo.id as hmo_id');
-
+            .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
+            .leftJoin(Hmo, 'hmo', `"patient"."hmo_id" = "hmo"."id"`)
+            .where('q.payment_type = :type', { type: 'Hmo' })
+            .select('q.*')
+            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.folderNumber, hmo.name as hmo_name, hmo.id as hmo_id');
 
         if (startDate && startDate !== '') {
             const start = moment(startDate).endOf('day').toISOString();
@@ -329,41 +331,43 @@ export class HmoService {
         }
 
         if (hmo_id && hmo_id !== '') {
-            query.andWhere('hmo.id = :hmo_id', {hmo_id});
+            query.andWhere('hmo.id = :hmo_id', { hmo_id });
         }
         if (patient_id && patient_id !== '') {
-            query.andWhere('q.patient_id = :patient_id', {patient_id});
+            query.andWhere('q.patient_id = :patient_id', { patient_id });
         }
 
         if (status) {
-            query.andWhere('q.status = :status', {status});
+            query.andWhere('q.status = :status', { status });
         }
 
-        const transactions = await query.offset(options.page * options.limit)
-        .limit(options.limit)
-        .orderBy('q.createdAt', 'DESC')
-        .getRawMany();
+        const page = options.page - 1;
+
+        const transactions = await query.offset(page * options.limit)
+            .limit(options.limit)
+            .orderBy('q.createdAt', 'DESC')
+            .getRawMany();
         console.log(transactions);
-         const total = await query.getCount();
+        const total = await query.getCount();
         return {
             result: transactions,
             lastPage: Math.ceil(total / options.limit),
             itemsPerPage: options.limit,
             totalPages: total,
-            currentPage: options.page + 1,
+            currentPage: options.page,
         };
     }
 
     async fetchPendingTransactions(options: PaginationOptionsInterface, params): Promise<Pagination> {
-        const {startDate, endDate, hmo_id } = params;
+        const { startDate, endDate, hmo_id } = params;
 
         const query = this.transactionsRepository.createQueryBuilder('q')
-                        .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
-                        .leftJoin(Hmo, 'hmo', `"patient"."hmo_id" = "hmo"."id"`)
-                        .where('q.payment_type = :type', {type: 'HMO'})
-                        .andWhere('q.hmo_approval_status = :status', {status: 0})
-                        .select('q.*')
-                        .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.folderNumber, hmo.name as hmo_name, hmo.id as hmo_id');
+            .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
+            .leftJoin(Hmo, 'hmo', `"patient"."hmo_id" = "hmo"."id"`)
+            .where('q.payment_type = :type', { type: 'HMO' })
+            .andWhere('q.hmo_approval_status = :status', { status: 0 })
+            .select('q.*')
+            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.folderNumber, hmo.name as hmo_name, hmo.id as hmo_id');
 
         if (startDate && startDate !== '') {
             const start = moment(startDate).startOf('day').toISOString();
@@ -374,31 +378,32 @@ export class HmoService {
             query.andWhere(`q.createdAt <= '${end}'`);
         }
 
-        
         if (hmo_id && hmo_id !== '') {
-            query.andWhere('hmo.id = :hmo_id', {hmo_id});
+            query.andWhere('hmo.id = :hmo_id', { hmo_id });
         }
 
-        const transactions = await query.offset(options.page * options.limit)
-        .limit(options.limit)
-        .orderBy('q.createdAt', 'DESC')
-        .getRawMany();
+        const page = options.page - 1;
 
-         const total = await query.getCount();
+        const transactions = await query.offset(page * options.limit)
+            .limit(options.limit)
+            .orderBy('q.createdAt', 'DESC')
+            .getRawMany();
+
+        const total = await query.getCount();
         return {
             result: transactions,
             lastPage: Math.ceil(total / options.limit),
             itemsPerPage: options.limit,
             totalPages: total,
-            currentPage: options.page + 1,
+            currentPage: options.page,
         };
     }
 
-    async processTransaction(params, {userId}) {
+    async processTransaction(params, { userId }) {
         const { action, id, approvalCode } = params;
         try {
 
-            const transaction = await this.transactionsRepository.findOne(id, {relations: ['patient']});
+            const transaction = await this.transactionsRepository.findOne(id, { relations: ['patient'] });
             if (!transaction) {
                 throw new NotFoundException(`Transaction was not found`);
             }
@@ -411,7 +416,7 @@ export class HmoService {
             await transaction.save();
             // find appointment
             const appointment = await getConnection().getRepository(Appointment).findOne({
-                where: {patient: transaction.patient, status: 'Pending HMO Approval'},
+                where: { patient: transaction.patient, status: 'Pending HMO Approval' },
                 relations: ['patient'],
             });
             let queue = {};
@@ -421,11 +426,11 @@ export class HmoService {
                 // create new queue
                 queue = await this.queueSystemRepository.saveQueue(appointment, 'vitals');
             }
-            this.appGateway.server.emit('paypoint-queue', {queue});
+            this.appGateway.server.emit('paypoint-queue', { queue });
 
-            return {success: true, transaction, queue};
+            return { success: true, transaction, queue };
         } catch (error) {
-            return {success: false, message: error.message};
+            return { success: false, message: error.message };
         }
 
     }

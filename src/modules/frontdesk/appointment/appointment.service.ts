@@ -81,6 +81,7 @@ export class AppointmentService {
         }
 
         if (doctor_id && doctor_id !== '' && department_id && department_id !== '') {
+            console.log('refresh--------------->');
             query.andWhere(new Brackets(qb => {
                 qb.where('q.doctor_id = :doctor_id', { doctor_id })
                     .orWhere('q.department_id = :department_id', { department_id });
@@ -390,6 +391,7 @@ export class AppointmentService {
             .orderBy('appointment.createdAt', 'DESC')
             .limit(noOfVisits)
             .getRawMany();
+
         if (appointments.length < noOfVisits) {
             return true;
         } else {

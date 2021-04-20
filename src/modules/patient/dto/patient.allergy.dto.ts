@@ -1,5 +1,5 @@
-import { IsNotEmpty, IsEmail } from "class-validator";
-import { Patient } from "../entities/patient.entity";
+import { IsNotEmpty, IsEmail } from 'class-validator';
+import { Patient } from '../entities/patient.entity';
 
 export class PatientAllergyDto {
 

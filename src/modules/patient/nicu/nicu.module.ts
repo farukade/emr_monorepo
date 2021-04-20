@@ -9,6 +9,6 @@ import { StaffRepository } from '../../hr/staff/staff.repository';
 @Module({
   imports: [TypeOrmModule.forFeature([NicuRepository, PatientRepository, StaffRepository])],
   controllers: [NicuController],
-  providers: [NicuService]
+  providers: [NicuService],
 })
 export class NicuModule {}

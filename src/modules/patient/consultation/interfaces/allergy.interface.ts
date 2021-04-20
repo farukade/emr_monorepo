@@ -1,6 +1,7 @@
 export class IAllergyInterface {
-    category: string;
     allergen: string;
     reaction: string;
-    severity: string;
+    category: any;
+    severity: any;
+    drug: any;
 }

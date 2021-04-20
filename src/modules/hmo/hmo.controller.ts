@@ -47,7 +47,7 @@ export class HmoController {
         @Request() request,
     ): Promise<Pagination> {
         const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 10;
-        const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page,10)-1 : 0;
+        const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
         return this.hmoService.fetchTransactions({ page, limit }, params);
     }
 
@@ -57,7 +57,7 @@ export class HmoController {
         @Request() request,
     ): Promise<Pagination> {
         const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 10;
-        const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page,10)-1 : 0;
+        const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
         return this.hmoService.fetchPendingTransactions({ page, limit }, params);
     }
 
@@ -69,7 +69,7 @@ export class HmoController {
     ): Promise<Pagination> {
         const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
         const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
-        return this.hmoService.getHmoTariff(id, params, { page: page - 1, limit });
+        return this.hmoService.getHmoTariff(id, params, { page, limit });
     }
 
     @Post()

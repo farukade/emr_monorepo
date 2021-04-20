@@ -13,40 +13,43 @@ export class Patient extends CustomBaseEntity {
     @Column({ type: 'varchar', nullable: true })
     folderNumber: string;
 
-    @Column({ type: 'varchar'})
+    @Column({ type: 'varchar' })
     surname: string;
 
     @Column({ type: 'varchar', length: 300, nullable: true })
     profile_pic: string;
 
-    @Column({ type: 'varchar'})
+    @Column({ type: 'varchar' })
     other_names: string;
 
-    @Column({ type: 'varchar'})
+    @Column({ type: 'varchar' })
     date_of_birth: string;
 
-    @Column({ type: 'varchar', nullable: true})
+    @Column({ type: 'varchar', nullable: true })
     occupation: string;
 
-    @Column({ type: 'varchar', nullable: true})
+    @Column({ type: 'varchar', nullable: true })
     address: string;
 
-    @Column({ type: 'varchar', nullable: true})
+    @Column({ type: 'varchar', nullable: true })
     email: string;
 
-    @Column({ type: 'varchar'})
+    @Column({ type: 'varchar' })
     phoneNumber: string;
 
-    @Column({ type: 'varchar'})
+    @Column({ default: false })
+    deceased: boolean;
+
+    @Column({ type: 'varchar' })
     gender: string;
 
-    @Column({ type: 'varchar', nullable: true})
+    @Column({ type: 'varchar', nullable: true })
     maritalStatus: string;
 
-    @Column({ type: 'varchar', nullable: true})
+    @Column({ type: 'varchar', nullable: true })
     ethnicity: string;
 
-    @Column({ type: 'varchar', nullable: true})
+    @Column({ type: 'varchar', nullable: true })
     referredBy: string;
 
     @OneToOne(type => PatientNOK, { cascade: true })

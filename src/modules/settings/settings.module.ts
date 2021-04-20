@@ -8,6 +8,8 @@ import { DepartmentModule } from './departments/department.module';
 import { LeaveCategoryModule } from './leave-category/leave-category.module';
 import { SpecializationModule } from './specialization/specialization.module';
 import { DiagnosisModule } from './diagnosis/diagnosis.module';
+import { ConsumableModule } from './consumable/consumable.module';
+import { AntenatalPackageModule } from './antenatal-packages/antenatal-package.module';
 
 @Module({
     imports: [
@@ -20,6 +22,8 @@ import { DiagnosisModule } from './diagnosis/diagnosis.module';
         LeaveCategoryModule,
         SpecializationModule,
         DiagnosisModule,
+        ConsumableModule,
+        AntenatalPackageModule,
     ],
 })
 export class SettingsModule {}

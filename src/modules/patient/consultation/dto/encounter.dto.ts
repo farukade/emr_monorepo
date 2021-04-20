@@ -4,25 +4,21 @@ import { IInvestigationInterface } from '../interfaces/investigations.interface'
 
 export class EncounterDto {
     complaints: string;
-    reviewOfSystem: string[];
-    patientHistory: string[];
-    medicalHistory: string[];
+    reviewOfSystem: any[];
+    patientHistorySelected: any[];
+    medicalHistory: any[];
     allergies: IAllergyInterface[];
-    physicalExamination: string[];
-    physicalExaminationSummary: string;
+    pastAllergies: any[];
+    physicalExamination: any[];
     diagnosis: IDiagnosisInterface[];
+    pastDiagnosis: IDiagnosisInterface[];
     investigations: IInvestigationInterface;
-    plan: {
-        treatmentPlan: string;
-        pharmacyRequests: any;
-        nextAppointment: any;
-        procedureRequest: any;
+    treatmentPlan: string;
+    nextAppointment: any;
+    instruction: string;
+    consumables: {
+        patient_id: number;
+        items: any[];
+        request_note: string;
     };
-
-    consumable: {
-        items: string;
-        note: string;
-        instruction: string;
-    };
-    appointment_id: string;
 }

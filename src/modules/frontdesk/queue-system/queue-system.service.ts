@@ -4,9 +4,10 @@ import * as moment from 'moment';
 
 import { QueueSystemRepository } from './queue-system.repository';
 import { Queue } from './queue.entity';
-import {AppointmentRepository} from '../appointment/appointment.repository';
-import {DepartmentRepository} from '../../settings/departments/department.repository';
-import {AppGateway} from '../../../app.gateway';
+import { AppointmentRepository } from '../appointment/appointment.repository';
+import { DepartmentRepository } from '../../settings/departments/department.repository';
+import { AppGateway } from '../../../app.gateway';
+import { PatientRepository } from '../../patient/repositories/patient.repository';
 
 @Injectable()
 export class QueueSystemService {
@@ -17,14 +18,17 @@ export class QueueSystemService {
         private departmentRepository: DepartmentRepository,
         @InjectRepository(AppointmentRepository)
         private appointmentRepository: AppointmentRepository,
+        @InjectRepository(PatientRepository)
+        private patientRepository: PatientRepository,
         private readonly appGateway: AppGateway,
-    ) {}
+    ) {
+    }
 
     async fetchQueueList(): Promise<Queue[]> {
         const today = moment().format('YYYY-MM-DD');
 
         return await this.queueSystemRepository.find({
-            where: {queueDate: today, status: 1},
+            where: { queueDate: today, status: 1 },
             relations: ['appointment', 'appointment.patient', 'appointment.whomToSee',
                 'appointment.consultingRoom', 'appointment.serviceCategory', 'appointment.serviceType'],
             // take: 10,
@@ -38,7 +42,7 @@ export class QueueSystemService {
         const today = moment().format('YYYY-MM-DD');
 
         return await this.queueSystemRepository.find({
-            where: {queueDate: today, status: 1, queueType: 'vitals'},
+            where: { queueDate: today, status: 1, queueType: 'vitals' },
             relations: ['appointment', 'appointment.patient', 'appointment.whomToSee',
                 'appointment.consultingRoom', 'appointment.serviceCategory', 'appointment.serviceType'],
             // take: 10,
@@ -48,30 +52,28 @@ export class QueueSystemService {
         });
     }
 
-    async addToQueue({patient_id,  department_id, queue_id}) {
+    async addToQueue(id, { patient_id, department_id, queue_id }) {
         try {
-            // find appointment
-            const appointment = await this.appointmentRepository
-                .createQueryBuilder('appointment')
-                .leftJoinAndSelect('appointment.patient', 'patient')
-                .where('appointment.patient_id = :patient_id', {patient_id})
-                .andWhere('appointment.isActive = :status', {status: true})
-                .getOne();
-
+            const appointment = await this.appointmentRepository.findOne(id, { relations: ['patient'] });
             appointment.canSeeDoctor = 1;
             await appointment.save();
+
+            const patient = await this.patientRepository.findOne(patient_id);
+
             const oldQueue = await this.queueSystemRepository.findOne(queue_id);
-            console.log('OldQueue');
-            console.log(oldQueue);
             oldQueue.status = 2;
+            oldQueue.patient = patient;
             await oldQueue.save();
+
             // save queue
-            const queue = await this.queueSystemRepository.saveQueue(appointment, 'doctor');
-            // send new queue message
+            const queue = await this.queueSystemRepository.saveQueue(appointment, 'doctor', patient);
+            console.log(queue);
+
+            // // send new queue message
             this.appGateway.server.emit('consultation-queue', { success: true, queue });
             return { success: true, queue };
         } catch (e) {
-            return {success: false, message: e.message};
+            return { success: false, message: e.message };
         }
     }
 }
