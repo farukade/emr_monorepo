@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="utf-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="shortcut icon" type="image/x-icon" href="../../../public/images/deda.ico"/>
+  <title>Pharmacy - Deda hospital</title>
+  <meta name="author" content="harnishdesign.net">
+  <!-- Stylesheet
+  ======================= -->
+  <link rel="stylesheet" type="text/css" href="http://demo.harnishdesign.net/html/koice/vendor/bootstrap/css/bootstrap.min.css"/>
+  <link rel="stylesheet" type="text/css" href="http://demo.harnishdesign.net/html/koice/vendor/font-awesome/css/all.min.css"/>
+  <link rel="stylesheet" type="text/css" href="http://demo.harnishdesign.net/html/koice/css/stylesheet.css"/>
+</head>
+<body>
+<!-- Container -->
+<div class="container-fluid invoice-container">
+  <!-- Header -->
+  <header>
+  <div class="row align-items-center">
+    <div class="col-sm-7 text-center text-sm-left mb-3 mb-sm-0">
+      <img id="logo" height="50%" width="50%" src="../../../public/images/logo.png" title="Deda" alt="Deda" />
+    </div>
+    <div class="col-sm-5 text-center text-sm-right">
+      <h4 class="text-7 mb-0">Prescription</h4>
+    </div>
+  </div>
+  <hr>
+  </header>
+  
+  <!-- Main Content -->
+  <main>
+  <div class="row">
+    <div class="col-sm-4"><strong>Date:</strong> {{date}}</div>
+    <div class="col-sm-4 text-sm-right"> <strong>Folder No:</strong> #{{folderNumber}}</div>
+    <div class="col-sm-4 text-sm-right"> <strong>Patient Name:</strong> {{name}}</div>
+	  
+  </div>
+  <hr>
+
+	
+  <div class="card">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table">
+		<thead class="card-header">
+          <tr>
+            <td><strong>Drug</strong></td>
+			<td><strong>Prescription</strong></td>
+            <td><strong>Amount</strong></td>
+          </tr>
+        </thead>
+          <tbody>
+            {{#each drugs}}
+                <tr>
+                    <td>
+                        {{name}}
+                    </td>
+                    <td>
+                        {{prescription}}
+                    </td>
+                    <td>
+                        &#8358;{{amount}}
+                    </td>
+                </tr>
+            {{/each}}
+
+            {{!-- <tr>
+              <td>Paracetamol</td>
+              <td>1-1-1</td>
+			  <td>&#8358;1200.00</td>
+            </tr> --}}
+			
+          </tbody>
+          <tfoot>
+			<tr>
+              <td class="text-right"><strong>Total:</strong></td>
+              <td class="text-right">&#8358;{{total}}</td>
+            </tr>
+		  </tfoot>
+		 
+        </table>
+      </div>
+    </div>
+  </div>
+  </main>
+  <!-- Footer -->
+  <footer class="text-center mt-4">
+  <p class="text-1"><strong>NOTE :</strong> This email was generated from Deda Hospital Electronic System. please ignore it if you did not enroll for any of this services.</p>
+  <div class="btn-group btn-group-sm d-print-none"> <a href="javascript:window.print()" class="btn btn-light border text-black-50 shadow-none"><i class="fa fa-print"></i> Print</a>  </div>
+  </footer>
+</div>
+</body>
+
+</html>
