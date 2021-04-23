@@ -32,11 +32,12 @@ import { ImmunizationRepository } from './immunization/repositories/immunization
 import { PatientRequestItemRepository } from './repositories/patient_request_items.repository';
 import { PatientDiagnosisRepository } from './repositories/patient_diagnosis.repository';
 import { PatientDiagnosis } from './entities/patient_diagnosis.entity';
-import { PatientAllergenRepository } from './repositories/patient_allergen.repository';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class PatientService {
     constructor(
+        private mailService: MailService,
         @InjectRepository(PatientRepository)
         private patientRepository: PatientRepository,
         @InjectRepository(PatientNOKRepository)
@@ -108,10 +109,6 @@ export class PatientService {
         const total = await query.getCount();
 
         for (const patient of patients) {
-            if (patient.profile_pic) {
-                patient.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${patient.profile_pic}`;
-            }
-
             patient.immunization = await this.immunizationRepository.find({ where: { patient } });
 
             if (patient.hmo_id) {
@@ -149,10 +146,6 @@ export class PatientService {
             .getRawMany();
 
         for (const patient of patients) {
-            if (patient.profile_pic) {
-                patient.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${patient.profile_pic}`;
-            }
-
             patient.immunization = await this.immunizationRepository.find({ where: { patient } });
 
             if (patient.hmo_id) {
@@ -168,8 +161,6 @@ export class PatientService {
     }
 
     async saveNewPatient(patientDto: PatientDto, createdBy: string, pic): Promise<any> {
-        console.log(pic);
-        console.log(patientDto);
         try {
             const { hmoId } = patientDto;
 
@@ -182,7 +173,11 @@ export class PatientService {
             const message = `Dear ${patient.surname} ${splits.length > 0 ? splits[0] : patient.other_names}, welcome to the DEDA Family. Your ID/Folder number is ${formatPID(patient.id)}. Kindly save the number and provide it at all your appointment visits. Thank you.`;
 
             if (process.env.DEBUG === 'false') {
+                // send sms
                 await sendSMS(patient.phoneNumber, message);
+
+                // email
+                await this.mailService.regMail(patient);
             }
 
             return { success: true, patient };

@@ -78,10 +78,6 @@ export class ConsultationService {
                 relations: ['nextOfKin', 'immunization', 'hmo'],
             });
 
-            if (patient.profile_pic) {
-                patient.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${patient.profile_pic}`;
-            }
-
             item.patient = patient;
 
             result = [...result, item];

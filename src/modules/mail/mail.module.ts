@@ -9,6 +9,8 @@ import { join } from 'path';
         MailerModule.forRoot({
             transport: {
                 host: process.env.MAILER_SMTP,
+                port: process.env.MAILER_PORT,
+                ignoreTLS: false,
                 secure: false,
                 auth: {
                     user: process.env.MAIL_USER_NAME,
@@ -30,5 +32,6 @@ import { join } from 'path';
     providers: [MailService],
     exports: [MailService],
 })
+
 export class MailModule {
 }

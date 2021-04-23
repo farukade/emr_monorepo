@@ -34,6 +34,7 @@ import { IvfModule } from './ivf/ivf.module';
 import { PatientAllergenModule } from './allergen/patient-allergen.module';
 import { PatientConsumableRepository } from './consumable/patient-consumable.repository';
 import { PatientConsumableModule } from './consumable/patient-consumable.module';
+import { MailService } from '../mail/mail.service';
 
 @Module({
     imports: [TypeOrmModule.forFeature([
@@ -61,7 +62,7 @@ import { PatientConsumableModule } from './consumable/patient-consumable.module'
         // tslint:disable-next-line:max-line-length
     ]), AntenatalModule, AdmissionsModule, ConsultationModule, LabourManagementModule, ImmunizationModule, NicuModule, PatientRequestModule, IvfModule, PatientAllergenModule, PatientConsumableModule],
     controllers: [PatientController],
-    providers: [AppGateway, PatientService],
+    providers: [AppGateway, PatientService, MailService],
 })
 export class PatientModule {
 }

@@ -31,21 +31,13 @@ export class StaffService {
                 isActive: true,
             },
             relations: ['department', 'user', 'user.role', 'specialization']});
-        for (const staff of staffs) {
-            if (staff.profile_pic) {
-                staff.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${staff.profile_pic}`;
-            }
-        }
+
         return staffs;
     }
 
     async getAllStaffs(): Promise<StaffDetails[]> {
         const staffs = await this.staffRepository.find({relations: ['department', 'user', 'user.role', 'specialization']});
-        for (const staff of staffs) {
-            if (staff.profile_pic) {
-                staff.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${staff.profile_pic}`;
-            }
-        }
+
         return staffs;
     }
 
@@ -147,10 +139,6 @@ export class StaffService {
                 staff.profile_pic = pic.filename;
             }
             await staff.save();
-
-            if (staff && staff.profile_pic) {
-                staff.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${staff.profile_pic}`;
-              }
 
             return {success: true, staff};
         } catch (err) {

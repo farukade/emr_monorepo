@@ -41,7 +41,7 @@ export class AdmissionsService {
         const query = this.admissionRepository.createQueryBuilder('q')
             .leftJoinAndSelect('q.patient', 'patient')
             .leftJoinAndSelect('q.room', 'room')
-            .select('q.createdAt as admission_date, q.createdBy as admitted_by, q.reason')
+            .select('q.id, q.createdAt as admission_date, q.createdBy as admitted_by, q.reason')
             .addSelect('CONCAT(patient.other_names || \' \' || patient.surname) as patient_name, patient.id as patient_id, patient.folderNumber as patient_folderNumber, patient.gender as patient_gender')
             .addSelect('room.name as suite, room.floor as floor');
 
@@ -73,19 +73,19 @@ export class AdmissionsService {
             query.where('q.patient_name like :name', { name: `%${name}%` });
         }
 
-        const admissions = await query.offset(options.page * options.limit)
-        .limit(options.limit)
-        .orderBy('q.createdAt', 'DESC')
-        .getRawMany();
+        const page = options.page - 1;
+
+        const admissions = await query.offset(page * options.limit)
+            .limit(options.limit)
+            .orderBy('q.createdAt', 'DESC')
+            .getRawMany();
 
         const total = await query.getCount();
 
         for (const item of admissions) {
             if (item.patient_id) {
                 const patient = await this.patientRepository.findOne(item.patient_id, { relations: ['nextOfKin', 'immunization', 'hmo'] });
-                if (patient.profile_pic) {
-                    patient.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${patient.profile_pic}`;
-                }
+
                 item.patient = patient;
             }
         }
@@ -95,39 +95,31 @@ export class AdmissionsService {
             lastPage: Math.ceil(total / options.limit),
             itemsPerPage: options.limit,
             totalPages: total,
-            currentPage: options.page + 1,
+            currentPage: options.page,
         };
     }
 
-    async saveAdmission(id: string, createDto: CreateAdmissionDto, createdById): Promise<any> {
+    async saveAdmission(id: string, createDto: CreateAdmissionDto, username): Promise<any> {
         const { healthState, riskToFall, reason, discharge_date } = createDto;
-        // find primary care giver
-        const staff = await this.staffRepository.createQueryBuilder('staff')
-            .where('staff.user_id = :createdById', { createdById })
-            .getOne();
+
         // find patient info
-        const patient = await this.patientRepository.findOne(id);
+        const patient = await this.patientRepository.findOne(id, { relations: ['nextOfKin', 'immunization', 'hmo'] });
 
         try {
             // save admission info
             const admission = await this.admissionRepository.save({
                 patient, healthState, riskToFall, reason,
                 anticipatedDischargeDate: discharge_date,
-                // careGiver: staff,
-                createdBy: staff.first_name + ' ' + staff.last_name,
+                createdBy: username,
             });
-            // save care givers
-            // await this.saveCareGivers(admission, care_givers);
-            // save tasks
-            // await this.saveClinicalTasks(admission, tasks);
-            // update patient admission status
+
             patient.isAdmitted = true;
             await patient.save();
 
             // send new opd socket message
             this.appGateway.server.emit('new-admission', admission);
 
-            return { success: true, admission };
+            return { success: true, patient };
         } catch (err) {
             return { success: false, message: err.message };
         }
@@ -224,15 +216,15 @@ export class AdmissionsService {
     }
 
     async deleteTask(id: number, username): Promise<any> {
-            const result = await this.clinicalTaskRepository.findOne(id);
+        const result = await this.clinicalTaskRepository.findOne(id);
 
-            if (!result) {
+        if (!result) {
             throw new NotFoundException(`Clinical Task with ID '${id}' not found`);
         }
 
-            result.deletedBy = username;
-            await result.save();
-            return result.softRemove();
+        result.deletedBy = username;
+        await result.save();
+        return result.softRemove();
     }
 
     async saveClinicalTasks(patientId: number, params, createdById): Promise<any> {

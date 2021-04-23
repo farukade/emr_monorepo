@@ -2,121 +2,719 @@
 <html lang="en">
 
 <head>
-<meta charset="utf-8"/>
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="shortcut icon" type="image/x-icon" href="../../../public/images/deda.ico"/>
-  <title>General Invoice - Deda hospital</title>
-  <meta name="author" content="harnishdesign.net">
-  <!-- Stylesheet
-  ======================= -->
-  <link rel="stylesheet" type="text/css" href="http://demo.harnishdesign.net/html/koice/vendor/bootstrap/css/bootstrap.min.css"/>
-  <link rel="stylesheet" type="text/css" href="http://demo.harnishdesign.net/html/koice/vendor/font-awesome/css/all.min.css"/>
-  <link rel="stylesheet" type="text/css" href="http://demo.harnishdesign.net/html/koice/css/stylesheet.css"/>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>General Invoice - Deda hospital</title>
+    <!-- Stylesheet
+      ======================= -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css"
+          integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css"
+          href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.3/css/fontawesome.min.css"/>
+    <style>
+        body {
+            background: #e7e9ed;
+            color: #535b61;
+            font-family: "Poppins", sans-serif;
+            font-size: 14px;
+            line-height: 22px;
+        }
+
+        form {
+            padding: 0;
+            margin: 0;
+            display: inline;
+        }
+
+        img {
+            vertical-align: inherit;
+        }
+
+        a, a:focus {
+            color: #0071cc;
+            -webkit-transition: all 0.2s ease;
+            transition: all 0.2s ease;
+        }
+
+        a:hover, a:active {
+            color: #0c2f55;
+            text-decoration: none;
+            -webkit-transition: all 0.2s ease;
+            transition: all 0.2s ease;
+        }
+
+        a:focus, a:active,
+        .btn.active.focus,
+        .btn.active:focus,
+        .btn.focus,
+        .btn:active.focus,
+        .btn:active:focus,
+        .btn:focus,
+        button:focus,
+        button:active {
+            outline: none;
+        }
+
+        p {
+            line-height: 1.9;
+        }
+
+        blockquote {
+            border-left: 5px solid #eee;
+            padding: 10px 20px;
+        }
+
+        iframe {
+            border: 0 !important;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            color: #0c2f54;
+            font-family: "Poppins", sans-serif;
+        }
+
+        .table {
+            color: #535b61;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: #f6f7f8;
+        }
+
+        /* =================================== */
+        /*  Helpers Classes
+        /* =================================== */
+        /* Border Radius */
+        .rounded-top-0 {
+            border-top-left-radius: 0px !important;
+            border-top-right-radius: 0px !important;
+        }
+
+        .rounded-bottom-0 {
+            border-bottom-left-radius: 0px !important;
+            border-bottom-right-radius: 0px !important;
+        }
+
+        .rounded-left-0 {
+            border-top-left-radius: 0px !important;
+            border-bottom-left-radius: 0px !important;
+        }
+
+        .rounded-right-0 {
+            border-top-right-radius: 0px !important;
+            border-bottom-right-radius: 0px !important;
+        }
+
+        /* Text Size */
+        .text-0 {
+            font-size: 11px !important;
+            font-size: 0.6875rem !important;
+        }
+
+        .text-1 {
+            font-size: 12px !important;
+            font-size: 0.75rem !important;
+        }
+
+        .text-2 {
+            font-size: 14px !important;
+            font-size: 0.875rem !important;
+        }
+
+        .text-3 {
+            font-size: 16px !important;
+            font-size: 1rem !important;
+        }
+
+        .text-4 {
+            font-size: 18px !important;
+            font-size: 1.125rem !important;
+        }
+
+        .text-5 {
+            font-size: 21px !important;
+            font-size: 1.3125rem !important;
+        }
+
+        .text-6 {
+            font-size: 24px !important;
+            font-size: 1.50rem !important;
+        }
+
+        .text-7 {
+            font-size: 28px !important;
+            font-size: 1.75rem !important;
+        }
+
+        .text-8 {
+            font-size: 32px !important;
+            font-size: 2rem !important;
+        }
+
+        .text-9 {
+            font-size: 36px !important;
+            font-size: 2.25rem !important;
+        }
+
+        .text-10 {
+            font-size: 40px !important;
+            font-size: 2.50rem !important;
+        }
+
+        .text-11 {
+            font-size: 2.75rem !important;
+        }
+
+        @media (max-width: 1200px) {
+            .text-11 {
+                font-size: calc(1.4rem + 1.8vw) !important;
+            }
+        }
+
+        .text-12 {
+            font-size: 3rem !important;
+        }
+
+        @media (max-width: 1200px) {
+            .text-12 {
+                font-size: calc(1.425rem + 2.1vw) !important;
+            }
+        }
+
+        .text-13 {
+            font-size: 3.25rem !important;
+        }
+
+        @media (max-width: 1200px) {
+            .text-13 {
+                font-size: calc(1.45rem + 2.4vw) !important;
+            }
+        }
+
+        .text-14 {
+            font-size: 3.5rem !important;
+        }
+
+        @media (max-width: 1200px) {
+            .text-14 {
+                font-size: calc(1.475rem + 2.7vw) !important;
+            }
+        }
+
+        .text-15 {
+            font-size: 3.75rem !important;
+        }
+
+        @media (max-width: 1200px) {
+            .text-15 {
+                font-size: calc(1.5rem + 3vw) !important;
+            }
+        }
+
+        .text-16 {
+            font-size: 4rem !important;
+        }
+
+        @media (max-width: 1200px) {
+            .text-16 {
+                font-size: calc(1.525rem + 3.3vw) !important;
+            }
+        }
+
+        .text-17 {
+            font-size: 4.5rem !important;
+        }
+
+        @media (max-width: 1200px) {
+            .text-17 {
+                font-size: calc(1.575rem + 3.9vw) !important;
+            }
+        }
+
+        .text-18 {
+            font-size: 5rem !important;
+        }
+
+        @media (max-width: 1200px) {
+            .text-18 {
+                font-size: calc(1.625rem + 4.5vw) !important;
+            }
+        }
+
+        .text-19 {
+            font-size: 5.25rem !important;
+        }
+
+        @media (max-width: 1200px) {
+            .text-19 {
+                font-size: calc(1.65rem + 4.8vw) !important;
+            }
+        }
+
+        .text-20 {
+            font-size: 5.75rem !important;
+        }
+
+        @media (max-width: 1200px) {
+            .text-20 {
+                font-size: calc(1.7rem + 5.4vw) !important;
+            }
+        }
+
+        .text-21 {
+            font-size: 6.5rem !important;
+        }
+
+        @media (max-width: 1200px) {
+            .text-21 {
+                font-size: calc(1.775rem + 6.3vw) !important;
+            }
+        }
+
+        .text-22 {
+            font-size: 7rem !important;
+        }
+
+        @media (max-width: 1200px) {
+            .text-22 {
+                font-size: calc(1.825rem + 6.9vw) !important;
+            }
+        }
+
+        .text-23 {
+            font-size: 7.75rem !important;
+        }
+
+        @media (max-width: 1200px) {
+            .text-23 {
+                font-size: calc(1.9rem + 7.8vw) !important;
+            }
+        }
+
+        .text-24 {
+            font-size: 8.25rem !important;
+        }
+
+        @media (max-width: 1200px) {
+            .text-24 {
+                font-size: calc(1.95rem + 8.4vw) !important;
+            }
+        }
+
+        .text-25 {
+            font-size: 9rem !important;
+        }
+
+        @media (max-width: 1200px) {
+            .text-25 {
+                font-size: calc(2.025rem + 9.3vw) !important;
+            }
+        }
+
+        /* Line height */
+        .line-height-07 {
+            line-height: 0.7 !important;
+        }
+
+        .line-height-1 {
+            line-height: 1 !important;
+        }
+
+        .line-height-2 {
+            line-height: 1.2 !important;
+        }
+
+        .line-height-3 {
+            line-height: 1.4 !important;
+        }
+
+        .line-height-4 {
+            line-height: 1.6 !important;
+        }
+
+        .line-height-5 {
+            line-height: 1.8 !important;
+        }
+
+        /* Font Weight */
+        .font-weight-100 {
+            font-weight: 100 !important;
+        }
+
+        .font-weight-200 {
+            font-weight: 200 !important;
+        }
+
+        .font-weight-300 {
+            font-weight: 300 !important;
+        }
+
+        .font-weight-400 {
+            font-weight: 400 !important;
+        }
+
+        .font-weight-500 {
+            font-weight: 500 !important;
+        }
+
+        .font-weight-600 {
+            font-weight: 600 !important;
+        }
+
+        .font-weight-700 {
+            font-weight: 700 !important;
+        }
+
+        .font-weight-800 {
+            font-weight: 800 !important;
+        }
+
+        .font-weight-900 {
+            font-weight: 900 !important;
+        }
+
+        /* Opacity */
+        .opacity-0 {
+            opacity: 0;
+        }
+
+        .opacity-1 {
+            opacity: 0.1;
+        }
+
+        .opacity-2 {
+            opacity: 0.2;
+        }
+
+        .opacity-3 {
+            opacity: 0.3;
+        }
+
+        .opacity-4 {
+            opacity: 0.4;
+        }
+
+        .opacity-5 {
+            opacity: 0.5;
+        }
+
+        .opacity-6 {
+            opacity: 0.6;
+        }
+
+        .opacity-7 {
+            opacity: 0.7;
+        }
+
+        .opacity-8 {
+            opacity: 0.8;
+        }
+
+        .opacity-9 {
+            opacity: 0.9;
+        }
+
+        .opacity-10 {
+            opacity: 1;
+        }
+
+        /* Background light */
+        .bg-light {
+            background-color: #FFF !important;
+        }
+
+        .bg-light-1 {
+            background-color: #f9f9fb !important;
+        }
+
+        .bg-light-2 {
+            background-color: #f8f8fa !important;
+        }
+
+        .bg-light-3 {
+            background-color: #f5f5f5 !important;
+        }
+
+        .bg-light-4 {
+            background-color: #eff0f2 !important;
+        }
+
+        .bg-light-5 {
+            background-color: #ececec !important;
+        }
+
+        @media print {
+            .table td, .table th {
+                background-color: transparent !important;
+            }
+
+            .table td.bg-light, .table th.bg-light {
+                background-color: #FFF !important;
+            }
+
+            .table td.bg-light-1, .table th.bg-light-1 {
+                background-color: #f9f9fb !important;
+            }
+
+            .table td.bg-light-2, .table th.bg-light-2 {
+                background-color: #f8f8fa !important;
+            }
+
+            .table td.bg-light-3, .table th.bg-light-3 {
+                background-color: #f5f5f5 !important;
+            }
+
+            .table td.bg-light-4, .table th.bg-light-4 {
+                background-color: #eff0f2 !important;
+            }
+
+            .table td.bg-light-5, .table th.bg-light-5 {
+                background-color: #ececec !important;
+            }
+        }
+
+        /* =================================== */
+        /*  Layouts
+        /* =================================== */
+        .invoice-container {
+            margin: 15px auto;
+            padding: 70px;
+            max-width: 850px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            -moz-border-radius: 6px;
+            -webkit-border-radius: 6px;
+            -o-border-radius: 6px;
+            border-radius: 6px;
+        }
+
+        @media (max-width: 767px) {
+            .invoice-container {
+                padding: 35px 20px 70px 20px;
+                margin-top: 0px;
+                border: none;
+                border-radius: 0px;
+            }
+        }
+
+        /* =================================== */
+        /*  Extras
+        /* =================================== */
+        .bg-primary, .badge-primary {
+            background-color: #0071cc !important;
+        }
+
+        .bg-secondary {
+            background-color: #0c2f55 !important;
+        }
+
+        .text-secondary {
+            color: #0c2f55 !important;
+        }
+
+        .text-primary {
+            color: #0071cc !important;
+        }
+
+        .btn-link {
+            color: #0071cc;
+        }
+
+        .btn-link:hover {
+            color: #005da8 !important;
+        }
+
+        .border-primary {
+            border-color: #0071cc !important;
+        }
+
+        .border-secondary {
+            border-color: #0c2f55 !important;
+        }
+
+        .btn-primary {
+            background-color: #0071cc;
+            border-color: #0071cc;
+        }
+
+        .btn-primary:hover {
+            background-color: #005da8;
+            border-color: #005da8;
+        }
+
+        .btn-secondary {
+            background-color: #0c2f55;
+            border-color: #0c2f55;
+        }
+
+        .btn-outline-primary {
+            color: #0071cc;
+            border-color: #0071cc;
+        }
+
+        .btn-outline-primary:hover {
+            background-color: #0071cc;
+            border-color: #0071cc;
+            color: #fff;
+        }
+
+        .btn-outline-secondary {
+            color: #0c2f55;
+            border-color: #0c2f55;
+        }
+
+        .btn-outline-secondary:hover {
+            background-color: #0c2f55;
+            border-color: #0c2f55;
+            color: #fff;
+        }
+
+        .progress-bar,
+        .nav-pills .nav-link.active, .nav-pills .show > .nav-link {
+            background-color: #0071cc;
+        }
+
+        .page-item.active .page-link,
+        .custom-radio .custom-control-input:checked ~ .custom-control-label:before,
+        .custom-control-input:checked ~ .custom-control-label::before,
+        .custom-checkbox .custom-control-input:checked ~ .custom-control-label:before,
+        .custom-control-input:checked ~ .custom-control-label:before {
+            background-color: #0071cc;
+            border-color: #0071cc;
+        }
+
+        .list-group-item.active {
+            background-color: #0071cc;
+            border-color: #0071cc;
+        }
+
+        .page-link {
+            color: #0071cc;
+        }
+
+        .page-link:hover {
+            color: #005da8;
+        }
+
+        /* Pagination */
+        .page-link {
+            border-color: #f4f4f4;
+            border-radius: 0.25rem;
+            margin: 0 0.3rem;
+        }
+
+        .page-item.disabled .page-link {
+            border-color: #f4f4f4;
+        }
+    </style>
 </head>
 <body>
 <!-- Container -->
 <div class="container-fluid invoice-container">
-  <!-- Header -->
-  <header>
-  <div class="row align-items-center">
-    <div class="col-sm-7 text-center text-sm-left mb-3 mb-sm-0">
-      <img id="logo" height="50%" width="50%" src="../../../public/images/logo.png" title="Deda" alt="Deda" />
-    </div>
-    <div class="col-sm-5 text-center text-sm-right">
-      <h4 class="text-7 mb-0">Invoice</h4>
-    </div>
-  </div>
-  <hr>
-  </header>
-  
-  <!-- Main Content -->
-  <main>
-  <div class="row">
-    <div class="col-sm-6"><strong>Date:</strong> {{date}}</div>
-    <div class="col-sm-6 text-sm-right"> <strong>Invoice No:</strong> {{invoiceNumber}}</div>
-	  
-  </div>
-  <hr>
-  <div class="row">
-    <div class="col-sm-6 text-sm-right order-sm-1"> <strong>Pay To:</strong>
-      <address style="font-size: 9px;">
-      Deda Hospital<br />
-      Plot 1847 Cadastral Zone B07, <br />
-      Behind ABC Cargo, Katampe, Abuja.<br />
-       ☎ +2348184227707<br/>email: dedahospital@yahoo.com, <br />
-       website: https://www.dedahospital.com
-      </address>
-    </div>
-    <div class="col-sm-6 order-sm-0"> <strong>Invoiced To:</strong>
-      <address>
-      {{name}}<br />
-      {{address}}<br />
-      {{email}}
-      </address>
-    </div>
-  </div>
-	
-  <div class="card">
-    <div class="card-body p-0">
-      <div class="table-responsive">
-        <table class="table mb-0">
-		<thead class="card-header">
-          <tr>
-            <td class="col-3 border-0"><strong>Service</strong></td>
-			<td class="col-4 border-0"><strong>Description</strong></td>
-            <td class="col-2 text-center border-0"><strong>Rate</strong></td>
-			<td class="col-1 text-center border-0"><strong>QTY</strong></td>
-            <td class="col-2 text-right border-0"><strong>Amount</strong></td>
-          </tr>
-        </thead>
-          <tbody>
-            <tr>
-              <td class="col-3 border-0">Consultation</td>
-              <td class="col-4 text-1 border-0">Consultation</td>
-              <td class="col-2 text-center border-0">&#8358;50.00</td>
-			  <td class="col-1 text-center border-0">10</td>
-			  <td class="col-2 text-right border-0">&#8358;500.00</td>
-            </tr>
-            <tr>
-              <td>Test</td>
-              <td class="text-1">Radiology</td>
-              <td class="text-center">&#8358;120.00</td>
-			  <td class="text-center">10</td>
-			  <td class="text-right">&#8358;1200.00</td>
-            </tr>
-			<tr>
-              <td>Scan</td>
-              <td class="text-1">Opd Scan</td>
-              <td class="text-center">&#8358;450.00</td>
-			  <td class="text-center">1</td>
-			  <td class="text-right">&#8358;450.00</td>
-            </tr>
-          </tbody>
-		  <tfoot class="card-footer">
-			<tr>
-              <td colspan="4" class="text-right"><strong>Sub Total:</strong></td>
-              <td class="text-right">&#8358;2150.00</td>
-            </tr>
-            <tr>
-              <td colspan="4" class="text-right"><strong>Tax:</strong></td>
-              <td class="text-right">&#8358;0.00</td>
-            </tr>
-			<tr>
-              <td colspan="4" class="text-right"><strong>Total:</strong></td>
-              <td class="text-right">&#8358;{{total}}</td>
-            </tr>
-		  </tfoot>
-        </table>
-      </div>
-    </div>
-  </div>
-  </main>
-  <!-- Footer -->
-  <footer class="text-center mt-4">
-  <p class="text-1"><strong>NOTE :</strong> This email was generated from Deda Hospital Electronic System. please ignore it if you did not enroll for any of this services.</p>
-  <div class="btn-group btn-group-sm d-print-none"> <a href="javascript:window.print()" class="btn btn-light border text-black-50 shadow-none"><i class="fa fa-print"></i> Print</a>  </div>
-  </footer>
+    <!-- Header -->
+    <header>
+        <div class="row align-items-center">
+            <div class="col-sm-7 text-center text-sm-left mb-3 mb-sm-0">
+                <img id="logo" width="220px" src="{{ logo }}" title="Deda" alt="Deda"/>
+            </div>
+            <div class="col-sm-5 text-center text-sm-right">
+                <h4 class="text-7 mb-0">Invoice</h4>
+            </div>
+        </div>
+        <hr>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <div class="row">
+            <div class="col-sm-6"><strong>Date:</strong> {{date}}</div>
+            <div class="col-sm-6 text-sm-right"><strong>Invoice No:</strong> {{invoiceNumber}}</div>
+
+        </div>
+        <hr>
+        <div class="row">
+            <div class="col-sm-6 text-sm-right order-sm-1"><strong>Pay To:</strong>
+                <address style="font-size: 9px;">
+                    Deda Hospital<br/>
+                    Plot 1847 Cadastral Zone B07, <br/>
+                    Behind ABC Cargo, Katampe, Abuja.<br/>
+                    ☎ +2348184227707<br/>email: dedahospital@yahoo.com, <br/>
+                    website: https://www.dedahospital.com
+                </address>
+            </div>
+            <div class="col-sm-6 order-sm-0"><strong>Invoiced To:</strong>
+                <address>
+                    {{name}}<br/>
+                    {{address}}<br/>
+                    {{email}}
+                </address>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead class="card-header">
+                        <tr>
+                            <td class="col-3 border-0"><strong>Service</strong></td>
+                            <td class="col-4 border-0"><strong>Description</strong></td>
+                            <td class="col-2 text-center border-0"><strong>Rate</strong></td>
+                            <td class="col-1 text-center border-0"><strong>QTY</strong></td>
+                            <td class="col-2 text-right border-0"><strong>Amount</strong></td>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td class="col-3 border-0">Consultation</td>
+                            <td class="col-4 text-1 border-0">Consultation</td>
+                            <td class="col-2 text-center border-0">&#8358;50.00</td>
+                            <td class="col-1 text-center border-0">10</td>
+                            <td class="col-2 text-right border-0">&#8358;500.00</td>
+                        </tr>
+                        <tr>
+                            <td>Test</td>
+                            <td class="text-1">Radiology</td>
+                            <td class="text-center">&#8358;120.00</td>
+                            <td class="text-center">10</td>
+                            <td class="text-right">&#8358;1200.00</td>
+                        </tr>
+                        <tr>
+                            <td>Scan</td>
+                            <td class="text-1">Opd Scan</td>
+                            <td class="text-center">&#8358;450.00</td>
+                            <td class="text-center">1</td>
+                            <td class="text-right">&#8358;450.00</td>
+                        </tr>
+                        </tbody>
+                        <tfoot class="card-footer">
+                        <tr>
+                            <td colspan="4" class="text-right"><strong>Sub Total:</strong></td>
+                            <td class="text-right">&#8358;2150.00</td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" class="text-right"><strong>Tax:</strong></td>
+                            <td class="text-right">&#8358;0.00</td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" class="text-right"><strong>Total:</strong></td>
+                            <td class="text-right">&#8358;{{total}}</td>
+                        </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+    <!-- Footer -->
+    <footer class="text-center mt-4">
+        <p class="text-1"><strong>NOTE :</strong> This email was generated from Deda Hospital Electronic System. please
+            ignore it if you did not enroll for any of this services.</p>
+        <div class="btn-group btn-group-sm d-print-none"><a href="javascript:window.print()"
+                                                            class="btn btn-light border text-black-50 shadow-none"><i
+                class="fa fa-print"></i> Print</a></div>
+    </footer>
 </div>
 </body>
 

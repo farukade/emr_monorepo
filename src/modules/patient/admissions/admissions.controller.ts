@@ -31,7 +31,7 @@ export class AdmissionsController {
     ): Promise<Pagination> {
         const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
         const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
-        return this.admissionService.getAdmissions({page: page - 1, limit}, urlParams);
+        return this.admissionService.getAdmissions({page, limit}, urlParams);
     }
 
     @Post(':id/save')
@@ -41,7 +41,7 @@ export class AdmissionsController {
         @Body() createDto: CreateAdmissionDto,
         @Request() req,
     ): Promise<any> {
-        return this.admissionService.saveAdmission(id, createDto, req.user.userId);
+        return this.admissionService.saveAdmission(id, createDto, req.user.username);
     }
 
     @Patch('/assign-bed')

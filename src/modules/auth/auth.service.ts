@@ -26,9 +26,6 @@ export class AuthService {
     const user = await this.getUserByUsername(username);
 
     const staff = await this.staffRepository.findOne({where: {user}, relations: ['department', 'room']});
-    if (staff && staff.profile_pic) {
-      staff.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${staff.profile_pic}`;
-    }
     const newUser = JSON.parse(JSON.stringify(user));
     newUser.details = staff;
     newUser.permissions = await this.setPermissions(newUser.role.permissions);
@@ -57,9 +54,7 @@ export class AuthService {
             const error = 'This account is disabled. Please Contact ICT.';
             throw new BadRequestException(error);
         }
-        if (staff && staff.profile_pic) {
-          staff.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${staff.profile_pic}`;
-        }
+
         const newUser = JSON.parse(JSON.stringify(user));
         newUser.token = token;
         newUser.expires_in = expires_in;

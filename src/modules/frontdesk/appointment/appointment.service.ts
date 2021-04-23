@@ -3,7 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { AppointmentRepository } from './appointment.repository';
 import { AppointmentDto } from './dto/appointment.dto';
 import { PatientRepository } from '../../patient/repositories/patient.repository';
-import { SpecializationRepository } from '../../settings/specialization/specialization.repository';
 import { DepartmentRepository } from '../../settings/departments/department.repository';
 import { ConsultingRoomRepository } from '../../settings/consulting-room/consulting-room.repository';
 import { Appointment } from './appointment.entity';
@@ -13,7 +12,6 @@ import { Service } from '../../settings/entities/service.entity';
 import { ServiceRepository } from '../../settings/services/service.repository';
 import { Patient } from '../../patient/entities/patient.entity';
 import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
-import { ServiceCategoryRepository } from '../../settings/services/service.category.repository';
 import { AppGateway } from '../../../app.gateway';
 import { Brackets, getRepository } from 'typeorm';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
@@ -28,8 +26,6 @@ export class AppointmentService {
         private appointmentRepository: AppointmentRepository,
         @InjectRepository(PatientRepository)
         private patientRepository: PatientRepository,
-        @InjectRepository(SpecializationRepository)
-        private specializationRepository: SpecializationRepository,
         @InjectRepository(DepartmentRepository)
         private departmentRepository: DepartmentRepository,
         @InjectRepository(ConsultingRoomRepository)
@@ -38,8 +34,6 @@ export class AppointmentService {
         private queueSystemRepository: QueueSystemRepository,
         @InjectRepository(ServiceRepository)
         private serviceRepository: ServiceRepository,
-        @InjectRepository(ServiceCategoryRepository)
-        private serviceCategoryRepository: ServiceCategoryRepository,
         @InjectRepository(TransactionsRepository)
         private transactionsRepository: TransactionsRepository,
         @InjectRepository(HmoRepository)
@@ -117,12 +111,6 @@ export class AppointmentService {
                 relations: ['hmo', 'immunization', 'nextOfKin'],
             });
 
-            if (patientProfile) {
-                if (patientProfile.profile_pic) {
-                    patientProfile.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${patientProfile.profile_pic}`;
-                }
-            }
-
             const { patient, ...others } = appointment;
             const appt = { ...others, patient: patientProfile };
 
@@ -146,16 +134,6 @@ export class AppointmentService {
             relations: ['patient', 'whomToSee', 'serviceType', 'consultingRoom', 'encounter', 'transaction', 'department'],
         });
 
-        for (const item of appointments) {
-            if (item.patient) {
-                const pat = item.patient;
-                if (pat.profile_pic) {
-                    pat.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${pat.profile_pic}`;
-                }
-                item.patient = pat;
-            }
-        }
-
         return appointments;
     }
 
@@ -164,14 +142,6 @@ export class AppointmentService {
             where: { id },
             relations: ['patient', 'whomToSee', 'serviceType', 'consultingRoom', 'encounter', 'transaction', 'department'],
         });
-
-        if (appointment.patient) {
-            const patient = appointment.patient;
-            if (patient.profile_pic) {
-                patient.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${patient.profile_pic}`;
-            }
-            appointment.patient = patient;
-        }
 
         return appointment;
 

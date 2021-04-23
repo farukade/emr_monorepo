@@ -91,10 +91,6 @@ export class PatientRequestService {
                 relations: ['nextOfKin', 'immunization', 'hmo'],
             });
 
-            if (patient.profile_pic) {
-                patient.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${patient.profile_pic}`;
-            }
-
             item.patient = patient;
 
             item.transaction = await this.transactionsRepository.findOne({ where: { request: item } });
@@ -160,10 +156,6 @@ export class PatientRequestService {
             const patient = await this.patientRepository.findOne(item.patient, {
                 relations: ['nextOfKin', 'immunization', 'hmo'],
             });
-
-            if (patient.profile_pic) {
-                patient.profile_pic = `${process.env.ENDPOINT}/uploads/avatars/${patient.profile_pic}`;
-            }
 
             item.patient = patient;
 
