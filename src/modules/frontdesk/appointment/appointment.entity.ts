@@ -69,8 +69,7 @@ export class Appointment extends CustomBaseEntity {
     @Column({ type: 'float4', default: 0 })
     amountToPay: string;
 
-    @OneToOne(type => Encounter, item => item.appointment, { nullable: true })
-    @JoinColumn({ name: 'encounter_id' })
+    @OneToOne(type => Encounter, item => item.appointment, { eager: true })
     encounter: Encounter;
 
     @OneToOne(type => Transactions, { nullable: true })

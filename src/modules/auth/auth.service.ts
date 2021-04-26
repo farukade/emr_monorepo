@@ -69,6 +69,16 @@ export class AuthService {
     throw new BadRequestException(error);
   }
 
+  async logoutUser(username: string) {
+    const user = await this.getUserByUsername(username);
+
+    if (user) {
+      return user;
+    }
+    const error = 'Invalid Username or password';
+    throw new BadRequestException(error);
+  }
+
 
   async getHash(password: string | undefined): Promise<string> {
     return bcrypt.hash(password, this.saltRounds);

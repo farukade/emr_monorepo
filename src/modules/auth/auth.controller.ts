@@ -5,7 +5,7 @@ import {
     Get,
     Param,
     Post,
-    Put,
+    Request,
     UsePipes,
     ValidationPipe,
 } from '@nestjs/common';
@@ -32,5 +32,13 @@ export class AuthController {
     @UsePipes(ValidationPipe)
     loginUser(@Body() loginUserDto: LoginUserDto) {
         return this.authService.loginUser(loginUserDto);
+    }
+
+    @Post('logout')
+    @UsePipes(ValidationPipe)
+    logoutUser(
+        @Request() req,
+    ) {
+        return this.authService.logoutUser(req.user.username);
     }
 }

@@ -18,7 +18,7 @@ export class Encounter extends CustomBaseEntity {
     @JoinColumn({ name: 'patient_id' })
     patient: Patient;
 
-    @OneToOne(type => Appointment, item => item.encounter)
+    @OneToOne(type => Appointment, item => item.encounter, { nullable: true })
     @JoinColumn({ name: 'appointment_id' })
     appointment: Appointment;
 

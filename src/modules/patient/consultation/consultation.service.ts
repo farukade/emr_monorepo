@@ -23,6 +23,7 @@ import { PatientHistory } from '../entities/patient_history.entity';
 import { PatientConsumable } from '../entities/patient_consumable.entity';
 import { ConsumableRepository } from '../../settings/consumable/consumable.repository';
 import { Appointment } from '../../frontdesk/appointment/appointment.entity';
+import { getConnection } from 'typeorm';
 
 @Injectable()
 export class ConsultationService {
@@ -98,16 +99,16 @@ export class ConsultationService {
 
         try {
             const patient = await this.patientRepository.findOne(patientId, { relations: ['hmo'] });
-            const appointment = await this.appointmentRepository.findOne(appointment_id, { relations: ['serviceCategory', 'serviceType', 'department', 'whomToSee'] });
 
-            let encounter = await this.encounterRepository.findOne({ where: { appointment } });
-            if (!encounter) {
-                encounter = new Encounter();
-                encounter.patient = patient;
-                encounter.appointment = appointment;
-                encounter.createdBy = createdBy;
-                await encounter.save();
-            }
+            const appointment = await this.appointmentRepository.findOne({
+                where: { id: appointment_id },
+                relations: ['patient', 'whomToSee', 'serviceType', 'consultingRoom', 'transaction', 'department'],
+            });
+
+            const encounter = new Encounter();
+            encounter.patient = patient;
+            encounter.createdBy = createdBy;
+            await encounter.save();
 
             const complain = param.complaints.replace(/(<([^>]+)>)/gi, '')
                 .replace(/&nbsp;/g, '')
@@ -288,14 +289,14 @@ export class ConsultationService {
                 await newAppointment.save();
             }
 
-            appointment.encounter = encounter;
             appointment.status = 'Completed';
+            appointment.encounter = encounter;
             appointment.lastChangedBy = createdBy;
             const rs = await appointment.save();
 
             await this.queueSystemRepository.delete({ appointment });
 
-            return { success: true, appointment: rs };
+            return { success: true, appointment: {...rs, encounter} };
         } catch (err) {
             console.log(err);
             return { success: false, message: err.message };

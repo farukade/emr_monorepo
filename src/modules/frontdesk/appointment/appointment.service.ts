@@ -103,7 +103,7 @@ export class AppointmentService {
         for (const item of appointments) {
             const appointment = await this.appointmentRepository.findOne({
                 where: { id: item.id },
-                relations: ['patient', 'whomToSee', 'serviceType', 'consultingRoom', 'encounter', 'transaction', 'department'],
+                relations: ['patient', 'whomToSee', 'serviceType', 'consultingRoom', 'transaction', 'department'],
             });
 
             const patientProfile = await this.patientRepository.findOne({
