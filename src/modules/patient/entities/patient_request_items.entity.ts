@@ -77,7 +77,7 @@ export class PatientRequestItem extends CustomBaseEntity {
     note: string;
 
     @Column({ nullable: true, name: 'dose_quantity' })
-    doseQuantity: number;
+    doseQuantity: string;
 
     @Column({ default: false })
     refillable: boolean;

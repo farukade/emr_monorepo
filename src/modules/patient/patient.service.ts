@@ -271,8 +271,8 @@ export class PatientService {
     }
 
     async doSaveVitals(param, createdBy: string): Promise<any> {
-        const { patient_id, readingType, reading, task_id } = param;
         try {
+            const { patient_id, readingType, reading, task_id } = param;
             const user = await this.authRepository.findOne({ where: { username: createdBy } });
 
             const staff = await this.connection.getRepository(StaffDetails)

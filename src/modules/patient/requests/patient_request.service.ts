@@ -11,12 +11,13 @@ import { PatientRequestItemRepository } from '../repositories/patient_request_it
 import { PatientRepository } from '../repositories/patient.repository';
 import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
 import { AppGateway } from '../../../app.gateway';
-import { getConnection } from 'typeorm';
+import { Brackets, getConnection } from 'typeorm';
 import { Transactions } from '../../finance/transactions/transaction.entity';
 import { AdmissionClinicalTask } from '../admissions/entities/admission-clinical-task.entity';
 import { generatePDF } from '../../../common/utils/utils';
 import { AdmissionsRepository } from '../admissions/repositories/admissions.repository';
 import * as path from 'path';
+import { Stock } from 'src/modules/inventory/entities/stock.entity';
 
 @Injectable()
 export class PatientRequestService {
@@ -51,7 +52,7 @@ export class PatientRequestService {
             .select('q.id, q.requestType, q.code, q.createdAt, q.status, q.urgent, q.requestNote, q.isFilled')
             .addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
             .addSelect('CONCAT(patient.other_names || \' \' || patient.surname) as patient_name, patient.id as patient_id')
-            .andWhere('q.requestType = :requestType', { requestType });
+            .where('q.requestType = :requestType', { requestType });
 
         if (startDate && startDate !== '') {
             const start = moment(startDate).startOf('day').format('YYYY-MM-DD HH:mm:ss');
@@ -87,7 +88,7 @@ export class PatientRequestService {
 
             item.items = await this.patientRequestItemRepository.find({ where: { request: item }, relations: ['diagnosis', 'transaction'] });
 
-            const patient = await this.patientRepository.findOne(item.patient, {
+            const patient = await this.patientRepository.findOne(item.patient_id, {
                 relations: ['nextOfKin', 'immunization', 'hmo'],
             });
 
@@ -153,7 +154,7 @@ export class PatientRequestService {
 
             item.items = await this.patientRequestItemRepository.find({ where: { request: item }, relations: ['diagnosis', 'transaction'] });
 
-            const patient = await this.patientRepository.findOne(item.patient, {
+            const patient = await this.patientRepository.findOne(item.patient_id, {
                 relations: ['nextOfKin', 'immunization', 'hmo'],
             });
 
@@ -270,11 +271,13 @@ export class PatientRequestService {
             });
 
             for (const item of items) {
+                const drug = await getConnection().getRepository(Stock).findOne(item.drug.id);
                 const requestItem = await this.patientRequestItemRepository.findOne(item.id);
                 requestItem.filled = 1;
                 requestItem.fillQuantity = item.fillQuantity;
                 requestItem.filledAt = moment().format('YYYY-MM-DD HH:mm:ss');
                 requestItem.filledBy = updatedBy;
+                requestItem.drug = drug;
                 await requestItem.save();
             }
 
@@ -382,7 +385,7 @@ export class PatientRequestService {
                             newTask.task = 'Immunization';
                             newTask.title = `Give ${item.drug.name} Immediately`;
                             newTask.taskType = 'regimen';
-                            newTask.drug = item.drug;
+                            newTask.drug = { ...item.drug, vaccine };
                             newTask.dose = 1;
                             newTask.interval = 1;
                             newTask.intervalType = 'immediately';

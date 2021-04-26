@@ -9,9 +9,13 @@ export class DBMigration1618911044249 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "patient_review_of_systems" ADD CONSTRAINT "FK_411b81b163b298bff642b15e46f" FOREIGN KEY ("encounter_id") REFERENCES "encounters"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "patient_review_of_systems" ADD CONSTRAINT "FK_e41ea3cc3d521fad9114425ca48" FOREIGN KEY ("antenatal_id") REFERENCES "patient_antenatals"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "patient_consumables" ADD "quantity" integer`);
+        await queryRunner.query(`ALTER TABLE "patient_request_items" DROP COLUMN "dose_quantity"`);
+        await queryRunner.query(`ALTER TABLE "patient_request_items" ADD "dose_quantity" character varying`);
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(`ALTER TABLE "patient_request_items" DROP COLUMN "dose_quantity"`);
+        await queryRunner.query(`ALTER TABLE "patient_request_items" ADD "dose_quantity" integer`);
         await queryRunner.query(`ALTER TABLE "patient_consumables" DROP COLUMN "quantity"`);
         await queryRunner.query(`ALTER TABLE "patient_review_of_systems" DROP CONSTRAINT "FK_e41ea3cc3d521fad9114425ca48"`);
         await queryRunner.query(`ALTER TABLE "patient_review_of_systems" DROP CONSTRAINT "FK_411b81b163b298bff642b15e46f"`);

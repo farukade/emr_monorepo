@@ -143,12 +143,11 @@ export class PatientRequestHelper {
     }
 
     static async handleVaccinationRequest(param, patient, createdBy) {
-        const { requestType, request, request_note } = param;
+        const { requestType, date_due, request_note } = param;
 
-        const dateDue = request.due_date;
         const vaccines = await getConnection()
             .getRepository(Immunization)
-            .find({ date_due: dateDue, patient });
+            .find({ date_due, patient });
 
         let body = [];
 
@@ -185,6 +184,7 @@ export class PatientRequestHelper {
             requestType: 'pharmacy',
             patient,
             createdBy,
+            requestNote: 'immunization',
         };
 
         try {
@@ -204,6 +204,7 @@ export class PatientRequestHelper {
                     frequencyType: item.frequencyType,
                     duration: item.duration,
                     externalPrescription: 'No',
+                    vaccine: item.vaccine,
                 };
 
                 const rs = await this.saveItem(requestItem);
