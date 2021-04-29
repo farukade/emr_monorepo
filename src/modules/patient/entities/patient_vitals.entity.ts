@@ -18,4 +18,7 @@ export class PatientVital extends CustomBaseEntity {
     @ManyToOne(() => AdmissionClinicalTask, task => task.vitals, { nullable: true })
     @JoinColumn({ name: 'clinical_task' })
     task!: AdmissionClinicalTask;
+
+    @Column({ type: 'boolean', default: false, name: 'is_abnormal' })
+    isAbnormal: boolean;
 }

@@ -1,18 +1,18 @@
 import {
-    SubscribeMessage,
     WebSocketGateway,
     OnGatewayInit,
     WebSocketServer,
     OnGatewayConnection,
     OnGatewayDisconnect,
-    MessageBody,
-    ConnectedSocket,
    } from '@nestjs/websockets';
 import { Logger } from '@nestjs/common';
 import { Socket, Server } from 'socket.io';
 
 @WebSocketGateway()
 export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+
+    // tslint:disable-next-line: no-empty
+    constructor() {}
 
     @WebSocketServer() server: Server;
     private logger: Logger = new Logger('AppGateway');

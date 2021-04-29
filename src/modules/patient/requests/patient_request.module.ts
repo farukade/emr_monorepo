@@ -9,7 +9,6 @@ import { PatientRepository } from '../repositories/patient.repository';
 import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
 import { AdmissionsRepository } from '../admissions/repositories/admissions.repository';
 import { AppGateway } from '../../../app.gateway';
-import { TransactionsService } from '../../finance/transactions/transactions.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([

@@ -8,7 +8,6 @@ import { SettingsModule } from './modules/settings/settings.module';
 import { PatientModule } from './modules/patient/patient.module';
 import { FinanceModule } from './modules/finance/finance.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
-import { QueueSystemModule } from './modules/frontdesk/queue-system/queue-system.module';
 import { FrontdeskModule } from './modules/frontdesk/frontdesk.module';
 import { UtilityModule } from './modules/utility/utility.module';
 
@@ -32,7 +31,6 @@ fs.writeFileSync(
     PatientModule,
     FinanceModule,
     InventoryModule,
-    QueueSystemModule,
     SettingsModule,
     FrontdeskModule,
     UtilityModule,

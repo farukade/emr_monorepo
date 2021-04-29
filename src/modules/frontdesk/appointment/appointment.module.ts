@@ -28,6 +28,6 @@ import { HmoRepository } from '../../hmo/hmo.repository';
     HmoRepository,
   ])],
   controllers: [AppointmentController],
-  providers: [AppGateway  , AppointmentService],
+  providers: [AppGateway, AppointmentService],
 })
 export class AppointmentModule {}

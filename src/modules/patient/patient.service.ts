@@ -328,14 +328,36 @@ export class PatientService {
             }
 
             if (patient) {
+                const values = Object.values(reading);
+                const single = values[0];
+                const message = `${readingType} Value ${single} is not within the NORMAL range`;
+                console.log(message);
+
+                let isAbnormal = false;
+
+                switch (readingType) {
+                    case 'Temperature':
+                        if (single < 36.1 || single > 37.2) {
+                            isAbnormal = true;
+                        }
+                        break;
+                    case 'BMI':
+                        if (single < 18.5 || single > 24.9) {
+                            isAbnormal = true;
+                        }
+                        break;
+                }
+
                 const data = {
                     readingType,
                     reading,
                     patient,
                     createdBy,
                     task: task || null,
+                    isAbnormal,
                 };
                 const readings = await this.patientVitalRepository.save(data);
+
                 return { success: true, readings };
             } else {
                 return { success: false, message: 'Patient record was not found' };

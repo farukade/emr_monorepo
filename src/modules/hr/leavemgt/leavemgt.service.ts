@@ -10,6 +10,7 @@ import { DiagnosisRepository } from '../../settings/diagnosis/diagnosis.reposito
 @Injectable()
 export class LeavemgtService {
     private limit = 20;
+
     constructor(
         @InjectRepository(LeaveApplicationRepository)
         private leaveRepository: LeaveApplicationRepository,
@@ -19,38 +20,51 @@ export class LeavemgtService {
         private leaveCategoryRepository: LeaveCategoryRepository,
         @InjectRepository(DiagnosisRepository)
         private diagnosisRepository: DiagnosisRepository,
-    ) {}
+    ) {
+    }
 
     async listApplications(urlParams): Promise<LeaveApplication[]> {
-        const {page} = urlParams;
-        const applications = await this.leaveRepository.find({
+        const { staff_id } = urlParams;
+
+        if (staff_id && staff_id !== '') {
+            const staff = await this.staffRepository.findOne(staff_id);
+
+            return await this.leaveRepository.find({
+                where: { staff },
+                relations: ['staff', 'category'],
+            });
+        }
+
+        return await this.leaveRepository.find({
             relations: ['staff', 'category'],
+        });
+    }
+
+    async listExcuseDuty(urlParams): Promise<LeaveApplication[]> {
+        const { page } = urlParams;
+        const applications = await this.leaveRepository.find({
+            where: {
+                leaveType: 'excuse_duty',
+            },
+            relations: ['staff', 'category', 'appliedBy', 'diagnosis'],
             skip: (page * this.limit) - this.limit,
             take: this.limit,
         });
         return applications;
     }
 
-    async listExcuseDuty(urlParams): Promise<LeaveApplication[]> {
-        const {page} = urlParams;
-        const applications = await this.leaveRepository.find({where: {
-                                leaveType: 'excuse_duty',
-                            },
-                            relations: ['staff', 'category', 'appliedBy', 'diagnosis'],
-                            skip: (page * this.limit) - this.limit,
-                            take: this.limit,
-                        });
-        return applications;
-    }
-
     async saveLeaveApplication(leaveApplicationDto: LeaveApplicationDto): Promise<any> {
         // find staff
         const staff = await this.staffRepository.findOne(leaveApplicationDto.staff_id);
-        if (!staff) return {success: false, message: 'Staff not found'};
+        if (!staff) {
+            return { success: false, message: 'Staff not found' };
+        }
         // find leave category
         const category = await this.leaveCategoryRepository.findOne(leaveApplicationDto.leave_category_id);
-        if (!category) return {success: false, message: 'Invalid category selected or category does not exist'};
-        
+        if (!category) {
+            return { success: false, message: 'Invalid category selected or category does not exist' };
+        }
+
         const leaveData = {
             staff,
             category,
@@ -64,7 +78,9 @@ export class LeavemgtService {
 
         if (leaveApplicationDto.appliedBy) {
             const appliedBy = await this.staffRepository.findOne(leaveApplicationDto.appliedBy);
-            if (!appliedBy) return {success: false, message: 'please make sure a valid user is submitting this request'};            
+            if (!appliedBy) {
+                return { success: false, message: 'please make sure a valid user is submitting this request' };
+            }
             leaveData.appliedBy = appliedBy;
             leaveData.leaveType = 'excuse_duty';
         }
