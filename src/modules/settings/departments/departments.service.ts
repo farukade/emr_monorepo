@@ -29,6 +29,7 @@ export class DepartmentsService {
             // .addSelect('CONCAT(hod.first_name || \' \' || hod.last_name) as hod_name, hod.id as hod_staff_id')
             .orderBy('q.createdAt')
             .getRawMany();
+
         for (const result of results) {
             if (result.hod_id) {
                 const staff = await this.staffRepository.findOne(result.hod_id);
@@ -83,11 +84,16 @@ export class DepartmentsService {
         }
     }
 
-    async deleteDepartment(id: string): Promise<void> {
-        const result = await this.departmentRepository.delete(id);
+    async deleteDepartment(id: number, username: string) {
+        const department = await this.departmentRepository.findOne(id);
 
-        if (result.affected === 0) {
+        if (!department) {
             throw new NotFoundException(`Department with ID '${id}' not found`);
         }
+
+        department.deletedBy = username;
+        await department.save();
+
+        return department.softRemove();
     }
 }

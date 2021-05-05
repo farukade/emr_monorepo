@@ -10,6 +10,7 @@ import { StockRepository } from '../../inventory/stock.repository';
 import { AppGateway } from '../../../app.gateway';
 import { QueueSystemRepository } from '../../frontdesk/queue-system/queue-system.repository';
 import { ConsumableRepository } from '../../settings/consumable/consumable.repository';
+import { AuthRepository } from '../../auth/auth.repository';
 
 @Module({
     imports: [TypeOrmModule.forFeature([
@@ -20,6 +21,7 @@ import { ConsumableRepository } from '../../settings/consumable/consumable.repos
         StockRepository,
         QueueSystemRepository,
         ConsumableRepository,
+        AuthRepository,
     ])],
     controllers: [ConsultationController],
     providers: [ AppGateway, ConsultationService],

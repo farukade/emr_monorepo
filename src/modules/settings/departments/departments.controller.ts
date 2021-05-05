@@ -3,11 +3,13 @@ import { DepartmentsService } from './departments.service';
 import { Department } from '../entities/department.entity';
 import { DepartmentDto } from './dto/department.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { Consumable } from '../entities/consumable.entity';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('departments')
 export class DepartmentsController {
-    constructor(private departmentService: DepartmentsService) {}
+    constructor(private departmentService: DepartmentsService) {
+    }
 
     @Get()
     getDepartment(): Promise<Department[]> {
@@ -34,7 +36,10 @@ export class DepartmentsController {
     }
 
     @Delete('/:id')
-    deleteDepartment(@Param('id') id: string): Promise<void> {
-        return this.departmentService.deleteDepartment(id);
+    deletePackage(
+        @Param('id') id: number,
+        @Request() req,
+    ): Promise<Consumable> {
+        return this.departmentService.deleteDepartment(id, req.user.username);
     }
 }

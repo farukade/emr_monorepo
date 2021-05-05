@@ -1,51 +1,50 @@
 import { Controller, Post, Body, Param, Request, Delete, UseGuards, Get, Query, UsePipes, ValidationPipe, Patch } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { PatientNoteService } from './patient_note.service';
+import { PatientNote } from '../entities/patient_note.entity';
 import { Pagination } from '../../../common/paginate/paginate.interface';
-import { ConsumableService } from './consumable.service';
-import { ConsumableDto } from './dto/consumable.dto';
-import { Consumable } from '../entities/consumable.entity';
 
 @UseGuards(AuthGuard('jwt'))
-@Controller('consumables')
-export class ConsumableController {
+@Controller('patient-notes')
+export class PatientNoteController {
     constructor(
-        private consumableService: ConsumableService,
+        private patientNoteService: PatientNoteService,
     ) {}
 
     @Get('')
-    getConsumables(
+    getNotes(
         @Query() urlParams,
         @Request() request,
     ): Promise<Pagination> {
         const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
         const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
-        return this.consumableService.getConsumables({page, limit}, urlParams);
+        return this.patientNoteService.getNotes({ page, limit }, urlParams);
     }
 
-    @Post('/save')
+    @Post('')
     @UsePipes(ValidationPipe)
-    saveConsumabe(
-        @Body() createDto: ConsumableDto,
+    saveNote(
+        @Body() param,
         @Request() req,
     ) {
-        return this.consumableService.saveConsumabe(createDto, req.user.username);
+        return this.patientNoteService.saveNote(param, req.user.username);
     }
 
-    @Patch('/:id/update')
+    @Patch('/:id')
     @UsePipes(ValidationPipe)
-    updateConsumable(
+    updateNote(
         @Param('id') id: number,
-        @Body() updateDto: ConsumableDto,
+        @Body() param,
         @Request() req,
     ) {
-        return this.consumableService.updateConsumable(id, updateDto, req.user.username);
+        return this.patientNoteService.updateNote(id, param, req.user.username);
     }
 
     @Delete('/:id')
-    deleteConsumable(
+    deleteNote(
         @Param('id') id: number,
         @Request() req,
-    ): Promise<Consumable> {
-        return this.consumableService.deleteConsumable(id, req.user.username);
+    ): Promise<PatientNote> {
+        return this.patientNoteService.deleteNote(id, req.user.username);
     }
 }

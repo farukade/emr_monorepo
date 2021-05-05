@@ -16,6 +16,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { JwtStrategy } from './common/utils/jwt.strategy';
 import { AppGateway } from './app.gateway';
 import { MailModule } from './modules/mail/mail.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 fs.writeFileSync(
   './ormconfig.json',
@@ -25,6 +26,7 @@ fs.writeFileSync(
 @Module({
   imports: [
     TypeOrmModule.forRoot(appService.getTypeOrmConfig()),
+    ScheduleModule.forRoot(),
     AuthModule,
     HmoModule,
     HRModule,

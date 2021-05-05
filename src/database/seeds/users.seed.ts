@@ -15,7 +15,7 @@ export default class CreateUser implements Seeder {
                         .getOne();
 
         const user = new User();
-        user.username = 'admin1';
+        user.username = 'admin';
         user.password = await this.getHash('secret');
         user.role = role;
         await user.save();

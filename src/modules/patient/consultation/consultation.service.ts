@@ -23,7 +23,7 @@ import { PatientHistory } from '../entities/patient_history.entity';
 import { PatientConsumable } from '../entities/patient_consumable.entity';
 import { ConsumableRepository } from '../../settings/consumable/consumable.repository';
 import { Appointment } from '../../frontdesk/appointment/appointment.entity';
-import { getConnection } from 'typeorm';
+import { AuthRepository } from '../../auth/auth.repository';
 
 @Injectable()
 export class ConsultationService {
@@ -43,13 +43,16 @@ export class ConsultationService {
         private queueSystemRepository: QueueSystemRepository,
         @InjectRepository(ConsumableRepository)
         private consumableRepository: ConsumableRepository,
+        @InjectRepository(AuthRepository)
+        private readonly authRepository: AuthRepository,
     ) {
     }
 
     async getEncounters(options: PaginationOptionsInterface, urlParams): Promise<any> {
         const { startDate, endDate, patient_id } = urlParams;
 
-        const query = this.encounterRepository.createQueryBuilder('e');
+        const query = this.encounterRepository.createQueryBuilder('e')
+            .select('e.*');
 
         if (startDate && startDate !== '') {
             const start = moment(startDate).endOf('day').toISOString();
@@ -79,7 +82,10 @@ export class ConsultationService {
                 relations: ['nextOfKin', 'immunization', 'hmo'],
             });
 
+            const staff = await this.authRepository.findOne({ where: {username: item.createdBy}, relations: ['details']});
+
             item.patient = patient;
+            item.staff = staff;
 
             result = [...result, item];
         }
