@@ -16,6 +16,7 @@ import { PerformanceIndicatorReportRepository } from './repositories/performance
 import { SupervisorEvaluation } from './entities/supervisor.evaluation.entity';
 import { PerformanceAppraisalPeriod } from './entities/performance_appraisal_period.entity';
 import { getConnection } from 'typeorm';
+import { PerformanceIndicator } from './entities/performance_indicator.entity';
 
 @Injectable()
 export class AppraisalService {
@@ -141,6 +142,41 @@ export class AppraisalService {
         }
     }
 
+  async saveIndicator(dto:any) {
+        const { keyFocus, objective, weight, kpis, departmentId} = dto;
+        const department = await this.departmentRepository.findOne(departmentId, {relations: ['staff']});
+        const indicator = new PerformanceIndicator();
+        indicator.keyFocus = keyFocus;
+        indicator.kpis = kpis;
+        indicator.isSettingsObject = true;
+        indicator.objective = objective;
+        indicator.weight = weight;
+        indicator.department = department;
+        this.performanceIndicatorRepository.save(indicator);
+        return { success: true, indicator };
+    }
+
+    async settingIndicators(department_id){
+        const isSettingsObject = true;
+        const indicators = await this.performanceIndicatorRepository.createQueryBuilder('performance_indicators')
+            .where('performance_indicators.department_id = :department_id', { department_id })
+            .andWhere('performance_indicators.isSettingsObject = :isSettingsObject', { isSettingsObject })
+            .select(['performance_indicators.createdAt as created_at'])
+            .orderBy('performance_indicators.createdAt', 'DESC')
+            .getMany();
+        return indicators; 
+        
+    }
+
+    async deleteIndicator(id){
+        const result = await this.performanceIndicatorRepository.delete(id);
+
+        if (result.affected === 0) {
+            throw new NotFoundException(`Indicator with '${id}' does not exist`);
+        }
+        return {success: true};
+    }
+
     async saveSelfAssessment(param) {
         try {
             const {appraisalId, employeeComment, indicators} = param;
@@ -238,6 +274,7 @@ export class AppraisalService {
                 indicator.keyFocus  = item.keyFocus;
                 indicator.objective = item.objective;
                 indicator.kpis      = item.kpis;
+                indicator.isSettingsObject = false;
                 indicator.weight    = item.weight;
                 await indicator.save();
             }
