@@ -18,6 +18,7 @@ import { Transactions } from '../../finance/transactions/transaction.entity';
 import { Connection, Like } from 'typeorm';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 import { Patient } from '../../patient/entities/patient.entity';
+import { StockRepository } from '../stock.repository';
 
 @Injectable()
 export class CafeteriaService {
@@ -30,30 +31,35 @@ export class CafeteriaService {
         private cafeteriaItemCategoryRepository: CafeteriaItemCategoryRepository,
         @InjectRepository(CafeteriaItemRepository)
         private cafeteriaItemRepository: CafeteriaItemRepository,
+        @InjectRepository(StockRepository)
+        private stockRepository: StockRepository,
         private connection: Connection,
-    ) {}
+    ) {
+    }
 
     /*
         INVENTORY
     */
 
     async getAllItems(urlParam): Promise<CafeteriaItem[]> {
-        const {q} = urlParam;
+        const { q } = urlParam;
 
         const query = this.cafeteriaItemRepository.createQueryBuilder('q');
-                        // .relation(CafeteriaItemCategory, 'category');
+        // .relation(CafeteriaItemCategory, 'category');
         if (q && q !== '') {
-            query.where('q.name LIKE  :query', {query: `%${q}%`});
+            query.where('q.name LIKE  :query', { query: `%${q}%` });
         }
         return await query.getRawMany();
     }
 
     async findItem(urlParam): Promise<CafeteriaItem[]> {
-        const {q} = urlParam;
+        const { q } = urlParam;
 
-        return await this.cafeteriaItemRepository.find({where: [
-            {name: Like(`%${q}%`)},
-        ]});
+        return await this.cafeteriaItemRepository.find({
+            where: [
+                { name: Like(`%${q}%`) },
+            ],
+        });
     }
 
     async getItemById(id): Promise<CafeteriaItem> {
@@ -62,11 +68,11 @@ export class CafeteriaService {
 
     async getItemsByCategory(category_id: string): Promise<CafeteriaItem[]> {
         const category = await this.cafeteriaItemCategoryRepository.findOne(category_id);
-        return this.cafeteriaItemRepository.find({ where: {category}});
+        return this.cafeteriaItemRepository.find({ where: { category } });
     }
 
     async createItem(itemDto: CafeteriaItemDto): Promise<CafeteriaItem> {
-        const { category_id , name, price, discount_price, description, item_code } = itemDto;
+        const { category_id, name, price, discount_price, description, item_code } = itemDto;
         const category = await this.cafeteriaItemCategoryRepository.findOne(category_id);
         let code = item_code;
         if (item_code === '') {
@@ -83,17 +89,17 @@ export class CafeteriaService {
     }
 
     async updateItem(id: string, itemDto: CafeteriaItemDto): Promise<CafeteriaItem> {
-        const { category_id , name, price, discount_price, description, item_code } = itemDto;
+        const { category_id, name, price, discount_price, description, item_code } = itemDto;
 
         const category = await this.cafeteriaItemCategoryRepository.findOne(category_id);
 
         const stock = await this.cafeteriaItemRepository.findOne(id);
-        stock.name        = name;
-        stock.item_code   = (item_code !== '') ? item_code : 'STU-' + Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5);
+        stock.name = name;
+        stock.item_code = (item_code !== '') ? item_code : 'STU-' + Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5);
         stock.description = description;
-        stock.price       = price;
+        stock.price = price;
         stock.discount_price = discount_price;
-        stock.category    = category;
+        stock.category = category;
         await stock.save();
         return stock;
     }
@@ -104,17 +110,17 @@ export class CafeteriaService {
         const csvWriter = createCsvWriter({
             path: 'cafeteria-items.csv',
             header: [
-                {id: 'category', title: 'CATEGORY'},
-                {id: 'item_code', title: 'ITEM CODE'},
-                {id: 'name', title: 'NAME'},
-                {id: 'price', title: 'SALES PRICE'},
-                {id: 'discount_price', title: 'DISCOUNT PRICE'},
-                {id: 'description', title: 'DESCRIPTION'},
+                { id: 'category', title: 'CATEGORY' },
+                { id: 'item_code', title: 'ITEM CODE' },
+                { id: 'name', title: 'NAME' },
+                { id: 'price', title: 'SALES PRICE' },
+                { id: 'discount_price', title: 'DISCOUNT PRICE' },
+                { id: 'description', title: 'DESCRIPTION' },
             ],
         });
 
         try {
-            const stocks = await this.cafeteriaItemRepository.find({relations: ['category']});
+            const stocks = await this.cafeteriaItemRepository.find({ relations: ['category'] });
 
             if (stocks.length) {
                 for (const stock of stocks) {
@@ -142,19 +148,19 @@ export class CafeteriaService {
                         description: '',
                     },
                 ];
-                await csvWriter.writeRecords({data});
+                await csvWriter.writeRecords({ data });
 
             }
-            return {success: true};
+            return { success: true };
         } catch (error) {
-            return {success: false, message: error.message };
+            return { success: false, message: error.message };
         }
     }
 
     async updateInventoryQty(param: CafeteriaInventoryQtyDto): Promise<CafeteriaInventory> {
         const { id, quantity } = param;
         const inventory = await this.cafeteriaInventoryRepository.findOne(id);
-        inventory.quantity    = quantity;
+        inventory.quantity = quantity;
         await inventory.save();
         return inventory;
     }
@@ -175,48 +181,48 @@ export class CafeteriaService {
         try {
             // read uploaded file
             fs.createReadStream(file.path)
-            .pipe(csv())
-            .on('data', async (row) => {
-                const data = {
-                    category: row.CATEGORY,
-                    name: row.NAME,
-                    price: row['SALES PRICE'].replace(',', ''),
-                    discount_price: row['DISCOUNT PRICE'],
-                    item_code: row['ITEM CODE'],
-                    description: row.DESCRIPTION,
-                };
-                content.push(data);
-            })
-            .on('end', async () => {
-                for (const item of content) {
-                    let category;
-                    // check if category exists
-                    if (item.category !== '') {
-                        category = await this.cafeteriaItemCategoryRepository.findOne({
-                            where: {name: item.category},
-                        });
-                        if (!category) {
-                            category = await this.cafeteriaItemCategoryRepository.save({name: item.category});
-                        }
-                    }
-                    if (category) {
-                        if (item.name !== '') {
-                            await this.cafeteriaItemRepository.save({
-                                name: item.name,
-                                category,
-                                price: item.price,
-                                discount_price: item.discount_price,
-                                description: item.description,
-                                // tslint:disable-next-line:max-line-length
-                                item_code: (item.item_code !== '') ? item.item_code : 'STU-' + Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5),
+                .pipe(csv())
+                .on('data', async (row) => {
+                    const data = {
+                        category: row.CATEGORY,
+                        name: row.NAME,
+                        price: row['SALES PRICE'].replace(',', ''),
+                        discount_price: row['DISCOUNT PRICE'],
+                        item_code: row['ITEM CODE'],
+                        description: row.DESCRIPTION,
+                    };
+                    content.push(data);
+                })
+                .on('end', async () => {
+                    for (const item of content) {
+                        let category;
+                        // check if category exists
+                        if (item.category !== '') {
+                            category = await this.cafeteriaItemCategoryRepository.findOne({
+                                where: { name: item.category },
                             });
+                            if (!category) {
+                                category = await this.cafeteriaItemCategoryRepository.save({ name: item.category });
+                            }
+                        }
+                        if (category) {
+                            if (item.name !== '') {
+                                await this.cafeteriaItemRepository.save({
+                                    name: item.name,
+                                    category,
+                                    price: item.price,
+                                    discount_price: item.discount_price,
+                                    description: item.description,
+                                    // tslint:disable-next-line:max-line-length
+                                    item_code: (item.item_code !== '') ? item.item_code : 'STU-' + Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5),
+                                });
+                            }
                         }
                     }
-                }
-            });
-            return {success: true};
+                });
+            return { success: true };
         } catch (err) {
-            return {success: false, message: err.message};
+            return { success: false, message: err.message };
         }
     }
 
@@ -225,16 +231,16 @@ export class CafeteriaService {
     */
 
     async getAllInventories(): Promise<CafeteriaInventory[]> {
-        return await this.cafeteriaInventoryRepository.find({relations: ['category']});
+        return await this.cafeteriaInventoryRepository.find({ relations: ['category'] });
     }
 
     async getInventoryByCategory(category_id: string): Promise<CafeteriaInventory[]> {
         const category = await this.cafeteriaInventoryCategoryRepository.findOne(category_id);
-        return this.cafeteriaInventoryRepository.find({ where: {category}});
+        return this.cafeteriaInventoryRepository.find({ where: { category } });
     }
 
     async createInventory(itemDto: CafeteriaInventoryDto): Promise<CafeteriaInventory> {
-        const { category_id , name, cost_price, description, stock_code, quantity } = itemDto;
+        const { category_id, name, cost_price, description, stock_code, quantity } = itemDto;
         const category = await this.cafeteriaInventoryCategoryRepository.findOne(category_id);
         let code = stock_code;
         if (stock_code === '') {
@@ -251,17 +257,17 @@ export class CafeteriaService {
     }
 
     async updateInventory(id: string, itemDto: CafeteriaInventoryDto): Promise<CafeteriaInventory> {
-        const { category_id , name, cost_price, description, stock_code, quantity } = itemDto;
+        const { category_id, name, cost_price, description, stock_code, quantity } = itemDto;
 
         const category = await this.cafeteriaInventoryCategoryRepository.findOne(category_id);
 
         const inventory = await this.cafeteriaInventoryRepository.findOne(id);
-        inventory.name          = name;
-        inventory.stock_code    = (stock_code !== '') ? stock_code : 'STU-' + Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5);
-        inventory.description   = description;
-        inventory.cost_price    = cost_price;
-        inventory.quantity      = quantity;
-        inventory.category      = category;
+        inventory.name = name;
+        inventory.stock_code = (stock_code !== '') ? stock_code : 'STU-' + Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5);
+        inventory.description = description;
+        inventory.cost_price = cost_price;
+        inventory.quantity = quantity;
+        inventory.category = category;
         await inventory.save();
         return inventory;
     }
@@ -283,7 +289,7 @@ export class CafeteriaService {
     }
 
     async createInventoryCategory(params: CafeteriaInventoryCategoryDto): Promise<CafeteriaInventoryCategory> {
-        return await this.cafeteriaInventoryCategoryRepository.save({name: params.name});
+        return await this.cafeteriaInventoryCategoryRepository.save({ name: params.name });
     }
 
     async updateInventoryCategory(id: string, param: CafeteriaInventoryCategoryDto): Promise<CafeteriaInventoryCategory> {
@@ -313,7 +319,7 @@ export class CafeteriaService {
     async createItemCategory(param: CafeteriaItemCategoryDto): Promise<CafeteriaItemCategory> {
         const { name } = param;
 
-        return await this.cafeteriaItemCategoryRepository.save({name});
+        return await this.cafeteriaItemCategoryRepository.save({ name });
     }
 
     async updateItemCategory(id: string, param: CafeteriaItemCategoryDto): Promise<CafeteriaItemCategory> {
@@ -336,31 +342,39 @@ export class CafeteriaService {
         const { user_type, user_id, amount, amount_paid, payment_type, items } = param;
         try {
             const transaction = new Transactions();
-            transaction.transaction_type  = 'cafeteria';
-            transaction.amount            = amount;
-            transaction.amount_paid       = amount_paid;
-            transaction.payment_type      = payment_type;
-            transaction.status            = 1;
+            transaction.transaction_type = 'cafeteria';
+            transaction.amount = amount;
+            transaction.amount_paid = amount_paid;
+            transaction.payment_type = payment_type;
+            transaction.status = 1;
 
             if (user_type === 'staff') {
                 const staff = await this.connection.getRepository(StaffDetails)
-                                        .createQueryBuilder('s').where('s.id = :id', {id: user_id}).getOne();
+                    .createQueryBuilder('s').where('s.id = :id', { id: user_id }).getOne();
                 transaction.staff = staff;
             } else if (user_type === 'patient') {
                 const patient = await this.connection.getRepository(Patient)
-                                        .createQueryBuilder('s').where('s.id = :id', {id: user_id}).getOne();
+                    .createQueryBuilder('s').where('s.id = :id', { id: user_id }).getOne();
                 transaction.patient = patient;
             }
-            const data = [];
+
+            let data = [];
             for (const sale of items) {
-                const parentItem = await this.cafeteriaItemRepository.findOne(sale.item_id);
-                data.push({name: parentItem.name, amount});
+                const parentItem = await this.stockRepository.findOne(sale.id);
+                data = [...data, {
+                    id: parentItem.id,
+                    name: parentItem.name,
+                    cost_price: parentItem.cost_price,
+                    sales_price: parentItem.sales_price,
+                }];
             }
+
             transaction.transaction_details = data;
             await transaction.save();
-            return {success: true, transaction};
+
+            return { success: true, transaction };
         } catch (error) {
-            return {success: false, message: error.message};
+            return { success: false, message: error.message };
         }
     }
 }

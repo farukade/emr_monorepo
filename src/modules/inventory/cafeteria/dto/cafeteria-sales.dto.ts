@@ -16,5 +16,5 @@ export class CafeteriaSalesDto {
 
     payment_type: string;
 
-    items: IItemInterface[];
+    items: any[];
 }

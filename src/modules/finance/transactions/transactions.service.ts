@@ -87,7 +87,9 @@ export class TransactionsService {
             }
 
             if (transaction.patient_id) {
-                transaction.patient = await this.patientRepository.findOne(transaction.patient_id);
+                transaction.patient = await this.patientRepository.findOne(transaction.patient_id, {
+                    relations: ['nextOfKin', 'immunization', 'hmo'],
+                });
             }
 
             if (transaction.service_id) {

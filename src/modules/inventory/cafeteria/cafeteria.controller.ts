@@ -24,7 +24,7 @@ export class CafeteriaController {
     @Get('/items')
     getAllItems(
         @Query() urlParam,
-    ): Promise<CafeteriaItem[]> {
+    ): Promise<any[]> {
         return this.inventoryService.getAllItems(urlParam);
     }
 
