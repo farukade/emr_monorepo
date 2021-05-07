@@ -290,6 +290,7 @@ export class AppointmentService {
 
     async updateDoctorStatus({ appointmentId, action, doctor_id, consulting_room_id }, user) {
         try {
+            let text = "";
             const doctor = await getRepository(StaffDetails).findOne(doctor_id);
 
             const appointment = await this.getAppointment(appointmentId);
@@ -299,12 +300,16 @@ export class AppointmentService {
             }
 
             if (consulting_room_id) {
-                appointment.consultingRoom = await this.consultingRoomRepository.findOne(consulting_room_id);
+                const room = await this.consultingRoomRepository.findOne(consulting_room_id);
+                appointment.consultingRoom = room;
+                text += `${appointment.patient.folderNumber}, please proceed to consulting room ${room.name}`
             }
 
             appointment.doctorStatus = action;
             await appointment.save();
+            console.log(text)
             this.appGateway.server.emit('appointment-update', { appointment, action });
+            this.appGateway.server.emit('speech-over', { speechText: text });
             return { success: true };
         } catch (e) {
             return { success: false, message: e.message };
