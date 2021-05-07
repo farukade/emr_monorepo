@@ -341,6 +341,18 @@ export class CafeteriaService {
     async saveSales(param: CafeteriaSalesDto): Promise<any> {
         const { user_type, user_id, amount, amount_paid, payment_type, items } = param;
         try {
+            let emptyStock = [];
+            for (const sale of items) {
+                const stock = await this.stockRepository.findOne(sale.id);
+                if (sale.qty === '' || sale.qty === 0 || sale.qty > stock.quantity) {
+                    emptyStock = [...emptyStock, stock];
+                }
+            }
+
+            if (emptyStock.length > 0) {
+                return { success: false, message: `${emptyStock.map(s => `${s.name} is out of stock`).join(', ')}` };
+            }
+
             const transaction = new Transactions();
             transaction.transaction_type = 'cafeteria';
             transaction.amount = amount;
@@ -366,7 +378,11 @@ export class CafeteriaService {
                     name: parentItem.name,
                     cost_price: parentItem.cost_price,
                     sales_price: parentItem.sales_price,
+                    qty: sale.qty,
                 }];
+
+                parentItem.quantity = parentItem.quantity - sale.qty;
+                await parentItem.save();
             }
 
             transaction.transaction_details = data;

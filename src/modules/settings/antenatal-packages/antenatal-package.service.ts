@@ -31,7 +31,6 @@ export class AntenatalPackageService {
             });
         } else {
             [result, total] = await this.antenatalPackageRepository.findAndCount({
-                relations: ['category', 'hmo'],
                 order: { name: 'ASC' },
                 take: options.limit,
                 skip: (page * options.limit),

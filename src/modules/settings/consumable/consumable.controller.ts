@@ -22,7 +22,7 @@ export class ConsumableController {
         return this.consumableService.getConsumables({page, limit}, urlParams);
     }
 
-    @Post('/save')
+    @Post('')
     @UsePipes(ValidationPipe)
     saveConsumabe(
         @Body() createDto: ConsumableDto,
@@ -31,7 +31,7 @@ export class ConsumableController {
         return this.consumableService.saveConsumabe(createDto, req.user.username);
     }
 
-    @Patch('/:id/update')
+    @Patch('/:id')
     @UsePipes(ValidationPipe)
     updateConsumable(
         @Param('id') id: number,

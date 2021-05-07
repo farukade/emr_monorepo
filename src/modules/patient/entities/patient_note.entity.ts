@@ -12,6 +12,12 @@ export class PatientNote extends CustomBaseEntity {
     @Column()
     type: string;
 
+    @Column({ nullable: true })
+    category: string;
+
+    @Column({ nullable: true })
+    specialty: string;
+
     @ManyToOne(type => Patient)
     @JoinColumn({ name: 'patient_id' })
     patient: Patient;

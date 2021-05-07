@@ -50,13 +50,15 @@ export class PatientNoteService {
     }
 
     async saveNote(param, createdBy) {
-        const { patient_id, description, type } = param;
+        const { patient_id, description, type, category, specialty } = param;
 
         const patient = await this.patientRepository.findOne(patient_id);
 
         const note = new PatientNote();
         note.description = description;
         note.type = type;
+        note.category = category;
+        note.specialty = specialty;
         note.patient = patient;
         note.createdBy = createdBy;
 

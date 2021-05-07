@@ -23,7 +23,7 @@ export class AntenatalPackageController {
         return this.packageService.getPackages({page, limit}, urlParams);
     }
 
-    @Post('/save')
+    @Post('/')
     @UsePipes(ValidationPipe)
     savePackage(
         @Body() createDto: AntenatalPackageDto,
@@ -32,7 +32,7 @@ export class AntenatalPackageController {
         return this.packageService.savePackage(createDto, req.user.username);
     }
 
-    @Patch('/:id/update')
+    @Patch('/:id')
     @UsePipes(ValidationPipe)
     updatePackage(
         @Param('id') id: number,
