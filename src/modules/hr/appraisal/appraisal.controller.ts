@@ -19,6 +19,21 @@ export class AppraisalController {
         return this.appraisalService.save(createAppriasalDto);
     }
 
+
+    @Post('save-appraisal-indicator')
+    createNewIndicator(
+        @Body() dto: any,
+    ) {
+        return this.appraisalService.saveIndicator(dto);
+    }
+
+    @Get('department-indicators/:departmentId')
+    departmentId(
+        @Param('departmentId') departmentId: string,
+    ) {
+        return this.appraisalService.settingIndicators(departmentId);
+    }
+
     @Patch(':id/update')
     updateAppraisal(
         @Param() id: string,
