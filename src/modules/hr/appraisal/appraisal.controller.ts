@@ -34,6 +34,11 @@ export class AppraisalController {
         return this.appraisalService.settingIndicators(departmentId);
     }
 
+    @Delete('delete-indicator/:id')
+    deleteIndicator(@Param('id') id: string) {
+        return this.appraisalService.deleteIndicator(id);
+    }
+
     @Patch(':id/update')
     updateAppraisal(
         @Param() id: string,
