@@ -16,6 +16,7 @@ import { PaginationOptionsInterface } from '../../../common/paginate';
 import { PatientVitalRepository } from '../repositories/patient_vitals.repository';
 import { PatientRequestHelper } from '../../../common/utils/PatientRequestHelper';
 import { Pagination } from '../../../common/paginate/paginate.interface';
+import { UserRepository } from '../../hr/user.repository';
 
 @Injectable()
 export class AdmissionsService {
@@ -24,6 +25,8 @@ export class AdmissionsService {
         private admissionRepository: AdmissionsRepository,
         @InjectRepository(AdmissionClinicalTaskRepository)
         private clinicalTaskRepository: AdmissionClinicalTaskRepository,
+        @InjectRepository(UserRepository)
+        private userRepository: UserRepository,
         @InjectRepository(PatientRepository)
         private patientRepository: PatientRepository,
         @InjectRepository(StaffRepository)
@@ -197,8 +200,15 @@ export class AdmissionsService {
                 relations: ['nextOfKin', 'immunization', 'hmo'],
             });
 
+            const user = await this.userRepository.findOne({
+                where: { username: request.createdBy },
+                relations: ['details'],
+            });
+              
+
             const data = {
                 ...request,
+                staff: user,
                 vitals,
                 admission,
                 patient,

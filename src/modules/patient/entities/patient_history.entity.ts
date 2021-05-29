@@ -6,10 +6,10 @@ import { PatientAntenatal } from './patient_antenatal.entity';
 
 @Entity({ name: 'patient_histories' })
 export class PatientHistory extends CustomBaseEntity {
-    @Column()
+    @Column({nullable: true})
     category: string;
 
-    @Column({ type: 'jsonb', nullable: true })
+    @Column({ type: 'text' })
     description: string;
 
     @ManyToOne(type => Patient)
