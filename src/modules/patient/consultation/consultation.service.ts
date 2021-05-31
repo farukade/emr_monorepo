@@ -24,10 +24,12 @@ import { PatientConsumable } from '../entities/patient_consumable.entity';
 import { ConsumableRepository } from '../../settings/consumable/consumable.repository';
 import { Appointment } from '../../frontdesk/appointment/appointment.entity';
 import { AuthRepository } from '../../auth/auth.repository';
+import { Connection } from 'typeorm';
 
 @Injectable()
 export class ConsultationService {
     constructor(
+        private connection: Connection,
         private readonly appGateway: AppGateway,
         @InjectRepository(PatientAllergenRepository)
         private allergenRepository: PatientAllergenRepository,
@@ -50,7 +52,6 @@ export class ConsultationService {
 
     async getEncounters(options: PaginationOptionsInterface, urlParams): Promise<any> {
         const { startDate, endDate, patient_id } = urlParams;
-
         const query = this.encounterRepository.createQueryBuilder('e')
             .select('e.*');
 
@@ -76,32 +77,91 @@ export class ConsultationService {
             .skip(page * options.limit)
             .getRawMany();
 
+        const queryRunner = this.connection.createQueryRunner();
+        await queryRunner.connect();
+
+        // lets now open a new transaction:
+        await queryRunner.startTransaction();
+
         let result = [];
-        for (const item of items) {
-            const patient = await this.patientRepository.findOne(item.patient, {
-                relations: ['nextOfKin', 'immunization', 'hmo'],
-            });
+        try {
 
-            const staff = await this.authRepository.findOne({ where: {username: item.createdBy}, relations: ['details']});
+            for (const item of items) {
+                const patient = await this.patientRepository.findOne(item.patient, {
+                    relations: ['nextOfKin', 'immunization', 'hmo'],
+                });
+    
+                const staff = await this.authRepository.findOne({ where: {username: item.createdBy}, relations: ['details']});
+    
+                item.patient = patient;
+                item.staff = staff;
+                const encounter_id = item.id;
+                const pns = await queryRunner.manager.createQueryBuilder(PatientNote, 'patient_notes')
+                .where('patient_notes.encounter_id = :encounter_id', { encounter_id: encounter_id }).getMany();
 
-            item.patient = patient;
-            item.staff = staff;
 
-            result = [...result, item];
+                const pallg = await queryRunner.manager.createQueryBuilder(PatientAllergen, 'patient_allergens')
+                .where('patient_allergens.encounter_id = :encounter_id', { encounter_id: encounter_id }).getMany();
+                
+              
+                const pd = await queryRunner.manager.createQueryBuilder(PatientDiagnosis, 'patient_diagnoses')
+                .where('patient_diagnoses.encounter_id = :encounter_id', { encounter_id: encounter_id }).getMany();
+                
+                
+                const ph = await queryRunner.manager.findOne(PatientHistory,{where: { encounter: item }});
+               
+                const pros = await queryRunner.manager.createQueryBuilder(PatientReviewOfSystem, 'patient_review_of_systems')
+                .where('patient_review_of_systems.encounter_id = :encounter_id', { encounter_id: encounter_id }).getMany();
+                
+               
+                const ppe = await queryRunner.manager.createQueryBuilder(PatientPhysicalExam, 'patient_physical_exams')
+                .where('patient_physical_exams.encounter_id = :encounter_id', { encounter_id: encounter_id }).getMany();
+ 
+                const pc = await queryRunner.manager.createQueryBuilder(PatientConsumable, 'patient_consumables')
+                .where('patient_consumables.encounter_id = :encounter_id', { encounter_id: encounter_id }).getMany();
+                console.log(ph)
+                item.patient_diagnoses = pd;
+                item.patient_allergens = pallg;
+                item.patient_history = ph;
+                item.patient_review_of_systems = pros;
+                item.patient_physical_exams = ppe;
+                item.patient_consumables = pc;
+
+                for(const note of pns){
+                    switch(note.type){
+                        case 'complaints':
+                           item.complaints = note;
+                        case 'treatment-plan':
+                            item.treatment_plan = note;
+                        case 'instruction':
+                            item.instruction = note;
+                    }
+                }
+    
+                result = [...result, item];
+            }
+
+            return {
+                result,
+                lastPage: Math.ceil(total / options.limit),
+                itemsPerPage: options.limit,
+                totalPages: total,
+                currentPage: options.page,
+            };
+
+        } catch (err) {
+            await queryRunner.rollbackTransaction();
+            return { success: false, error: `${err.message || 'problem fecthcing encounter at the moment please try again later'}`}
+        } finally {
+            await queryRunner.release();
         }
 
-        return {
-            result,
-            lastPage: Math.ceil(total / options.limit),
-            itemsPerPage: options.limit,
-            totalPages: total,
-            currentPage: options.page,
-        };
     }
 
     async saveEncounter(patientId: number, param: EncounterDto, urlParam, createdBy) {
         const { appointment_id } = urlParam;
         const { investigations, nextAppointment } = param;
+        console.log(param.medicalHistory);
 
         try {
             const patient = await this.patientRepository.findOne(patientId, { relations: ['hmo'] });
@@ -187,16 +247,33 @@ export class ConsultationService {
                 await patientDiagnosis.save();
             }
 
-            for (const diagnosis of param.medicalHistory) {
-                const patientDiagnosis = new PatientPastDiagnosis();
-                patientDiagnosis.item = diagnosis.diagnosis;
-                patientDiagnosis.diagnosedAt = diagnosis.date;
-                patientDiagnosis.patient = patient;
-                patientDiagnosis.encounter = encounter;
-                patientDiagnosis.comment = diagnosis.comment;
-                patientDiagnosis.createdBy = createdBy;
-                await patientDiagnosis.save();
+
+            const his = param.medicalHistory.replace(/(<([^>]+)>)/gi, '')
+                .replace(/&nbsp;/g, '')
+                .replace('Past Medical History', '')
+                .replace(/\s/g, '')
+                .replace(/\/r/g, '')
+                .split(':').join('');
+
+            if (encodeURIComponent(his) !== '%E2%80%8B') {
+                const patHistory = new PatientHistory();
+                patHistory.description = param.medicalHistory;
+                patHistory.patient = patient;
+                patHistory.encounter = encounter;
+                patHistory.createdBy = createdBy;
+                await patHistory.save();
             }
+
+            // for (const diagnosis of param.medicalHistory) {
+            //     const patientDiagnosis = new PatientPastDiagnosis();
+            //     patientDiagnosis.item = diagnosis.diagnosis;
+            //     patientDiagnosis.diagnosedAt = diagnosis.date;
+            //     patientDiagnosis.patient = patient;
+            //     patientDiagnosis.encounter = encounter;
+            //     patientDiagnosis.comment = diagnosis.comment;
+            //     patientDiagnosis.createdBy = createdBy;
+            //     await patientDiagnosis.save();
+            // }
 
             for (const exam of param.physicalExamination) {
                 const physicalExam = new PatientPhysicalExam();
@@ -232,15 +309,15 @@ export class ConsultationService {
                 }
             }
 
-            for (const item of param.patientHistorySelected) {
-                const history = new PatientHistory();
-                history.category = item.category;
-                history.description = item.description;
-                history.patient = patient;
-                history.encounter = encounter;
-                history.createdBy = createdBy;
-                await history.save();
-            }
+            // for (const item of param.patientHistorySelected) {
+            //     const history = new PatientHistory();
+            //     history.category = item.category;
+            //     history.description = item.description;
+            //     history.patient = patient;
+            //     history.encounter = encounter;
+            //     history.createdBy = createdBy;
+            //     await history.save();
+            // }
 
             if (investigations.labRequest) {
                 const labRequest = await PatientRequestHelper.handleLabRequest(investigations.labRequest, patient, createdBy);

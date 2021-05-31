@@ -6,7 +6,7 @@ export class EncounterDto {
     complaints: string;
     reviewOfSystem: any[];
     patientHistorySelected: any[];
-    medicalHistory: any[];
+    medicalHistory: string;
     allergies: IAllergyInterface[];
     pastAllergies: any[];
     physicalExamination: any[];
