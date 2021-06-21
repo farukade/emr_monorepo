@@ -51,7 +51,7 @@ export class HmoController {
         return this.hmoService.fetchTransactions({ page, limit }, params);
     }
 
-    @Get(':id/tariff')
+    @Get('/tariffs')
     getHmoTariff(
         @Param('id') id: string,
         @Query() params,

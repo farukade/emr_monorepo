@@ -19,6 +19,7 @@ import { PaginationOptionsInterface } from '../../common/paginate';
 import { AppGateway } from '../../app.gateway';
 import { Pagination } from '../../common/paginate/paginate.interface';
 import { PatientRepository } from '../patient/repositories/patient.repository';
+import { ServiceCategoryRepository } from '../settings/services/service.category.repository';
 
 @Injectable()
 export class HmoService {
@@ -37,6 +38,8 @@ export class HmoService {
         private queueSystemRepository: QueueSystemRepository,
         @InjectRepository(PatientRepository)
         private patientRepository: PatientRepository,
+        @InjectRepository(ServiceCategoryRepository)
+        private serviceCategory: ServiceCategoryRepository,
         private readonly appGateway: AppGateway,
     ) {
     }
@@ -56,26 +59,34 @@ export class HmoService {
     }
 
     async getHmoTariff(id, urlParams, options: PaginationOptionsInterface): Promise<Pagination> {
-        const { listType } = urlParams;
+        const { listType, hmo_id } = urlParams;
 
         const page = options.page - 1;
 
         if (listType === 'services') {
-            const query = await this.serviceRepository.createQueryBuilder('q').select('q.*')
-                .where('q.hmo_id = :id', { id });
+            const query = await this.serviceRepository.createQueryBuilder('q').select('q.*');
+
+            if (hmo_id && hmo_id !== '') {
+                query.where('q.hmo_id = :id', { id });
+            }
 
             const services = await query.offset(page * options.limit)
                 .limit(options.limit)
                 .orderBy('q.createdAt', 'DESC')
                 .getRawMany();
 
+            let result = [];
             for (const s of services) {
-                s.hmo = await this.hmoRateRepository.findOne(s.hmo_id);
+                s.hmo = await this.hmoRepository.findOne(s.hmo_id);
+                s.category = await this.serviceCategory.findOne(s.category_id);
+
+                result = [...result, s];
             }
 
             const total = await query.getCount();
+
             return {
-                result: services,
+                result,
                 lastPage: Math.ceil(total / options.limit),
                 itemsPerPage: options.limit,
                 totalPages: total,
