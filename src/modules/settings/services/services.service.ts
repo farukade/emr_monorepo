@@ -55,6 +55,7 @@ export class ServicesService {
             });
         } else {
             [result, total] = await this.serviceRepository.findAndCount({
+                where: { hmo },
                 relations: ['category', 'subCategory', 'hmo'],
                 order: { name: 'ASC' },
                 take: options.limit,
