@@ -3,8 +3,7 @@ import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { Patient } from './patient.entity';
 
 @Entity({ name: 'patient_alerts' })
-export class PatientNOK extends CustomBaseEntity {
-
+export class PatientAlert extends CustomBaseEntity {
     @ManyToOne(type => Patient)
     @JoinColumn({ name: 'patient_id' })
     patient: Patient;

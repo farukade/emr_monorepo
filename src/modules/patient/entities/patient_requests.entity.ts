@@ -32,6 +32,9 @@ export class PatientRequest extends CustomBaseEntity {
     @Column({type: 'smallint', default: 0})
     status: number;
 
+    @Column({ nullable: true, name: 'procedure_id' })
+    procedureId: number;
+
     @OneToMany(type => AdmissionClinicalTask, task => task.request)
     task: AdmissionClinicalTask;
 

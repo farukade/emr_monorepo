@@ -70,8 +70,7 @@ export class AdmissionsController {
         return this.admissionService.deleteTask(taskId, req.user.username);
     }
 
-
-    @Patch('/create-task/:id')
+    @Post('/create-task/:id')
     createTask(
         @Param('id') id: number,
         @Body() params,

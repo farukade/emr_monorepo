@@ -52,6 +52,7 @@ export class ConsultationService {
 
     async getEncounters(options: PaginationOptionsInterface, urlParams): Promise<any> {
         const { startDate, endDate, patient_id } = urlParams;
+
         const query = this.encounterRepository.createQueryBuilder('e')
             .select('e.*');
 
@@ -161,7 +162,6 @@ export class ConsultationService {
     async saveEncounter(patientId: number, param: EncounterDto, urlParam, createdBy) {
         const { appointment_id } = urlParam;
         const { investigations, nextAppointment } = param;
-        console.log(param.medicalHistory);
 
         try {
             const patient = await this.patientRepository.findOne(patientId, { relations: ['hmo'] });
@@ -309,21 +309,22 @@ export class ConsultationService {
                 }
             }
 
-            // for (const item of param.patientHistorySelected) {
-            //     const history = new PatientHistory();
-            //     history.category = item.category;
-            //     history.description = item.description;
-            //     history.patient = patient;
-            //     history.encounter = encounter;
-            //     history.createdBy = createdBy;
-            //     await history.save();
-            // }
+            for (const item of param.patientHistorySelected) {
+                const history = new PatientHistory();
+                history.category = item.category;
+                history.description = item.description;
+                history.patient = patient;
+                history.encounter = encounter;
+                history.createdBy = createdBy;
+                await history.save();
+            }
 
             if (investigations.labRequest) {
                 const labRequest = await PatientRequestHelper.handleLabRequest(investigations.labRequest, patient, createdBy);
                 if (labRequest.success) {
                     // save transaction
-                    const payment = await RequestPaymentHelper.clinicalLabPayment(labRequest.data, patient, createdBy);
+                    // tslint:disable-next-line:max-line-length
+                    const payment = await RequestPaymentHelper.clinicalLabPayment(labRequest.data, patient, createdBy, investigations.labRequest.pay_later);
                     this.appGateway.server.emit('paypoint-queue', { payment: payment.transactions });
                 }
             }
@@ -332,7 +333,13 @@ export class ConsultationService {
                 const request = await PatientRequestHelper.handleServiceRequest(investigations.radiologyRequest, patient, createdBy, 'radiology');
                 if (request.success) {
                     // save transaction
-                    const payment = await RequestPaymentHelper.servicePayment(request.data, patient, createdBy, 'radiology', 'now');
+                    const payment = await RequestPaymentHelper.servicePayment(
+                        request.data,
+                        patient,
+                        createdBy,
+                        'radiology',
+                        investigations.radiologyRequest.pay_later,
+                    );
                     this.appGateway.server.emit('paypoint-queue', { payment: payment.transactions });
                 }
             }
@@ -379,7 +386,7 @@ export class ConsultationService {
 
             await this.queueSystemRepository.delete({ appointment });
 
-            return { success: true, appointment: {...rs, encounter} };
+            return { success: true, appointment: { ...rs, encounter } };
         } catch (err) {
             console.log(err);
             return { success: false, message: err.message };

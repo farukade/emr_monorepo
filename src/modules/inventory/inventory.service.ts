@@ -16,6 +16,7 @@ import { VendorRepository } from './vendor/vendor.repository';
 import * as moment from 'moment';
 import { Pagination } from '../../common/paginate/paginate.interface';
 import { HmoRepository } from '../hmo/hmo.repository';
+import { Brackets, Raw } from 'typeorm';
 
 @Injectable()
 export class InventoryService {
@@ -36,24 +37,29 @@ export class InventoryService {
     /*
         INVENTORY
     */
-
-    async getAllStocks(options: PaginationOptionsInterface, categoryId: string): Promise<Pagination> {
-        const category = await this.inventoryCategoryRepository.findOne(categoryId);
-
+    async getAllStocks(options: PaginationOptionsInterface, q: string, hmoId: string): Promise<Pagination> {
         const page = options.page - 1;
+
+        const hmo = await this.hmoRepository.findOne(hmoId);
 
         let result;
         let count;
-        if (categoryId && categoryId !== '' && category) {
+        if (q && q !== '') {
             result = await this.stockRepository.find({
-                where: { category },
+                where: [
+                    { name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`), hmo },
+                    { generic_name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`), hmo },
+                ],
                 relations: ['subCategory', 'category', 'vendor'],
                 take: options.limit,
                 skip: (page * options.limit),
             });
 
             count = await this.stockRepository.count({
-                where: { category },
+                where: [
+                    { name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`), hmo },
+                    { generic_name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`), hmo },
+                ],
             });
         } else {
             result = await this.stockRepository.find({
@@ -78,12 +84,15 @@ export class InventoryService {
         return await this.stockRepository.findOne(id);
     }
 
-    async getStocksByCategoryId(category_id: string, hmo_id: string): Promise<Stock[]> {
-        // find category
-        const category = await this.inventoryCategoryRepository.findOne(category_id);
-        const hmo = await this.hmoRepository.findOne(hmo_id);
-
-        return this.stockRepository.find({ where: { category, hmo }, relations: ['vendor', 'hmo'] });
+    async getStocksByCategoryId(category_id: string, hmo_id: string, q: string): Promise<Stock[]> {
+        return this.stockRepository.createQueryBuilder('s')
+            .where('category_id = :category_id', { category_id })
+            .where('hmo_id = :hmo_id', { hmo_id })
+            .andWhere(new Brackets(qb => {
+                qb.where('LOWER(s.name) Like :name', { name: `%${q.toLowerCase()}%` })
+                    .orWhere('LOWER(s.generic_name) Like :generic_name', { generic_name: `%${q.toLowerCase()}%` });
+            }))
+            .getMany();
     }
 
     async getStocksByCategoryName(name: string): Promise<Stock[]> {

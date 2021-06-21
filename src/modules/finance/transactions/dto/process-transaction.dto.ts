@@ -13,4 +13,6 @@ export class ProcessTransactionDto {
 
     @IsNotEmpty()
     payment_type: string;
+
+    is_part_payment: number;
 }

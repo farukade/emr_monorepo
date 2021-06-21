@@ -109,7 +109,7 @@ export class PatientRequestService {
     }
 
     async listPatientRequests(requestType, patient_id, urlParams): Promise<any> {
-        const { startDate, endDate, filled, page, limit, today } = urlParams;
+        const { startDate, endDate, filled, page, limit, today, procedure_id } = urlParams;
 
         const queryLimit = limit ? parseInt(limit, 10) : 30;
         const offset = (page ? parseInt(page, 10) : 1) - 1;
@@ -135,6 +135,10 @@ export class PatientRequestService {
 
         if (today && today !== '') {
             query.andWhere(`CAST(q.createdAt as text) LIKE '%${today}%'`);
+        }
+
+        if (procedure_id && procedure_id !== '') {
+            query.andWhere('q.procedureId = :procedure_id', { procedure_id });
         }
 
         if (filled) {
@@ -187,7 +191,7 @@ export class PatientRequestService {
                 let labRequest = await PatientRequestHelper.handleLabRequest(param, patient, createdBy);
                 if (labRequest.success) {
                     // save transaction
-                    const payment = await RequestPaymentHelper.clinicalLabPayment(labRequest.data, patient, createdBy);
+                    const payment = await RequestPaymentHelper.clinicalLabPayment(labRequest.data, patient, createdBy, param.pay_later);
                     // @ts-ignore
                     labRequest = { ...payment.labRequest };
 
@@ -206,7 +210,7 @@ export class PatientRequestService {
                 let request = await PatientRequestHelper.handleServiceRequest(param, patient, createdBy, requestType);
                 if (request.success) {
                     // save transaction
-                    const payment = await RequestPaymentHelper.servicePayment(request.data, patient, createdBy, requestType, 'now');
+                    const payment = await RequestPaymentHelper.servicePayment(request.data, patient, createdBy, requestType, param.pay_later);
 
                     // @ts-ignore
                     request = { ...payment.request };
@@ -287,7 +291,6 @@ export class PatientRequestService {
                 amount: total_amount,
                 description: 'Payment for pharmacy request',
                 payment_type: patient.hmo.id === 1 ? 'Private' : 'HMO',
-                hmo_approval_status: patient.hmo.id === 1 ? 2 : 0,
                 transaction_type: 'pharmacy',
                 // tslint:disable-next-line:max-line-length
                 transaction_details: items.map(i => ({
@@ -304,6 +307,7 @@ export class PatientRequestService {
                 })),
                 createdBy: updatedBy,
                 request,
+                hmo: patient.hmo,
             };
 
             const payment = await getConnection()
@@ -463,6 +467,74 @@ export class PatientRequestService {
         }
     }
 
+    async scheduleProcedure(id: number, params, username: string) {
+        try {
+            const { resources, start_date, end_date } = params;
+
+            const request = await this.patientRequestItemRepository.findOne(id);
+            request.resources = resources;
+            request.scheduledDate = true;
+            request.scheduledStartDate = start_date;
+            request.scheduledEndDate = end_date;
+            request.lastChangedBy = username;
+            await request.save();
+
+            const rs = await this.patientRequestItemRepository.findOne({ where: { id }, relations: ['diagnosis', 'transaction'] });
+
+            return { success: true, data: rs };
+        } catch (e) {
+            return { success: false, message: e.message };
+        }
+    }
+
+    async startProcedure(id: number, params, username: string) {
+        try {
+            const { date } = params;
+
+            const requestItem = await this.patientRequestItemRepository.findOne(id, { relations: ['request'] });
+            requestItem.startedDate = date;
+            requestItem.approved = 1;
+            requestItem.approvedBy = username;
+            requestItem.approvedAt = moment().format('YYYY-MM-DD HH:mm:ss');
+            requestItem.lastChangedBy = username;
+            await requestItem.save();
+
+            const request = await this.patientRequestRepository.findOne(requestItem.request.id);
+            request.status = 1;
+            await request.save();
+
+            const rs = await this.patientRequestItemRepository.findOne({ where: { id }, relations: ['diagnosis', 'transaction'] });
+
+            return { success: true, data: rs };
+        } catch (e) {
+            return { success: false, message: e.message };
+        }
+    }
+
+    async endProcedure(id: number, params, username: string) {
+        try {
+            const { date } = params;
+
+            const requestItem = await this.patientRequestItemRepository.findOne(id, { relations: ['request'] });
+            requestItem.finishedDate = date;
+            requestItem.filled = 1;
+            requestItem.filledBy = username;
+            requestItem.filledAt = moment().format('YYYY-MM-DD HH:mm:ss');
+            requestItem.lastChangedBy = username;
+            await requestItem.save();
+
+            const request = await this.patientRequestRepository.findOne(requestItem.request.id);
+            request.isFilled = true;
+            await request.save();
+
+            const rs = await this.patientRequestItemRepository.findOne({ where: { id }, relations: ['diagnosis', 'transaction'] });
+
+            return { success: true, data: rs };
+        } catch (e) {
+            return { success: false, message: e.message };
+        }
+    }
+
     async deleteRequest(id: string, params, username: string) {
         // const { type } = params;
         const requestItem = await this.patientRequestItemRepository.findOne(id);
@@ -530,7 +602,7 @@ export class PatientRequestService {
 
             const date = new Date();
             const filename = `${type}-${date.getTime()}.pdf`;
-            const filepath = path.resolve(__dirname, `../../../public/result/${filename}`);
+            const filepath = path.resolve(__dirname, `../../../../public/result/${filename}`);
 
             const dob = moment(patient.date_of_birth, 'YYYY-MM-DD HH:mm:ss').format('YYYY-MM-DD');
 
@@ -564,6 +636,7 @@ export class PatientRequestService {
 
             return { success: true, file: `${process.env.ENDPOINT}/public/result/${filename}` };
         } catch (error) {
+            console.log(error);
             return { success: false, message: error.message };
         }
     }

@@ -152,7 +152,7 @@ export class AppointmentService {
             const { patient_id, doctor_id, consulting_room_id, service_id, sendToQueue, department_id, consultation_id } = appointmentDto;
 
             // find patient details
-            const patient = await this.patientRepository.findOne(patient_id);
+            const patient = await this.patientRepository.findOne(patient_id, { relations: ['hmo'] });
             if (!patient) {
                 return { success: false, message: 'please select a patient' };
             }
@@ -325,7 +325,7 @@ export class AppointmentService {
             description: service.name,
             payment_type: paymentType,
             transaction_type: 'appointment',
-            hmo_approval_status: hmoApprovalStatus,
+            hmo: patient.hmo,
         };
 
         return await this.transactionsRepository.save(data);

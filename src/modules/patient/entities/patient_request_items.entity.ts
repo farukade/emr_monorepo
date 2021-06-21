@@ -82,6 +82,21 @@ export class PatientRequestItem extends CustomBaseEntity {
     @Column({ default: false })
     refillable: boolean;
 
+    @Column({ default: false, name: 'scheduled_date' })
+    scheduledDate: boolean;
+
+    @Column({ nullable: true, name: 'scheduled_start_date' })
+    scheduledStartDate: string;
+
+    @Column({ nullable: true, name: 'scheduled_end_date' })
+    scheduledEndDate: string;
+
+    @Column({ nullable: true, name: 'started_date' })
+    startedDate: string;
+
+    @Column({ nullable: true, name: 'finished_date' })
+    finishedDate: string;
+
     @Column({ default: 0 })
     refills: number;
 
@@ -108,6 +123,9 @@ export class PatientRequestItem extends CustomBaseEntity {
     @OneToMany(type => PatientDiagnosis, data => data.request, { eager: true })
     @JoinColumn({ name: 'patient_diagnosis_id' })
     diagnosis: PatientDiagnosis;
+
+    @Column({ nullable: true })
+    resources: string;
 
     @OneToOne(type => Transactions, data => data.patientRequestItem)
     @JoinColumn({ name: 'transaction_id' })

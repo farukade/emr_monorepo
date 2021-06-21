@@ -61,7 +61,7 @@ export class PatientRequestHelper {
     }
 
     static async handlePharmacyRequest(param, patient, createdBy) {
-        const { requestType, request_note, items, id } = param;
+        const { requestType, request_note, items, id, procedure_id } = param;
 
         const data = {
             requestType,
@@ -69,6 +69,7 @@ export class PatientRequestHelper {
             requestNote: request_note,
             createdBy,
             lastChangedBy: null,
+            procedureId: procedure_id,
         };
 
         let res;

@@ -5,12 +5,14 @@ import * as hbs from 'handlebars';
 import * as utils from 'util';
 import { SmsHistory } from '../entities/sms.entity';
 import { getConnection } from 'typeorm';
+import { User } from '../../modules/hr/entities/user.entity';
+import { StaffDetails } from '../../modules/hr/staff/entities/staff_details.entity';
 
 const apiKey = process.env.API_KEY;
 const apiSecret = process.env.API_SECRET;
 
 // tslint:disable-next-line:no-var-requires prefer-const
-var smsglobal = require('smsglobal')(apiKey, apiSecret);
+let smsglobal = require('smsglobal')(apiKey, apiSecret);
 
 export const slugify = (text) => {
     return text
@@ -127,4 +129,16 @@ export const formatPID = id => {
         len--;
     }
     return formattedId;
+};
+
+export const getStaff = async (username: string): Promise<StaffDetails> => {
+    const connection = getConnection();
+    const user = await connection.getRepository(User).findOne({ where: { username } });
+
+    return await connection.getRepository(StaffDetails).findOne({ where: { user } });
+};
+
+export const fixAmount = (amount) => {
+    const price = amount.split(',').join('');
+    return amount === '' ? 0 : price;
 };

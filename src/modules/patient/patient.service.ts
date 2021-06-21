@@ -5,11 +5,8 @@ import { PatientNOKRepository } from './repositories/patient.nok.repository';
 import { Patient } from './entities/patient.entity';
 import { PatientDto } from './dto/patient.dto';
 import { Connection, getConnection, Brackets } from 'typeorm';
-import { ServiceRepository } from '../settings/services/service.repository';
 import { PatientVitalRepository } from './repositories/patient_vitals.repository';
-import { PatientAntenatalRepository } from './repositories/patient_antenatal.repository';
 import { PatientVital } from './entities/patient_vitals.entity';
-import { PatientRequestRepository } from './repositories/patient_request.repository';
 import * as moment from 'moment';
 import { HmoRepository } from '../hmo/hmo.repository';
 import { VoucherRepository } from '../finance/vouchers/voucher.repository';
@@ -33,6 +30,10 @@ import { PatientRequestItemRepository } from './repositories/patient_request_ite
 import { PatientDiagnosisRepository } from './repositories/patient_diagnosis.repository';
 import { PatientDiagnosis } from './entities/patient_diagnosis.entity';
 import { MailService } from '../mail/mail.service';
+import { Service } from '../settings/entities/service.entity';
+import { Transactions } from '../finance/transactions/transaction.entity';
+import { PatientAlert } from './entities/patient_alert.entity';
+import { PatientAlertRepository } from './repositories/patient_alert.repository';
 
 @Injectable()
 export class PatientService {
@@ -70,6 +71,8 @@ export class PatientService {
         private patientRequestItemRepository: PatientRequestItemRepository,
         @InjectRepository(PatientDiagnosisRepository)
         private patientDiagnosisRepository: PatientDiagnosisRepository,
+        @InjectRepository(PatientAlertRepository)
+        private patientAlertRepository: PatientAlertRepository,
     ) {
     }
 
@@ -119,7 +122,13 @@ export class PatientService {
                 patient.nextOfKin = await this.nextOfKinRepository.findOne(patient.nextOfKin_id);
             }
 
-            const transactions = await this.transactionsRepository.find({ where: { patient, status: 0 } });
+            const transactions = await this.transactionsRepository.createQueryBuilder('q')
+                .select('q.*')
+                .where(new Brackets(qb => {
+                    qb.where('q.status = 0').orWhere('q.status = -1');
+                }))
+                .andWhere('q.patient_id = :patient_id', { patient_id: patient.id })
+                .getRawMany();
 
             // tslint:disable-next-line:no-shadowed-variable
             patient.wallet = transactions.reduce((total, item) => total + item.amount, 0);
@@ -172,6 +181,22 @@ export class PatientService {
             const splits = patient.other_names.split(' ');
             const message = `Dear ${patient.surname} ${splits.length > 0 ? splits[0] : patient.other_names}, welcome to the DEDA Family. Your ID/Folder number is ${formatPID(patient.id)}. Kindly save the number and provide it at all your appointment visits. Thank you.`;
 
+            const service = await getConnection().getRepository(Service).findOne(1);
+
+            const data = {
+                patient,
+                amount: parseFloat(service.hmoTarrif),
+                description: 'Payment for Patient Registration',
+                payment_type: (hmo.name !== 'Private') ? 'HMO' : '',
+                transaction_type: 'registration',
+                transaction_details: service,
+                createdBy,
+                status: 0,
+                hmo,
+            };
+
+            await this.save(data);
+
             if (process.env.DEBUG === 'false') {
                 // send sms
                 await sendSMS(patient.phoneNumber, message);
@@ -180,7 +205,12 @@ export class PatientService {
                 await this.mailService.regMail(patient);
             }
 
-            return { success: true, patient };
+            const transactions = await this.transactionsRepository.find({ where: { patient, status: 0 } });
+
+            const wallet = transactions.reduce((total, item) => total + item.amount, 0);
+            const pat = { ...patient, wallet };
+
+            return { success: true, patient: pat };
         } catch (err) {
             return { success: false, message: err.message };
         }
@@ -358,6 +388,14 @@ export class PatientService {
                 };
                 const readings = await this.patientVitalRepository.save(data);
 
+                if (isAbnormal) {
+                    const alert = new PatientAlert();
+                    alert.patient = patient;
+                    alert.type = readingType;
+                    alert.message = message;
+                    await alert.save();
+                }
+
                 return { success: true, readings };
             } else {
                 return { success: false, message: 'Patient record was not found' };
@@ -469,6 +507,15 @@ export class PatientService {
         return await query.orderBy('q.createdAt', 'DESC').getMany();
     }
 
+    async getAlerts(id: number): Promise<PatientAlert[]> {
+        const query = this.patientAlertRepository.createQueryBuilder('q')
+            .innerJoin(Patient, 'patient', 'q.patient = patient.id')
+            .where('q.patient = :id', { id })
+            .andWhere('q.read = :read', { read: false });
+
+        return await query.orderBy('q.createdAt', 'DESC').getMany();
+    }
+
     async doUploadDocument(id, param, fileName, createdBy) {
         try {
             const patient = await this.patientRepository.findOne(id);
@@ -499,5 +546,14 @@ export class PatientService {
         } catch (error) {
             return { success: false, message: error.message };
         }
+    }
+
+    public async save(data) {
+        return await getConnection()
+            .createQueryBuilder()
+            .insert()
+            .into(Transactions)
+            .values(data)
+            .execute();
     }
 }

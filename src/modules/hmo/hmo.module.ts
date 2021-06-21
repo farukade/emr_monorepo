@@ -9,6 +9,7 @@ import { HmoRateRepository } from './hmo-rate.repository';
 import { TransactionsRepository } from '../finance/transactions/transactions.repository';
 import { QueueSystemRepository } from '../frontdesk/queue-system/queue-system.repository';
 import { AppGateway } from '../../app.gateway';
+import { PatientRepository } from '../patient/repositories/patient.repository';
 
 @Module({
   imports: [TypeOrmModule.forFeature([
@@ -18,6 +19,7 @@ import { AppGateway } from '../../app.gateway';
     StockRepository,
     TransactionsRepository,
     QueueSystemRepository,
+    PatientRepository,
   ])],
   controllers: [HmoController],
   providers: [AppGateway, HmoService],

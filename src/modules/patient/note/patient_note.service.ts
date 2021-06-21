@@ -5,6 +5,7 @@ import { PatientNoteRepository } from '../repositories/patient_note.repository';
 import { PaginationOptionsInterface } from '../../../common/paginate';
 import { PatientNote } from '../entities/patient_note.entity';
 import { AuthRepository } from '../../auth/auth.repository';
+import { getStaff } from '../../../common/utils/utils';
 
 @Injectable()
 export class PatientNoteService {
@@ -19,23 +20,35 @@ export class PatientNoteService {
     }
 
     async getNotes(options: PaginationOptionsInterface, params): Promise<any> {
-        const { patient_id, type } = params;
+        const { patient_id, type, id } = params;
 
         const page = options.page - 1;
 
         const patient = await this.patientRepository.findOne(patient_id);
 
-        const [result, total] = await this.patientNoteRepository.findAndCount({
-            where: { patient, type },
-            relations: ['patient'],
-            order: { createdAt: 'DESC' },
-            take: options.limit,
-            skip: (page * options.limit),
-        });
+        let result;
+        let total = 0;
+        if (id && id !== '') {
+            [result, total] = await this.patientNoteRepository.findAndCount({
+                where: { patient, type, itemId: id },
+                relations: ['patient'],
+                order: { createdAt: 'DESC' },
+                take: options.limit,
+                skip: (page * options.limit),
+            });
+        } else {
+            [result, total] = await this.patientNoteRepository.findAndCount({
+                where: { patient, type },
+                relations: ['patient'],
+                order: { createdAt: 'DESC' },
+                take: options.limit,
+                skip: (page * options.limit),
+            });
+        }
 
         let notes = [];
         for (const item of result) {
-            const staff = await this.authRepository.findOne({ where: { username: item.createdBy }, relations: ['details'] });
+            const staff = await getStaff(item.createdBy);
 
             notes = [...notes, { ...item, staff }];
         }
@@ -50,7 +63,7 @@ export class PatientNoteService {
     }
 
     async saveNote(param, createdBy) {
-        const { patient_id, description, type, category, specialty } = param;
+        const { id, patient_id, description, type, category, specialty } = param;
 
         const patient = await this.patientRepository.findOne(patient_id);
 
@@ -60,6 +73,7 @@ export class PatientNoteService {
         note.category = category;
         note.specialty = specialty;
         note.patient = patient;
+        note.itemId = id;
         note.createdBy = createdBy;
 
         return await note.save();

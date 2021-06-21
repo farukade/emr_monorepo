@@ -12,7 +12,7 @@ import { ServiceSubCategoryDto } from './dto/service.sub.category.dto';
 import { HmoRepository } from '../../hmo/hmo.repository';
 import { LabTestCategoryRepository } from '../lab/lab.category.repository';
 import { LabTestRepository } from '../lab/lab.test.repository';
-import { slugify } from '../../../common/utils/utils';
+import { fixAmount, slugify } from '../../../common/utils/utils';
 import { ServicesUploadRateDto } from './dto/service.upload.dto';
 import { PaginationOptionsInterface } from '../../../common/paginate';
 import { Pagination } from '../../../common/paginate/paginate.interface';
@@ -156,21 +156,28 @@ export class ServicesService {
         try {
             // read uploaded file
             fs.createReadStream(file.path)
-                .pipe(csv())
+                .pipe(csv({
+                    mapHeaders: ({ header, index }) => header.toLowerCase(),
+                }))
                 .on('data', async (row) => {
+                    const category = Object.values(row)[Object.keys(row).findIndex(c => c.trim() === 'category')];
+
                     const data = {
-                        category: row.Category,
-                        subCategory: row.SubCategory,
-                        service: row.Service,
-                        amount: row.Amount,
-                        hmoAmount: row.HmoAmount,
+                        category,
+                        subCategory: row.subcategory,
+                        service: row.service,
+                        amount: row.amount,
+                        hmoAmount: row.hmoamount,
                     };
 
-                    if (data.category === 'Clinical Laboratory') {
-                        labs.push(data);
-                    } else {
-                        content.push(data);
+                    if (data.category && data.category !== '') {
+                        if (data.category === 'Clinical Laboratory') {
+                            labs.push(data);
+                        } else {
+                            content.push(data);
+                        }
                     }
+
                 })
                 .on('end', async () => {
                     console.log('CSV file successfully processed');
@@ -211,11 +218,11 @@ export class ServicesService {
                             const query = await this.serviceRepository.save({
                                 name: item.service,
                                 slug: slugify(item.service),
-                                tariff: item.amount.replace(',', ''),
+                                tariff: fixAmount(item.amount),
                                 category,
                                 subCategory: (subCategory) ? subCategory : null,
                                 hmo,
-                                hmoTarrif: (item.hmoAmount || item.amount).replace(',', ''),
+                                hmoTarrif: fixAmount(item.hmoAmount || item.amount),
                             });
 
                             query.hmo = hmo;
@@ -240,13 +247,13 @@ export class ServicesService {
                             const labTest = {
                                 name: test.service,
                                 slug: slugify(test.service),
-                                price: test.amount.replace(',', ''),
+                                price: fixAmount(test.amount),
                                 test_type: null,
                                 description: null,
                                 parameters: [],
                                 specimens: [],
                                 lab_category_id: category.id,
-                                hmoPrice: (test.hmoAmount || test.amount).replace(',', ''),
+                                hmoPrice: fixAmount(test.hmoAmount || test.amount),
                                 hasParameters: false,
                                 hmo_id: hmo.id,
                             };

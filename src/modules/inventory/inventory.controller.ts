@@ -34,22 +34,24 @@ export class InventoryController {
     constructor(private inventoryService: InventoryService) {
     }
 
-    /**
-     * INVENTORY CATEGORIES
-     */
     @Get('/stocks')
     getAllStocks(
         @Request() request,
         @Query('q') q: string,
+        @Query('hmo_id') hmo_id: string,
     ): Promise<Pagination> {
         const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 30;
         const page = request.query.hasOwnProperty('page') ? request.query.page : 1;
-        return this.inventoryService.getAllStocks({ page, limit }, q);
+        return this.inventoryService.getAllStocks({ page, limit }, q, hmo_id);
     }
 
     @Get('/stocks-by-category/:id/:hmo')
-    listStocksByCategory(@Param('id') category_id: string, @Param('hmo') hmo_id: string): Promise<Stock[]> {
-        return this.inventoryService.getStocksByCategoryId(category_id, hmo_id);
+    listStocksByCategory(
+        @Query('q') q: string,
+        @Param('id') category_id: string,
+        @Param('hmo') hmo_id: string,
+    ): Promise<Stock[]> {
+        return this.inventoryService.getStocksByCategoryId(category_id, hmo_id, q);
     }
 
     @Get('/stocks-by-category-name/:name')

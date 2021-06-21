@@ -83,7 +83,16 @@ export class TransactionsController {
         return this.transactionsService.update(id, transactionDto, req.user.username, req.query.hmo_approval_code);
     }
 
-    @Patch('/:id/process')
+    @Patch('/:id/decline')
+    @UsePipes(ValidationPipe)
+    declineTransaction(
+        @Param('id') id: number,
+        @Request() req,
+    ): Promise<any> {
+        return this.transactionsService.decline(id, req.user.username);
+    }
+
+    @Post('/:id/process')
     @UsePipes(ValidationPipe)
     processTransaction(
         @Param('id') id: number,

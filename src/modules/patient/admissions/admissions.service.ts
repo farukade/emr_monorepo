@@ -272,8 +272,8 @@ export class AdmissionsService {
 
                 newTask.interval = task.interval;
                 newTask.intervalType = task.intervalType;
-                newTask.startTime = moment(task.startTime).format('YYYY-MM-DD HH:mm:ss');
-                newTask.nextTime = moment(task.startTime).format('YYYY-MM-DD HH:mm:ss');
+                newTask.startTime = task.startTime === '' ? moment().format('YYYY-MM-DD HH:mm:ss') : moment(task.startTime).format('YYYY-MM-DD HH:mm:ss');
+                newTask.nextTime = task.startTime === '' ? moment().format('YYYY-MM-DD HH:mm:ss') : moment(task.startTime).format('YYYY-MM-DD HH:mm:ss');
                 newTask.patient = patient;
                 newTask.admission = admission;
                 newTask.createdBy = staff.user.username;

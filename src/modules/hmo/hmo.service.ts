@@ -18,6 +18,7 @@ import { QueueSystemRepository } from '../frontdesk/queue-system/queue-system.re
 import { PaginationOptionsInterface } from '../../common/paginate';
 import { AppGateway } from '../../app.gateway';
 import { Pagination } from '../../common/paginate/paginate.interface';
+import { PatientRepository } from '../patient/repositories/patient.repository';
 
 @Injectable()
 export class HmoService {
@@ -34,6 +35,8 @@ export class HmoService {
         private transactionsRepository: TransactionsRepository,
         @InjectRepository(QueueSystemRepository)
         private queueSystemRepository: QueueSystemRepository,
+        @InjectRepository(PatientRepository)
+        private patientRepository: PatientRepository,
         private readonly appGateway: AppGateway,
     ) {
     }
@@ -65,6 +68,7 @@ export class HmoService {
                 .limit(options.limit)
                 .orderBy('q.createdAt', 'DESC')
                 .getRawMany();
+
             for (const s of services) {
                 s.hmo = await this.hmoRateRepository.findOne(s.hmo_id);
             }
@@ -315,16 +319,14 @@ export class HmoService {
         const { startDate, endDate, patient_id, hmo_id, status } = params;
 
         const query = this.transactionsRepository.createQueryBuilder('q')
-            .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
-            .leftJoin(Hmo, 'hmo', `"patient"."hmo_id" = "hmo"."id"`)
-            .where('q.payment_type = :type', { type: 'Hmo' })
-            .select('q.*')
-            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.folderNumber, hmo.name as hmo_name, hmo.id as hmo_id');
+            .where('q.payment_type = :type', { type: 'HMO' })
+            .select('q.*');
 
         if (startDate && startDate !== '') {
             const start = moment(startDate).endOf('day').toISOString();
             query.andWhere(`q.createdAt >= '${start}'`);
         }
+
         if (endDate && endDate !== '') {
             const end = moment(endDate).endOf('day').toISOString();
             query.andWhere(`q.createdAt <= '${end}'`);
@@ -333,6 +335,7 @@ export class HmoService {
         if (hmo_id && hmo_id !== '') {
             query.andWhere('hmo.id = :hmo_id', { hmo_id });
         }
+
         if (patient_id && patient_id !== '') {
             query.andWhere('q.patient_id = :patient_id', { patient_id });
         }
@@ -343,55 +346,28 @@ export class HmoService {
 
         const page = options.page - 1;
 
-        const transactions = await query.offset(page * options.limit)
-            .limit(options.limit)
-            .orderBy('q.createdAt', 'DESC')
-            .getRawMany();
-        console.log(transactions);
-        const total = await query.getCount();
-        return {
-            result: transactions,
-            lastPage: Math.ceil(total / options.limit),
-            itemsPerPage: options.limit,
-            totalPages: total,
-            currentPage: options.page,
-        };
-    }
-
-    async fetchPendingTransactions(options: PaginationOptionsInterface, params): Promise<Pagination> {
-        const { startDate, endDate, hmo_id } = params;
-
-        const query = this.transactionsRepository.createQueryBuilder('q')
-            .innerJoin(Patient, 'patient', 'q.patient_id = patient.id')
-            .leftJoin(Hmo, 'hmo', `"patient"."hmo_id" = "hmo"."id"`)
-            .where('q.payment_type = :type', { type: 'HMO' })
-            .andWhere('q.hmo_approval_status = :status', { status: 0 })
-            .select('q.*')
-            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.folderNumber, hmo.name as hmo_name, hmo.id as hmo_id');
-
-        if (startDate && startDate !== '') {
-            const start = moment(startDate).startOf('day').toISOString();
-            query.andWhere(`q.createdAt >= '${start}'`);
-        }
-        if (endDate && endDate !== '') {
-            const end = moment(endDate).endOf('day').toISOString();
-            query.andWhere(`q.createdAt <= '${end}'`);
-        }
-
-        if (hmo_id && hmo_id !== '') {
-            query.andWhere('hmo.id = :hmo_id', { hmo_id });
-        }
-
-        const page = options.page - 1;
-
-        const transactions = await query.offset(page * options.limit)
+        const items = await query.offset(page * options.limit)
             .limit(options.limit)
             .orderBy('q.createdAt', 'DESC')
             .getRawMany();
 
         const total = await query.getCount();
+
+        let result = [];
+        for (const item of items) {
+            item.hmo = await this.hmoRepository.findOne(item.hmo_id);
+
+            const patient = await this.patientRepository.findOne(item.patient_id, {
+                relations: ['nextOfKin', 'immunization', 'hmo'],
+            });
+
+            item.patient = patient;
+
+            result = [...result, item];
+        }
+
         return {
-            result: transactions,
+            result,
             lastPage: Math.ceil(total / options.limit),
             itemsPerPage: options.limit,
             totalPages: total,
@@ -403,17 +379,15 @@ export class HmoService {
         const { action, id, approvalCode } = params;
         try {
 
-            const transaction = await this.transactionsRepository.findOne(id, { relations: ['patient'] });
+            const transaction = await this.transactionsRepository.findOne(id, { relations: ['patient', 'hmo'] });
             if (!transaction) {
                 throw new NotFoundException(`Transaction was not found`);
             }
-            if (action === '1') {
-                transaction.hmo_approval_status = 2;
-                transaction.hmo_approval_code = approvalCode;
-            } else {
-                transaction.hmo_approval_status = 3;
-            }
+
+            transaction.hmo_approval_code = approvalCode;
+
             await transaction.save();
+
             // find appointment
             const appointment = await getConnection().getRepository(Appointment).findOne({
                 where: { patient: transaction.patient, status: 'Pending HMO Approval' },

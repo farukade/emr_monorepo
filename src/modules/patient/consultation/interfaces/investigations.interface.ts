@@ -5,6 +5,7 @@ export interface IInvestigationInterface {
         tests: object[],
         request_note: string,
         urgent: boolean,
+        pay_later: number,
     };
     radiologyRequest: {
         requestType: string,
@@ -12,6 +13,7 @@ export interface IInvestigationInterface {
         tests: object[],
         urgent: boolean,
         request_note: string,
+        pay_later: number,
     };
     pharmacyRequest: {
         requestType: string,

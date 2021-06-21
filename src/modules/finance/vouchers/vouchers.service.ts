@@ -32,7 +32,7 @@ export class VouchersService {
             // .innerJoin(User, 'updator', 'q.lastChangedBy = updator.username')
             .innerJoin(StaffDetails, 'staff1', 'staff1.user_id = creator.id')
             // .innerJoin(StaffDetails, 'staff2', 'staff2.user_id = updator.id')
-            .select('q.id, q.voucher_no, q.amount, q.amount_used, q.duration')
+            .select('q.*')
             .addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
             // .addSelect('CONCAT(staff2.first_name || \' \' || staff2.last_name) as updated_by, staff2.id as updated_by_id')
             .addSelect('CONCAT(patient.other_names || \' \' || patient.surname) as patient_name, patient.id as patient_id');
@@ -54,18 +54,30 @@ export class VouchersService {
             query.where('q.status = :status', { status });
         }
 
-        const vouchers = await query.offset(options.page * options.limit)
+        const page = options.page - 1;
+
+        const vouchers = await query.offset(page * options.limit)
         .limit(options.limit)
         .orderBy('q.createdAt', 'DESC')
         .getRawMany();
 
+        let result = [];
+        for (const item of vouchers) {
+            item.transaction = await this.transactionsRepository.findOne({
+                where: { voucher: item },
+                relations: ['patient', 'staff'],
+            });
+
+            result = [...result, item];
+        }
+
         const total = await query.getCount();
         return {
-            result: vouchers,
+            result,
             lastPage: Math.ceil(total / options.limit),
             itemsPerPage: options.limit,
             totalPages: total,
-            currentPage: options.page + 1,
+            currentPage: options.page,
         };
 
     }

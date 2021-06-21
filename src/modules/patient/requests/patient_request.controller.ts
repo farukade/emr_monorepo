@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Param, Request, Delete, UseGuards, Get, Query, UsePipes, ValidationPipe, Patch } from '@nestjs/common';
+import { Controller, Post, Body, Param, Request, Delete, UseGuards, Get, Query, UsePipes, ValidationPipe, Patch, Put } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { PatientRequestService } from './patient_request.service';
 
@@ -95,5 +95,32 @@ export class PatientRequestController {
         @Query() urlParams,
     ): Promise<any> {
         return this.patientRequestService.printResult(requestId, urlParams);
+    }
+
+    @Put(':procedureId/schedule')
+    doScheduleProcedure(
+        @Param('procedureId') procedureId: number,
+        @Request() req,
+        @Body() param,
+    ) {
+        return this.patientRequestService.scheduleProcedure(procedureId, param, req.user.username);
+    }
+
+    @Put(':procedureId/start')
+    doStartProcedure(
+        @Param('procedureId') procedureId: number,
+        @Request() req,
+        @Body() param,
+    ) {
+        return this.patientRequestService.startProcedure(procedureId, param, req.user.username);
+    }
+
+    @Put(':procedureId/end')
+    doEndProcedure(
+        @Param('procedureId') procedureId: number,
+        @Request() req,
+        @Body() param,
+    ) {
+        return this.patientRequestService.endProcedure(procedureId, param, req.user.username);
     }
 }

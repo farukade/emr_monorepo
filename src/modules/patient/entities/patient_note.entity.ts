@@ -18,6 +18,9 @@ export class PatientNote extends CustomBaseEntity {
     @Column({ nullable: true })
     specialty: string;
 
+    @Column({ nullable: true, name: 'item_id' })
+    itemId: string;
+
     @ManyToOne(type => Patient)
     @JoinColumn({ name: 'patient_id' })
     patient: Patient;

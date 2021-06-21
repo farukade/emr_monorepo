@@ -1,12 +1,11 @@
 import { getConnection } from 'typeorm';
 import { Transactions } from '../../modules/finance/transactions/transaction.entity';
 import { Patient } from '../../modules/patient/entities/patient.entity';
-import { Stock } from '../../modules/inventory/entities/stock.entity';
 import { PatientRequestItem } from '../../modules/patient/entities/patient_request_items.entity';
 import { PatientRequest } from '../../modules/patient/entities/patient_requests.entity';
 
 export class RequestPaymentHelper {
-    static async clinicalLabPayment(labRequests, patient: Patient, createdBy) {
+    static async clinicalLabPayment(labRequests, patient: Patient, createdBy, bill) {
         let requests = [];
         let payments = [];
 
@@ -24,12 +23,12 @@ export class RequestPaymentHelper {
                     amount: parseFloat(labTest.hmoPrice),
                     description: 'Payment for clinical lab',
                     payment_type: (patient.hmo.name !== 'Private') ? 'HMO' : '',
-                    hmo_approval_status: (patient.hmo.name !== 'Private') ? 1 : 0,
                     transaction_type: 'lab',
                     transaction_details: labTest,
                     createdBy,
-                    status: 0,
+                    status: bill,
                     patientRequestItem: labRequestItem,
+                    hmo: patient.hmo,
                 };
 
                 const result = await this.save(data);
@@ -53,27 +52,27 @@ export class RequestPaymentHelper {
         return { labRequest: requests, transactions: payments };
     }
 
-    static async pharmacyPayment(requestBody, patient: Patient, createdBy) {
-        let totalAmount = 0;
-        const items = [];
-        for (const body of requestBody) {
-            const drug = await getConnection().getRepository(Stock).findOne(body.drug_id);
-            totalAmount += parseFloat(drug.sales_price);
-            items.push({ name: drug.name, amount: drug.sales_price });
-        }
-        const data = {
-            patient,
-            amount: totalAmount,
-            description: 'Payment for pharmacy request',
-            payment_type: (patient.hmo.name !== 'Private') ? 'HMO' : '',
-            hmo_approval_status: (patient.hmo.name !== 'Private') ? 1 : 0,
-            transaction_type: 'billing',
-            transaction_details: items,
-            createdBy,
-        };
-        const payment = await this.save(data);
-        return { payment: payment.generatedMaps[0] };
-    }
+    // static async pharmacyPayment(requestBody, patient: Patient, createdBy) {
+    //     let totalAmount = 0;
+    //     const items = [];
+    //     for (const body of requestBody) {
+    //         const drug = await getConnection().getRepository(Stock).findOne(body.drug_id);
+    //         totalAmount += parseFloat(drug.sales_price);
+    //         items.push({ name: drug.name, amount: drug.sales_price });
+    //     }
+    //     const data = {
+    //         patient,
+    //         amount: totalAmount,
+    //         description: 'Payment for pharmacy request',
+    //         payment_type: (patient.hmo.name !== 'Private') ? 'HMO' : '',
+    //         transaction_type: 'billing',
+    //         transaction_details: items,
+    //         createdBy,
+    //         hmo: patient.hmo,
+    //     };
+    //     const payment = await this.save(data);
+    //     return { payment: payment.generatedMaps[0] };
+    // }
 
     static async servicePayment(patientRequests, patient: Patient, createdBy, requestType, bill) {
         let requests = [];
@@ -93,12 +92,13 @@ export class RequestPaymentHelper {
                     amount: parseFloat(service.hmoTarrif),
                     description: `Payment for ${requestType}`,
                     payment_type: (patient.hmo.name !== 'Private') ? 'HMO' : '',
-                    hmo_approval_status: (patient.hmo.name !== 'Private') ? 1 : 0,
                     transaction_type: requestType,
                     transaction_details: service,
                     createdBy,
-                    status: requestType === 'procedure' && bill === 'later' ? -1 : 0,
+                    status: bill,
                     patientRequestItem,
+                    request: serviceRequest,
+                    hmo: patient.hmo,
                 };
 
                 const result = await this.save(data);
@@ -117,7 +117,7 @@ export class RequestPaymentHelper {
             }
 
             requests = [...requests, { ...request, items: results }];
-         }
+        }
 
         return { request: requests, transactions: payments };
     }

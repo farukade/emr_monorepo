@@ -51,16 +51,6 @@ export class HmoController {
         return this.hmoService.fetchTransactions({ page, limit }, params);
     }
 
-    @Get('/transactions/pending')
-    getHmoPendingTransactions(
-        @Query() params,
-        @Request() request,
-    ): Promise<Pagination> {
-        const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 10;
-        const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
-        return this.hmoService.fetchPendingTransactions({ page, limit }, params);
-    }
-
     @Get(':id/tariff')
     getHmoTariff(
         @Param('id') id: string,

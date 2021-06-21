@@ -56,28 +56,30 @@ export class IvfService {
             const data = await this.ivfEnrollmentRepo.save(ivfEnrollmentDto);
 
             // TODO: add lab tests
-            let mappedIds = []
+            // let mappedIds = [];
             let requests = [];
-            if(labTests.length > 0 ){
-                labTests.forEach(id=>mappedIds.push({id}))
-                console.log(mappedIds)
-                let labRequest = await PatientRequestHelper.handleLabRequest({tests:mappedIds, 
-                    request_note:"IVF enrollment lab tests", requestType:'ivf'}, patient, createdBy);
-                if (labRequest.success) {
-                    // save transaction
-                    const payment = await RequestPaymentHelper.clinicalLabPayment(labRequest.data, patient, createdBy);
-                    
-                    for (const request of labRequest.data) {
-                        const labRequest = await getConnection().getRepository(PatientRequest).findOne(request.id, { relations: ['items'] });
-                        
-                        labRequest.ivf = data;
-                        await labRequest.save();
-                        requests = [...requests, labRequest]
-                    }            
-                    this.appGateway.server.emit('paypoint-queue', { payment: payment.transactions });
-                }
-            }
-            return { success: true, data: {...data, requests} };
+            // if (labTests.length > 0) {
+            //     labTests.forEach(id => mappedIds.push({ id }));
+            //     console.log(mappedIds);
+            //     let labRequest = await PatientRequestHelper.handleLabRequest({
+            //         tests: mappedIds,
+            //         request_note: 'IVF enrollment lab tests', requestType: 'ivf',
+            //     }, patient, createdBy);
+            //     if (labRequest.success) {
+            //         // save transaction
+            //         const payment = await RequestPaymentHelper.clinicalLabPayment(labRequest.data, patient, createdBy, labRequest.data.pay_later,);
+            //
+            //         for (const request of labRequest.data) {
+            //             const labRequest = await getConnection().getRepository(PatientRequest).findOne(request.id, { relations: ['items'] });
+            //
+            //             labRequest.ivf = data;
+            //             await labRequest.save();
+            //             requests = [...requests, labRequest];
+            //         }
+            //         this.appGateway.server.emit('paypoint-queue', { payment: payment.transactions });
+            //     }
+            // }
+            return { success: true, data: { ...data, requests } };
         } catch (err) {
             return { success: false, message: err.message };
         }
@@ -127,13 +129,13 @@ export class IvfService {
                 ivf.wife = await this.patientRepository.findOne(ivf.wife_patient_id);
             }
             const requests = await this.patientRequestRepository.find({ where: { ivf }, relations: ['items'] });
-            objInplace = [...objInplace, {id: ivf.id, requests}]
+            objInplace = [...objInplace, { id: ivf.id, requests }];
         }
 
-        const collection = ivfs.map(ivf=>{
-            const obj = objInplace.find(obj=>obj.id === ivf.id);
-            return({...ivf, requests: obj.requests});
-        })
+        const collection = ivfs.map(ivf => {
+            const obj = objInplace.find(obj => obj.id === ivf.id);
+            return ({ ...ivf, requests: obj.requests });
+        });
 
         return {
             result: collection,

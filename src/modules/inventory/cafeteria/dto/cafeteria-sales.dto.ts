@@ -6,8 +6,11 @@ export class CafeteriaSalesDto {
 
     user_id: string;
 
-    @IsNotEmpty()
-    amount: number;
+    sub_total: number;
+
+    vat: number;
+
+    total_amount: number;
 
     @IsNotEmpty()
     amount_paid: number;
