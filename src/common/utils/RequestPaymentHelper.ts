@@ -3,6 +3,7 @@ import { Transactions } from '../../modules/finance/transactions/transaction.ent
 import { Patient } from '../../modules/patient/entities/patient.entity';
 import { PatientRequestItem } from '../../modules/patient/entities/patient_request_items.entity';
 import { PatientRequest } from '../../modules/patient/entities/patient_requests.entity';
+import { getStaff } from './utils';
 
 export class RequestPaymentHelper {
     static async clinicalLabPayment(labRequests, patient: Patient, createdBy, bill) {
@@ -29,6 +30,7 @@ export class RequestPaymentHelper {
                     status: bill,
                     patientRequestItem: labRequestItem,
                     hmo: patient.hmo,
+                    staff: await getStaff(createdBy),
                 };
 
                 const result = await this.save(data);
@@ -99,6 +101,7 @@ export class RequestPaymentHelper {
                     patientRequestItem,
                     request: serviceRequest,
                     hmo: patient.hmo,
+                    staff: await getStaff(createdBy),
                 };
 
                 const result = await this.save(data);

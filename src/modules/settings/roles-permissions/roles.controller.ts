@@ -9,7 +9,7 @@ import {
   UsePipes,
   ValidationPipe,
   UseGuards,
-  Request,
+  Request, Put,
 } from '@nestjs/common';
 import { CreateRoleDto } from './dto/role.dto';
 import { Role } from '../entities/role.entity';
@@ -35,7 +35,7 @@ export class RolesController {
     return this.roleService.createRole(createRoleDto, req.user.username);
   }
 
-  @Patch('/:id/update')
+  @Put('/:id')
   @UsePipes(ValidationPipe)
   updateRole(
     @Param('id') id: string,
