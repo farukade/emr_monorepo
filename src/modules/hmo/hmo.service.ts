@@ -58,7 +58,7 @@ export class HmoService {
         return this.hmoRepository.find(searchParam);
     }
 
-    async getHmoTariff(id, urlParams, options: PaginationOptionsInterface): Promise<Pagination> {
+    async getHmoTariff(options: PaginationOptionsInterface, urlParams): Promise<Pagination> {
         const { listType, hmo_id } = urlParams;
 
         const page = options.page - 1;
@@ -67,7 +67,7 @@ export class HmoService {
             const query = await this.serviceRepository.createQueryBuilder('q').select('q.*');
 
             if (hmo_id && hmo_id !== '') {
-                query.where('q.hmo_id = :id', { id });
+                query.where('q.hmo_id = :id', { id: hmo_id });
             }
 
             const services = await query.offset(page * options.limit)
@@ -94,7 +94,7 @@ export class HmoService {
             };
         } else {
             const query = await this.stockRepository.createQueryBuilder('q').select('q.*')
-                .where('q.hmo_id = :id', { id });
+                .where('q.hmo_id = :id', { id: hmo_id });
 
             const stocks = await query.offset(page * options.limit)
                 .limit(options.limit)

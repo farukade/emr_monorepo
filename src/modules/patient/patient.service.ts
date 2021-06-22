@@ -197,12 +197,18 @@ export class PatientService {
 
             await this.save(data);
 
-            if (process.env.DEBUG === 'false') {
-                // send sms
-                await sendSMS(patient.phoneNumber, message);
-
-                // email
-                await this.mailService.regMail(patient);
+            try {
+                const mail = {
+                    id: patient.id,
+                    name: `${patient.other_names} ${patient.surname}`,
+                    email: patient.email,
+                    phoneNumber: patient.phoneNumber,
+                    createdAt: patient.createdAt,
+                    message,
+                };
+                await this.mailService.sendMail(mail, 'registration');
+            } catch (e) {
+                console.log(e);
             }
 
             const transactions = await this.transactionsRepository.find({ where: { patient, status: 0 } });

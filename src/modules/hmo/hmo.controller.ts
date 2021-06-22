@@ -53,13 +53,12 @@ export class HmoController {
 
     @Get('/tariffs')
     getHmoTariff(
-        @Param('id') id: string,
         @Query() params,
         @Request() request,
     ): Promise<Pagination> {
         const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
         const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
-        return this.hmoService.getHmoTariff(id, params, { page, limit });
+        return this.hmoService.getHmoTariff({ page, limit }, params);
     }
 
     @Post()

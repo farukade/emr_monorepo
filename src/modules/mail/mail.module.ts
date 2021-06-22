@@ -3,6 +3,10 @@ import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handleba
 import { Module } from '@nestjs/common';
 import { MailService } from './mail.service';
 import { join } from 'path';
+import { BullModule } from '@nestjs/bull';
+import { MailProcessor } from './mail.processor';
+
+console.log(join(__dirname, './template'));
 
 @Module({
     imports: [
@@ -21,15 +25,24 @@ import { join } from 'path';
                 from: '"No Reply" <noreply@dedahospital.com>',
             },
             template: {
-                dir: join(__dirname, '../../../views/mail'),
+                dir: join(__dirname, './templates'),
                 adapter: new HandlebarsAdapter(),
                 options: {
                     strict: true,
                 },
             },
         }),
+        BullModule.registerQueueAsync({
+            name: process.env.MAIL_QUEUE_NAME,
+            useFactory: () => ({
+                redis: {
+                    host: 'localhost',
+                    port: 6379,
+                },
+            }),
+        }),
     ],
-    providers: [MailService],
+    providers: [MailService, MailProcessor],
     exports: [MailService],
 })
 
