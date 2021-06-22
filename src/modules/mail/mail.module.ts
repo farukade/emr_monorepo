@@ -15,7 +15,7 @@ console.log(join(__dirname, './template'));
                 host: process.env.MAILER_SMTP,
                 port: process.env.MAILER_PORT,
                 ignoreTLS: false,
-                secure: false,
+                secure: true,
                 auth: {
                     user: process.env.MAIL_USER_NAME,
                     pass: process.env.MAIL_USER_PASSWORD,
