@@ -10,6 +10,7 @@ import { User } from '../../hr/entities/user.entity';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import { PaginationOptionsInterface } from '../../../common/paginate';
+import { getStaff } from '../../../common/utils/utils';
 
 @Injectable()
 export class VouchersService {
@@ -57,16 +58,22 @@ export class VouchersService {
         const page = options.page - 1;
 
         const vouchers = await query.offset(page * options.limit)
-        .limit(options.limit)
-        .orderBy('q.createdAt', 'DESC')
-        .getRawMany();
+            .limit(options.limit)
+            .orderBy('q.createdAt', 'DESC')
+            .getRawMany();
 
         let result = [];
         for (const item of vouchers) {
-            item.transaction = await this.transactionsRepository.findOne({
+            const transaction = await this.transactionsRepository.findOne({
                 where: { voucher: item },
-                relations: ['patient', 'staff'],
+                relations: ['patient'],
             });
+
+            if (transaction) {
+                item.staff = await getStaff(transaction.lastChangedBy);
+            }
+
+            item.transaction = transaction;
 
             result = [...result, item];
         }

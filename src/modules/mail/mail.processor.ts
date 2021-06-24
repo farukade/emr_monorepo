@@ -45,7 +45,7 @@ export class MailProcessor {
         }
 
         try {
-            return await this.mailerService.sendMail({
+            await this.mailerService.sendMail({
                 to: data.email,
                 from: '"DEDA Hospital" <info@dedahospital.com>', // override default from
                 subject: 'Welcome to Deda Hospital',
@@ -61,7 +61,6 @@ export class MailProcessor {
         } catch (error) {
             console.log(error);
             this.logger.error(`Failed to send registration email to '${data.email}'`, error.stack);
-            throw error;
         }
     }
 
@@ -91,7 +90,6 @@ export class MailProcessor {
         } catch (error) {
             console.log(error);
             this.logger.error(`Failed to send registration email to '${data.email}'`, error.stack);
-            throw error;
         }
     }
 
@@ -119,7 +117,6 @@ export class MailProcessor {
         } catch (error) {
             console.log(error);
             this.logger.error(`Failed to send registration email to '${data.email}'`, error.stack);
-            throw error;
         }
     }
 
@@ -147,7 +144,6 @@ export class MailProcessor {
         } catch (error) {
             console.log(error);
             this.logger.error(`Failed to send registration email to '${data.email}'`, error.stack);
-            throw error;
         }
     }
 }

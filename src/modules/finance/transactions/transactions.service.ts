@@ -84,9 +84,7 @@ export class TransactionsService {
         const total = await query.getCount();
 
         for (const transaction of transactions) {
-            if (transaction.staff_id) {
-                transaction.staff = await this.staffRepository.findOne(transaction.staff_id);
-            }
+            transaction.staff = await getStaff(transaction.lastChangedBy);
 
             if (transaction.patient_id) {
                 transaction.patient = await this.patientRepository.findOne(transaction.patient_id, {
@@ -294,7 +292,6 @@ export class TransactionsService {
                 amount_paid: amount,
                 createdBy,
                 lastChangedBy: createdBy,
-                staff: await getStaff(createdBy),
                 status: 1,
                 hmo: patient.hmo,
             });
@@ -309,8 +306,8 @@ export class TransactionsService {
         if (code) {
             const transaction = await this.transactionsRepository.findOne(id);
             transaction.hmo_approval_code = code;
-            transaction.staff = await getStaff(createdBy);
             transaction.status = 1;
+            transaction.lastChangedBy = createdBy;
             transaction.save();
 
             return { success: true, transaction };
@@ -336,7 +333,6 @@ export class TransactionsService {
             transaction.transaction_details = items;
             transaction.lastChangedBy = createdBy;
             transaction.hmo_approval_code = code;
-            transaction.staff = await getStaff(createdBy);
             transaction.hmo = patient.hmo;
             const data = await transaction.save();
 
@@ -371,7 +367,7 @@ export class TransactionsService {
 
             if (is_part_payment && amount_paid < transaction.amount) {
                 const balance = new Transactions();
-                balance.createdBy = updatedBy;
+                balance.createdBy = transaction.createdBy;
                 balance.amount = transaction.amount - amount_paid;
                 balance.description = transaction.description;
                 balance.transaction_type = transaction.transaction_type;
@@ -434,10 +430,11 @@ export class TransactionsService {
             transaction.next_location = null;
             transaction.status = 1;
             transaction.lastChangedBy = updatedBy;
-            transaction.staff = await getStaff(updatedBy);
-            await transaction.save();
+            const rs = await transaction.save();
 
-            return { success: true, transaction, queue };
+            rs.staff = await getStaff(transaction.lastChangedBy);
+
+            return { success: true, transaction: rs, queue };
         } catch (error) {
             console.log(error);
             return { success: false, message: error.message };

@@ -170,7 +170,7 @@ export class CafeteriaService {
         }
     }
 
-    async saveSales(param: CafeteriaSalesDto): Promise<any> {
+    async saveSales(param: CafeteriaSalesDto, username: string): Promise<any> {
         const { user_type, user_id, sub_total, vat, total_amount, amount_paid, balance, payment_type, items } = param;
         try {
             let emptyStock = [];
@@ -194,6 +194,8 @@ export class CafeteriaService {
             transaction.balance = balance * -1;
             transaction.payment_type = payment_type;
             transaction.status = 1;
+            transaction.createdBy = username;
+            transaction.lastChangedBy = username;
 
             if (user_type === 'staff') {
                 const staff = await this.connection.getRepository(StaffDetails)

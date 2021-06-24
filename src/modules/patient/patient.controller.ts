@@ -136,6 +136,17 @@ export class PatientController {
         return this.patientService.getVouchers(id, urlParams);
     }
 
+    @Get(':id/transactions')
+    getTransactions(
+        @Param('id') id: number,
+        @Query() urlParams,
+        @Request() request,
+    ): Promise<Pagination> {
+        const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
+        const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
+        return this.patientService.getTransactions({ page, limit }, id, urlParams);
+    }
+
     @Get(':id/documents')
     getPatientDocument(
         @Param('id') id: string,

@@ -204,7 +204,6 @@ export class AdmissionsService {
                 where: { username: request.createdBy },
                 relations: ['details'],
             });
-              
 
             const data = {
                 ...request,

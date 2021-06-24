@@ -88,7 +88,10 @@ export class CafeteriaController {
 
     @Post('/sale')
     @UsePipes(ValidationPipe)
-    postSales(@Body() param: CafeteriaSalesDto): Promise<any> {
-        return this.inventoryService.saveSales(param);
+    postSales(
+        @Request() req,
+        @Body() param: CafeteriaSalesDto,
+    ): Promise<any> {
+        return this.inventoryService.saveSales(param, req.user.username);
     }
 }

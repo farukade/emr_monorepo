@@ -386,7 +386,7 @@ export class HmoService {
         };
     }
 
-    async processTransaction(params, { userId }) {
+    async processTransaction(params, { userId, username }) {
         const { action, id, approvalCode } = params;
         try {
 
@@ -396,6 +396,7 @@ export class HmoService {
             }
 
             transaction.hmo_approval_code = approvalCode;
+            transaction.lastChangedBy = username;
 
             await transaction.save();
 

@@ -1,19 +1,23 @@
-import {Controller, Get, Post, Body, Query, Param, Request, Patch, UseGuards} from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, Param, Request, Patch, UseGuards } from '@nestjs/common';
 import { AppointmentService } from './appointment.service';
 import { AppointmentDto } from './dto/appointment.dto';
 import { Appointment } from './appointment.entity';
-import {AuthGuard} from '@nestjs/passport';
+import { AuthGuard } from '@nestjs/passport';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('front-desk/appointments')
 export class AppointmentController {
 
-    constructor(private appointmentService: AppointmentService) {}
+    constructor(private appointmentService: AppointmentService) {
+    }
 
     @Post('new')
-    createNewAppointment(@Body() appointmentDto: AppointmentDto) {
-        return this.appointmentService.saveNewAppointment(appointmentDto);
+    createNewAppointment(
+        @Request() req,
+        @Body() appointmentDto: AppointmentDto,
+    ) {
+        return this.appointmentService.saveNewAppointment(appointmentDto, req.user.username);
     }
 
     @Get('')
@@ -23,7 +27,7 @@ export class AppointmentController {
     ): Promise<Pagination> {
         const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
         const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
-        return this.appointmentService.listAppointments({page, limit}, urlParams);
+        return this.appointmentService.listAppointments({ page, limit }, urlParams);
     }
 
     @Get('/patient/:patient_id')

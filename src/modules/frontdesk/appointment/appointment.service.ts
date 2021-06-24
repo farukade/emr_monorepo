@@ -147,7 +147,7 @@ export class AppointmentService {
 
     }
 
-    async saveNewAppointment(appointmentDto: AppointmentDto): Promise<any> {
+    async saveNewAppointment(appointmentDto: AppointmentDto, username: string): Promise<any> {
         try {
             const { patient_id, doctor_id, consulting_room_id, service_id, sendToQueue, department_id, consultation_id } = appointmentDto;
 
@@ -212,7 +212,7 @@ export class AppointmentService {
                     }
 
                     // save payment
-                    const payment = await this.saveTransaction(patient, service, amount, paymentType, hmoApprovalStatus);
+                    const payment = await this.saveTransaction(patient, service, amount, paymentType, hmoApprovalStatus, username);
                     appointment.transaction = payment;
                     await appointment.save();
                     // send queue message
@@ -316,7 +316,7 @@ export class AppointmentService {
         }
     }
 
-    private async saveTransaction(patient: Patient, service: Service, amount, paymentType, hmoApprovalStatus) {
+    private async saveTransaction(patient: Patient, service: Service, amount, paymentType, hmoApprovalStatus, createdBy) {
         const data = {
             patient,
             serviceType: service,
@@ -326,6 +326,7 @@ export class AppointmentService {
             payment_type: paymentType,
             transaction_type: 'appointment',
             hmo: patient.hmo,
+            createdBy,
         };
 
         return await this.transactionsRepository.save(data);

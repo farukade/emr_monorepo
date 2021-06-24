@@ -19,7 +19,7 @@ import { AppGateway } from '../../app.gateway';
 import { AppointmentRepository } from '../frontdesk/appointment/appointment.repository';
 import { AuthRepository } from '../auth/auth.repository';
 import { TransactionsRepository } from '../finance/transactions/transactions.repository';
-import { formatPID, sendSMS } from '../../common/utils/utils';
+import { formatPID, getStaff, sendSMS } from '../../common/utils/utils';
 import { AdmissionClinicalTaskRepository } from './admissions/repositories/admission-clinical-tasks.repository';
 import { AdmissionsRepository } from './admissions/repositories/admissions.repository';
 import { Immunization } from './immunization/entities/immunization.entity';
@@ -443,6 +443,59 @@ export class PatientService {
             query.andWhere('q.isActive = :status', { status: stat });
         }
         return await query.orderBy('q.createdAt', 'DESC').getMany();
+    }
+
+    async getTransactions(options: PaginationOptionsInterface, id, params): Promise<Pagination> {
+        const { startDate, endDate, q, status } = params;
+        const query = this.transactionsRepository.createQueryBuilder('t').select('t.*')
+            .where('t.patient_id = :id', { id });
+
+        const page = options.page - 1;
+
+        if (q && q !== '') {
+            query.andWhere(new Brackets(qb => {
+                qb
+                    .orWhere('LOWER(t.description) Like :description', { description: `%${q.toLowerCase()}%` })
+                    .orWhere('t.transaction_details Like :details', { details: `%${q}%` });
+            }));
+        }
+
+        if (startDate && startDate !== '') {
+            const start = moment(startDate).endOf('day').toISOString();
+            query.andWhere(`t.createdAt >= '${start}'`);
+        }
+        if (endDate && endDate !== '') {
+            const end = moment(endDate).endOf('day').toISOString();
+            query.andWhere(`t.createdAt <= '${end}'`);
+        }
+
+        if (status && status !== '') {
+            query.andWhere('t.status = :status', { status });
+        }
+
+        const transactions = await query.offset(page * options.limit)
+            .limit(options.limit)
+            .orderBy('t.createdAt', 'DESC')
+            .getRawMany();
+
+        const total = await query.getCount();
+
+        let result = [];
+        for (const transaction of transactions) {
+            transaction.hmo = await this.hmoRepository.findOne(transaction.hmo_id);
+
+            transaction.staff = await getStaff(transaction.lastChangedBy);
+
+            result = [...result, transaction];
+        }
+
+        return {
+            result,
+            lastPage: Math.ceil(total / options.limit),
+            itemsPerPage: options.limit,
+            totalPages: total,
+            currentPage: options.page,
+        };
     }
 
     async getDocuments(id, urlParams): Promise<PatientDocument[]> {
