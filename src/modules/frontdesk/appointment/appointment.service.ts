@@ -18,6 +18,7 @@ import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 import { HmoRepository } from '../../hmo/hmo.repository';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import { PaginationOptionsInterface } from '../../../common/paginate';
+import { getStaff } from '../../../common/utils/utils';
 
 @Injectable()
 export class AppointmentService {
@@ -193,7 +194,7 @@ export class AppointmentService {
 
             if (sendToQueue) {
                 if (consultation_id !== 'follow-up') {
-                    const hmo = await this.hmoRepository.findOne(patient.hmo);
+                    const hmo = await this.hmoRepository.findOne(patient.hmo.id);
                     if (hmo.name === 'Private') {
                         // update appointment status
                         appointment.status = 'Pending Paypoint Approval';
@@ -230,6 +231,7 @@ export class AppointmentService {
             this.appGateway.server.emit('new-appointment', resp);
             return resp;
         } catch (error) {
+            console.log(error);
             return { success: false, message: error.message };
         }
     }
@@ -290,7 +292,7 @@ export class AppointmentService {
 
     async updateDoctorStatus({ appointmentId, action, doctor_id, consulting_room_id }, user) {
         try {
-            let text = "";
+            let text = '';
             const doctor = await getRepository(StaffDetails).findOne(doctor_id);
 
             const appointment = await this.getAppointment(appointmentId);
@@ -302,12 +304,12 @@ export class AppointmentService {
             if (consulting_room_id) {
                 const room = await this.consultingRoomRepository.findOne(consulting_room_id);
                 appointment.consultingRoom = room;
-                text += `${appointment.patient.folderNumber}, please proceed to consulting room ${room.name}`
+                text += `${appointment.patient.folderNumber}, please proceed to consulting room ${room.name}`;
             }
 
             appointment.doctorStatus = action;
             await appointment.save();
-            console.log(text)
+            console.log(text);
             this.appGateway.server.emit('appointment-update', { appointment, action });
             this.appGateway.server.emit('speech-over', { speechText: text });
             return { success: true };

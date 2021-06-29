@@ -61,10 +61,11 @@ export class StaffController {
         }),
     }))
     createNewStaff(
+        @Request() req,
         @Body() staffDto: StaffDto,
         @UploadedFile() pic,
     ): Promise<StaffDetails> {
-        return this.staffService.addNewStaff(staffDto, pic);
+        return this.staffService.addNewStaff(staffDto, pic, req.user.username);
     }
 
     @Patch(':id/update')

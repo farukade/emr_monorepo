@@ -4,6 +4,9 @@ import { Logger } from '@nestjs/common';
 import * as moment from 'moment';
 import { formatPID, sendSMS } from '../../common/utils/utils';
 import { Job } from 'bull';
+import { InjectRepository } from '@nestjs/typeorm';
+import { LoggerRepository } from '../logger/logger.repository';
+import { LogEntity } from '../logger/entities/logger.entity';
 
 @Processor(process.env.MAIL_QUEUE_NAME)
 export class MailProcessor {
@@ -11,6 +14,8 @@ export class MailProcessor {
 
     constructor(
         private readonly mailerService: MailerService,
+        @InjectRepository(LoggerRepository)
+        private loggerRepository: LoggerRepository,
     ) {
     }
 
@@ -60,6 +65,17 @@ export class MailProcessor {
 
         } catch (error) {
             console.log(error);
+
+            const log = new LogEntity();
+            log.email = data.email;
+            log.type = 'email';
+            log.category = 'registration';
+            log.status = 'failed';
+            log.errorMessage = error.message;
+            log.data = data;
+
+            await this.loggerRepository.save(log);
+
             this.logger.error(`Failed to send registration email to '${data.email}'`, error.stack);
         }
     }

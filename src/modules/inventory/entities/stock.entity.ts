@@ -1,11 +1,9 @@
-import { Column, Entity, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
+import { Column, Entity, ManyToOne, JoinColumn } from 'typeorm';
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 import { InventorySubCategory } from './inventory.sub-category.entity';
 import { InventoryCategory } from './inventory.category.entity';
 import { Vendor } from '../vendor/vendor.entity';
 import { Hmo } from '../../hmo/entities/hmo.entity';
-import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
-import { PatientAllergen } from '../../patient/entities/patient_allergens.entity';
 
 @Entity({ name: 'stocks' })
 export class Stock extends CustomBaseEntity {

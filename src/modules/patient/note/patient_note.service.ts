@@ -28,22 +28,42 @@ export class PatientNoteService {
 
         let result;
         let total = 0;
-        if (id && id !== '') {
-            [result, total] = await this.patientNoteRepository.findAndCount({
-                where: { patient, type, itemId: id },
-                relations: ['patient'],
-                order: { createdAt: 'DESC' },
-                take: options.limit,
-                skip: (page * options.limit),
-            });
+        if (type && type !== '') {
+            if (id && id !== '') {
+                [result, total] = await this.patientNoteRepository.findAndCount({
+                    where: { patient, type, itemId: id },
+                    relations: ['patient'],
+                    order: { createdAt: 'DESC' },
+                    take: options.limit,
+                    skip: (page * options.limit),
+                });
+            } else {
+                [result, total] = await this.patientNoteRepository.findAndCount({
+                    where: { patient, type },
+                    relations: ['patient'],
+                    order: { createdAt: 'DESC' },
+                    take: options.limit,
+                    skip: (page * options.limit),
+                });
+            }
         } else {
-            [result, total] = await this.patientNoteRepository.findAndCount({
-                where: { patient, type },
-                relations: ['patient'],
-                order: { createdAt: 'DESC' },
-                take: options.limit,
-                skip: (page * options.limit),
-            });
+            if (id && id !== '') {
+                [result, total] = await this.patientNoteRepository.findAndCount({
+                    where: { patient, itemId: id },
+                    relations: ['patient'],
+                    order: { createdAt: 'DESC' },
+                    take: options.limit,
+                    skip: (page * options.limit),
+                });
+            } else {
+                [result, total] = await this.patientNoteRepository.findAndCount({
+                    where: { patient },
+                    relations: ['patient'],
+                    order: { createdAt: 'DESC' },
+                    take: options.limit,
+                    skip: (page * options.limit),
+                });
+            }
         }
 
         let notes = [];

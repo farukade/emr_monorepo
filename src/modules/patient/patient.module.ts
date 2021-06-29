@@ -34,7 +34,6 @@ import { IvfModule } from './ivf/ivf.module';
 import { PatientAllergenModule } from './allergen/patient-allergen.module';
 import { PatientConsumableRepository } from './consumable/patient-consumable.repository';
 import { PatientConsumableModule } from './consumable/patient-consumable.module';
-import { MailService } from '../mail/mail.service';
 import { PatientFluidChartModule } from './fluid-chart/patient_fluid_chart.module';
 import { PatientNoteModule } from './note/patient_note.module';
 import { PatientAlertRepository } from './repositories/patient_alert.repository';

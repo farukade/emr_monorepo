@@ -17,6 +17,7 @@ import * as moment from 'moment';
 import { Pagination } from '../../common/paginate/paginate.interface';
 import { HmoRepository } from '../hmo/hmo.repository';
 import { Brackets, Raw } from 'typeorm';
+import { getStaff } from '../../common/utils/utils';
 
 @Injectable()
 export class InventoryService {
@@ -85,14 +86,23 @@ export class InventoryService {
     }
 
     async getStocksByCategoryId(category_id: string, hmo_id: string, q: string): Promise<Stock[]> {
-        return this.stockRepository.createQueryBuilder('s')
+        const rs = await this.stockRepository.createQueryBuilder('s')
             .where('category_id = :category_id', { category_id })
             .where('hmo_id = :hmo_id', { hmo_id })
             .andWhere(new Brackets(qb => {
-                qb.where('LOWER(s.name) Like :name', { name: `%${q.toLowerCase()}%` })
-                    .orWhere('LOWER(s.generic_name) Like :generic_name', { generic_name: `%${q.toLowerCase()}%` });
+                qb.where('LOWER(s.name) Like :name', { name: `%${q?.toLowerCase() || ''}%` })
+                    .orWhere('LOWER(s.generic_name) Like :generic_name', { generic_name: `%${q?.toLowerCase() || ''}%` });
             }))
             .getMany();
+
+        let results = [];
+        for (const item of rs) {
+            item.hmo = await this.hmoRepository.findOne(hmo_id);
+
+            results = [...results, item];
+        }
+
+        return results;
     }
 
     async getStocksByCategoryName(name: string): Promise<Stock[]> {

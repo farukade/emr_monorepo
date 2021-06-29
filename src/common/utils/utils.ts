@@ -7,6 +7,7 @@ import { SmsHistory } from '../entities/sms.entity';
 import { getConnection } from 'typeorm';
 import { User } from '../../modules/hr/entities/user.entity';
 import { StaffDetails } from '../../modules/hr/staff/entities/staff_details.entity';
+import { LogEntity } from '../../modules/logger/entities/logger.entity';
 
 const apiKey = process.env.API_KEY;
 const apiSecret = process.env.API_SECRET;
@@ -72,7 +73,7 @@ export const sendSMS = async (phone, message) => {
     };
 
     // tslint:disable-next-line:only-arrow-functions
-    smsglobal.sms.send(payload, function(error, response) {
+    smsglobal.sms.send(payload, async function(error, response) {
         if (response) {
             console.log(JSON.stringify(response));
             if (response.statusCode === 200) {
@@ -83,6 +84,27 @@ export const sendSMS = async (phone, message) => {
 
         if (error) {
             console.log(error);
+            const connection = getConnection();
+            const queryRunner = connection.createQueryRunner();
+            await queryRunner.connect();
+            await queryRunner.startTransaction();
+            try {
+                const log = new LogEntity();
+                log.phone = payload.destination;
+                log.type = 'sms';
+                log.message = payload.message;
+                log.status = 'failed';
+                log.errorMessage = error.message;
+
+                await queryRunner.manager.save(log);
+                await queryRunner.commitTransaction();
+                return { success: true, log };
+            } catch (err) {
+                await queryRunner.rollbackTransaction();
+                return { success: false, error: `${err.message || 'problem saving sms history'}` };
+            } finally {
+                await queryRunner.release();
+            }
         }
     });
 };

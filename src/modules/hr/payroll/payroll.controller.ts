@@ -1,9 +1,7 @@
-import { Controller, Post, Body, Patch, Get, Param } from '@nestjs/common';
+import { Controller, Post, Body, Patch, Get, Param, Request, Query } from '@nestjs/common';
 import { PayrollService } from './payroll.service';
 import { SalaryAllowanceDto } from './dto/salary.allowance.dto';
-import { SalaryAllowance } from './entities/salary_allowance.entity';
 import { SalaryDeductionDto } from './dto/salary.deduction.dto';
-import { SalaryDeduction } from './entities/salary_deduction.entity';
 import { GeneratePayrollDto } from './dto/generate.payroll.dto';
 import { MakePaymentDto } from './dto/make-payment.dto';
 import { UpdatePayslipDto } from './dto/update.payroll.dto';
@@ -12,16 +10,19 @@ import { SalaryPayment } from './entities/salary_payment.entity';
 
 @Controller('hr/payroll')
 export class PayrollController {
-    constructor(private payrollService: PayrollService) {}
+    constructor(private payrollService: PayrollService) {
+    }
 
-    @Post('list-payroll')
-    listPayslips(@Body() listPayrollDto: ListPayrollDto): Promise<SalaryPayment[]> {
-        return this.payrollService.listPayroll(listPayrollDto);
+    @Get('list-payroll')
+    listPayslips(
+        @Query() params: string,
+    ): Promise<SalaryPayment[]> {
+        return this.payrollService.listPayroll(params);
     }
 
     @Get(':staffId/list')
-    listStaffPayroll(@Param() staffId: string): Promise<SalaryPayment[]> {
-        return this.payrollService.listStaffPayroll(staffId);
+    listStaffPayroll(@Param() params: string): Promise<SalaryPayment[]> {
+        return this.payrollService.listStaffPayroll(params);
     }
 
     @Post('update-allowances')
@@ -35,7 +36,10 @@ export class PayrollController {
     }
 
     @Post('generate-payslip')
-    generatePayroll(@Body() generatePayrollDto: GeneratePayrollDto): Promise<any> {
+    generatePayroll(
+        @Body() generatePayrollDto: GeneratePayrollDto,
+        @Request() req,
+    ): Promise<any> {
         return this.payrollService.generatePayroll(generatePayrollDto);
     }
 

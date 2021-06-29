@@ -17,28 +17,31 @@ import { JwtStrategy } from './common/utils/jwt.strategy';
 import { AppGateway } from './app.gateway';
 import { MailModule } from './modules/mail/mail.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { LoggerModule } from './modules/logger/logger.module';
 
 fs.writeFileSync(
-  './ormconfig.json',
-  JSON.stringify(appService.getTypeOrmConfig(), null, 2),
+    './ormconfig.json',
+    JSON.stringify(appService.getTypeOrmConfig(), null, 2),
 );
 
 @Module({
-  imports: [
-    TypeOrmModule.forRoot(appService.getTypeOrmConfig()),
-    ScheduleModule.forRoot(),
-    AuthModule,
-    HmoModule,
-    HRModule,
-    PatientModule,
-    FinanceModule,
-    InventoryModule,
-    SettingsModule,
-    FrontdeskModule,
-    UtilityModule,
-    MailModule,
-  ],
-  controllers: [AppController],
-  providers: [AppGateway, JwtStrategy],
+    imports: [
+        TypeOrmModule.forRoot(appService.getTypeOrmConfig()),
+        ScheduleModule.forRoot(),
+        AuthModule,
+        HmoModule,
+        HRModule,
+        PatientModule,
+        FinanceModule,
+        InventoryModule,
+        SettingsModule,
+        FrontdeskModule,
+        UtilityModule,
+        MailModule,
+        LoggerModule,
+    ],
+    controllers: [AppController],
+    providers: [AppGateway, JwtStrategy],
 })
-export class AppModule {}
+export class AppModule {
+}

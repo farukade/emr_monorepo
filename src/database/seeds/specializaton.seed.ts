@@ -14,7 +14,7 @@ export default class CreateSpecialization implements Seeder {
         const s = specializations[i];
         const spec = new Specialization();
         spec.name = s.name;
-        spec.createdBy = 'admin1';
+        spec.createdBy = 'admin';
         spec.save();
       } catch (error) {
         continue;

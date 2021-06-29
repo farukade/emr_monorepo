@@ -7,7 +7,7 @@ import { User } from '../entities/user.entity';
 @EntityRepository(StaffDetails)
 export class StaffRepository extends Repository<StaffDetails> {
 
-    async saveDetails(staffDto: StaffDto, department: Department, user: User, specialization, pic) {
+    async saveDetails(staffDto: StaffDto, department: Department, user: User, specialization, pic, username) {
         try {
             const staff = new StaffDetails();
             staff.first_name = staffDto?.first_name?.toLocaleLowerCase();
@@ -42,14 +42,17 @@ export class StaffRepository extends Repository<StaffDetails> {
             staff.profile_pic = (pic) ? pic.filename : '';
             staff.specialization = specialization;
             staff.user = user;
-            staff.emp_code = 'DHS ' + Math.floor(Math.random() * 90000),
+            staff.emp_code = 'DHS ' + Math.floor(Math.random() * 90000);
+            staff.createdBy = username;
 
-                await staff.save();
-                console.log(staff);
+            const rs = await staff.save();
+            console.log(rs);
 
-            return {success: true, staff};
+            return { success: true, staff: rs };
         } catch (e) {
-            return {success: false, message: e.message};
+            await user.remove();
+            console.log(e);
+            return { success: false, message: 'error, could not create staff' };
         }
     }
 

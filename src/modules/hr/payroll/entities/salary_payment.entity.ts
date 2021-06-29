@@ -2,6 +2,8 @@ import { CustomBaseEntity } from '../../../../common/entities/custom-base.entity
 import { Column, Entity, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { SalaryPaymentAllowance } from './salary_payment_allowance.entity';
 import { SalaryPaymentDeduction } from './salary_payment_deductions.entity';
+import { StaffDetails } from '../../staff/entities/staff_details.entity';
+import { Department } from '../../../settings/entities/department.entity';
 
 @Entity({ name: 'salary_payments' })
 export class SalaryPayment extends CustomBaseEntity {
@@ -9,31 +11,33 @@ export class SalaryPayment extends CustomBaseEntity {
     @Column({ type: 'varchar' })
     emp_code: string;
 
+    @ManyToOne(() => StaffDetails, { nullable: true })
+    @JoinColumn({ name: 'staff_id' })
+    staff: StaffDetails;
+
     @Column({ type: 'varchar' })
     staff_name: string;
 
-    @Column({ type: 'varchar', nullable: true })
-    department: string;
+    @ManyToOne(() => Department, { nullable: true })
+    @JoinColumn({ name: 'department_id' })
+    department: Department;
 
-    @Column({ type: 'varchar' })
-    department_id: string;
-
-    @Column({ type: 'varchar', length: 20})
+    @Column({ type: 'varchar', length: 20 })
     payment_month: string;
 
-    @Column({ type: 'int', nullable: true})
+    @Column({ type: 'float4', nullable: true })
     total_allowance: number;
 
-    @Column({ type: 'int', nullable: true})
+    @Column({ type: 'float4', nullable: true })
     total_deduction: number;
 
-    @Column({ type: 'int', nullable: true})
+    @Column({ type: 'float4', nullable: true })
     amount_paid: number;
 
-    @Column({ type: 'varchar', nullable: true})
+    @Column({ type: 'varchar', nullable: true })
     comment: string;
 
-    @Column({ type: 'smallint', default: 0})
+    @Column({ type: 'smallint', default: 0 })
     status: number;
 
     @OneToMany(

@@ -50,9 +50,7 @@ export class StaffService {
         ]});
     }
 
-    async addNewStaff(staffDto: StaffDto, pic): Promise<any> {
-        console.log(pic);
-        console.log(staffDto);
+    async addNewStaff(staffDto: StaffDto, pic, username): Promise<any> {
         // find role
         const role = await this.roleRepository.findOne(staffDto.role_id);
         // find department
@@ -70,7 +68,7 @@ export class StaffService {
         });
 
         // save staff
-        return await this.staffRepository.saveDetails(staffDto, department, user, specialization, pic);
+        return await this.staffRepository.saveDetails(staffDto, department, user, specialization, pic, username);
     }
 
     async updateStaffDetails(id: string, staffDto: StaffDto, pic): Promise<any> {

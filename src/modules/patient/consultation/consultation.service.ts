@@ -14,7 +14,6 @@ import { PatientNote } from '../entities/patient_note.entity';
 import { PatientAllergen } from '../entities/patient_allergens.entity';
 import { StockRepository } from '../../inventory/stock.repository';
 import { PatientDiagnosis } from '../entities/patient_diagnosis.entity';
-import { PatientPastDiagnosis } from '../entities/patient_past_diagnosis.entity';
 import { PatientPhysicalExam } from '../entities/patient_physical_exam.entity';
 import { PatientReviewOfSystem } from '../entities/patient_review_of_system.entity';
 import { AppGateway } from '../../../app.gateway';
@@ -24,7 +23,10 @@ import { PatientConsumable } from '../entities/patient_consumable.entity';
 import { ConsumableRepository } from '../../settings/consumable/consumable.repository';
 import { Appointment } from '../../frontdesk/appointment/appointment.entity';
 import { AuthRepository } from '../../auth/auth.repository';
-import { Connection } from 'typeorm';
+import { Connection, getRepository } from 'typeorm';
+import { getStaff } from '../../../common/utils/utils';
+import { PatientNoteRepository } from '../repositories/patient_note.repository';
+import { PatientDiagnosisRepository } from '../repositories/patient_diagnosis.repository';
 
 @Injectable()
 export class ConsultationService {
@@ -33,6 +35,8 @@ export class ConsultationService {
         private readonly appGateway: AppGateway,
         @InjectRepository(PatientAllergenRepository)
         private allergenRepository: PatientAllergenRepository,
+        @InjectRepository(PatientDiagnosisRepository)
+        private patientDiagnosisRepository: PatientDiagnosisRepository,
         @InjectRepository(EncounterRepository)
         private encounterRepository: EncounterRepository,
         @InjectRepository(PatientRepository)
@@ -45,6 +49,8 @@ export class ConsultationService {
         private queueSystemRepository: QueueSystemRepository,
         @InjectRepository(ConsumableRepository)
         private consumableRepository: ConsumableRepository,
+        @InjectRepository(PatientNoteRepository)
+        private patientNoteRepository: PatientNoteRepository,
         @InjectRepository(AuthRepository)
         private readonly authRepository: AuthRepository,
     ) {
@@ -78,12 +84,6 @@ export class ConsultationService {
             .skip(page * options.limit)
             .getRawMany();
 
-        const queryRunner = this.connection.createQueryRunner();
-        await queryRunner.connect();
-
-        // lets now open a new transaction:
-        await queryRunner.startTransaction();
-
         let result = [];
         try {
 
@@ -91,54 +91,46 @@ export class ConsultationService {
                 const patient = await this.patientRepository.findOne(item.patient, {
                     relations: ['nextOfKin', 'immunization', 'hmo'],
                 });
-    
-                const staff = await this.authRepository.findOne({ where: {username: item.createdBy}, relations: ['details']});
-    
+
+                const staff = await getStaff(item.createdBy);
+
                 item.patient = patient;
                 item.staff = staff;
-                const encounter_id = item.id;
-                const pns = await queryRunner.manager.createQueryBuilder(PatientNote, 'patient_notes')
-                .where('patient_notes.encounter_id = :encounter_id', { encounter_id: encounter_id }).getMany();
 
+                const pns = await this.patientNoteRepository.createQueryBuilder('pn')
+                    .where('pn.encounter_id = :id', { id: item.id }).getMany();
 
-                const pallg = await queryRunner.manager.createQueryBuilder(PatientAllergen, 'patient_allergens')
-                .where('patient_allergens.encounter_id = :encounter_id', { encounter_id: encounter_id }).getMany();
-                
-              
-                const pd = await queryRunner.manager.createQueryBuilder(PatientDiagnosis, 'patient_diagnoses')
-                .where('patient_diagnoses.encounter_id = :encounter_id', { encounter_id: encounter_id }).getMany();
-                
-                
-                const ph = await queryRunner.manager.findOne(PatientHistory,{where: { encounter: item }});
-               
-                const pros = await queryRunner.manager.createQueryBuilder(PatientReviewOfSystem, 'patient_review_of_systems')
-                .where('patient_review_of_systems.encounter_id = :encounter_id', { encounter_id: encounter_id }).getMany();
-                
-               
-                const ppe = await queryRunner.manager.createQueryBuilder(PatientPhysicalExam, 'patient_physical_exams')
-                .where('patient_physical_exams.encounter_id = :encounter_id', { encounter_id: encounter_id }).getMany();
- 
-                const pc = await queryRunner.manager.createQueryBuilder(PatientConsumable, 'patient_consumables')
-                .where('patient_consumables.encounter_id = :encounter_id', { encounter_id: encounter_id }).getMany();
-                console.log(ph)
-                item.patient_diagnoses = pd;
+                const pallg = await this.allergenRepository.createQueryBuilder('pa')
+                    .where('pa.encounter_id = :id', { id: item.id }).getMany();
+
+                const pd = await this.patientDiagnosisRepository.createQueryBuilder('pd')
+                    .where('pd.encounter_id = :id', { id: item.id }).getMany();
+
+                const ph = await getRepository(PatientHistory).createQueryBuilder('ph')
+                    .where('ph.encounter_id = :id', { id: item.id }).getMany();
+
+                const pros = await getRepository(PatientReviewOfSystem).createQueryBuilder('prs')
+                    .where('prs.encounter_id = :id', { id: item.id }).getMany();
+
+                const ppe = await getRepository(PatientPhysicalExam).createQueryBuilder('pe')
+                    .where('pe.encounter_id = :id', { id: item.id }).getMany();
+
+                const pc = await getRepository(PatientConsumable).createQueryBuilder('pc')
+                    .where('pc.encounter_id = :id', { id: item.id }).getMany();
+
                 item.patient_allergens = pallg;
+                item.patient_diagnoses = pd;
                 item.patient_history = ph;
                 item.patient_review_of_systems = pros;
                 item.patient_physical_exams = ppe;
                 item.patient_consumables = pc;
+                item.patient_notes = pns;
 
-                for(const note of pns){
-                    switch(note.type){
-                        case 'complaints':
-                           item.complaints = note;
-                        case 'treatment-plan':
-                            item.treatment_plan = note;
-                        case 'instruction':
-                            item.instruction = note;
-                    }
-                }
-    
+                item.appointment = await this.appointmentRepository.findOne({
+                    where: { id: item.appointment_id },
+                    relations: ['whomToSee', 'serviceType', 'consultingRoom', 'department'],
+                });
+
                 result = [...result, item];
             }
 
@@ -151,10 +143,7 @@ export class ConsultationService {
             };
 
         } catch (err) {
-            await queryRunner.rollbackTransaction();
-            return { success: false, error: `${err.message || 'problem fecthcing encounter at the moment please try again later'}`}
-        } finally {
-            await queryRunner.release();
+            return { success: false, error: `${err.message || 'problem fetching encounter at the moment please try again later'}` };
         }
 
     }
@@ -246,7 +235,6 @@ export class ConsultationService {
                 patientDiagnosis.createdBy = createdBy;
                 await patientDiagnosis.save();
             }
-
 
             const his = param.medicalHistory.replace(/(<([^>]+)>)/gi, '')
                 .replace(/&nbsp;/g, '')
@@ -363,7 +351,7 @@ export class ConsultationService {
                 await PatientRequestHelper.handlePharmacyRequest(investigations.pharmacyRequest, patient, createdBy);
             }
 
-            if (nextAppointment) {
+            if (nextAppointment && nextAppointment.appointment_date && nextAppointment.appointment_date !== '') {
                 const appointmentDate = `${moment(nextAppointment.appointment_date).format('YYYY-MM-DD')} ${moment().format('HH:mm:ss')}`;
 
                 const newAppointment = new Appointment();

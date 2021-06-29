@@ -5,8 +5,8 @@ import { MailService } from './mail.service';
 import { join } from 'path';
 import { BullModule } from '@nestjs/bull';
 import { MailProcessor } from './mail.processor';
-
-console.log(join(__dirname, './template'));
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { LoggerRepository } from '../logger/logger.repository';
 
 @Module({
     imports: [
@@ -41,6 +41,7 @@ console.log(join(__dirname, './template'));
                 },
             }),
         }),
+        TypeOrmModule.forFeature([LoggerRepository]),
     ],
     providers: [MailService, MailProcessor],
     exports: [MailService],

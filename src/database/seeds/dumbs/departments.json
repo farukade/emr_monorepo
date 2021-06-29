@@ -18,5 +18,6 @@
   {"name": "Housekeeping"},
   {"name": "HMO"},
   {"name": "Logistics"},
-  {"name": "Security"}
+  {"name": "Security"},
+  {"name": "Human Resources"}
 ]

@@ -11,6 +11,8 @@ import { AppGateway } from '../../../app.gateway';
 import { QueueSystemRepository } from '../../frontdesk/queue-system/queue-system.repository';
 import { ConsumableRepository } from '../../settings/consumable/consumable.repository';
 import { AuthRepository } from '../../auth/auth.repository';
+import { PatientDiagnosisRepository } from '../repositories/patient_diagnosis.repository';
+import { PatientNoteRepository } from '../repositories/patient_note.repository';
 
 @Module({
     imports: [TypeOrmModule.forFeature([
@@ -22,6 +24,8 @@ import { AuthRepository } from '../../auth/auth.repository';
         QueueSystemRepository,
         ConsumableRepository,
         AuthRepository,
+        PatientDiagnosisRepository,
+        PatientNoteRepository,
     ])],
     controllers: [ConsultationController],
     providers: [ AppGateway, ConsultationService],
