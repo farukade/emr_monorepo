@@ -4,7 +4,7 @@ import { PatientRepository } from './repositories/patient.repository';
 import { PatientNOKRepository } from './repositories/patient.nok.repository';
 import { Patient } from './entities/patient.entity';
 import { PatientDto } from './dto/patient.dto';
-import { Connection, getConnection, Brackets } from 'typeorm';
+import { Brackets, Connection, getConnection } from 'typeorm';
 import { PatientVitalRepository } from './repositories/patient_vitals.repository';
 import { PatientVital } from './entities/patient_vitals.entity';
 import * as moment from 'moment';
@@ -19,7 +19,7 @@ import { AppGateway } from '../../app.gateway';
 import { AppointmentRepository } from '../frontdesk/appointment/appointment.repository';
 import { AuthRepository } from '../auth/auth.repository';
 import { TransactionsRepository } from '../finance/transactions/transactions.repository';
-import { formatPID, getStaff, sendSMS } from '../../common/utils/utils';
+import { formatPID, getStaff } from '../../common/utils/utils';
 import { AdmissionClinicalTaskRepository } from './admissions/repositories/admission-clinical-tasks.repository';
 import { AdmissionsRepository } from './admissions/repositories/admissions.repository';
 import { Immunization } from './immunization/entities/immunization.entity';
@@ -573,6 +573,15 @@ export class PatientService {
             .andWhere('q.read = :read', { read: false });
 
         return await query.orderBy('q.createdAt', 'DESC').getMany();
+    }
+
+    async readAlert(id: number, readBy): Promise<PatientAlert> {
+        const alertItem = await this.patientAlertRepository.findOne(id);
+        alertItem.read = true;
+        alertItem.readBy = readBy;
+        alertItem.lastChangedBy = readBy;
+
+        return await alertItem.save();
     }
 
     async doUploadDocument(id, param, fileName, createdBy) {

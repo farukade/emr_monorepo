@@ -52,4 +52,7 @@ export class IvfEnrollment extends CustomBaseEntity {
     @JoinColumn({name: 'husband_patient_id'})
     husband: Patient;
 
+    @Column({ type: 'smallint', default: 0 })
+    status: number;
+
 }

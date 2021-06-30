@@ -12,14 +12,8 @@ import { IvfHcgAdministrationChartEntity } from './entities/ivf_hcg_administrati
 import { IvfTheaterProcedureListEntity } from './entities/ivf_theater_procedure_lists.entity';
 import { PaginationOptionsInterface } from '../../../common/paginate';
 import { Pagination } from '../../../common/paginate/paginate.interface';
-import { PatientRequest } from '../entities/patient_requests.entity';
 import * as moment from 'moment';
-import { RequestPaymentHelper } from '../../../common/utils/RequestPaymentHelper';
-import { PatientRequestHelper } from '../../../common/utils/PatientRequestHelper';
 import { AppGateway } from '../../../app.gateway';
-import { PatientRequestItem } from '../entities/patient_request_items.entity';
-import { User } from '../../hr/entities/user.entity';
-import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 import { PatientRequestItemRepository } from '../repositories/patient_request_items.repository';
 import { PatientRequestRepository } from '../repositories/patient_request.repository';
 
@@ -98,6 +92,9 @@ export class IvfService {
 
     async getEnrollments(options: PaginationOptionsInterface, params): Promise<Pagination> {
         const { startDate, endDate, patient_id } = params;
+
+        const page = options.page - 1;
+
         const query = this.ivfEnrollmentRepo.createQueryBuilder('q').select('q.*');
 
         if (startDate && startDate !== '') {
@@ -108,16 +105,18 @@ export class IvfService {
             const end = moment(endDate).endOf('day').toISOString();
             query.andWhere(`q.createdAt <= '${end}'`);
         }
+
         if (patient_id && patient_id !== '') {
             query.andWhere('q.wife_patient_id = :wife_patient_id', { wife_patient_id: patient_id });
         }
 
-        const ivfs = await query.offset(options.page * options.limit)
+        const ivfs = await query.offset(page * options.limit)
             .limit(options.limit)
             .orderBy('q.createdAt', 'DESC')
             .getRawMany();
 
         const total = await query.getCount();
+
         let objInplace = [];
         for (const ivf of ivfs) {
 
@@ -142,7 +141,7 @@ export class IvfService {
             lastPage: Math.ceil(total / options.limit),
             itemsPerPage: options.limit,
             totalPages: total,
-            currentPage: options.page + 1,
+            currentPage: options.page,
         };
     }
 

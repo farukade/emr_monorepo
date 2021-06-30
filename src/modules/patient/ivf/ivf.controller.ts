@@ -11,6 +11,16 @@ import { Pagination } from '../../../common/paginate/paginate.interface';
 export class IvfController {
     constructor(private ivfService: IvfService) {}
 
+    @Get('')
+    listEnrollments(
+        @Query() urlParams,
+        @Request() request,
+    ): Promise<Pagination> {
+        const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
+        const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
+        return this.ivfService.getEnrollments({ page, limit }, urlParams);
+    }
+
     @Delete('/:id')
     deleteIVF(
         @Param('id') id: number,
@@ -30,16 +40,6 @@ export class IvfController {
     @Get(':patientId/history')
     ivfHistory(@Param('patientId') patientId: string ): Promise<IvfEnrollment[]> {
         return this.ivfService.getHistory(patientId);
-    }
-
-    @Get('enrollments')
-    listEnrollments(
-        @Query() urlParams,
-        @Request() request,
-    ): Promise<Pagination> {
-        const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
-        const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page,10) : 0;
-        return this.ivfService.getEnrollments({ page: page - 1, limit }, urlParams);
     }
 
     @Post('save/down-regulation')

@@ -35,4 +35,7 @@ export class AntenatalEnrollment extends CustomBaseEntity {
 
     @Column()
     enrollmentPackage: string;
+
+    @Column({ type: 'smallint', default: 0 })
+    status: number;
 }

@@ -1,8 +1,7 @@
-import { Controller, Get, Post, Body, Put, Param, Delete, Request, UseGuards } from '@nestjs/common';
+import { Controller, Get, Request, UseGuards, Query } from '@nestjs/common';
 import { NicuService } from './nicu.service';
 import { AuthGuard } from '@nestjs/passport';
-import { CreateNicuDto } from './dto/create-nicu.dto';
-import { UpdateNicuDto } from './dto/update-nicu.dto';
+import { Pagination } from '../../../common/paginate/paginate.interface';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('nicu')
@@ -10,28 +9,13 @@ export class NicuController {
     constructor(private readonly nicuService: NicuService) {
     }
 
-    @Post()
-    create(@Body() createNicuDto: CreateNicuDto, @Request() req) {
-        return this.nicuService.createNicu(createNicuDto, req.user.userId);
-    }
-
-    @Get()
-    findAll() {
-        return this.nicuService.getAllNicu();
-    }
-
-    @Get(':id')
-    findOne(@Param('id') id: number) {
-        return this.nicuService.getNicu(id);
-    }
-
-    @Put(':id')
-    update(@Param('id') id: string, @Body() updateNicuDto: UpdateNicuDto) {
-        return this.nicuService.updateNicu(id, updateNicuDto);
-    }
-
-    @Delete(':id')
-    remove(@Param('id') id: string) {
-        return this.nicuService.removeNicu(id);
+    @Get('')
+    listEnrollments(
+        @Query() urlParams,
+        @Request() request,
+    ): Promise<Pagination> {
+        const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
+        const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
+        return this.nicuService.getEnrollments({ page, limit }, urlParams);
     }
 }

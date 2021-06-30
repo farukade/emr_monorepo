@@ -202,6 +202,14 @@ export class PatientController {
         return this.patientService.getAlerts(id);
     }
 
+    @Patch(':id/read-alert')
+    readAlert(
+        @Param('id') id: number,
+        @Request() req,
+    ) {
+        return this.patientService.readAlert(id, req.user.username);
+    }
+
     @Post(':id/upload-document')
     @UsePipes(ValidationPipe)
     @UseInterceptors(FileInterceptor('file', {

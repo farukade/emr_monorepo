@@ -5,7 +5,6 @@ import { AdmissionClinicalTaskRepository } from './repositories/admission-clinic
 import { CreateAdmissionDto } from './dto/create-admission.dto';
 import { StaffRepository } from '../../hr/staff/staff.repository';
 import { PatientRepository } from '../repositories/patient.repository';
-import { getConnection } from 'typeorm';
 import { RoomRepository } from '../../settings/room/room.repository';
 import { Admission } from './entities/admission.entity';
 import { AdmissionCareGiver } from './entities/admission-care-giver.entity';
@@ -17,6 +16,7 @@ import { PatientVitalRepository } from '../repositories/patient_vitals.repositor
 import { PatientRequestHelper } from '../../../common/utils/PatientRequestHelper';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import { UserRepository } from '../../hr/user.repository';
+import { NicuRepository } from '../nicu/nicu.repository';
 
 @Injectable()
 export class AdmissionsService {
@@ -36,6 +36,8 @@ export class AdmissionsService {
         private readonly appGateway: AppGateway,
         @InjectRepository(PatientVitalRepository)
         private patientVitalRepository: PatientVitalRepository,
+        @InjectRepository(NicuRepository)
+        private nicuRepository: NicuRepository,
     ) {
     }
 
@@ -44,7 +46,7 @@ export class AdmissionsService {
         const query = this.admissionRepository.createQueryBuilder('q')
             .leftJoinAndSelect('q.patient', 'patient')
             .leftJoinAndSelect('q.room', 'room')
-            .select('q.id, q.createdAt as admission_date, q.createdBy as admitted_by, q.reason')
+            .select('q.id, q.createdAt as admission_date, q.createdBy as admitted_by, q.reason, q.status')
             .addSelect('CONCAT(patient.other_names || \' \' || patient.surname) as patient_name, patient.id as patient_id, patient.folderNumber as patient_folderNumber, patient.gender as patient_gender')
             .addSelect('room.name as suite, room.floor as floor');
 
@@ -85,16 +87,22 @@ export class AdmissionsService {
 
         const total = await query.getCount();
 
+        let result = [];
         for (const item of admissions) {
             if (item.patient_id) {
                 const patient = await this.patientRepository.findOne(item.patient_id, { relations: ['nextOfKin', 'immunization', 'hmo'] });
 
                 item.patient = patient;
             }
+
+            item.nicu = await this.nicuRepository.createQueryBuilder('n').select('n.*')
+                .where('n.admission_id = :id', { id: item.id }).getRawOne();
+
+            result = [...result, item];
         }
 
         return {
-            result: admissions,
+            result,
             lastPage: Math.ceil(total / options.limit),
             itemsPerPage: options.limit,
             totalPages: total,
@@ -103,7 +111,7 @@ export class AdmissionsService {
     }
 
     async saveAdmission(id: string, createDto: CreateAdmissionDto, username): Promise<any> {
-        const { healthState, riskToFall, reason, discharge_date } = createDto;
+        const { healthState, riskToFall, reason, discharge_date, nicu } = createDto;
 
         // find patient info
         const patient = await this.patientRepository.findOne(id, { relations: ['nextOfKin', 'immunization', 'hmo'] });
@@ -114,10 +122,20 @@ export class AdmissionsService {
                 patient, healthState, riskToFall, reason,
                 anticipatedDischargeDate: discharge_date,
                 createdBy: username,
+                status: 0,
             });
 
             patient.isAdmitted = true;
             await patient.save();
+
+            if (nicu) {
+                // save to nicu
+                await this.nicuRepository.save({
+                    patient,
+                    createdBy: username,
+                    admission,
+                });
+            }
 
             // send new opd socket message
             this.appGateway.server.emit('new-admission', admission);

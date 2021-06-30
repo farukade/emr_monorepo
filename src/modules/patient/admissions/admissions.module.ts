@@ -10,18 +10,21 @@ import { RoomRepository } from '../../settings/room/room.repository';
 import { AppGateway } from '../../../app.gateway';
 import { PatientVitalRepository } from '../repositories/patient_vitals.repository';
 import { UserRepository } from '../../hr/user.repository';
+import { NicuRepository } from '../nicu/nicu.repository';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([
-    UserRepository,
-    AdmissionsRepository,
-    AdmissionClinicalTaskRepository,
-    PatientRepository,
-    StaffRepository,
-    RoomRepository,
-    PatientVitalRepository,
-  ])],
-  controllers: [AdmissionsController],
-  providers: [AppGateway, AdmissionsService],
+    imports: [TypeOrmModule.forFeature([
+        UserRepository,
+        AdmissionsRepository,
+        AdmissionClinicalTaskRepository,
+        PatientRepository,
+        StaffRepository,
+        RoomRepository,
+        PatientVitalRepository,
+        NicuRepository,
+    ])],
+    controllers: [AdmissionsController],
+    providers: [AppGateway, AdmissionsService],
 })
-export class AdmissionsModule {}
+export class AdmissionsModule {
+}

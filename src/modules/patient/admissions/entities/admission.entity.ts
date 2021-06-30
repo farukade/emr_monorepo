@@ -36,6 +36,6 @@ export class Admission extends CustomBaseEntity {
     @OneToMany(() => AdmissionCareGiver, givers => givers.admission)
     care_givers: AdmissionCareGiver;
 
-    @Column({ type: 'smallint', default: 1})
+    @Column({ type: 'smallint', default: 0})
     status: number;
 }

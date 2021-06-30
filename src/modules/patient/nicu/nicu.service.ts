@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { NicuRepository } from './nicu.repository';
-import { Nicu } from './entities/nicu.entity';
 import { StaffRepository } from '../../hr/staff/staff.repository';
 import { PatientRepository } from '../repositories/patient.repository';
-import { CreateNicuDto } from './dto/create-nicu.dto';
-import { UpdateNicuDto } from './dto/update-nicu.dto';
+import { PaginationOptionsInterface } from '../../../common/paginate';
+import { Pagination } from '../../../common/paginate/paginate.interface';
+import * as moment from 'moment';
+import { AdmissionsRepository } from '../admissions/repositories/admissions.repository';
 
 @Injectable()
 export class NicuService {
@@ -14,39 +15,71 @@ export class NicuService {
         private nicuRepository: (NicuRepository),
         @InjectRepository(StaffRepository)
         private staffRepository: StaffRepository,
+        @InjectRepository(AdmissionsRepository)
+        private admissionsRepository: AdmissionsRepository,
         @InjectRepository(PatientRepository)
         private patientRepository: PatientRepository,
     ) {
     }
 
-    async createNicu(createNicuDto: CreateNicuDto, userId): Promise<any> {
+    async getEnrollments(options: PaginationOptionsInterface, params): Promise<Pagination> {
+        const { startDate, endDate, patient_id, status, type, name } = params;
+        const query = this.nicuRepository.createQueryBuilder('q')
+            .leftJoinAndSelect('q.patient', 'patient')
+            .select('q.id, q.createdAt as admission_date, q.createdBy as admitted_by, q.status')
+            .addSelect('CONCAT(patient.other_names || \' \' || patient.surname) as patient_name, patient.id as patient_id, patient.folderNumber as patient_folderNumber, patient.gender as patient_gender');
 
-        const user = await this.staffRepository.findOne(userId);
-
-        try {
-            const data = await this.nicuRepository.create(createNicuDto);
-            return { success: true, data };
-        } catch (err) {
-            return { success: false, message: err.message };
+        if (startDate && startDate !== '') {
+            const start = moment(startDate).endOf('day').toISOString();
+            query.andWhere(`q.createdAt >= '${start}'`);
         }
 
-    }
+        if (endDate && endDate !== '') {
+            const end = moment(endDate).endOf('day').toISOString();
+            query.andWhere(`q.createdAt <= '${end}'`);
+        }
 
-    async getAllNicu(): Promise<Nicu[]> {
-        const nicu = await this.nicuRepository.find({});
-        return nicu;
-    }
+        if (patient_id && patient_id !== '') {
+            query.andWhere('q.patient = :patient_id', { patient_id });
+        }
 
-    async getNicu(id: number): Promise<Nicu> {
-        const nicu = await this.nicuRepository.findOne({ id });
-        return nicu;
-    }
+        if (status) {
+            query.andWhere('q.status = :status', { status });
+        }
 
-    updateNicu(id: string, updateNicuDto: UpdateNicuDto): Promise<Nicu> {
-        return;
-    }
+        if (name) {
+            query.where('q.patient_name like :name', { name: `%${name}%` });
+        }
 
-    removeNicu(id: string) {
-        return `This action removes a #${id} nicu`;
+        const page = options.page - 1;
+
+        const admissions = await query.offset(page * options.limit)
+            .limit(options.limit)
+            .orderBy('q.createdAt', 'DESC')
+            .getRawMany();
+
+        const total = await query.getCount();
+
+        let result = [];
+        for (const item of admissions) {
+            if (item.patient_id) {
+                const patient = await this.patientRepository.findOne(item.patient_id, { relations: ['nextOfKin', 'immunization', 'hmo'] });
+
+                item.patient = patient;
+
+            }
+
+            item.admission = await this.admissionsRepository.findOne(item.admission_id);
+
+            result = [...result, item];
+        }
+
+        return {
+            result,
+            lastPage: Math.ceil(total / options.limit),
+            itemsPerPage: options.limit,
+            totalPages: total,
+            currentPage: options.page,
+        };
     }
 }
