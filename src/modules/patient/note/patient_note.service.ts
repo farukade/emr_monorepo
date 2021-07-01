@@ -96,7 +96,11 @@ export class PatientNoteService {
         note.itemId = id;
         note.createdBy = createdBy;
 
-        return await note.save();
+        const rs = await note.save();
+
+        const staff = await getStaff(createdBy);
+
+        return { ...rs, staff };
     }
 
     async updateNote(id: number, param, username: string) {

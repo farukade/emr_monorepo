@@ -50,7 +50,7 @@ export class ConsumableService {
         };
     }
 
-    async saveConsumabe(createDto: ConsumableDto, createdBy): Promise<Consumable> {
+    async saveConsumable(createDto: ConsumableDto, createdBy): Promise<Consumable> {
         const { name, description } = createDto;
 
         const consumable = new Consumable();

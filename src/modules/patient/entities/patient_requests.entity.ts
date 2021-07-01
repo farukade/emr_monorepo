@@ -35,6 +35,9 @@ export class PatientRequest extends CustomBaseEntity {
     @Column({ nullable: true, name: 'procedure_id' })
     procedureId: number;
 
+    @Column({ nullable: true, name: 'antenatal_id' })
+    antenatalId: number;
+
     @OneToMany(type => AdmissionClinicalTask, task => task.request)
     task: AdmissionClinicalTask;
 

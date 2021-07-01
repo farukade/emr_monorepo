@@ -3,8 +3,6 @@ import { Entity, Column, ManyToOne, JoinColumn, OneToOne, OneToMany} from 'typeo
 import { IWifeLabDetails } from '../interfaces/wifeLabDetails.interface';
 import { IHusbandLabDetails } from '../interfaces/husbandLabDetails.interface';
 import { Patient } from '../../entities/patient.entity';
-import { PatientRequest } from '../../entities/patient_requests.entity';
-import { PatientRequestItem } from '../../entities/patient_request_items.entity';
 
 
 @Entity({name: 'ivf_enrollments'})
@@ -45,11 +43,11 @@ export class IvfEnrollment extends CustomBaseEntity {
     otherComments: string;
 
     @ManyToOne(() => Patient)
-    @JoinColumn({name: 'wife_patient_id'})
+    @JoinColumn({name: 'wife_id'})
     wife: Patient;
 
     @ManyToOne(() => Patient)
-    @JoinColumn({name: 'husband_patient_id'})
+    @JoinColumn({name: 'husband_id'})
     husband: Patient;
 
     @Column({ type: 'smallint', default: 0 })

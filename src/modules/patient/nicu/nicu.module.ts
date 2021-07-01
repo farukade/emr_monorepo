@@ -6,6 +6,7 @@ import { NicuRepository } from './nicu.repository';
 import { PatientRepository } from '../repositories/patient.repository';
 import { StaffRepository } from '../../hr/staff/staff.repository';
 import { AdmissionsRepository } from '../admissions/repositories/admissions.repository';
+import { NicuAccommodationRepository } from '../../settings/nicu-accommodation/accommodation.repository';
 
 @Module({
     imports: [TypeOrmModule.forFeature([
@@ -13,6 +14,7 @@ import { AdmissionsRepository } from '../admissions/repositories/admissions.repo
         PatientRepository,
         StaffRepository,
         AdmissionsRepository,
+        NicuAccommodationRepository,
     ])],
     controllers: [NicuController],
     providers: [NicuService],

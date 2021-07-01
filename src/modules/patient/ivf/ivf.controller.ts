@@ -21,20 +21,12 @@ export class IvfController {
         return this.ivfService.getEnrollments({ page, limit }, urlParams);
     }
 
-    @Delete('/:id')
-    deleteIVF(
-        @Param('id') id: number,
-        @Request() req,
-    ): Promise<any> {
-        return this.ivfService.deleteIVF(id, req.user.username);
-    }
-
     @Post('enroll')
     saveEnrollment(
         @Body() ivfEnrollmentDto: IvfEnrollmentDto,
         @Request() req,
     ) {
-        return this.ivfService.saveEnrollment(ivfEnrollmentDto, req.user.userId, req.user.username);
+        return this.ivfService.saveEnrollment(ivfEnrollmentDto, req.user.username);
     }
 
     @Get(':patientId/history')
@@ -64,5 +56,13 @@ export class IvfController {
         @Request() req,
     ) {
         return this.ivfService.doSaveTheatreProcedure(params, req.user);
+    }
+
+    @Delete('/:id')
+    deleteIVF(
+        @Param('id') id: number,
+        @Request() req,
+    ): Promise<any> {
+        return this.ivfService.deleteIVF(id, req.user.username);
     }
 }

@@ -7,6 +7,9 @@ import { PaginationOptionsInterface } from '../../../common/paginate';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import * as moment from 'moment';
 import { AdmissionsRepository } from '../admissions/repositories/admissions.repository';
+import { getConnection } from 'typeorm';
+import { Transactions } from '../../finance/transactions/transaction.entity';
+import { NicuAccommodationRepository } from '../../settings/nicu-accommodation/accommodation.repository';
 
 @Injectable()
 export class NicuService {
@@ -19,6 +22,8 @@ export class NicuService {
         private admissionsRepository: AdmissionsRepository,
         @InjectRepository(PatientRepository)
         private patientRepository: PatientRepository,
+        @InjectRepository(NicuAccommodationRepository)
+        private nicuAccommodationRepository: NicuAccommodationRepository,
     ) {
     }
 
@@ -26,7 +31,7 @@ export class NicuService {
         const { startDate, endDate, patient_id, status, type, name } = params;
         const query = this.nicuRepository.createQueryBuilder('q')
             .leftJoinAndSelect('q.patient', 'patient')
-            .select('q.id, q.createdAt as admission_date, q.createdBy as admitted_by, q.status')
+            .select('q.id, q.createdAt as admission_date, q.createdBy as admitted_by, q.status, q.accommodation_id')
             .addSelect('CONCAT(patient.other_names || \' \' || patient.surname) as patient_name, patient.id as patient_id, patient.folderNumber as patient_folderNumber, patient.gender as patient_gender');
 
         if (startDate && startDate !== '') {
@@ -63,13 +68,14 @@ export class NicuService {
         let result = [];
         for (const item of admissions) {
             if (item.patient_id) {
-                const patient = await this.patientRepository.findOne(item.patient_id, { relations: ['nextOfKin', 'immunization', 'hmo'] });
-
-                item.patient = patient;
-
+                item.patient = await this.patientRepository.findOne(item.patient_id, { relations: ['nextOfKin', 'immunization', 'hmo'] });
             }
 
             item.admission = await this.admissionsRepository.findOne(item.admission_id);
+
+            if (item.accommodation_id) {
+                item.accommodation = await this.nicuAccommodationRepository.findOne(item.accommodation_id);
+            }
 
             result = [...result, item];
         }
@@ -81,5 +87,49 @@ export class NicuService {
             totalPages: total,
             currentPage: options.page,
         };
+    }
+
+    async saveAccommodation(id, params, createdBy: string) {
+        try {
+            const { slug, patient_id } = params;
+
+            // find accommodation
+            const accommodation = await this.nicuAccommodationRepository.findOne({ where: { slug } });
+
+            const nicu = await this.nicuRepository.findOne(id);
+            nicu.accommodation = accommodation;
+            const rs = await nicu.save();
+
+            const patient = await this.patientRepository.findOne(patient_id, { relations: ['hmo'] });
+
+            // add transaction
+            const data = {
+                patient,
+                amount: accommodation.amount,
+                description: `Payment for ${accommodation.name} - Nicu`,
+                payment_type: (patient.hmo.name !== 'Private') ? 'HMO' : '',
+                transaction_type: 'nicu-accommodation',
+                is_admitted: true,
+                transaction_details: accommodation,
+                createdBy,
+                status: 0,
+                hmo: patient.hmo,
+            };
+
+            await this.save(data);
+
+            return { success: true, nicu: { ...rs, accommodation } };
+        } catch (e) {
+            return { success: false, message: e.message };
+        }
+    }
+
+    async save(data) {
+        return await getConnection()
+            .createQueryBuilder()
+            .insert()
+            .into(Transactions)
+            .values(data)
+            .execute();
     }
 }

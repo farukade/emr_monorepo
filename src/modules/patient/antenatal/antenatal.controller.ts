@@ -12,9 +12,14 @@ export class AntenatalController {
         private antenatalService: AntenatalService,
     ) {}
 
-    @Delete('/:id')
-    deleteAntenatal(@Param('id') id: string){
-        return this.antenatalService.deleteAntenatal(id);
+    @Get('/list')
+    getEnrollments(
+        @Query() urlParams,
+        @Request() request,
+    ): Promise<Pagination> {
+        const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
+        const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
+        return this.antenatalService.getAntenatals({page, limit}, urlParams);
     }
 
     @Post('/save')
@@ -25,17 +30,6 @@ export class AntenatalController {
     ) {
         return this.antenatalService.saveEnrollment(createDto, req.user.username);
     }
-
-    @Get('/list')
-    getEnrollments(
-        @Query() urlParams,
-        @Request() request,
-    ): Promise<Pagination> {
-        const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
-        const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page,10) : 0;
-        return this.antenatalService.getAntenatals({page: page - 1, limit}, urlParams);
-    }
-
 
     @Post('visits')
     @UsePipes(ValidationPipe)
@@ -54,5 +48,10 @@ export class AntenatalController {
         const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 2;
         const page = request.query.hasOwnProperty('page') ? request.query.page : 0;
         return this.antenatalService.getPatientAntenatalVisits({page, limit}, urlParams);
+    }
+
+    @Delete('/:id')
+    deleteAntenatal(@Param('id') id: string){
+        return this.antenatalService.deleteAntenatal(id);
     }
 }

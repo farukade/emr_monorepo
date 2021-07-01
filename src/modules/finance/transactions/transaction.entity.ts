@@ -60,6 +60,9 @@ export class Transactions extends CustomBaseEntity {
     @Column({ nullable: true })
     payment_type: string;
 
+    @Column({ default: false })
+    is_admitted: string;
+
     @Column({ nullable: true })
     transaction_type: string;
 

@@ -1,9 +1,8 @@
-import { Column, Entity, ManyToOne, JoinColumn } from 'typeorm';
+import { Column, Entity, ManyToOne, JoinColumn, OneToOne } from 'typeorm';
 import { CustomBaseEntity } from '../../../../common/entities/custom-base.entity';
 import { Patient } from '../../entities/patient.entity';
-import { Room } from '../../../settings/entities/room.entity';
-import { StaffDetails } from '../../../hr/staff/entities/staff_details.entity';
 import { Admission } from '../../admissions/entities/admission.entity';
+import { NicuAccommodation } from '../../../settings/entities/nicu-accommodation.entity';
 
 @Entity({ name: 'nicu' })
 export class Nicu extends CustomBaseEntity {
@@ -11,13 +10,14 @@ export class Nicu extends CustomBaseEntity {
     @JoinColumn({ name: 'patient_id' })
     patient: Patient;
 
-    @Column({ nullable: true })
-    room: string;
+    @ManyToOne(() => NicuAccommodation, { nullable: true })
+    @JoinColumn({ name: 'accommodation_id' })
+    accommodation: NicuAccommodation;
 
     @Column({ type: 'smallint', default: 0 })
     status: number;
 
-    @ManyToOne(() => Admission)
-    @JoinColumn({name: 'admission_id'})
+    @OneToOne(() => Admission, item => item.nicu)
+    @JoinColumn({ name: 'admission_id' })
     admission: Admission;
 }

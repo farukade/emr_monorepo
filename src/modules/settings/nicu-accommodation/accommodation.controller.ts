@@ -1,51 +1,51 @@
 import { Controller, Post, Body, Param, Request, Delete, UseGuards, Get, Query, UsePipes, ValidationPipe, Patch } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Pagination } from '../../../common/paginate/paginate.interface';
-import { ConsumableService } from './consumable.service';
-import { ConsumableDto } from './dto/consumable.dto';
-import { Consumable } from '../entities/consumable.entity';
+import { NicuAccommodationService } from './accommodation.service';
+import { AccommodationDto } from './dto/accommodation.dto';
+import { NicuAccommodation } from '../entities/nicu-accommodation.entity';
 
 @UseGuards(AuthGuard('jwt'))
-@Controller('consumables')
-export class ConsumableController {
+@Controller('nicu-accommodations')
+export class NicuAccommodationController {
     constructor(
-        private consumableService: ConsumableService,
+        private accommodationService: NicuAccommodationService,
     ) {}
 
     @Get('')
-    getConsumables(
+    getAccommodations(
         @Query() urlParams,
         @Request() request,
     ): Promise<Pagination> {
         const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
         const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
-        return this.consumableService.getConsumables({page, limit}, urlParams);
+        return this.accommodationService.getAccommodations({page, limit}, urlParams);
     }
 
     @Post('')
     @UsePipes(ValidationPipe)
     saveConsumabe(
-        @Body() createDto: ConsumableDto,
+        @Body() createDto: AccommodationDto,
         @Request() req,
     ) {
-        return this.consumableService.saveConsumable(createDto, req.user.username);
+        return this.accommodationService.saveAccommodation(createDto, req.user.username);
     }
 
     @Patch('/:id')
     @UsePipes(ValidationPipe)
-    updateConsumable(
+    updateAccommodation(
         @Param('id') id: number,
-        @Body() updateDto: ConsumableDto,
+        @Body() updateDto: AccommodationDto,
         @Request() req,
     ) {
-        return this.consumableService.updateConsumable(id, updateDto, req.user.username);
+        return this.accommodationService.updateAccommodation(id, updateDto, req.user.username);
     }
 
     @Delete('/:id')
-    deleteConsumable(
+    deleteAccommodation(
         @Param('id') id: number,
         @Request() req,
-    ): Promise<Consumable> {
-        return this.consumableService.deleteConsumable(id, req.user.username);
+    ): Promise<NicuAccommodation> {
+        return this.accommodationService.deleteAccommodation(id, req.user.username);
     }
 }

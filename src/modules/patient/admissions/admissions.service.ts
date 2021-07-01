@@ -46,6 +46,7 @@ export class AdmissionsService {
         const query = this.admissionRepository.createQueryBuilder('q')
             .leftJoinAndSelect('q.patient', 'patient')
             .leftJoinAndSelect('q.room', 'room')
+            .leftJoinAndSelect('q.nicu', 'nicu')
             .select('q.id, q.createdAt as admission_date, q.createdBy as admitted_by, q.reason, q.status')
             .addSelect('CONCAT(patient.other_names || \' \' || patient.surname) as patient_name, patient.id as patient_id, patient.folderNumber as patient_folderNumber, patient.gender as patient_gender')
             .addSelect('room.name as suite, room.floor as floor');
@@ -55,6 +56,8 @@ export class AdmissionsService {
                 .leftJoin('room.category', 'category')
                 .addSelect('room.name as room_no, category.name as room_type');
         }
+
+        query.where('q.nicu_id is null');
 
         if (startDate && startDate !== '') {
             const start = moment(startDate).endOf('day').toISOString();
@@ -75,7 +78,7 @@ export class AdmissionsService {
         }
 
         if (name) {
-            query.where('q.patient_name like :name', { name: `%${name}%` });
+            query.andWhere('q.patient_name like :name', { name: `%${name}%` });
         }
 
         const page = options.page - 1;
@@ -130,11 +133,14 @@ export class AdmissionsService {
 
             if (nicu) {
                 // save to nicu
-                await this.nicuRepository.save({
+                const admitNicu = await this.nicuRepository.save({
                     patient,
                     createdBy: username,
                     admission,
                 });
+
+                admission.nicu = admitNicu;
+                await admission.save();
             }
 
             // send new opd socket message
@@ -280,6 +286,11 @@ export class AdmissionsService {
                     newTask.request = request?.data;
                     newTask.frequency = task.frequency;
                     newTask.taskCount = task.taskNumber;
+                } else if (task.title === 'Fluid Chart') {
+                    newTask.task = task.name;
+                    newTask.title = `Check ${task.name} every ${task.interval}${task.intervalType}`;
+                    newTask.taskType = 'fluid';
+                    newTask.taskCount = task.taskCount;
                 } else {
                     newTask.task = task.name;
                     newTask.title = `Check ${task.name} every ${task.interval}${task.intervalType}`;

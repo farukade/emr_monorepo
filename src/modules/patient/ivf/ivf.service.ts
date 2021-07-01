@@ -16,6 +16,7 @@ import * as moment from 'moment';
 import { AppGateway } from '../../../app.gateway';
 import { PatientRequestItemRepository } from '../repositories/patient_request_items.repository';
 import { PatientRequestRepository } from '../repositories/patient_request.repository';
+import { getStaff } from '../../../common/utils/utils';
 
 @Injectable()
 export class IvfService {
@@ -32,62 +33,6 @@ export class IvfService {
         private patientRepository: PatientRepository,
         private readonly appGateway: AppGateway,
     ) {
-    }
-
-    async saveEnrollment(ivfEnrollmentDto: IvfEnrollmentDto, userId, createdBy): Promise<any> {
-        try {
-            const { wife_id, husband_id, labTests } = ivfEnrollmentDto;
-
-            // find user
-            const user = await this.staffRepository.findOne(userId);
-
-            // wife patient details
-            const patient = await this.patientRepository.findOne(wife_id, { relations: ['hmo'] });
-            ivfEnrollmentDto.wife = patient;
-            // husband patient details
-            ivfEnrollmentDto.husband = await this.patientRepository.findOne(husband_id);
-            // save enrollment details
-            const data = await this.ivfEnrollmentRepo.save(ivfEnrollmentDto);
-
-            // TODO: add lab tests
-            // let mappedIds = [];
-            let requests = [];
-            // if (labTests.length > 0) {
-            //     labTests.forEach(id => mappedIds.push({ id }));
-            //     console.log(mappedIds);
-            //     let labRequest = await PatientRequestHelper.handleLabRequest({
-            //         tests: mappedIds,
-            //         request_note: 'IVF enrollment lab tests', requestType: 'ivf',
-            //     }, patient, createdBy);
-            //     if (labRequest.success) {
-            //         // save transaction
-            //         const payment = await RequestPaymentHelper.clinicalLabPayment(labRequest.data, patient, createdBy, labRequest.data.pay_later,);
-            //
-            //         for (const request of labRequest.data) {
-            //             const labRequest = await getConnection().getRepository(PatientRequest).findOne(request.id, { relations: ['items'] });
-            //
-            //             labRequest.ivf = data;
-            //             await labRequest.save();
-            //             requests = [...requests, labRequest];
-            //         }
-            //         this.appGateway.server.emit('paypoint-queue', { payment: payment.transactions });
-            //     }
-            // }
-            return { success: true, data: { ...data, requests } };
-        } catch (err) {
-            return { success: false, message: err.message };
-        }
-    }
-
-    async getHistory(patientId): Promise<IvfEnrollment[]> {
-        // get patient details
-        const patient = await this.patientRepository.findOne(patientId);
-
-        if (patient.gender === 'Female') {
-            return await this.ivfEnrollmentRepo.find({ where: { wife: patient }, relations: ['wife'] });
-        } else {
-            return await this.ivfEnrollmentRepo.find({ where: { husband: patient }, relations: ['husband'] });
-        }
     }
 
     async getEnrollments(options: PaginationOptionsInterface, params): Promise<Pagination> {
@@ -107,7 +52,7 @@ export class IvfService {
         }
 
         if (patient_id && patient_id !== '') {
-            query.andWhere('q.wife_patient_id = :wife_patient_id', { wife_patient_id: patient_id });
+            query.andWhere('q.wife_id = :patient_id', { patient_id });
         }
 
         const ivfs = await query.offset(page * options.limit)
@@ -117,32 +62,62 @@ export class IvfService {
 
         const total = await query.getCount();
 
-        let objInplace = [];
+        let result = [];
         for (const ivf of ivfs) {
 
-            if (ivf.husband_patient_id) {
-                ivf.husband = await this.patientRepository.findOne(ivf.husband_patient_id);
+            if (ivf.husband_id) {
+                ivf.husband = await this.patientRepository.findOne(ivf.husband_id);
             }
 
-            if (ivf.wife_patient_id) {
-                ivf.wife = await this.patientRepository.findOne(ivf.wife_patient_id);
+            if (ivf.wife_id) {
+                ivf.wife = await this.patientRepository.findOne(ivf.wife_id, { relations: ['hmo'] });
             }
+
             const requests = await this.patientRequestRepository.find({ where: { ivf }, relations: ['items'] });
-            objInplace = [...objInplace, { id: ivf.id, requests }];
+
+            ivf.staff = await getStaff(ivf.createdBy);
+
+            result = [...result, { ...ivf, requests }];
         }
 
-        const collection = ivfs.map(ivf => {
-            const obj = objInplace.find(obj => obj.id === ivf.id);
-            return ({ ...ivf, requests: obj.requests });
-        });
-
         return {
-            result: collection,
+            result,
             lastPage: Math.ceil(total / options.limit),
             itemsPerPage: options.limit,
             totalPages: total,
             currentPage: options.page,
         };
+    }
+
+    async saveEnrollment(ivfEnrollmentDto: IvfEnrollmentDto, createdBy): Promise<any> {
+        try {
+            const { wife, husband } = ivfEnrollmentDto;
+
+            // wife patient details
+            const patient = await this.patientRepository.findOne(wife.id, { relations: ['hmo'] });
+            ivfEnrollmentDto.wife = patient;
+
+            // husband patient details
+            ivfEnrollmentDto.husband = await this.patientRepository.findOne(husband.id);
+
+            // save enrollment details
+            const data = await this.ivfEnrollmentRepo.save({ ...ivfEnrollmentDto, createdBy });
+
+            return { success: true, data };
+        } catch (err) {
+            return { success: false, message: err.message };
+        }
+    }
+
+    async getHistory(patientId): Promise<IvfEnrollment[]> {
+        // get patient details
+        const patient = await this.patientRepository.findOne(patientId);
+
+        if (patient.gender === 'Female') {
+            return await this.ivfEnrollmentRepo.find({ where: { wife: patient }, relations: ['wife'] });
+        } else {
+            return await this.ivfEnrollmentRepo.find({ where: { husband: patient }, relations: ['husband'] });
+        }
     }
 
     async doSaveDownRegulationChart(param: IvfDownRegulationChartDto, user) {

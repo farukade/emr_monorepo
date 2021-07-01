@@ -39,7 +39,7 @@ export class DepartmentsController {
     deletePackage(
         @Param('id') id: number,
         @Request() req,
-    ): Promise<Consumable> {
+    ): Promise<Department> {
         return this.departmentService.deleteDepartment(id, req.user.username);
     }
 }

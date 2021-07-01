@@ -4,6 +4,9 @@ import { PatientRepository } from '../repositories/patient.repository';
 import { PaginationOptionsInterface } from '../../../common/paginate';
 import { PatientFluidChart } from '../entities/patient_fluid_chart.entity';
 import { PatientFluidChartRepository } from '../repositories/patient_fluid_chart.repository';
+import * as moment from 'moment';
+import { AdmissionClinicalTaskRepository } from '../admissions/repositories/admission-clinical-tasks.repository';
+import { PatientVitalRepository } from '../repositories/patient_vitals.repository';
 
 @Injectable()
 export class PatientFluidChartService {
@@ -12,6 +15,10 @@ export class PatientFluidChartService {
         private patientRepository: PatientRepository,
         @InjectRepository(PatientFluidChartRepository)
         private patientFluidChartRepository: PatientFluidChartRepository,
+        @InjectRepository(AdmissionClinicalTaskRepository)
+        private clinicalTaskRepository: AdmissionClinicalTaskRepository,
+        @InjectRepository(PatientVitalRepository)
+        private patientVitalRepository: PatientVitalRepository,
     ) {
     }
 
@@ -40,7 +47,7 @@ export class PatientFluidChartService {
     }
 
     async saveChart(param, createdBy) {
-        const { patient_id, type, fluidRoute, volume } = param;
+        const { patient_id, type, fluidRoute, volume, task_id } = param;
 
         const patient = await this.patientRepository.findOne(patient_id);
 
@@ -51,7 +58,54 @@ export class PatientFluidChartService {
         chart.volume = volume;
         chart.createdBy = createdBy;
 
-        return await chart.save();
+        await chart.save();
+
+        let task;
+        if (task_id !== '') {
+            task = await this.clinicalTaskRepository.findOne(task_id);
+
+            if (task && task.tasksCompleted < task.taskCount) {
+                let nextTime;
+                switch (task.intervalType) {
+                    case 'minutes':
+                        nextTime = moment().add(task.interval, 'm').format('YYYY-MM-DD HH:mm:ss');
+                        break;
+                    case 'hours':
+                        nextTime = moment().add(task.interval, 'h').format('YYYY-MM-DD HH:mm:ss');
+                        break;
+                    case 'days':
+                        nextTime = moment().add(task.interval, 'd').format('YYYY-MM-DD HH:mm:ss');
+                        break;
+                    case 'weeks':
+                        nextTime = moment().add(task.interval, 'w').format('YYYY-MM-DD HH:mm:ss');
+                        break;
+                    case 'months':
+                        nextTime = moment().add(task.interval, 'M').format('YYYY-MM-DD HH:mm:ss');
+                        break;
+                    default:
+                        break;
+                }
+
+                const completed = task.tasksCompleted + 1;
+
+                task.nextTime = nextTime;
+                task.tasksCompleted = completed;
+                task.lastChangedBy = createdBy;
+                task.completed = completed === task.taskCount;
+                await task.save();
+            }
+        }
+
+        const data = {
+            readingType: 'Fluid Chart',
+            reading: {type, fluid_route: fluidRoute, volume},
+            patient,
+            createdBy,
+            task: task || null,
+        };
+
+        // @ts-ignore
+        return await this.patientVitalRepository.save(data);
     }
 
     async updateChart(id: number, param, username: string) {

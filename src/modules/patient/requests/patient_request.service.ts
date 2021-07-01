@@ -109,7 +109,7 @@ export class PatientRequestService {
     }
 
     async listPatientRequests(requestType, patient_id, urlParams): Promise<any> {
-        const { startDate, endDate, filled, page, limit, today, procedure_id } = urlParams;
+        const { startDate, endDate, filled, page, limit, today, type, item_id } = urlParams;
 
         const queryLimit = limit ? parseInt(limit, 10) : 30;
         const offset = (page ? parseInt(page, 10) : 1) - 1;
@@ -137,8 +137,12 @@ export class PatientRequestService {
             query.andWhere(`CAST(q.createdAt as text) LIKE '%${today}%'`);
         }
 
-        if (procedure_id && procedure_id !== '') {
-            query.andWhere('q.procedureId = :procedure_id', { procedure_id });
+        if (type && type === 'procedure') {
+            query.andWhere('q.procedureId = :item_id', { item_id });
+        }
+
+        if (type && type === 'antenatal') {
+            query.andWhere('q.antenatalId = :item_id', { item_id });
         }
 
         if (filled) {

@@ -24,9 +24,6 @@ export class IvfEnrollmentDto {
     pregnancyTestDate: string;
     result: string;
     otherComments: string;
-    wife_id: string;
     wife: Patient;
     husband: Patient;
-    husband_id: string;
-    labTests: string[];
 }

@@ -1,11 +1,14 @@
 import { Entity, Column } from 'typeorm';
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 
-@Entity({ name: 'consumables' })
-export class Consumable extends CustomBaseEntity {
+@Entity({ name: 'nicu-accommodations' })
+export class NicuAccommodation extends CustomBaseEntity {
 
     @Column()
     name: string;
+
+    @Column()
+    slug: string;
 
     @Column({ nullable: true })
     description: string;

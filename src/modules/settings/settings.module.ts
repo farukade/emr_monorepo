@@ -10,6 +10,7 @@ import { SpecializationModule } from './specialization/specialization.module';
 import { DiagnosisModule } from './diagnosis/diagnosis.module';
 import { ConsumableModule } from './consumable/consumable.module';
 import { AntenatalPackageModule } from './antenatal-packages/antenatal-package.module';
+import { NicuAccommodationModule } from './nicu-accommodation/accommodation.module';
 
 @Module({
     imports: [
@@ -24,6 +25,7 @@ import { AntenatalPackageModule } from './antenatal-packages/antenatal-package.m
         DiagnosisModule,
         ConsumableModule,
         AntenatalPackageModule,
+        NicuAccommodationModule,
     ],
 })
 export class SettingsModule {}
