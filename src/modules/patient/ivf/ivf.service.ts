@@ -142,7 +142,7 @@ export class IvfService {
         }
     }
 
-    async doSaveHCGAdministration(params, user) {
+    async doSaveHCGAdministration(params, username) {
         const { patient_id, ivf_enrollment_id, timeOfEntry, timeOfAdmin, typeOfDosage, typeOfHcg, routeOfAdmin, nurse_id, remarks, id } = params;
 
         try {
@@ -153,7 +153,7 @@ export class IvfService {
             const ivfEnrollment = await this.ivfEnrollmentRepo.findOne(ivf_enrollment_id);
 
             // find staff details
-            const staffDetails = await this.staffRepository.findOne(nurse_id);
+            const staffDetails = await getStaff(username);
             if (!id) {
                 // save new hcg administration
                 const hcgAdministration = new IvfHcgAdministrationChartEntity();

@@ -47,7 +47,7 @@ export class IvfController {
         @Body() params,
         @Request() req,
     ) {
-        return this.ivfService.doSaveHCGAdministration(params, req.user);
+        return this.ivfService.doSaveHCGAdministration(params, req.user.username);
     }
 
     @Post('save/theatre-procedure')

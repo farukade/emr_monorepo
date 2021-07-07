@@ -1,42 +1,40 @@
-import {Entity, Column, JoinColumn, PrimaryGeneratedColumn, ManyToOne, BaseEntity} from 'typeorm';
-import {IvfEnrollment} from './ivf_enrollment.entity';
-import {Patient} from '../../entities/patient.entity';
-import {StaffDetails} from '../../../hr/staff/entities/staff_details.entity';
+import { Entity, Column, JoinColumn, PrimaryGeneratedColumn, ManyToOne } from 'typeorm';
+import { IvfEnrollment } from './ivf_enrollment.entity';
+import { Patient } from '../../entities/patient.entity';
+import { StaffDetails } from '../../../hr/staff/entities/staff_details.entity';
+import { CustomBaseEntity } from '../../../../common/entities/custom-base.entity';
 
-@Entity({name: 'ivf_hcg_administration_charts'})
-export class IvfHcgAdministrationChartEntity extends BaseEntity{
+@Entity({ name: 'ivf_hcg_administration_charts' })
+export class IvfHcgAdministrationChartEntity extends CustomBaseEntity {
 
-    @PrimaryGeneratedColumn()
-    id: number;
-
-    @Column()
+    @Column({ nullable: true })
     timeOfEntry: string;
 
-    @Column()
+    @Column({ nullable: true })
     timeOfAdmin: string;
 
-    @Column()
+    @Column({ nullable: true })
     typeOfHcg: string;
 
-    @Column()
+    @Column({ nullable: true })
     typeOfDosage: string;
 
-    @Column()
+    @Column({ nullable: true })
     routeOfAdmin: string;
 
-    @Column()
+    @Column({ nullable: true })
     remarks: string;
 
-    @ManyToOne(() => IvfEnrollment)
-    @JoinColumn({name: 'ivf_enrollment_id'})
+    @ManyToOne(() => IvfEnrollment, { nullable: true })
+    @JoinColumn({ name: 'ivf_enrollment_id' })
     ivfEnrollment: IvfEnrollment;
 
-    @ManyToOne(() => Patient)
-    @JoinColumn({name: 'patient_id'})
+    @ManyToOne(() => Patient, { nullable: true })
+    @JoinColumn({ name: 'patient_id' })
     patient: Patient;
 
-    @ManyToOne(() => StaffDetails)
-    @JoinColumn({name: 'staff_id'})
+    @ManyToOne(() => StaffDetails, { nullable: true })
+    @JoinColumn({ name: 'staff_id' })
     staff: StaffDetails;
 
 }
