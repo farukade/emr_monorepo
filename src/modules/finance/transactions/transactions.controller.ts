@@ -29,7 +29,7 @@ export class TransactionsController {
         @Request() request,
     ): Promise<Pagination> {
         const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
-        const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page,10) : 1;
+        const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
         return this.transactionsService.fetchPending({ page, limit }, urlParams);
     }
 
@@ -83,6 +83,24 @@ export class TransactionsController {
         return this.transactionsService.update(id, transactionDto, req.user.username, req.query.hmo_approval_code);
     }
 
+    @Patch('/:id/approve')
+    @UsePipes(ValidationPipe)
+    approveTransaction(
+        @Param('id') id: number,
+        @Request() req,
+    ): Promise<any> {
+        return this.transactionsService.approve(id, req.user.username);
+    }
+
+    @Patch('/:id/transfer')
+    @UsePipes(ValidationPipe)
+    transferTransaction(
+        @Param('id') id: number,
+        @Request() req,
+    ): Promise<any> {
+        return this.transactionsService.transfer(id, req.user.username);
+    }
+
     @Patch('/:id/decline')
     @UsePipes(ValidationPipe)
     declineTransaction(
@@ -100,6 +118,15 @@ export class TransactionsController {
         @Request() req,
     ): Promise<any> {
         return this.transactionsService.processTransaction(id, transactionDto, req.user.username);
+    }
+
+    @Post('/process-bulk')
+    @UsePipes(ValidationPipe)
+    processBulkTransaction(
+        @Body() transactionDto: ProcessTransactionDto,
+        @Request() req,
+    ): Promise<any> {
+        return this.transactionsService.processBulkTransaction(transactionDto, req.user.username);
     }
 
     @Delete('/:id')

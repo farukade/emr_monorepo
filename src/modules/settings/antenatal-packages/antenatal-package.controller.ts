@@ -14,7 +14,7 @@ export class AntenatalPackageController {
     ) {}
 
     @Get('')
-    getEnrollments(
+    getPackages(
         @Query() urlParams,
         @Request() request,
     ): Promise<Pagination> {

@@ -7,6 +7,8 @@ import { Country } from '../../common/entities/country.entity';
 import { Bank } from '../../common/entities/bank.entity';
 import { StaffDetails } from '../hr/staff/entities/staff_details.entity';
 import { getRepository, IsNull, Not } from 'typeorm';
+import { PaymentMethod } from '../settings/entities/payment-method.entity';
+import { PaymentMethodRepository } from '../settings/payment-methods/pm.repository';
 
 @Injectable()
 export class UtilityService {
@@ -17,7 +19,13 @@ export class UtilityService {
         private countryRepository: CountryRepository,
         @InjectRepository(StateRepository)
         private stateRepository: StateRepository,
+        @InjectRepository(PaymentMethodRepository)
+        private paymentMethodRepository: PaymentMethodRepository,
     ) {
+    }
+
+    async getPaymentMethods(): Promise<PaymentMethod[]> {
+        return await this.paymentMethodRepository.find({ where: { status: 1 } });
     }
 
     async getCountries(): Promise<Country[]> {

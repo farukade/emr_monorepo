@@ -1,12 +1,19 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Query, Request } from '@nestjs/common';
 import { UtilityService } from './utility.service';
 import { Country } from '../../common/entities/country.entity';
 import { Bank } from '../../common/entities/bank.entity';
-import {StaffDetails} from '../hr/staff/entities/staff_details.entity';
+import { StaffDetails } from '../hr/staff/entities/staff_details.entity';
+import { PaymentMethod } from '../settings/entities/payment-method.entity';
 
 @Controller('utility')
 export class UtilityController {
-    constructor(private utilityService: UtilityService) {}
+    constructor(private utilityService: UtilityService) {
+    }
+
+    @Get('payment-methods')
+    getMethods(): Promise<PaymentMethod[]> {
+        return this.utilityService.getPaymentMethods();
+    }
 
     @Get('countries')
     listCountries(): Promise<Country[]> {

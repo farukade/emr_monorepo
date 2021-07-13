@@ -11,4 +11,6 @@ export class HmoDto {
 
     email: any;
 
+    cacNumber: string;
+
 }

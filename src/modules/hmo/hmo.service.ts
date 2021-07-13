@@ -10,8 +10,6 @@ import { HmoRate } from './entities/hmo-rate.entity';
 import { HmoRateRepository } from './hmo-rate.repository';
 import { TransactionsRepository } from '../finance/transactions/transactions.repository';
 import * as moment from 'moment';
-import { Transactions } from '../finance/transactions/transaction.entity';
-import { Patient } from '../patient/entities/patient.entity';
 import { getConnection, Like } from 'typeorm';
 import { Appointment } from '../frontdesk/appointment/appointment.entity';
 import { QueueSystemRepository } from '../frontdesk/queue-system/queue-system.repository';
@@ -120,7 +118,7 @@ export class HmoService {
     }
 
     async updateHmo(id: string, hmoDto: HmoDto): Promise<any> {
-        const { name, address, phoneNumber, email } = hmoDto;
+        const { name, address, phoneNumber, email, cacNumber } = hmoDto;
         const hmo = await this.hmoRepository.findOne(id);
         if (!hmo) {
             return { success: false, message: `HMO with ${id} was not found` };
@@ -130,6 +128,7 @@ export class HmoService {
         hmo.address = address;
         hmo.phoneNumber = phoneNumber;
         hmo.email = email;
+        hmo.cacNumber = cacNumber;
         await hmo.save();
         return hmo;
     }
@@ -415,6 +414,27 @@ export class HmoService {
             this.appGateway.server.emit('paypoint-queue', { queue });
 
             return { success: true, transaction, queue };
+        } catch (error) {
+            return { success: false, message: error.message };
+        }
+
+    }
+
+    async transferToPaypoint(params, username) {
+        const { id } = params;
+        try {
+
+            const transaction = await this.transactionsRepository.findOne(id, { relations: ['patient', 'hmo'] });
+            if (!transaction) {
+                throw new NotFoundException(`Transaction was not found`);
+            }
+
+            transaction.payment_type = '';
+            transaction.lastChangedBy = username;
+
+            const rs = await transaction.save();
+
+            return { success: true, transaction: rs };
         } catch (error) {
             return { success: false, message: error.message };
         }

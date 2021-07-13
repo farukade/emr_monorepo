@@ -130,7 +130,6 @@ export class PatientService {
                 .andWhere('q.patient_id = :patient_id', { patient_id: patient.id })
                 .getRawMany();
 
-            // tslint:disable-next-line:no-shadowed-variable
             patient.wallet = transactions.reduce((total, item) => total + item.amount, 0);
         }
 
@@ -155,7 +154,9 @@ export class PatientService {
             .getRawMany();
 
         for (const patient of patients) {
-            patient.immunization = await this.immunizationRepository.find({ where: { patient } });
+            patient.immunization = await this.immunizationRepository.find({
+                where: { patient },
+            });
 
             if (patient.hmo_id) {
                 patient.hmo = await this.hmoRepository.findOne(patient.hmo_id);
@@ -164,6 +165,15 @@ export class PatientService {
             if (patient.nextOfKin_id) {
                 patient.nextOfKin = await this.nextOfKinRepository.findOne(patient.nextOfKin_id);
             }
+
+            const transactions = await this.transactionsRepository.createQueryBuilder('q')
+                .select('q.*')
+                .where('q.status = 0')
+                .andWhere('q.patient_id = :patient_id', { patient_id: patient.id })
+                .andWhere('q.payment_type != :type', { type: 'HMO' })
+                .getRawMany();
+
+            patient.wallet = transactions.reduce((total, item) => total + item.amount, 0);
         }
 
         return patients;

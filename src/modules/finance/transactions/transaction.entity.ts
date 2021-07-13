@@ -54,11 +54,17 @@ export class Transactions extends CustomBaseEntity {
     @Column({ type: 'float4', nullable: true })
     balance: number;
 
+    @Column({ type: 'float4', nullable: true })
+    remaining: number;
+
     @Column({ nullable: true })
     description: string;
 
     @Column({ nullable: true })
     payment_type: string;
+
+    @Column({ nullable: true })
+    part_payment_expiry_date: string;
 
     @Column({ default: false })
     is_admitted: string;

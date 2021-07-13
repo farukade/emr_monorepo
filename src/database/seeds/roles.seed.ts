@@ -16,6 +16,7 @@ export default class CreateRole implements Seeder {
             { name: 'HR Manager', slug: 'hr-manager' },
             { name: 'HMO Officer', slug: 'hmo-officer' },
             { name: 'Cafeteria', slug: 'cafeteria' },
+            { name: 'Records', slug: 'records' },
         ];
         // tslint:disable-next-line:forin
         for (const i in roles) {
@@ -24,6 +25,7 @@ export default class CreateRole implements Seeder {
                 const role = new Role();
                 role.slug = s.slug;
                 role.name = s.name;
+                role.createdBy = 'admin';
                 await role.save();
             } catch (error) {
                 continue;

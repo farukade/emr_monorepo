@@ -294,7 +294,7 @@ export class PatientRequestService {
                 patient,
                 amount: total_amount,
                 description: 'Payment for pharmacy request',
-                payment_type: patient.hmo.id === 1 ? 'Private' : 'HMO',
+                payment_type: patient.hmo.id === 1 ? '' : 'HMO',
                 transaction_type: 'pharmacy',
                 // tslint:disable-next-line:max-line-length
                 transaction_details: items.map(i => ({

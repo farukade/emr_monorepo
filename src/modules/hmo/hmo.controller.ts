@@ -1,30 +1,11 @@
-import {
-    Controller,
-    Get,
-    Post,
-    UsePipes,
-    ValidationPipe,
-    Body,
-    Patch,
-    Param,
-    Delete,
-    UploadedFile,
-    UseInterceptors,
-    Header,
-    Res,
-    Query,
-    Request,
-    UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Post, UsePipes, ValidationPipe, Body, Patch, Param, Delete, UploadedFile, UseInterceptors, Query, Request, UseGuards} from '@nestjs/common';
 import { HmoService } from './hmo.service';
 import { Hmo } from './entities/hmo.entity';
 import { HmoDto } from './dto/hmo.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { extname, join } from 'path';
+import { extname } from 'path';
 import { HmoUploadRateDto } from './dto/hmo.upload-rate.dto';
-import { HmoRate } from './entities/hmo-rate.entity';
-import { Transactions } from '../finance/transactions/transaction.entity';
 import { AuthGuard } from '@nestjs/passport';
 import { Pagination } from '../../common/paginate/paginate.interface';
 
@@ -107,5 +88,13 @@ export class HmoController {
         @Request() req,
     ) {
         return this.hmoService.processTransaction(param, req.user);
+    }
+
+    @Post('transactions/transfer')
+    transferTransaction(
+        @Body() param,
+        @Request() req,
+    ) {
+        return this.hmoService.transferToPaypoint(param, req.user.username);
     }
 }

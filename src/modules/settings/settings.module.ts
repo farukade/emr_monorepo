@@ -11,9 +11,15 @@ import { DiagnosisModule } from './diagnosis/diagnosis.module';
 import { ConsumableModule } from './consumable/consumable.module';
 import { AntenatalPackageModule } from './antenatal-packages/antenatal-package.module';
 import { NicuAccommodationModule } from './nicu-accommodation/accommodation.module';
+import { PaymentMethodModule } from './payment-methods/pm.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { SettingsRepository } from './settings.repository';
+import { SettingsController } from './settings.controller';
+import { SettingsService } from './settings.service';
 
 @Module({
     imports: [
+        TypeOrmModule.forFeature([SettingsRepository]),
         ConsultingRoomModule,
         RolesPermissionsModule,
         ServicesModule,
@@ -26,6 +32,9 @@ import { NicuAccommodationModule } from './nicu-accommodation/accommodation.modu
         ConsumableModule,
         AntenatalPackageModule,
         NicuAccommodationModule,
+        PaymentMethodModule,
     ],
+    controllers: [SettingsController],
+    providers: [SettingsService],
 })
 export class SettingsModule {}

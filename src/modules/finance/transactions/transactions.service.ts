@@ -15,8 +15,9 @@ import { QueueSystemRepository } from '../../frontdesk/queue-system/queue-system
 import { AppointmentRepository } from '../../frontdesk/appointment/appointment.repository';
 import { AppGateway } from '../../../app.gateway';
 import { Pagination } from '../../../common/paginate/paginate.interface';
-import { Brackets } from 'typeorm';
+import { Brackets, getConnection } from 'typeorm';
 import { getStaff } from '../../../common/utils/utils';
+import { Settings } from '../../settings/entities/settings.entity';
 
 @Injectable()
 export class TransactionsService {
@@ -114,6 +115,8 @@ export class TransactionsService {
         query.where(new Brackets(qb => {
             qb.where('q.status = 0').orWhere('q.status = -1');
         }));
+
+        query.andWhere('q.payment_type != :type', { type: 'HMO' });
 
         if (startDate && startDate !== '') {
             const start = moment(startDate).endOf('day').toISOString();
@@ -255,9 +258,8 @@ export class TransactionsService {
                     .orderBy('transaction.createdAt', 'DESC')
                     .getRawMany();
                 break;
-            case 'total-outstanding':
-                result = await query.andWhere('transaction.status = :status', { status: 1 })
-                    .andWhere('transaction.balance > :balance', { balance: 0 })
+            case 'total-paylater':
+                result = await query.andWhere('transaction.status = :status', { status: -1 })
                     .orderBy('transaction.createdAt', 'DESC')
                     .getRawMany();
                 break;
@@ -308,7 +310,7 @@ export class TransactionsService {
             transaction.hmo_approval_code = code;
             transaction.status = 1;
             transaction.lastChangedBy = createdBy;
-            transaction.save();
+            await transaction.save();
 
             return { success: true, transaction };
         }
@@ -342,6 +344,24 @@ export class TransactionsService {
         }
     }
 
+    async approve(id: number, createdBy): Promise<any> {
+        const transaction = await this.transactionsRepository.findOne(id);
+        transaction.status = 1;
+        transaction.lastChangedBy = createdBy;
+        const rs = await transaction.save();
+
+        return { success: true, transaction: rs };
+    }
+
+    async transfer(id: number, createdBy): Promise<any> {
+        const transaction = await this.transactionsRepository.findOne(id);
+        transaction.payment_type = '';
+        transaction.lastChangedBy = createdBy;
+        const rs = await transaction.save();
+
+        return { success: true, transaction: rs };
+    }
+
     async decline(id: number, createdBy): Promise<any> {
         const transaction = await this.transactionsRepository.findOne(id);
 
@@ -366,6 +386,9 @@ export class TransactionsService {
             const transaction = await this.transactionsRepository.findOne(id, { relations: ['patient', 'staff', 'serviceType', 'patientRequestItem', 'request', 'appointment', 'hmo'] });
 
             if (is_part_payment && amount_paid < transaction.amount) {
+                const duration = await getConnection().getRepository(Settings).findOne({ where: { slug: 'part-payment-duration' } });
+                const date = moment().add(duration.value, 'd').format('YYYY-MM-DD');
+
                 const balance = new Transactions();
                 balance.createdBy = transaction.createdBy;
                 balance.amount = transaction.amount - amount_paid;
@@ -381,6 +404,7 @@ export class TransactionsService {
                 balance.request = transaction.request;
                 balance.appointment = transaction.appointment;
                 balance.status = -1;
+                balance.part_payment_expiry_date = date;
                 balance.hmo = transaction.hmo;
                 await balance.save();
             }
@@ -405,7 +429,7 @@ export class TransactionsService {
             }
 
             if (is_part_payment && amount_paid < transaction.amount) {
-                transaction.balance = transaction.amount - amount_paid;
+                transaction.remaining = transaction.amount - amount_paid;
             }
 
             let queue;
@@ -435,6 +459,51 @@ export class TransactionsService {
             rs.staff = await getStaff(transaction.lastChangedBy);
 
             return { success: true, transaction: rs, queue };
+        } catch (error) {
+            console.log(error);
+            return { success: false, message: error.message };
+        }
+    }
+
+    async processBulkTransaction(transactionDto: ProcessTransactionDto, updatedBy): Promise<any> {
+        const { payment_type, items } = transactionDto;
+        try {
+            let transactions = [];
+            for (const item of items) {
+                const transaction = await this.transactionsRepository.findOne(item.id, { relations: ['patient', 'staff', 'serviceType', 'patientRequestItem', 'request', 'appointment', 'hmo'] });
+
+                transaction.amount_paid = item.amount;
+                transaction.payment_type = payment_type;
+
+                let queue;
+                if (transaction.next_location && transaction.next_location === 'vitals') {
+                    // find appointment
+                    const appointment = await this.appointmentRepository.findOne({
+                        where: { transaction: transaction.id },
+                        relations: ['patient', 'whomToSee', 'consultingRoom', 'serviceCategory', 'serviceType'],
+                    });
+
+                    // create new queue
+                    if (appointment) {
+                        appointment.status = 'Approved';
+                        appointment.save();
+
+                        queue = await this.queueSystemRepository.saveQueue(appointment, transaction.next_location);
+                        this.appGateway.server.emit('nursing-queue', { queue });
+                    }
+                }
+
+                transaction.next_location = null;
+                transaction.status = 1;
+                transaction.lastChangedBy = updatedBy;
+                const rs = await transaction.save();
+
+                rs.staff = await getStaff(transaction.lastChangedBy);
+
+                transactions = [...transactions, rs];
+            }
+
+            return { success: true, transactions };
         } catch (error) {
             console.log(error);
             return { success: false, message: error.message };

@@ -19,5 +19,6 @@
   {"name": "HMO"},
   {"name": "Logistics"},
   {"name": "Security"},
-  {"name": "Human Resources"}
+  {"name": "Human Resources"},
+  {"name": "Records"}
 ]

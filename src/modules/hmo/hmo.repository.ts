@@ -6,13 +6,15 @@ import { Hmo } from './entities/hmo.entity';
 export class HmoRepository extends Repository<Hmo> {
 
     async saveHmo(hmoDto: HmoDto): Promise<Hmo> {
-        const { name, address, phoneNumber, email }  = hmoDto;
-        const hmo       = new Hmo();
-        hmo.name        = name;
+        const { name, address, phoneNumber, email, cacNumber } = hmoDto;
+
+        const hmo = new Hmo();
+        hmo.name = name;
         // hmo.logo        = logo;
-        hmo.address     = address;
+        hmo.address = address;
         hmo.phoneNumber = phoneNumber;
-        hmo.email       = email;
+        hmo.email = email;
+        hmo.cacNumber = cacNumber;
         await hmo.save();
         return hmo;
     }

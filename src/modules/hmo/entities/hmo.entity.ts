@@ -4,22 +4,28 @@ import { RoomCategory } from '../../settings/entities/room_category.entity';
 
 @Entity({ name: 'hmos' })
 export class Hmo extends CustomBaseEntity {
-  @Column({ type: 'varchar', length: 300 })
-  name: string;
+    @Column({ type: 'varchar', length: 300 })
+    name: string;
 
-  @Column({ type: 'varchar', length: 300, nullable: true })
-  logo: string;
+    @Column({ type: 'varchar', length: 300, nullable: true })
+    logo: string;
 
-  @Column({ type: 'varchar', length: 300, nullable: true })
-  address: string;
+    @Column({ type: 'varchar', length: 300, nullable: true })
+    address: string;
 
-  @Column({ type: 'varchar', length: 300, nullable: true })
-  phoneNumber: string;
+    @Column({ type: 'varchar', length: 300 })
+    phoneNumber: string;
 
-  @Column({ type: 'varchar', length: 300, nullable: true })
-  email: string;
+    @Column({ type: 'varchar', length: 300 })
+    email: string;
 
-  @OneToMany(() => RoomCategory, category => category.hmo, { onDelete: 'CASCADE' })
-  roomCategories: RoomCategory[];
+    @Column({ type: 'varchar', nullable: true, name: 'cac_number' })
+    cacNumber: string;
+
+    @Column({ type: 'varchar', default: 'full', name: 'coverage_type' })
+    coverageType: string;
+
+    @Column({ nullable: true })
+    coverage: number;
 
 }

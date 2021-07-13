@@ -24,7 +24,7 @@ export class NicuAccommodationController {
 
     @Post('')
     @UsePipes(ValidationPipe)
-    saveConsumabe(
+    saveAccommodation(
         @Body() createDto: AccommodationDto,
         @Request() req,
     ) {

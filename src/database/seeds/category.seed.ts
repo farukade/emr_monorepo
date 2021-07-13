@@ -14,6 +14,7 @@ export default class SetCategorySeed implements Seeder {
             const category = new InventoryCategory();
             category.name = c.name;
             category.slug = slugify(c.name);
+            category.createdBy = 'admin';
             await category.save();
         }
     }
