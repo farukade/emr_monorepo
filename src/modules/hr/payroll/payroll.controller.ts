@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Patch, Get, Param, Request, Query } from '@nestjs/common';
+import { Controller, Post, Body, Patch, Get, Param, Request, Query, UseGuards } from '@nestjs/common';
 import { PayrollService } from './payroll.service';
 import { SalaryAllowanceDto } from './dto/salary.allowance.dto';
 import { SalaryDeductionDto } from './dto/salary.deduction.dto';
@@ -7,7 +7,9 @@ import { MakePaymentDto } from './dto/make-payment.dto';
 import { UpdatePayslipDto } from './dto/update.payroll.dto';
 import { ListPayrollDto } from './dto/list.payroll.dto';
 import { SalaryPayment } from './entities/salary_payment.entity';
+import { AuthGuard } from '@nestjs/passport';
 
+@UseGuards(AuthGuard('jwt'))
 @Controller('hr/payroll')
 export class PayrollController {
     constructor(private payrollService: PayrollService) {

@@ -1,4 +1,18 @@
-import { Controller, Post, Body, Res, Header, UseInterceptors, UploadedFile, Get, Query, UsePipes, ValidationPipe, Request } from '@nestjs/common';
+import {
+    Controller,
+    Post,
+    Body,
+    Res,
+    Header,
+    UseInterceptors,
+    UploadedFile,
+    Get,
+    Query,
+    UsePipes,
+    ValidationPipe,
+    Request,
+    UseGuards,
+} from '@nestjs/common';
 import { HousekeepingService } from './housekeeping.service';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
@@ -6,7 +20,9 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadRoasterDto } from './dto/upload-roaster.dto';
 import { ListRoasterDto } from './dto/list-roaster.dto';
 import { Roaster } from './entities/roaster.entity';
+import { AuthGuard } from '@nestjs/passport';
 
+@UseGuards(AuthGuard('jwt'))
 @Controller('hr/housekeeping')
 export class HousekeepingController {
     constructor(private housekeepingService: HousekeepingService) {}

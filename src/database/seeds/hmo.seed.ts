@@ -18,6 +18,8 @@ export default class CreateHmos implements Seeder {
                 hmo.phoneNumber = '080';
                 hmo.email = 'dedahospital@gmail.com';
                 hmo.createdBy = 'admin';
+                hmo.coverage = 100;
+                hmo.coverageType = 'full';
                 await hmo.save();
             } catch (error) {
                 continue;

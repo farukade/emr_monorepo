@@ -13,4 +13,8 @@ export class HmoDto {
 
     cacNumber: string;
 
+    coverageType: string;
+
+    coverage: any;
+
 }

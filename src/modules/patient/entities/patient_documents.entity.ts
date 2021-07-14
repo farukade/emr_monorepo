@@ -1,9 +1,9 @@
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
-import { Entity, Column, ManyToOne, OneToMany, OneToOne } from 'typeorm';
+import { Entity, Column, ManyToOne, OneToOne, JoinColumn } from 'typeorm';
 import { Patient } from './patient.entity';
 import { PatientRequestItem } from './patient_request_items.entity';
 
-@Entity({name: 'patient_documents'})
+@Entity({ name: 'patient_documents' })
 export class PatientDocument extends CustomBaseEntity {
 
     @Column()
@@ -13,6 +13,7 @@ export class PatientDocument extends CustomBaseEntity {
     document_name: string;
 
     @ManyToOne(type => Patient)
+    @JoinColumn({ name: 'patient_id' })
     patient: Patient;
 
     @OneToOne(type => PatientRequestItem, item => item.document)

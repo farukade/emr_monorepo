@@ -1,10 +1,12 @@
-import { Controller, Get, Post, Patch, UsePipes, ValidationPipe, Body, Param, Delete, Request } from '@nestjs/common';
+import { Controller, Get, Post, Patch, UsePipes, ValidationPipe, Body, Param, Delete, Request, UseGuards } from '@nestjs/common';
 import { RoomService } from './room.service';
 import { Room } from '../entities/room.entity';
 import { RoomCategory } from '../entities/room_category.entity';
 import { RoomDto } from './dto/room.dto';
 import { RoomCategoryDto } from './dto/room.category.dto';
+import { AuthGuard } from '@nestjs/passport';
 
+@UseGuards(AuthGuard('jwt'))
 @Controller('rooms')
 export class RoomController {
     constructor(private roomService: RoomService) {}

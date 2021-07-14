@@ -42,8 +42,9 @@ export class HmoService {
     ) {
     }
 
-    async getHmos(urlParams): Promise<Hmo[]> {
-        const { name } = urlParams;
+    async fetchHmos(options: PaginationOptionsInterface, params): Promise<Pagination> {
+        const { name } = params;
+
         let searchParam = {};
         if (name && name !== '') {
             searchParam = {
@@ -53,7 +54,21 @@ export class HmoService {
             };
         }
 
-        return this.hmoRepository.find(searchParam);
+        const page = options.page - 1;
+
+        const [result, total] = await this.hmoRepository.findAndCount({
+            ...searchParam,
+            take: options.limit,
+            skip: (page * options.limit),
+        });
+
+        return {
+            result,
+            lastPage: Math.ceil(total / options.limit),
+            itemsPerPage: options.limit,
+            totalPages: total,
+            currentPage: options.page,
+        };
     }
 
     async getHmoTariff(options: PaginationOptionsInterface, urlParams): Promise<Pagination> {
@@ -118,18 +133,23 @@ export class HmoService {
     }
 
     async updateHmo(id: string, hmoDto: HmoDto): Promise<any> {
-        const { name, address, phoneNumber, email, cacNumber } = hmoDto;
+        const { name, address, phoneNumber, email, cacNumber, coverage, coverageType } = hmoDto;
         const hmo = await this.hmoRepository.findOne(id);
+
         if (!hmo) {
             return { success: false, message: `HMO with ${id} was not found` };
         }
-        hmo.name = name.toLocaleLowerCase();
+
+        hmo.name = name;
         // hmo.logo        = logo;
         hmo.address = address;
         hmo.phoneNumber = phoneNumber;
         hmo.email = email;
         hmo.cacNumber = cacNumber;
+        hmo.coverage = coverage;
+        hmo.coverageType = coverageType;
         await hmo.save();
+
         return hmo;
     }
 

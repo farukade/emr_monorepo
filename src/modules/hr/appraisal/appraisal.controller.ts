@@ -1,4 +1,19 @@
-import { Controller, Post, UsePipes, ValidationPipe, Body, Param, Patch, Delete, Get, Header, Res, UseInterceptors, UploadedFile } from '@nestjs/common';
+import {
+    Controller,
+    Post,
+    UsePipes,
+    ValidationPipe,
+    Body,
+    Param,
+    Patch,
+    Delete,
+    Get,
+    Header,
+    Res,
+    UseInterceptors,
+    UploadedFile,
+    UseGuards,
+} from '@nestjs/common';
 import { CreateAppriasalDto } from './dto/create-appraisal.dto';
 import { AppraisalService } from './appraisal.service';
 import { UpdateAppraisalDto } from './dto/update-appraisal.dto';
@@ -6,7 +21,9 @@ import { CreateAppriasalPeriodDto } from './dto/create-appraisal-period.dto';
 import { extname, join } from 'path';
 import { diskStorage } from 'multer';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { AuthGuard } from '@nestjs/passport';
 
+@UseGuards(AuthGuard('jwt'))
 @Controller('hr/appraisal')
 export class AppraisalController {
 

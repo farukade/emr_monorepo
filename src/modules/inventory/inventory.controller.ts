@@ -13,7 +13,7 @@ import {
     Header,
     Res,
     Request,
-    Query,
+    Query, UseGuards,
 } from '@nestjs/common';
 import { InventoryService } from './inventory.service';
 import { InventoryCategory } from './entities/inventory.category.entity';
@@ -28,7 +28,9 @@ import { extname, join } from 'path';
 import { StockUploadDto } from './dto/stock.upload.dto';
 import { InventorySubCategory } from './entities/inventory.sub-category.entity';
 import { Pagination } from '../../common/paginate/paginate.interface';
+import { AuthGuard } from '@nestjs/passport';
 
+@UseGuards(AuthGuard('jwt'))
 @Controller('inventory')
 export class InventoryController {
     constructor(private inventoryService: InventoryService) {

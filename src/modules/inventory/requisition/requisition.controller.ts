@@ -1,7 +1,9 @@
-import { Controller, Get, Query, Request } from '@nestjs/common';
+import { Controller, Get, Query, Request, UseGuards } from '@nestjs/common';
 import { RequisitionService } from './requisition.service';
 import { Pagination } from '../../../common/paginate/paginate.interface';
+import { AuthGuard } from '@nestjs/passport';
 
+@UseGuards(AuthGuard('jwt'))
 @Controller('inventory/requisitions')
 export class RequisitionController {
     constructor(private requisitionService: RequisitionService) {

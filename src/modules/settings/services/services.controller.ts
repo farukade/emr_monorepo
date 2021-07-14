@@ -12,7 +12,7 @@ import {
     UploadedFile,
     Header,
     Res,
-    Request, Query,
+    Request, Query, UseGuards,
 } from '@nestjs/common';
 import { ServicesService } from './services.service';
 import { Service } from '../entities/service.entity';
@@ -24,7 +24,9 @@ import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import { ServicesUploadRateDto } from './dto/service.upload.dto';
 import { Pagination } from '../../../common/paginate/paginate.interface';
+import { AuthGuard } from '@nestjs/passport';
 
+@UseGuards(AuthGuard('jwt'))
 @Controller('services')
 export class ServicesController {
     constructor(private servicesService: ServicesService) {

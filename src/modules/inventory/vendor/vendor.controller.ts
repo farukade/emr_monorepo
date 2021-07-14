@@ -1,8 +1,10 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Request, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Request, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
 import { Vendor } from './vendor.entity';
 import { VendorDto } from './vendor.dto';
 import { VendorService } from './vendor.service';
+import { AuthGuard } from '@nestjs/passport';
 
+@UseGuards(AuthGuard('jwt'))
 @Controller('inventory/vendors')
 export class VendorController {
     constructor(private vendorService: VendorService) {

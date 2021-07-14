@@ -12,7 +12,7 @@ import {
     Header,
     Res,
     Query,
-    Request, Put,
+    Request, Put, UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -22,7 +22,9 @@ import { CafeteriaItem } from './entities/cafeteria_item.entity';
 import { CafeteriaItemDto } from './dto/cafeteria.item.dto';
 import { CafeteriaSalesDto } from './dto/cafeteria-sales.dto';
 import { Pagination } from '../../../common/paginate/paginate.interface';
+import { AuthGuard } from '@nestjs/passport';
 
+@UseGuards(AuthGuard('jwt'))
 @Controller('cafeteria')
 export class CafeteriaController {
     constructor(private inventoryService: CafeteriaService) {

@@ -1,8 +1,10 @@
-import { Controller, Get, Body, Post, Patch, Param, Delete, Query, UsePipes, ValidationPipe, Request } from '@nestjs/common';
+import { Controller, Get, Body, Post, Patch, Param, Delete, Query, UsePipes, ValidationPipe, Request, UseGuards } from '@nestjs/common';
 import { LeavemgtService } from './leavemgt.service';
 import { LeaveApplicationDto } from './dto/leave.application.dto';
 import { LeaveApplication } from './entities/leave_application.entity';
+import { AuthGuard } from '@nestjs/passport';
 
+@UseGuards(AuthGuard('jwt'))
 @Controller('hr/leave-management')
 export class LeavemgtController {
     constructor(private leaveService: LeavemgtService) {}

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { appService } from './app.service';
 import { HmoModule } from './modules/hmo/hmo.module';
@@ -10,14 +11,14 @@ import { FinanceModule } from './modules/finance/finance.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { FrontdeskModule } from './modules/frontdesk/frontdesk.module';
 import { UtilityModule } from './modules/utility/utility.module';
-
-import fs = require('fs');
 import { AuthModule } from './modules/auth/auth.module';
 import { JwtStrategy } from './common/utils/jwt.strategy';
 import { AppGateway } from './app.gateway';
 import { MailModule } from './modules/mail/mail.module';
-import { ScheduleModule } from '@nestjs/schedule';
 import { LoggerModule } from './modules/logger/logger.module';
+import { TasksModule } from './modules/scheduler/cron.module';
+
+import fs = require('fs');
 
 fs.writeFileSync(
     './ormconfig.json',
@@ -39,6 +40,7 @@ fs.writeFileSync(
         UtilityModule,
         MailModule,
         LoggerModule,
+        TasksModule,
     ],
     controllers: [AppController],
     providers: [AppGateway, JwtStrategy],

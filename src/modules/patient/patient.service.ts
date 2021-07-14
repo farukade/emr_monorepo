@@ -124,13 +124,12 @@ export class PatientService {
 
             const transactions = await this.transactionsRepository.createQueryBuilder('q')
                 .select('q.*')
-                .where(new Brackets(qb => {
-                    qb.where('q.status = 0').orWhere('q.status = -1');
-                }))
+                .where('q.status = :status', { status: 0 })
                 .andWhere('q.patient_id = :patient_id', { patient_id: patient.id })
+                .andWhere('q.payment_type != :type', { type: 'HMO' })
                 .getRawMany();
 
-            patient.wallet = transactions.reduce((total, item) => total + item.amount, 0);
+            patient.outstanding = patient.creditLimit > 0 ? 0 : transactions.reduce((totalAmount, item) => totalAmount + item.amount, 0);
         }
 
         return {
@@ -168,12 +167,12 @@ export class PatientService {
 
             const transactions = await this.transactionsRepository.createQueryBuilder('q')
                 .select('q.*')
-                .where('q.status = 0')
+                .where('q.status = :status', { status: 0 })
                 .andWhere('q.patient_id = :patient_id', { patient_id: patient.id })
                 .andWhere('q.payment_type != :type', { type: 'HMO' })
                 .getRawMany();
 
-            patient.wallet = transactions.reduce((total, item) => total + item.amount, 0);
+            patient.outstanding = patient.creditLimit > 0 ? 0 : transactions.reduce((total, item) => total + item.amount, 0);
         }
 
         return patients;
@@ -223,8 +222,8 @@ export class PatientService {
 
             const transactions = await this.transactionsRepository.find({ where: { patient, status: 0 } });
 
-            const wallet = transactions.reduce((total, item) => total + item.amount, 0);
-            const pat = { ...patient, wallet };
+            const outstanding = patient.creditLimit > 0 ? 0 : transactions.reduce((total, item) => total + item.amount, 0);
+            const pat = { ...patient, outstanding };
 
             return { success: true, patient: pat };
         } catch (err) {
@@ -455,8 +454,9 @@ export class PatientService {
         return await query.orderBy('q.createdAt', 'DESC').getMany();
     }
 
-    async getTransactions(options: PaginationOptionsInterface, id, params): Promise<Pagination> {
+    async getTransactions(options: PaginationOptionsInterface, id, params): Promise<any> {
         const { startDate, endDate, q, status } = params;
+
         const query = this.transactionsRepository.createQueryBuilder('t').select('t.*')
             .where('t.patient_id = :id', { id });
 
@@ -499,32 +499,42 @@ export class PatientService {
             result = [...result, transaction];
         }
 
+        const outstanding = transactions.filter(t => t.status !== 1 && t.payment_type !== 'HMO')
+            .reduce((sumTotal, item) => sumTotal + item.amount, 0);
+
+        const totalAmount = transactions.reduce((sumTotal, item) => sumTotal + item.amount, 0);
+
         return {
             result,
             lastPage: Math.ceil(total / options.limit),
             itemsPerPage: options.limit,
             totalPages: total,
             currentPage: options.page,
+            total_amount: totalAmount,
+            outstanding_amount: outstanding,
         };
     }
 
     async getDocuments(id, urlParams): Promise<PatientDocument[]> {
         const { startDate, endDate, documentType } = urlParams;
 
-        const query = this.patientDocumentRepository.createQueryBuilder('v')
-            .select(['v.document_name', 'v.document_type'])
-            .where('v.patient_id = :id', { id });
+        const query = this.patientDocumentRepository.createQueryBuilder('q').select('q.*')
+            .where('q.patient_id = :id', { id });
+
         if (startDate && startDate !== '') {
             const start = moment(startDate).endOf('day').toISOString();
             query.andWhere(`q.createdAt >= '${start}'`);
         }
+
         if (endDate && endDate !== '') {
             const end = moment(endDate).endOf('day').toISOString();
             query.andWhere(`q.createdAt <= '${end}'`);
         }
+
         if (documentType && documentType !== '') {
             query.andWhere('q.document_type = :document_type', { document_type: documentType });
         }
+
         return await query.orderBy('q.createdAt', 'DESC').getMany();
     }
 
@@ -633,5 +643,20 @@ export class PatientService {
             .into(Transactions)
             .values(data)
             .execute();
+    }
+
+    async doSaveCreditLimit(id, param, updatedBy): Promise<any> {
+        try {
+            const patient = await this.patientRepository.findOne(id);
+            patient.creditLimit = param.amount;
+            patient.creditLimitExpiryDate = param.expiry_date;
+            patient.lastChangedBy = updatedBy;
+            const rs = await patient.save();
+
+            return { success: true, patient: rs };
+        } catch (error) {
+            console.log(error);
+            return { success: false, message: error.message };
+        }
     }
 }

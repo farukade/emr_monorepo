@@ -1,8 +1,10 @@
-import { Controller, Get, Post, UsePipes, ValidationPipe, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, UsePipes, ValidationPipe, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { SpecializationService } from './specialization.service';
 import { Specialization } from '../entities/specialization.entity';
 import { SpecializationDto } from './dto/specialization.dto';
+import { AuthGuard } from '@nestjs/passport';
 
+@UseGuards(AuthGuard('jwt'))
 @Controller('specializations')
 export class SpecializationController {
     constructor(private specializationService: SpecializationService) {}

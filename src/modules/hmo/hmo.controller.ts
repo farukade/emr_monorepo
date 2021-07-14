@@ -1,4 +1,19 @@
-import { Controller, Get, Post, UsePipes, ValidationPipe, Body, Patch, Param, Delete, UploadedFile, UseInterceptors, Query, Request, UseGuards} from '@nestjs/common';
+import {
+    Controller,
+    Get,
+    Post,
+    UsePipes,
+    ValidationPipe,
+    Body,
+    Patch,
+    Param,
+    Delete,
+    UploadedFile,
+    UseInterceptors,
+    Query,
+    Request,
+    UseGuards,
+} from '@nestjs/common';
 import { HmoService } from './hmo.service';
 import { Hmo } from './entities/hmo.entity';
 import { HmoDto } from './dto/hmo.dto';
@@ -15,11 +30,15 @@ export class HmoController {
     constructor(private hmoService: HmoService) {
     }
 
-    @Get()
+    @Get('')
     getHmo(
-        @Query() param,
-    ): Promise<Hmo[]> {
-        return this.hmoService.getHmos(param);
+        @Query() params,
+        @Request() request,
+    ): Promise<Pagination> {
+        const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 10;
+        const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
+
+        return this.hmoService.fetchHmos({ page, limit }, params);
     }
 
     @Get('/transactions')

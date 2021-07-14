@@ -52,7 +52,7 @@ export class Patient extends CustomBaseEntity {
     @Column({ type: 'varchar', nullable: true })
     referredBy: string;
 
-    @OneToOne(type => PatientNOK, { cascade: true })
+    @OneToOne(type => PatientNOK, { cascade: true, nullable: true })
     @JoinColumn()
     nextOfKin?: PatientNOK;
 
@@ -83,4 +83,10 @@ export class Patient extends CustomBaseEntity {
 
     @Column({ default: false })
     isStaff: boolean;
+
+    @Column({ type: 'float8', default: 0, name: 'credit_limit' })
+    creditLimit: number;
+
+    @Column({ nullable: true, name: 'credit_limit_expiry_date' })
+    creditLimitExpiryDate: string;
 }

@@ -1,22 +1,5 @@
-import {
-    Controller,
-    Get,
-    Post,
-    Body,
-    Patch,
-    Param,
-    Delete,
-    Query,
-    UsePipes,
-    ValidationPipe,
-    UseInterceptors,
-    UploadedFile,
-    Res,
-    UploadedFiles,
-    UseGuards,
-    Request,
-    Render,
-} from '@nestjs/common';
+// tslint:disable-next-line:max-line-length
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UsePipes, ValidationPipe, UseInterceptors, UploadedFile, Res, UseGuards, Request} from '@nestjs/common';
 import { PatientService } from './patient.service';
 import { Patient } from './entities/patient.entity';
 import { PatientDto } from './dto/patient.dto';
@@ -141,7 +124,7 @@ export class PatientController {
         @Param('id') id: number,
         @Query() urlParams,
         @Request() request,
-    ): Promise<Pagination> {
+    ): Promise<any> {
         const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
         const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
         return this.patientService.getTransactions({ page, limit }, id, urlParams);
@@ -237,5 +220,14 @@ export class PatientController {
     ) {
         // const file = fs.readFile(`uploads/${filename}`)
         return response.sendFile(join(__dirname, '../../../uploads/') + filename);
+    }
+
+    @Post(':id/credit-limit')
+    saveCreditLimit(
+        @Param('id') id: number,
+        @Body() param,
+        @Request() req,
+    ) {
+        return this.patientService.doSaveCreditLimit(id, param, req.user.username);
     }
 }

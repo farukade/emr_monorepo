@@ -1,4 +1,4 @@
-import { Controller, Post, UseInterceptors, UploadedFile, Patch, UsePipes, ValidationPipe, Param, Body, Get, Query } from '@nestjs/common';
+import { Controller, Post, UseInterceptors, UploadedFile, Patch, UsePipes, ValidationPipe, Param, Body, Get, Query, UseGuards } from '@nestjs/common';
 import { DiagnosisService } from './diagnosis.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { extname } from 'path';
@@ -6,7 +6,9 @@ import { diskStorage } from 'multer';
 import { DiagnosisUpdateDto } from './dto/diagnosis-update.dto';
 import { Diagnosis } from '../entities/diagnosis.entity';
 import { DiagnosisPaginationDto } from './dto/diagnosis-pagination.dto';
+import { AuthGuard } from '@nestjs/passport';
 
+@UseGuards(AuthGuard('jwt'))
 @Controller('settings/diagnosis')
 export class DiagnosisController {
     constructor(private diagnosisService: DiagnosisService) {}

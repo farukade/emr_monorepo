@@ -18,7 +18,9 @@ import { StaffService } from './staff.service';
 import {FileInterceptor} from '@nestjs/platform-express';
 import { extname, join } from 'path';
 import { diskStorage } from 'multer';
+import { AuthGuard } from '@nestjs/passport';
 
+@UseGuards(AuthGuard('jwt'))
 @Controller('hr/staffs')
 export class StaffController {
     constructor( private staffService: StaffService) {}
