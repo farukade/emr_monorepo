@@ -1,6 +1,5 @@
 import { Controller, Get, Query, Post, UsePipes, ValidationPipe, Body, Patch, Param, Delete, Request, UseGuards } from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
-import { Transactions } from './transaction.entity';
 import { TransactionDto } from './dto/transaction.dto';
 import { ProcessTransactionDto } from './dto/process-transaction.dto';
 import { AuthGuard } from '@nestjs/passport';
@@ -12,7 +11,7 @@ export class TransactionsController {
     constructor(private transactionsService: TransactionsService) {
     }
 
-    @Get('list')
+    @Get('')
     getTransactions(
         @Query() urlParams,
         @Request() request,
@@ -23,7 +22,7 @@ export class TransactionsController {
         return this.transactionsService.fetchList({ page, limit }, urlParams);
     }
 
-    @Get('list/pending')
+    @Get('pending')
     getPendingTransactions(
         @Query() urlParams,
         @Request() request,
@@ -33,38 +32,7 @@ export class TransactionsController {
         return this.transactionsService.fetchPending({ page, limit }, urlParams);
     }
 
-    @Get('show/:id')
-    getTransaction(
-        @Param('id') id: string,
-    ): Promise<Transactions> {
-        return this.transactionsService.getTransaction(id);
-    }
-
-    @Get('dashboard')
-    getDashboardTransaction(
-        @Query() urlParams,
-    ): Promise<any> {
-        return this.transactionsService.fetchDashboardTransactions();
-    }
-
-    @Get('cafeteria-daily')
-    getCafeteriaDailytotal() {
-        return this.transactionsService.cafeteriaDailyTotal();
-    }
-
-    @Get('personal-cafetaria-bill')
-    getPersonalCafeteriaBill(@Request() req) {
-        return this.transactionsService.personalCafeterialBill(req.user.username);
-    }
-
-    @Get('dashboard-list')
-    getDashboardTransactionList(
-        @Query() urlParams,
-    ): Promise<any> {
-        return this.transactionsService.listDashboardTransactions(urlParams);
-    }
-
-    @Post()
+    @Post('')
     @UsePipes(ValidationPipe)
     saveTransaction(
         @Body() transactionDto: TransactionDto,

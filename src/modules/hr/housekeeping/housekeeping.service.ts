@@ -33,7 +33,7 @@ export class HousekeepingService {
             path: filename,
             header: [
                 {id: 'sn', title: 'S/N'},
-                {id: 'emp_code', title: 'EMP CODE'},
+                {id: 'employee_number', title: 'EMPLOYEE No'},
                 {id: 'name', title: 'NAME'},
             ],
         });
@@ -50,7 +50,7 @@ export class HousekeepingService {
                 const data = [
                     {
                         sn,
-                        emp_code: staff.emp_code,
+                        employee_number: staff.employeeNumber,
                         name: `${staff.last_name}, ${staff.first_name}`,
                     },
                 ];
@@ -62,7 +62,7 @@ export class HousekeepingService {
             const data = [
                 {
                     sn: '',
-                    emp_code: '',
+                    employee_number: '',
                     name: '',
                 },
             ];
@@ -87,7 +87,7 @@ export class HousekeepingService {
             .pipe(csv())
             .on('data', (row) => {
                 const data = {
-                    emp_code: row['EMP CODE'],
+                    employee_number: row['EMPLOYEE No'],
                     schedule: [],
                 };
                 for (let index = 1; index <= noOfDays; index++) {
@@ -101,7 +101,7 @@ export class HousekeepingService {
             .on('end', async () => {
                 for (const item of content) {
                     // find staff
-                    const staff = await this.staffRepository.findOne({where: {emp_code: item.emp_code}});
+                    const staff = await this.staffRepository.findOne({where: {employeeNumber: item.employeeNumber}});
                     const data = {
                         staff,
                         department,

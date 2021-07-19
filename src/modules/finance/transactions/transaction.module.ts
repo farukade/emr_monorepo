@@ -4,13 +4,15 @@ import { TransactionsService } from './transactions.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TransactionsRepository } from './transactions.repository';
 import { PatientRepository } from '../../patient/repositories/patient.repository';
-import { ServiceRepository } from '../../settings/services/service.repository';
+import { ServiceRepository } from '../../settings/services/repositories/service.repository';
 import { DepartmentRepository } from '../../settings/departments/department.repository';
 import { VoucherRepository } from '../vouchers/voucher.repository';
 import { StaffRepository } from '../../hr/staff/staff.repository';
 import { QueueSystemRepository } from '../../frontdesk/queue-system/queue-system.repository';
 import { AppointmentRepository } from '../../frontdesk/appointment/appointment.repository';
 import { AppGateway } from '../../../app.gateway';
+import { ServiceCostRepository } from '../../settings/services/repositories/service_cost.repository';
+import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repository';
 
 @Module({
     imports: [TypeOrmModule.forFeature([
@@ -22,6 +24,8 @@ import { AppGateway } from '../../../app.gateway';
         VoucherRepository,
         StaffRepository,
         QueueSystemRepository,
+        ServiceCostRepository,
+        HmoSchemeRepository,
     ])],
     controllers: [TransactionsController],
     providers: [AppGateway, TransactionsService],

@@ -1,18 +1,19 @@
 import * as bcrypt from 'bcrypt';
-import { Connection } from 'typeorm';
+import { Connection, getConnection } from 'typeorm';
 import { Factory, Seeder } from 'typeorm-seeding';
-import { User } from '../../modules/hr/entities/user.entity';
+import { User } from '../../modules/auth/entities/user.entity';
 import { Role } from '../../modules/settings/entities/role.entity';
 import { StaffDetails } from '../../modules/hr/staff/entities/staff_details.entity';
+import { Department } from '../../modules/settings/entities/department.entity';
 
 export default class CreateUser implements Seeder {
     private saltRounds = 10;
 
     public async run(factory: Factory, connection: Connection): Promise<any> {
         const role = await connection.getRepository(Role)
-                        .createQueryBuilder('role')
-                        .where('role.name = :name', { name: 'Admin' })
-                        .getOne();
+            .createQueryBuilder('r')
+            .where('r.slug = :slug', { slug: 'it-admin' })
+            .getOne();
 
         const user = new User();
         user.username = 'admin';
@@ -21,16 +22,17 @@ export default class CreateUser implements Seeder {
         await user.save();
 
         const staff = new StaffDetails();
-        staff.first_name     = 'Admin'.toLocaleLowerCase();
-        staff.last_name      = 'Deda'.toLocaleLowerCase();
-        staff.email          = 'admin@deda.com';
+        staff.first_name = 'Admin'.toLocaleLowerCase();
+        staff.last_name = 'Deda'.toLocaleLowerCase();
+        staff.email = 'admin@deda.com';
         staff.user = user;
-        staff.emp_code = 'DHS ' + Math.floor(Math.random() * 90000),
+        staff.employeeNumber = 'DH140';
+        staff.department = await getConnection().getRepository(Department).findOne({ where: { name: 'ICT' } });
 
         await staff.save();
     }
 
-  async getHash(password: string | undefined): Promise<string> {
-    return bcrypt.hash(password, this.saltRounds);
-  }
+    async getHash(password: string | undefined): Promise<string> {
+        return bcrypt.hash(password, this.saltRounds);
+    }
 }

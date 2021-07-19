@@ -1,31 +1,18 @@
-import { Column, Entity, OneToMany } from 'typeorm';
+import { Column, Entity } from 'typeorm';
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
-import { RoomCategory } from '../../settings/entities/room_category.entity';
 
-@Entity({ name: 'hmos' })
+@Entity({ name: 'hmo_companies' })
 export class Hmo extends CustomBaseEntity {
     @Column({ type: 'varchar', length: 300 })
     name: string;
 
     @Column({ type: 'varchar', length: 300, nullable: true })
-    logo: string;
-
-    @Column({ type: 'varchar', length: 300, nullable: true })
     address: string;
 
-    @Column({ type: 'varchar', length: 300 })
+    @Column({ type: 'varchar', length: 300, name: 'phone_number' })
     phoneNumber: string;
 
     @Column({ type: 'varchar', length: 300 })
     email: string;
-
-    @Column({ type: 'varchar', nullable: true, name: 'cac_number' })
-    cacNumber: string;
-
-    @Column({ type: 'varchar', default: 'full', name: 'coverage_type' })
-    coverageType: string;
-
-    @Column({ nullable: true })
-    coverage: number;
 
 }

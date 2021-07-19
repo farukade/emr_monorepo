@@ -1,5 +1,5 @@
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
-import { Entity, Column, ManyToOne } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { Patient } from '../../patient/entities/patient.entity';
 
 @Entity({ name: 'vouchers' })
@@ -20,6 +20,10 @@ export class Voucher extends CustomBaseEntity {
     @Column()
     start_date: string;
 
-    @ManyToOne(() => Patient)
+    @ManyToOne(() => Patient, { nullable: true })
+    @JoinColumn({ name: 'patient_id' })
     patient: Patient;
+
+    @Column({ type: 'boolean', default: true })
+    isActive: boolean;
 }

@@ -6,7 +6,7 @@ import { PatientRepository } from '../../patient/repositories/patient.repository
 import { Voucher } from './voucher.entity';
 import { VoucherDto } from './dto/voucher.dto';
 import { TransactionsRepository } from '../transactions/transactions.repository';
-import { User } from '../../hr/entities/user.entity';
+import { User } from '../../auth/entities/user.entity';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import { PaginationOptionsInterface } from '../../../common/paginate';

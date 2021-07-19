@@ -11,10 +11,4 @@ export class HmoDto {
 
     email: any;
 
-    cacNumber: string;
-
-    coverageType: string;
-
-    coverage: any;
-
 }

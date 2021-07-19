@@ -1,7 +1,7 @@
 import { Column, Entity, ManyToOne, JoinColumn } from 'typeorm';
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 import { LabTestCategory } from './lab_test_category.entity';
-import { Hmo } from '../../hmo/entities/hmo.entity';
+import { HmoScheme } from '../../hmo/entities/hmo_scheme.entity';
 
 @Entity({ name: 'lab_tests' })
 export class LabTest extends CustomBaseEntity {
@@ -23,13 +23,13 @@ export class LabTest extends CustomBaseEntity {
     @Column({ type: 'varchar', nullable: true })
     hmoPrice: string;
 
-    @ManyToOne(type => Hmo, { nullable: true })
-    @JoinColumn({ name: 'hmo_id' })
-    public hmo!: Hmo;
+    @ManyToOne(type => HmoScheme, { nullable: true })
+    @JoinColumn({ name: 'hmo_scheme_id' })
+    hmo: HmoScheme;
 
     @ManyToOne(type => LabTestCategory, { eager: true })
     @JoinColumn({ name: 'lab_test_category_id' })
-    public category!: LabTestCategory;
+    category: LabTestCategory;
 
     @Column({ type: 'jsonb', nullable: true })
     specimens: string;

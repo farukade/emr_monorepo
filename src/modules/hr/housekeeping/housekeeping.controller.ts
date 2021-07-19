@@ -27,7 +27,7 @@ import { AuthGuard } from '@nestjs/passport';
 export class HousekeepingController {
     constructor(private housekeepingService: HousekeepingService) {}
 
-    @Get('download-roaster')
+    @Get('download-roster')
     @Header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     @Header('Content-Disposition', 'attachment; filename=roaster.csv')
     async downloadRoaster(@Query() query, @Res() res) {
@@ -37,7 +37,7 @@ export class HousekeepingController {
         }
     }
 
-    @Post('/upload-roaster')
+    @Post('/upload-roster')
     @UsePipes(ValidationPipe)
     @UseInterceptors(FileInterceptor('file', {
         storage: diskStorage({
@@ -54,13 +54,13 @@ export class HousekeepingController {
         return this.housekeepingService.doUploadRoaster(file, uploadRoasterDto);
     }
 
-    @Post('list-roaster')
+    @Post('list-roster')
     @UsePipes(ValidationPipe)
     listRoaster(@Body() listRoasterDto: ListRoasterDto): Promise<Roaster[]> {
         return this.housekeepingService.listRoaster(listRoasterDto);
     }
 
-    @Get('list-roaster')
+    @Get('list-roster')
     @UsePipes(ValidationPipe)
     singleRoaster(@Body() listRoasterDto: ListRoasterDto, @Request() req ): Promise<Roaster[]> {
         return this.housekeepingService.singleRoaster(listRoasterDto, req.user.userId);

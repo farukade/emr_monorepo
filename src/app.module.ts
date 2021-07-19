@@ -17,8 +17,13 @@ import { AppGateway } from './app.gateway';
 import { MailModule } from './modules/mail/mail.module';
 import { LoggerModule } from './modules/logger/logger.module';
 import { TasksModule } from './modules/scheduler/cron.module';
+import { CafeteriaModule } from './modules/cafeteria/cafeteria.module';
+import { ActivityModule } from './modules/activity/activity.module';
 
 import fs = require('fs');
+import { AccountingModule } from './modules/accounting/accounting.module';
+import { ReportModule } from './modules/report/report.module';
+import { MigrationModule } from './modules/migration/migration.module';
 
 fs.writeFileSync(
     './ormconfig.json',
@@ -41,6 +46,11 @@ fs.writeFileSync(
         MailModule,
         LoggerModule,
         TasksModule,
+        CafeteriaModule,
+        ActivityModule,
+        AccountingModule,
+        ReportModule,
+        MigrationModule,
     ],
     controllers: [AppController],
     providers: [AppGateway, JwtStrategy],

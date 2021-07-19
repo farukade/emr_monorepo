@@ -6,13 +6,13 @@ import { EncounterRepository } from './encounter.repository';
 import { PatientAllergenRepository } from '../repositories/patient_allergen.repository';
 import { PatientRepository } from '../repositories/patient.repository';
 import { AppointmentRepository } from '../../frontdesk/appointment/appointment.repository';
-import { StockRepository } from '../../inventory/stock.repository';
 import { AppGateway } from '../../../app.gateway';
 import { QueueSystemRepository } from '../../frontdesk/queue-system/queue-system.repository';
 import { ConsumableRepository } from '../../settings/consumable/consumable.repository';
 import { AuthRepository } from '../../auth/auth.repository';
 import { PatientDiagnosisRepository } from '../repositories/patient_diagnosis.repository';
 import { PatientNoteRepository } from '../repositories/patient_note.repository';
+import { DrugGenericRepository } from '../../inventory/pharmacy/generic/generic.repository';
 
 @Module({
     imports: [TypeOrmModule.forFeature([
@@ -20,7 +20,7 @@ import { PatientNoteRepository } from '../repositories/patient_note.repository';
         PatientAllergenRepository,
         PatientRepository,
         AppointmentRepository,
-        StockRepository,
+        DrugGenericRepository,
         QueueSystemRepository,
         ConsumableRepository,
         AuthRepository,

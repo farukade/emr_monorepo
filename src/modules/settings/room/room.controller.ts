@@ -9,20 +9,21 @@ import { AuthGuard } from '@nestjs/passport';
 @UseGuards(AuthGuard('jwt'))
 @Controller('rooms')
 export class RoomController {
-    constructor(private roomService: RoomService) {}
+    constructor(private roomService: RoomService) {
+    }
 
-    @Get()
+    @Get('')
     getRooms(): Promise<Room[]> {
         return this.roomService.getAllRooms();
     }
 
-    @Post()
+    @Post('')
     @UsePipes(ValidationPipe)
     createRoom(@Body() roomDto: RoomDto): Promise<Room> {
         return this.roomService.createRoom(roomDto);
     }
 
-    @Patch('/:id/update')
+    @Patch('/:id')
     @UsePipes(ValidationPipe)
     updateRoom(
         @Param('id') id: string,
@@ -40,7 +41,7 @@ export class RoomController {
     }
 
     @Get('/categories')
-    getCategories(@Request() req,): Promise<RoomCategory[]> {
+    getCategories(@Request() req): Promise<RoomCategory[]> {
         return this.roomService.getRoomsCategory(req.query.hmo_id);
     }
 
@@ -50,7 +51,7 @@ export class RoomController {
         return this.roomService.createRoomCategory(roomCategoryDto);
     }
 
-    @Patch('categories/:id/update')
+    @Patch('categories/:id')
     @UsePipes(ValidationPipe)
     updateCategory(
         @Param('id') id: string,

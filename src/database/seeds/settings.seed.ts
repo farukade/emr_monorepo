@@ -16,7 +16,7 @@ export default class CreateSettings implements Seeder {
                 item.name = s.name;
                 item.slug = slugify(s.name);
                 item.value = s.value;
-                item.createdBy = 'admin';
+                item.createdBy = 'it-admin';
                 await item.save();
             } catch (error) {
                 continue;

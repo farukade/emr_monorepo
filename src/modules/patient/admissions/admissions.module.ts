@@ -9,12 +9,12 @@ import { StaffRepository } from '../../hr/staff/staff.repository';
 import { RoomRepository } from '../../settings/room/room.repository';
 import { AppGateway } from '../../../app.gateway';
 import { PatientVitalRepository } from '../repositories/patient_vitals.repository';
-import { UserRepository } from '../../hr/user.repository';
 import { NicuRepository } from '../nicu/nicu.repository';
+import { AuthRepository } from '../../auth/auth.repository';
 
 @Module({
     imports: [TypeOrmModule.forFeature([
-        UserRepository,
+        AuthRepository,
         AdmissionsRepository,
         AdmissionClinicalTaskRepository,
         PatientRepository,

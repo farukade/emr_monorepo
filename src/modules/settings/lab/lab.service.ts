@@ -1,9 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { LabTestCategoryRepository } from './lab.category.repository';
-import { LabTestRepository } from './lab.test.repository';
 import { LabTest } from '../entities/lab_test.entity';
-import { ParameterRepository } from './parameter.repository';
 import { LabTestCategory } from '../entities/lab_test_category.entity';
 import { LabCategoryDto } from './dto/lab.category.dto';
 import { Parameter } from '../entities/parameters.entity';
@@ -11,17 +8,20 @@ import { ParameterDto } from './dto/parameter.dto';
 import { LabTestDto } from './dto/lab_test.dto';
 import { Specimen } from '../entities/specimen.entity';
 import { SpecimenDto } from './dto/specimen.dto';
-import { SpecimenRepository } from './specimen.repository';
-import { GroupRepository } from './group.repository';
 import { Group } from '../entities/group.entity';
 import { GroupDto } from './dto/group.dto';
 import { slugify } from '../../../common/utils/utils';
 import { PaginationOptionsInterface } from '../../../common/paginate';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import { getConnection, Like, Raw } from 'typeorm';
-import { HmoRepository } from '../../hmo/hmo.repository';
 import { GroupTest } from '../entities/group_tests.entity';
-import { GroupTestRepository } from './group_tests.repository';
+import { LabTestCategoryRepository } from './repositories/lab.category.repository';
+import { LabTestRepository } from './repositories/lab.test.repository';
+import { ParameterRepository } from './repositories/parameter.repository';
+import { SpecimenRepository } from './repositories/specimen.repository';
+import { GroupRepository } from './repositories/group.repository';
+import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repository';
+import { GroupTestRepository } from './repositories/group_tests.repository';
 
 @Injectable()
 export class LabService {
@@ -36,9 +36,9 @@ export class LabService {
         private specimenRepository: SpecimenRepository,
         @InjectRepository(GroupRepository)
         private groupRepository: GroupRepository,
-        @InjectRepository(HmoRepository)
-        private hmoRepository: HmoRepository,
-        @InjectRepository(HmoRepository)
+        @InjectRepository(HmoSchemeRepository)
+        private hmoSchemeRepository: HmoSchemeRepository,
+        @InjectRepository(GroupTestRepository)
         private groupTestRepository: GroupTestRepository,
     ) {
     }
@@ -52,7 +52,7 @@ export class LabService {
 
         const page = options.page - 1;
 
-        const hmo = await this.hmoRepository.findOne(hmo_id);
+        const hmo = await this.hmoSchemeRepository.findOne(hmo_id);
 
         let result;
         let total = 0;
@@ -83,10 +83,9 @@ export class LabService {
         };
     }
 
-
     async getTestsUnpaginated(params): Promise<any> {
         const { q, hmo_id } = params;
-        const hmo = await this.hmoRepository.findOne(hmo_id);
+        const hmo = await this.hmoSchemeRepository.findOne(hmo_id);
 
         let result;
         if (q && q.length > 0) {
@@ -109,16 +108,17 @@ export class LabService {
     async createLabTest(labTestDto: LabTestDto, createdBy: string): Promise<LabTest> {
         const { lab_category_id, hmo_id } = labTestDto;
         const category = await this.labTestCategoryRepo.findOne(lab_category_id);
-        const hmo = await this.hmoRepository.findOne(hmo_id);
+        const hmo = await this.hmoSchemeRepository.findOne(hmo_id);
 
         return this.labTestRepository.saveLabTest(labTestDto, category, createdBy, hmo);
     }
 
     async updateLabTest(id: string, labTestDto: LabTestDto, updatedBy: string): Promise<LabTest> {
         const { lab_category_id, hmo_id } = labTestDto;
+
         const category = await this.labTestCategoryRepo.findOne(lab_category_id);
         const labTest = await this.labTestRepository.findOne({ where: { id }, relations: ['hmo'] });
-        const hmo = await this.hmoRepository.findOne(hmo_id);
+        const hmo = await this.hmoSchemeRepository.findOne(hmo_id);
 
         try {
             return this.labTestRepository.updateLabTest(labTestDto, labTest, category, updatedBy, hmo);
@@ -154,7 +154,7 @@ export class LabService {
         }
 
         let results = [];
-        const hmo = await this.hmoRepository.findOne(hmo_id);
+        const hmo = await this.hmoSchemeRepository.findOne(hmo_id);
 
         for (const category of categories) {
             const tests = await this.labTestRepository.find({
@@ -279,7 +279,7 @@ export class LabService {
         let result = [];
 
         if (hmo_id && hmo_id !== '') {
-            const hmo = await this.hmoRepository.findOne(hmo_id);
+            const hmo = await this.hmoSchemeRepository.findOne(hmo_id);
             result = await this.groupRepository.find({ where: { hmo }, relations: ['hmo', 'tests'] });
         } else {
             result = await this.groupRepository.find({ relations: ['hmo', 'tests'] });
@@ -290,7 +290,7 @@ export class LabService {
 
     async createGroup(groupDto: GroupDto, createdBy: string): Promise<any> {
         try {
-            const hmo = await this.hmoRepository.findOne(groupDto.hmo_id);
+            const hmo = await this.hmoSchemeRepository.findOne(groupDto.hmo_id);
 
             const group = await this.groupRepository.saveGroup(groupDto, createdBy, hmo);
 

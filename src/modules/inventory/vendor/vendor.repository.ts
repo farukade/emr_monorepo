@@ -1,7 +1,6 @@
 import { EntityRepository, Repository } from 'typeorm';
-import { Vendor } from './vendor.entity';
-import { Stock } from '../entities/stock.entity';
-import { VendorDto } from './vendor.dto';
+import { Vendor } from '../entities/vendor.entity';
+import { VendorDto } from '../dto/vendor.dto';
 
 @EntityRepository(Vendor)
 export class VendorRepository extends Repository<Vendor> {

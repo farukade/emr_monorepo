@@ -5,15 +5,30 @@ import * as hbs from 'handlebars';
 import * as utils from 'util';
 import { SmsHistory } from '../entities/sms.entity';
 import { getConnection } from 'typeorm';
-import { User } from '../../modules/hr/entities/user.entity';
+import { User } from '../../modules/auth/entities/user.entity';
 import { StaffDetails } from '../../modules/hr/staff/entities/staff_details.entity';
 import { LogEntity } from '../../modules/logger/entities/logger.entity';
+
+// tslint:disable-next-line:no-var-requires
+const mysql = require('mysql2/promise');
+
+// tslint:disable-next-line:no-var-requires
+const bluebird = require('bluebird');
 
 const apiKey = process.env.API_KEY;
 const apiSecret = process.env.API_SECRET;
 
+const host = process.env.MYSQL_HOST;
+const user = process.env.MYSQL_USER;
+const password = process.env.MYSQL_PASSWORD;
+const database = process.env.MYSQL_DATABASE;
+
 // tslint:disable-next-line:no-var-requires prefer-const
 let smsglobal = require('smsglobal')(apiKey, apiSecret);
+
+export const mysqlConnect = async () => {
+    return await mysql.createConnection({ host, port: 3306, user, password, database, Promise: bluebird });
+};
 
 export const slugify = (text) => {
     return text
@@ -157,7 +172,10 @@ export const getStaff = async (username: string): Promise<StaffDetails> => {
     const connection = getConnection();
     const user = await connection.getRepository(User).findOne({ where: { username } });
 
-    return await connection.getRepository(StaffDetails).findOne({ where: { user } });
+    return await connection.getRepository(StaffDetails).findOne({
+        where: { user },
+        relations: ['department', 'room', 'specialization'],
+    });
 };
 
 export const fixAmount = (amount) => {

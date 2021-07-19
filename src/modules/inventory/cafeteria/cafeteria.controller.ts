@@ -1,99 +1,47 @@
-import {
-    Controller,
-    Body,
-    ValidationPipe,
-    UsePipes,
-    Post,
-    Get,
-    Param,
-    Delete,
-    UseInterceptors,
-    UploadedFile,
-    Header,
-    Res,
-    Query,
-    Request, Put, UseGuards,
-} from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname, join } from 'path';
-import { CafeteriaService } from './cafeteria.service';
-import { CafeteriaItem } from './entities/cafeteria_item.entity';
-import { CafeteriaItemDto } from './dto/cafeteria.item.dto';
-import { CafeteriaSalesDto } from './dto/cafeteria-sales.dto';
-import { Pagination } from '../../../common/paginate/paginate.interface';
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, Request, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { Pagination } from '../../../common/paginate/paginate.interface';
+import { InventoryDto } from '../dto/inventory.dto';
+import { CafeteriaInventoryService } from './cafeteria.service';
 
 @UseGuards(AuthGuard('jwt'))
-@Controller('cafeteria')
-export class CafeteriaController {
-    constructor(private inventoryService: CafeteriaService) {
+@Controller('inventory/cafeteria')
+export class CafeteriaInventoryController {
+    constructor(private cafeteriaInventoryService: CafeteriaInventoryService) {
     }
 
-    @Get('/items')
-    getAllStocks(
+    @Get('')
+    all(
+        @Query() urlParams,
         @Request() request,
-        @Query('q') q: string,
     ): Promise<Pagination> {
-        const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 30;
-        const page = request.query.hasOwnProperty('page') ? request.query.page : 1;
-        return this.inventoryService.getAllItems({ page, limit }, q);
+        const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
+        const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
+        return this.cafeteriaInventoryService.fetchAll({ page, limit }, urlParams);
     }
 
-    @Post('/items')
+    @Post('/')
     @UsePipes(ValidationPipe)
-    createItem(@Body() itemDto: CafeteriaItemDto): Promise<CafeteriaItem> {
-        return this.inventoryService.createItem(itemDto);
+    create(
+        @Body() inventoryDto: InventoryDto,
+    ): Promise<any> {
+        return;
     }
 
-    @Get('items/download')
-    @Header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    @Header('Content-Disposition', 'attachment; filename=cafeteria-item.csv')
-    async downloadItems(
-        @Res() res) {
-        const resp = await this.inventoryService.downloadStocks();
-        if (resp.success) {
-            res.sendFile(join(__dirname, '../../../../') + '/cafeteria-items.csv');
-        }
-    }
-
-    @Put('/items/:id')
+    @Put('/:id')
     @UsePipes(ValidationPipe)
-    updateStock(
+    update(
         @Param('id') id: string,
-        @Body() itemDto: CafeteriaItemDto,
-    ): Promise<CafeteriaItem> {
-        return this.inventoryService.updateItem(id, itemDto);
+        @Body() inventoryDto: InventoryDto,
+    ): Promise<any> {
+        return;
     }
 
-    @Delete('/items/:id')
-    deleteSubCategory(
+    @Delete('/:id')
+    delete(
         @Param('id') id: number,
         @Request() req,
     ): Promise<any> {
-        return this.inventoryService.deleteItem(id, req.user.username);
-    }
-
-    @Post('/items/bulk-upload')
-    @UseInterceptors(FileInterceptor('file', {
-        storage: diskStorage({
-            filename: (req, file, cb) => {
-                const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('');
-                return cb(null, `${randomName}${extname(file.originalname)}`);
-            },
-        }),
-    }))
-    uploadStock(
-        @UploadedFile() file) {
-        return this.inventoryService.doUploadItem(file);
-    }
-
-    @Post('/sale')
-    @UsePipes(ValidationPipe)
-    postSales(
-        @Request() req,
-        @Body() param: CafeteriaSalesDto,
-    ): Promise<any> {
-        return this.inventoryService.saveSales(param, req.user.username);
+        return;
     }
 }

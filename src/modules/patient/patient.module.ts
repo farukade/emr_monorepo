@@ -4,11 +4,10 @@ import { PatientService } from './patient.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PatientRepository } from './repositories/patient.repository';
 import { PatientNOKRepository } from './repositories/patient.nok.repository';
-import { ServiceRepository } from '../settings/services/service.repository';
+import { ServiceRepository } from '../settings/services/repositories/service.repository';
 import { PatientVitalRepository } from './repositories/patient_vitals.repository';
 import { PatientAntenatalRepository } from './repositories/patient_antenatal.repository';
 import { PatientAllergenRepository } from './repositories/patient_allergen.repository';
-import { HmoRepository } from '../hmo/hmo.repository';
 import { VoucherRepository } from '../finance/vouchers/voucher.repository';
 import { PatientDocumentRepository } from './repositories/patient_document.repository';
 import { AntenatalModule } from './antenatal/antenatal.module';
@@ -27,7 +26,6 @@ import { AdmissionClinicalTaskRepository } from './admissions/repositories/admis
 import { AdmissionsRepository } from './admissions/repositories/admissions.repository';
 import { ImmunizationRepository } from './immunization/repositories/immunization.repository';
 import { PatientRequestItemRepository } from './repositories/patient_request_items.repository';
-import { LabTestRepository } from '../settings/lab/lab.test.repository';
 import { PatientDiagnosisRepository } from './repositories/patient_diagnosis.repository';
 import { PatientRequestModule } from './requests/patient_request.module';
 import { IvfModule } from './ivf/ivf.module';
@@ -38,33 +36,53 @@ import { PatientFluidChartModule } from './fluid-chart/patient_fluid_chart.modul
 import { PatientNoteModule } from './note/patient_note.module';
 import { PatientAlertRepository } from './repositories/patient_alert.repository';
 import { MailModule } from '../mail/mail.module';
+import { HmoSchemeRepository } from '../hmo/repositories/hmo_scheme.repository';
+import { LabTestRepository } from '../settings/lab/repositories/lab.test.repository';
+import { ServiceCategoryRepository } from '../settings/services/repositories/service_category.repository';
+import { ServiceCostRepository } from '../settings/services/repositories/service_cost.repository';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([
-        PatientRepository,
-        ImmunizationRepository,
-        PatientDocumentRepository,
-        PatientNOKRepository,
-        PatientVitalRepository,
-        PatientAntenatalRepository,
-        PatientRequestItemRepository,
-        PatientAllergenRepository,
-        HmoRepository,
-        ServiceRepository,
-        VoucherRepository,
-        IvfEnrollmentRepository,
-        StaffRepository,
-        AppointmentRepository,
-        AuthRepository,
-        TransactionsRepository,
-        AdmissionClinicalTaskRepository,
-        AdmissionsRepository,
-        LabTestRepository,
-        PatientDiagnosisRepository,
-        PatientConsumableRepository,
-        PatientAlertRepository,
-        // tslint:disable-next-line:max-line-length
-    ]), AntenatalModule, AdmissionsModule, ConsultationModule, LabourManagementModule, ImmunizationModule, NicuModule, PatientRequestModule, IvfModule, PatientAllergenModule, PatientConsumableModule, PatientNoteModule, PatientFluidChartModule, MailModule],
+    imports: [
+        TypeOrmModule.forFeature([
+            PatientRepository,
+            ImmunizationRepository,
+            PatientDocumentRepository,
+            PatientNOKRepository,
+            PatientVitalRepository,
+            PatientAntenatalRepository,
+            PatientRequestItemRepository,
+            PatientAllergenRepository,
+            HmoSchemeRepository,
+            ServiceRepository,
+            ServiceCategoryRepository,
+            VoucherRepository,
+            IvfEnrollmentRepository,
+            StaffRepository,
+            AppointmentRepository,
+            AuthRepository,
+            TransactionsRepository,
+            AdmissionClinicalTaskRepository,
+            AdmissionsRepository,
+            LabTestRepository,
+            PatientDiagnosisRepository,
+            PatientConsumableRepository,
+            PatientAlertRepository,
+            ServiceCostRepository,
+        ]),
+        AntenatalModule,
+        AdmissionsModule,
+        ConsultationModule,
+        LabourManagementModule,
+        ImmunizationModule,
+        NicuModule,
+        PatientRequestModule,
+        IvfModule,
+        PatientAllergenModule,
+        PatientConsumableModule,
+        PatientNoteModule,
+        PatientFluidChartModule,
+        MailModule,
+    ],
     controllers: [PatientController],
     providers: [AppGateway, PatientService],
 })

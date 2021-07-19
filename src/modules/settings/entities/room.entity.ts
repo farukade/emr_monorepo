@@ -15,11 +15,7 @@ export class Room extends CustomBaseEntity {
   @Column({ type: 'varchar', nullable: true })
   status: string;
 
-  @ManyToOne(
-    () => RoomCategory,
-    roomCategory => roomCategory.rooms,
-  )
+  @ManyToOne(() => RoomCategory, roomCategory => roomCategory.rooms)
   @JoinColumn({ name: 'room_category_id' })
-  @Type(() => RoomCategory)
   category?: RoomCategory;
 }

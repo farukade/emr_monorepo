@@ -5,9 +5,9 @@ import { Appointment } from './appointment.entity';
 import { AppointmentDto } from './dto/appointment.dto';
 import { Patient } from '../../patient/entities/patient.entity';
 import { ConsultingRoom } from '../../settings/entities/consulting-room.entity';
-import { Service } from '../../settings/entities/service.entity';
 import {StaffDetails} from '../../hr/staff/entities/staff_details.entity';
 import { Department } from '../../settings/entities/department.entity';
+import { ServiceCost } from '../../settings/entities/service_cost.entity';
 
 @EntityRepository(Appointment)
 export class AppointmentRepository extends Repository<Appointment> {
@@ -18,7 +18,8 @@ export class AppointmentRepository extends Repository<Appointment> {
         consultingRoom: ConsultingRoom,
         doctor: StaffDetails,
         amount,
-        service: Service,
+        service,
+        serviceCost: ServiceCost,
         department: Department,
     ) {
         const appointmentDate = `${moment(appointmentDto.appointment_date).format('YYYY-MM-DD')} ${moment().format('HH:mm:ss')}`;
@@ -28,7 +29,7 @@ export class AppointmentRepository extends Repository<Appointment> {
         appointment.consultingRoom = consultingRoom;
         appointment.appointment_date = appointmentDate;
         appointment.serviceCategory = service.category;
-        appointment.serviceType = service;
+        appointment.service = serviceCost;
         appointment.amountToPay = amount;
         appointment.duration = appointmentDto.duration;
         appointment.description = appointmentDto.description;

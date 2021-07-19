@@ -4,5 +4,4 @@ export class ServiceCategoryDto {
   @IsNotEmpty()
   name: string;
 
-  notes: string;
 }

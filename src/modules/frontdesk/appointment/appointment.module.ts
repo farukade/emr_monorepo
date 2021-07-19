@@ -8,26 +8,29 @@ import { SpecializationRepository } from '../../settings/specialization/speciali
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConsultingRoomRepository } from '../../settings/consulting-room/consulting-room.repository';
 import { QueueSystemRepository } from '../queue-system/queue-system.repository';
-import { ServiceRepository } from '../../settings/services/service.repository';
+import { ServiceRepository } from '../../settings/services/repositories/service.repository';
 import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
-import { ServiceCategoryRepository } from '../../settings/services/service.category.repository';
+import { ServiceCategoryRepository } from '../../settings/services/repositories/service_category.repository';
 import { AppGateway } from '../../../app.gateway';
-import { HmoRepository } from '../../hmo/hmo.repository';
+import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repository';
+import { ServiceCostRepository } from '../../settings/services/repositories/service_cost.repository';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([
-    AppointmentRepository,
-    PatientRepository,
-    DepartmentRepository,
-    SpecializationRepository,
-    ConsultingRoomRepository,
-    QueueSystemRepository,
-    ServiceRepository,
-    ServiceCategoryRepository,
-    TransactionsRepository,
-    HmoRepository,
-  ])],
-  controllers: [AppointmentController],
-  providers: [AppGateway, AppointmentService],
+    imports: [TypeOrmModule.forFeature([
+        AppointmentRepository,
+        PatientRepository,
+        DepartmentRepository,
+        SpecializationRepository,
+        ConsultingRoomRepository,
+        QueueSystemRepository,
+        ServiceRepository,
+        ServiceCategoryRepository,
+        TransactionsRepository,
+        HmoSchemeRepository,
+        ServiceCostRepository,
+    ])],
+    controllers: [AppointmentController],
+    providers: [AppGateway, AppointmentService],
 })
-export class AppointmentModule {}
+export class AppointmentModule {
+}

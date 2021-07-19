@@ -32,7 +32,7 @@ export class NicuService {
         const query = this.nicuRepository.createQueryBuilder('q')
             .leftJoinAndSelect('q.patient', 'patient')
             .select('q.id, q.createdAt as admission_date, q.createdBy as admitted_by, q.status, q.accommodation_id')
-            .addSelect('CONCAT(patient.other_names || \' \' || patient.surname) as patient_name, patient.id as patient_id, patient.folderNumber as patient_folderNumber, patient.gender as patient_gender');
+            .addSelect('CONCAT(patient.other_names || \' \' || patient.surname) as patient_name, patient.id as patient_id, patient.gender as patient_gender');
 
         if (startDate && startDate !== '') {
             const start = moment(startDate).endOf('day').toISOString();
@@ -108,7 +108,7 @@ export class NicuService {
                 amount: accommodation.amount,
                 description: `Payment for ${accommodation.name} - Nicu`,
                 payment_type: (patient.hmo.name !== 'Private') ? 'HMO' : '',
-                transaction_type: 'nicu-accommodation',
+                bill_source: 'nicu-accommodation',
                 is_admitted: true,
                 transaction_details: accommodation,
                 createdBy,

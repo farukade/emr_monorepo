@@ -3,17 +3,17 @@ import { PatientRequestRepository } from '../repositories/patient_request.reposi
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PatientRequestService } from './patient_request.service';
 import { PatientRequestController } from './patient_request.controller';
-import { HmoRepository } from '../../hmo/hmo.repository';
 import { PatientRequestItemRepository } from '../repositories/patient_request_items.repository';
 import { PatientRepository } from '../repositories/patient.repository';
 import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
 import { AdmissionsRepository } from '../admissions/repositories/admissions.repository';
 import { AppGateway } from '../../../app.gateway';
+import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repository';
 
 @Module({
   imports: [TypeOrmModule.forFeature([
     PatientRequestRepository,
-    HmoRepository,
+    HmoSchemeRepository,
     PatientRequestItemRepository,
     PatientRepository,
     TransactionsRepository,

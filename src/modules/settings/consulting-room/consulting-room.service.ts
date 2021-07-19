@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ConsultingRoomRepository } from './consulting-room.repository';
 import { ConsultingRoomDto } from './dto/consulting-room.dto';
 import { ConsultingRoom } from '../entities/consulting-room.entity';
-import { User } from '../../hr/entities/user.entity';
+import { User } from '../../auth/entities/user.entity';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 
 @Injectable()

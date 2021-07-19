@@ -1,36 +1,28 @@
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 import { Entity, ManyToOne, JoinColumn, Column, OneToOne } from 'typeorm';
 import { Patient } from '../../patient/entities/patient.entity';
-import { Service } from '../../settings/entities/service.entity';
 import { Voucher } from '../vouchers/voucher.entity';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 import { PatientRequestItem } from '../../patient/entities/patient_request_items.entity';
 import { PatientRequest } from '../../patient/entities/patient_requests.entity';
 import { Appointment } from '../../frontdesk/appointment/appointment.entity';
-import { Hmo } from '../../hmo/entities/hmo.entity';
+import { HmoScheme } from '../../hmo/entities/hmo_scheme.entity';
+import { ServiceCost } from '../../settings/entities/service_cost.entity';
 
 @Entity({ name: 'transactions' })
 export class Transactions extends CustomBaseEntity {
 
-    @ManyToOne(
-        () => Patient,
-        patient => patient.transactions,
-        { nullable: true },
-    )
+    @ManyToOne(() => Patient, patient => patient.transactions, { nullable: true })
     @JoinColumn({ name: 'patient_id' })
     patient: Patient;
 
-    @ManyToOne(
-        () => StaffDetails,
-        staff => staff.transactions,
-        { nullable: true },
-    )
+    @ManyToOne(() => StaffDetails, staff => staff.transactions, { nullable: true })
     @JoinColumn({ name: 'staff_id' })
     staff: StaffDetails;
 
-    @ManyToOne(type => Service, { nullable: true })
-    @JoinColumn({ name: 'service_id' })
-    serviceType: Service;
+    @ManyToOne(type => ServiceCost, { eager: true })
+    @JoinColumn({ name: 'service_cost_id' })
+    service: ServiceCost;
 
     @ManyToOne(type => Voucher, { nullable: true })
     @JoinColumn({ name: 'voucher_id' })
@@ -67,10 +59,10 @@ export class Transactions extends CustomBaseEntity {
     part_payment_expiry_date: string;
 
     @Column({ default: false })
-    is_admitted: string;
+    is_admitted: boolean;
 
     @Column({ nullable: true })
-    transaction_type: string;
+    bill_source: string;
 
     @Column({ nullable: true })
     next_location: string;
@@ -96,7 +88,7 @@ export class Transactions extends CustomBaseEntity {
     @JoinColumn({ name: 'appointment_id' })
     appointment: Appointment;
 
-    @ManyToOne(() => Hmo, { nullable: true })
-    @JoinColumn({ name: 'hmo_id' })
-    hmo: Hmo;
+    @ManyToOne(type => HmoScheme, { nullable: true })
+    @JoinColumn({ name: 'hmo_scheme_id' })
+    hmo: HmoScheme;
 }

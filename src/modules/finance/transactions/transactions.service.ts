@@ -5,8 +5,7 @@ import * as moment from 'moment';
 import { PatientRepository } from '../../patient/repositories/patient.repository';
 import { Transactions } from './transaction.entity';
 import { TransactionDto } from './dto/transaction.dto';
-import { ServiceRepository } from '../../settings/services/service.repository';
-import { Patient } from '../../patient/entities/patient.entity';
+import { ServiceRepository } from '../../settings/services/repositories/service.repository';
 import { ProcessTransactionDto } from './dto/process-transaction.dto';
 import { VoucherRepository } from '../vouchers/voucher.repository';
 import { StaffRepository } from '../../hr/staff/staff.repository';
@@ -18,6 +17,9 @@ import { Pagination } from '../../../common/paginate/paginate.interface';
 import { Brackets, getConnection } from 'typeorm';
 import { getStaff } from '../../../common/utils/utils';
 import { Settings } from '../../settings/entities/settings.entity';
+import { ServiceCost } from '../../settings/entities/service_cost.entity';
+import { ServiceCostRepository } from '../../settings/services/repositories/service_cost.repository';
+import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repository';
 
 @Injectable()
 export class TransactionsService {
@@ -31,10 +33,14 @@ export class TransactionsService {
         private patientRepository: PatientRepository,
         @InjectRepository(ServiceRepository)
         private serviceRepository: ServiceRepository,
+        @InjectRepository(ServiceCostRepository)
+        private serviceCostRepository: ServiceCostRepository,
         @InjectRepository(VoucherRepository)
         private voucherRepository: VoucherRepository,
         @InjectRepository(StaffRepository)
         private staffRepository: StaffRepository,
+        @InjectRepository(HmoSchemeRepository)
+        private hmoSchemeRepository: HmoSchemeRepository,
         @InjectRepository(QueueSystemRepository)
         private queueSystemRepository: QueueSystemRepository,
         private readonly appGateway: AppGateway,
@@ -42,14 +48,14 @@ export class TransactionsService {
     }
 
     async fetchList(options: PaginationOptionsInterface, params): Promise<Pagination> {
-        const { startDate, endDate, patient_id, staff_id, payment_type, transaction_type } = params;
+        const { startDate, endDate, patient_id, staff_id, payment_type, bill_source } = params;
 
         const page = options.page - 1;
 
         const query = this.transactionsRepository.createQueryBuilder('q').select('q.*');
 
-        if (transaction_type && transaction_type !== '') {
-            query.where('q.transaction_type = :type', { type: transaction_type });
+        if (bill_source && bill_source !== '') {
+            query.where('q.bill_source = :type', { type: bill_source });
         }
 
         if (startDate && startDate !== '') {
@@ -93,8 +99,8 @@ export class TransactionsService {
                 });
             }
 
-            if (transaction.service_id) {
-                transaction.service = await this.serviceRepository.findOne(transaction.service_id);
+            if (transaction.service_cost_id) {
+                transaction.service = await this.serviceCostRepository.findOne(transaction.service_cost_id);
             }
         }
 
@@ -146,8 +152,8 @@ export class TransactionsService {
                 transaction.patient = await this.patientRepository.findOne(transaction.patient_id);
             }
 
-            if (transaction.service_id) {
-                transaction.service = await this.serviceRepository.findOne(transaction.service_id);
+            if (transaction.service_cost_id) {
+                transaction.service = await this.serviceRepository.findOne(transaction.service_cost_id);
             }
         }
 
@@ -160,128 +166,18 @@ export class TransactionsService {
         };
     }
 
-    async fetchDashboardTransactions() {
-        const startOfDay = moment().startOf('day').toISOString();
-        const endOfDay = moment().endOf('day').toISOString();
-        const dailyTotal = await this.transactionsRepository.createQueryBuilder('transaction')
-            .where('transaction.transaction_type = :type', { type: 'billing' })
-            .andWhere(`transaction.createdAt >= '${startOfDay}'`)
-            .andWhere(`transaction.createdAt <= '${endOfDay}'`)
-            .select('SUM(amount) as amount')
-            .getRawOne();
-        const unpaidTotal = await this.transactionsRepository.createQueryBuilder('transaction')
-            .where('transaction.transaction_type = :type', { type: 'billing' })
-            // .andWhere(`transaction.createdAt >= '${startOfDay}'`)
-            // .andWhere(`transaction.createdAt <= '${endOfDay}'`)
-            .andWhere('transaction.status = :status', { status: 0 })
-            .select('SUM(amount) as amount')
-            .getRawOne();
-        const totalCash = await this.transactionsRepository.createQueryBuilder('transaction')
-            .where('transaction.transaction_type = :type', { type: 'billing' })
-            // .andWhere(`transaction.createdAt >= '${startOfDay}'`)
-            // .andWhere(`transaction.createdAt <= '${endOfDay}'`)
-            .andWhere('transaction.status = :status', { status: 1 })
-            .andWhere('transaction.payment_type = :tran_type', { tran_type: 'Cash' })
-            .select('SUM(amount) as amount')
-            .getRawOne();
-        const totalPOS = await this.transactionsRepository.createQueryBuilder('transaction')
-            .where('transaction.transaction_type = :type', { type: 'billing' })
-            // .andWhere(`transaction.createdAt >= '${startOfDay}'`)
-            // .andWhere(`transaction.createdAt <= '${endOfDay}'`)
-            .andWhere('transaction.status = :status', { status: 1 })
-            .andWhere('transaction.payment_type = :tran_type', { tran_type: 'POS' })
-            .select('SUM(amount) as amount')
-            .getRawOne();
-        const totalCheque = await this.transactionsRepository.createQueryBuilder('transaction')
-            .where('transaction.transaction_type = :type', { type: 'billing' })
-            // .andWhere(`transaction.createdAt >= '${startOfDay}'`)
-            // .andWhere(`transaction.createdAt <= '${endOfDay}'`)
-            .andWhere('transaction.status = :status', { status: 1 })
-            .andWhere('transaction.payment_type = :tran_type', { tran_type: 'Cheque' })
-            .select('SUM(amount) as amount')
-            .getRawOne();
-        const totalOutstanding = await this.transactionsRepository.createQueryBuilder('transaction')
-            .where('transaction.transaction_type = :type', { type: 'billing' })
-            // .andWhere(`transaction.createdAt >= '${startOfDay}'`)
-            // .andWhere(`transaction.createdAt <= '${endOfDay}'`)
-            .andWhere('transaction.status = :status', { status: 1 })
-            .select('SUM(balance) as amount')
-            .getRawOne();
-        return { dailyTotal, unpaidTotal, totalCash, totalPOS, totalCheque, totalOutstanding };
-    }
-
-    async listDashboardTransactions(params) {
-        const { transactionType, startDate, endDate } = params;
-
-        const query = this.transactionsRepository.createQueryBuilder('transaction')
-            .innerJoin(Patient, 'patient', 'transaction.patient_id = patient.id')
-            .addSelect('patient.surname, patient.other_names')
-            .where('transaction.transaction_type = :type', { type: 'billing' });
-        if (startDate && startDate !== '') {
-            const start = moment(startDate).startOf('day').toISOString();
-            query.andWhere(`transaction.createdAt >= '${start}'`);
-        } else {
-            const start = moment().startOf('day').toISOString();
-            query.andWhere(`transaction.createdAt >= '${start}'`);
-        }
-        if (endDate && endDate !== '') {
-            const end = moment(endDate).endOf('day').toISOString();
-            query.andWhere(`transaction.createdAt <= '${end}'`);
-        } else {
-            const end = moment().endOf('day').toISOString();
-            query.andWhere(`transaction.createdAt <= '${end}'`);
-
-        }
-        let result;
-        switch (transactionType) {
-            case 'daily-total':
-                result = await query.getRawMany();
-                break;
-            case 'total-unpaid':
-                result = await query.andWhere('transaction.status = :status', { status: 0 }).orderBy('transaction.createdAt', 'DESC').getRawMany();
-                break;
-            case 'total-cash':
-                result = await query.andWhere('transaction.status = :status', { status: 1 })
-                    .andWhere('transaction.payment_type = :tran_type', { tran_type: 'Cash' })
-                    .orderBy('transaction.createdAt', 'DESC')
-                    .getRawMany();
-                break;
-            case 'total-pos':
-                result = await query.andWhere('transaction.status = :status', { status: 1 })
-                    .andWhere('transaction.payment_type = :tran_type', { tran_type: 'POS' })
-                    .orderBy('transaction.createdAt', 'DESC')
-                    .getRawMany();
-                break;
-            case 'total-cheque':
-                result = await query.andWhere('transaction.status = :status', { status: 1 })
-                    .andWhere('transaction.payment_type = :tran_type', { tran_type: 'Cheque' })
-                    .orderBy('transaction.createdAt', 'DESC')
-                    .getRawMany();
-                break;
-            case 'total-paylater':
-                result = await query.andWhere('transaction.status = :status', { status: -1 })
-                    .orderBy('transaction.createdAt', 'DESC')
-                    .getRawMany();
-                break;
-            default:
-                break;
-        }
-        return result;
-    }
-
     async save(transactionDto: TransactionDto, createdBy): Promise<any> {
-        const { patient_id, serviceType, amount, description, payment_type } = transactionDto;
+        const { patient_id, hmo_id, service_id, amount, description, payment_type } = transactionDto;
         // find patient record
-        const patient = await this.patientRepository.findOne(patient_id, { relations: ['hmo'] });
-        const items = [];
-        for (const serviceId of serviceType) {
-            // find service record
-            const service = await this.serviceRepository.findOne(serviceId);
-            items.push({ name: service.name, amount: service.tariff });
-        }
+        const patient = await this.patientRepository.findOne(patient_id);
 
-        const date = new Date();
-        date.setDate(date.getDate() - 1);
+        const hmo = await this.hmoSchemeRepository.findOne(hmo_id);
+
+        const service = await this.serviceRepository.findOne(service_id);
+
+        const serviceCost = await this.serviceCostRepository.findOne({ where: { item: service, hmo } });
+
+        const item = { name: service.name, amount: serviceCost.tariff };
 
         try {
             const transaction = await this.transactionsRepository.save({
@@ -289,13 +185,14 @@ export class TransactionsService {
                 amount,
                 description,
                 payment_type,
-                transaction_type: 'billing',
-                transaction_details: items,
+                bill_source: 'billing',
+                transaction_details: [item],
                 amount_paid: amount,
                 createdBy,
                 lastChangedBy: createdBy,
                 status: 1,
                 hmo: patient.hmo,
+                service: serviceCost,
             });
             return { success: true, transaction };
         } catch (error) {
@@ -315,16 +212,18 @@ export class TransactionsService {
             return { success: true, transaction };
         }
 
-        const { patient_id, serviceType, amount, description, payment_type } = transactionDto;
+        const { patient_id, service_id, hmo_id, amount, description, payment_type } = transactionDto;
 
         // find patient record
-        const patient = await this.patientRepository.findOne(patient_id, { relations: ['hmo'] });
-        const items = [];
-        for (const serviceId of serviceType) {
-            // find service record
-            const service = await this.serviceRepository.findOne(serviceId);
-            items.push({ name: service.name, amount: service.tariff });
-        }
+        const patient = await this.patientRepository.findOne(patient_id);
+
+        const hmo = await this.hmoSchemeRepository.findOne(hmo_id);
+
+        const service = await this.serviceRepository.findOne(service_id);
+
+        const serviceCost = await this.serviceCostRepository.findOne({ where: { item: service, hmo } });
+
+        const item = { name: service.name, amount: serviceCost.tariff };
 
         try {
             const transaction = await this.transactionsRepository.findOne(id);
@@ -332,10 +231,11 @@ export class TransactionsService {
             transaction.amount = amount;
             transaction.description = description;
             transaction.payment_type = payment_type;
-            transaction.transaction_details = items;
+            transaction.transaction_details = [item];
             transaction.lastChangedBy = createdBy;
             transaction.hmo_approval_code = code;
             transaction.hmo = patient.hmo;
+            transaction.service = serviceCost;
             const data = await transaction.save();
 
             return { success: true, transaction: data };
@@ -355,7 +255,15 @@ export class TransactionsService {
 
     async transfer(id: number, createdBy): Promise<any> {
         const transaction = await this.transactionsRepository.findOne(id);
+
+        const hmo = await this.hmoSchemeRepository.findOne({ where: { name: 'Private' } });
+
+        const serviceCost = await this.serviceCostRepository.findOne({ where: { id: transaction.service.id, hmo } });
+
         transaction.payment_type = '';
+        transaction.amount = serviceCost.tariff;
+        transaction.transaction_details = { ...transaction.transaction_details, amount: serviceCost.tariff };
+        transaction.hmo = hmo;
         transaction.lastChangedBy = createdBy;
         const rs = await transaction.save();
 
@@ -366,7 +274,7 @@ export class TransactionsService {
         const transaction = await this.transactionsRepository.findOne(id);
 
         let amount = 0;
-        if (transaction.transaction_type === 'registration') {
+        if (transaction.bill_source === 'registration') {
             amount = parseFloat(transaction.transaction_details.tariff);
         } else {
             amount = parseFloat(transaction.transaction_details.price);
@@ -383,7 +291,7 @@ export class TransactionsService {
     async processTransaction(id: number, transactionDto: ProcessTransactionDto, updatedBy): Promise<any> {
         const { voucher_id, amount_paid, voucher_amount, payment_type, patient_id, is_part_payment } = transactionDto;
         try {
-            const transaction = await this.transactionsRepository.findOne(id, { relations: ['patient', 'staff', 'serviceType', 'patientRequestItem', 'request', 'appointment', 'hmo'] });
+            const transaction = await this.transactionsRepository.findOne(id, { relations: ['patient', 'staff', 'patientRequestItem', 'request', 'appointment', 'hmo'] });
 
             if (is_part_payment && amount_paid < transaction.amount) {
                 const duration = await getConnection().getRepository(Settings).findOne({ where: { slug: 'part-payment-duration' } });
@@ -393,13 +301,13 @@ export class TransactionsService {
                 balance.createdBy = transaction.createdBy;
                 balance.amount = transaction.amount - amount_paid;
                 balance.description = transaction.description;
-                balance.transaction_type = transaction.transaction_type;
+                balance.bill_source = transaction.bill_source;
                 balance.next_location = transaction.next_location;
                 balance.hmo_approval_code = transaction.hmo_approval_code;
                 balance.transaction_details = transaction.transaction_details;
                 balance.patient = transaction.patient;
                 balance.staff = transaction.staff;
-                balance.serviceType = transaction.serviceType;
+                balance.service = transaction.service;
                 balance.patientRequestItem = transaction.patientRequestItem;
                 balance.request = transaction.request;
                 balance.appointment = transaction.appointment;
@@ -438,7 +346,7 @@ export class TransactionsService {
                 console.log(transaction.id);
                 const appointment = await this.appointmentRepository.findOne({
                     where: { transaction: transaction.id },
-                    relations: ['patient', 'whomToSee', 'consultingRoom', 'serviceCategory', 'serviceType'],
+                    relations: ['patient', 'whomToSee', 'consultingRoom', 'serviceCategory'],
                 });
                 appointment.status = 'Approved';
                 appointment.save();
@@ -470,7 +378,7 @@ export class TransactionsService {
         try {
             let transactions = [];
             for (const item of items) {
-                const transaction = await this.transactionsRepository.findOne(item.id, { relations: ['patient', 'staff', 'serviceType', 'patientRequestItem', 'request', 'appointment', 'hmo'] });
+                const transaction = await this.transactionsRepository.findOne(item.id, { relations: ['patient', 'staff', 'patientRequestItem', 'request', 'appointment', 'hmo'] });
 
                 transaction.amount_paid = item.amount;
                 transaction.payment_type = payment_type;
@@ -480,7 +388,7 @@ export class TransactionsService {
                     // find appointment
                     const appointment = await this.appointmentRepository.findOne({
                         where: { transaction: transaction.id },
-                        relations: ['patient', 'whomToSee', 'consultingRoom', 'serviceCategory', 'serviceType'],
+                        relations: ['patient', 'whomToSee', 'consultingRoom', 'serviceCategory'],
                     });
 
                     // create new queue
@@ -520,37 +428,5 @@ export class TransactionsService {
         await transaction.save();
 
         return transaction.softRemove();
-    }
-
-    async getTransaction(id: string): Promise<Transactions> {
-        const result = await this.transactionsRepository.findOne({ where: { id } });
-
-        if (!result) {
-            throw new NotFoundException(`Transaction with ID '${id}' not found`);
-        }
-
-        return result;
-    }
-
-    async cafeteriaDailyTotal() {
-        const startOfDay = moment().startOf('day').toISOString();
-        const endOfDay = moment().endOf('day').toISOString();
-        const query = await this.transactionsRepository.createQueryBuilder('transaction')
-            .where('transaction.transaction_type = :type', { type: 'cafeteria' })
-            .andWhere(`transaction.createdAt >= '${startOfDay}'`)
-            .andWhere(`transaction.createdAt <= '${endOfDay}'`)
-            .select('SUM(amount) as amount')
-            .getRawOne();
-        return query;
-    }
-
-    async personalCafeterialBill(userId) {
-        const query = await this.transactionsRepository.createQueryBuilder('transaction')
-            .where('transaction.transaction_type = :type', { type: 'cafeteria' })
-            .andWhere('transaction.staff_id = :user', { user: `${userId}` })
-            .andWhere('transaction.status = :status', { status: 0 })
-            .getRawOne();
-
-        return query;
     }
 }

@@ -1,15 +1,12 @@
 import { Module } from '@nestjs/common';
-import { CafeteriaService } from './cafeteria.service';
-import { CafeteriaController } from './cafeteria.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { CafeteriaItemRepository } from './repositories/cafeteria.item.repository';
+import { CafeteriaInventoryRepository } from './cafeteria.repository';
+import { CafeteriaInventoryController } from './cafeteria.controller';
+import { CafeteriaInventoryService } from './cafeteria.service';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([
-        CafeteriaItemRepository,
-    ])],
-    providers: [CafeteriaService],
-    controllers: [CafeteriaController],
+    imports: [TypeOrmModule.forFeature([CafeteriaInventoryRepository])],
+    providers: [CafeteriaInventoryService],
+    controllers: [CafeteriaInventoryController],
 })
-export class CafeteriaModule {
-}
+export class CafeteriaInventoryModule {}

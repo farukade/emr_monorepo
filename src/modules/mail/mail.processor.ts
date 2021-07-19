@@ -57,7 +57,7 @@ export class MailProcessor {
                 template: 'registration',
                 context: {
                     name: data.name,
-                    folderNumber: formatPID(data.id),
+                    patientId: formatPID(data.id),
                     date: moment(data.createdAt).format('DD-MMM-YYYY'),
                     logo: `${process.env.ENDPOINT}/public/images/logo.png`,
                 },
@@ -123,7 +123,7 @@ export class MailProcessor {
                 template: 'pharmacy',
                 context: {
                     name: data.name,
-                    folderNumber: formatPID(data.id),
+                    patientId: formatPID(data.id),
                     date: moment(data.createdAt).format('DD-MMM-YYYY'),
                     drugs: data.drugs,
                     logo: `${process.env.ENDPOINT}/public/images/logo.png`,
@@ -150,7 +150,7 @@ export class MailProcessor {
                 template: 'discharge',
                 context: {
                     name: data.name,
-                    folderNumber: data.folderNumber,
+                    patientId: formatPID(data.id),
                     date: moment(data.createdAt).format('DD-MMM-YYYY'),
                     services: data.services,
                     logo: `${process.env.ENDPOINT}/public/images/logo.png`,

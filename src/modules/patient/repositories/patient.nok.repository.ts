@@ -1,6 +1,7 @@
 import { EntityRepository, Repository } from 'typeorm';
 import { PatientNOK } from '../entities/patient-next-of-kin.entity';
 import { PatientDto } from '../dto/patient.dto';
+import * as moment from 'moment';
 
 @EntityRepository(PatientNOK)
 export class PatientNOKRepository extends Repository<PatientNOK> {
@@ -10,7 +11,7 @@ export class PatientNOKRepository extends Repository<PatientNOK> {
         nok.surname             = patientDto.nok_surname;
         nok.other_names         = patientDto.nok_other_names;
         nok.address             = patientDto.nok_address;
-        nok.date_of_birth       = patientDto.nok_date_of_birth;
+        nok.date_of_birth       = patientDto.nok_date_of_birth ? moment(new Date(patientDto.nok_date_of_birth)).format('YYYY-MM-DD') : null;
         nok.relationship        = patientDto.relationship;
         nok.occupation          = patientDto.nok_occupation;
         nok.gender              = patientDto.nok_gender;

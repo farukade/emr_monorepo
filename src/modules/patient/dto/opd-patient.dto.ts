@@ -21,5 +21,4 @@ export class OpdPatientDto {
     gender: string;
 
     opdType: string;
-    folderNumber: string;
 }

@@ -1,14 +1,11 @@
 import { IsNotEmpty } from 'class-validator';
 
 export class DiagnosisUpdateDto {
-  @IsNotEmpty()
-  procedureCode: string;
+    @IsNotEmpty()
+    code: string;
 
-  @IsNotEmpty()
-  icd10Code: string;
+    description: string;
 
-  description: string;
-
-  diagnosisType: string;
+    type: string;
 
 }

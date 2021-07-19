@@ -9,16 +9,18 @@ import { Appointment } from './appointment.entity';
 import * as moment from 'moment';
 import { QueueSystemRepository } from '../queue-system/queue-system.repository';
 import { Service } from '../../settings/entities/service.entity';
-import { ServiceRepository } from '../../settings/services/service.repository';
+import { ServiceRepository } from '../../settings/services/repositories/service.repository';
 import { Patient } from '../../patient/entities/patient.entity';
 import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
 import { AppGateway } from '../../../app.gateway';
 import { Brackets, getRepository } from 'typeorm';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
-import { HmoRepository } from '../../hmo/hmo.repository';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import { PaginationOptionsInterface } from '../../../common/paginate';
 import { getStaff } from '../../../common/utils/utils';
+import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repository';
+import { ServiceCostRepository } from '../../settings/services/repositories/service_cost.repository';
+import { ServiceCost } from '../../settings/entities/service_cost.entity';
 
 @Injectable()
 export class AppointmentService {
@@ -37,8 +39,10 @@ export class AppointmentService {
         private serviceRepository: ServiceRepository,
         @InjectRepository(TransactionsRepository)
         private transactionsRepository: TransactionsRepository,
-        @InjectRepository(HmoRepository)
-        private hmoRepository: HmoRepository,
+        @InjectRepository(HmoSchemeRepository)
+        private hmoSchemeRepository: HmoSchemeRepository,
+        @InjectRepository(ServiceCostRepository)
+        private serviceCostRepository: ServiceCostRepository,
         private readonly appGateway: AppGateway,
     ) {
     }
@@ -104,7 +108,7 @@ export class AppointmentService {
         for (const item of appointments) {
             const appointment = await this.appointmentRepository.findOne({
                 where: { id: item.id },
-                relations: ['patient', 'whomToSee', 'serviceType', 'consultingRoom', 'transaction', 'department'],
+                relations: ['patient', 'whomToSee', 'serviceCost', 'consultingRoom', 'transaction', 'department'],
             });
 
             const patientProfile = await this.patientRepository.findOne({
@@ -132,7 +136,7 @@ export class AppointmentService {
 
         const appointments = await this.appointmentRepository.find({
             where: { patient },
-            relations: ['patient', 'whomToSee', 'serviceType', 'consultingRoom', 'encounter', 'transaction', 'department'],
+            relations: ['patient', 'whomToSee', 'serviceCost', 'consultingRoom', 'encounter', 'transaction', 'department'],
         });
 
         return appointments;
@@ -141,7 +145,7 @@ export class AppointmentService {
     async getAppointment(id: number): Promise<Appointment> {
         const appointment = await this.appointmentRepository.findOne({
             where: { id },
-            relations: ['patient', 'whomToSee', 'serviceType', 'consultingRoom', 'encounter', 'transaction', 'department'],
+            relations: ['patient', 'whomToSee', 'serviceCost', 'consultingRoom', 'encounter', 'transaction', 'department'],
         });
 
         return appointment;
@@ -158,6 +162,8 @@ export class AppointmentService {
                 return { success: false, message: 'please select a patient' };
             }
 
+            const hmo = patient.hmo;
+
             // find doctor
             let doctor = null;
             if (doctor_id) {
@@ -172,14 +178,15 @@ export class AppointmentService {
 
             // find service
             const service = await this.serviceRepository.findOne(service_id);
+            const serviceCost = await this.serviceCostRepository.findOne({ where: { item: service, hmo } });
 
             // find department
             const department = await this.departmentRepository.findOne(department_id);
 
-            const amount = service.hmoTarrif;
+            const amount = serviceCost.tariff;
 
             // tslint:disable-next-line:max-line-length
-            const appointment = await this.appointmentRepository.saveAppointment(appointmentDto, patient, consultingRoom, doctor, amount, service, department);
+            const appointment = await this.appointmentRepository.saveAppointment(appointmentDto, patient, consultingRoom, doctor, amount, service, serviceCost, department);
 
             // update patient appointment date
             patient.lastAppointmentDate = moment().format('YYYY-MM-DD');
@@ -194,7 +201,6 @@ export class AppointmentService {
 
             if (sendToQueue) {
                 if (consultation_id !== 'follow-up') {
-                    const hmo = await this.hmoRepository.findOne(patient.hmo.id);
                     if (hmo.name === 'Private') {
                         // update appointment status
                         appointment.status = 'Pending Paypoint Approval';
@@ -213,7 +219,7 @@ export class AppointmentService {
                     }
 
                     // save payment
-                    const payment = await this.saveTransaction(patient, service, amount, paymentType, hmoApprovalStatus, username);
+                    const payment = await this.saveTransaction(patient, service, serviceCost, amount, paymentType, username);
                     appointment.transaction = payment;
                     await appointment.save();
                     // send queue message
@@ -249,22 +255,24 @@ export class AppointmentService {
         const { patient_id, service_id } = params;
         // find service
         const service = await this.serviceRepository.findOne(service_id);
-        let resGracePeriod;
-        let resNoOfVisits;
-        if (service.gracePeriod) {
-            const gracePeriodParams = service.gracePeriod.split(' ');
-            resGracePeriod = await this.verifyGracePeriod(gracePeriodParams, patient_id, service_id);
-        }
+        // let resGracePeriod;
+        // let resNoOfVisits;
+        // if (service.gracePeriod) {
+        //     const gracePeriodParams = service.gracePeriod.split(' ');
+        //     resGracePeriod = await this.verifyGracePeriod(gracePeriodParams, patient_id, service_id);
+        // }
+        //
+        // if (service.noOfVisits) {
+        //     resNoOfVisits = await this.verifyNoOfVisits(service.noOfVisits, patient_id, service_id);
+        // }
 
-        if (service.noOfVisits) {
-            resNoOfVisits = await this.verifyNoOfVisits(service.noOfVisits, patient_id, service_id);
-        }
+        // if (resGracePeriod && resNoOfVisits) {
+        //     return { isPaying: false, amount: 0 };
+        // } else {
+        //     return { isPaying: true, amount: parseInt(service.tariff, 10) };
+        // }
 
-        if (resGracePeriod && resNoOfVisits) {
-            return { isPaying: false, amount: 0 };
-        } else {
-            return { isPaying: true, amount: parseInt(service.tariff, 10) };
-        }
+        return { isPaying: false, amount: 0 };
     }
 
     async closeAppointment(id) {
@@ -304,7 +312,7 @@ export class AppointmentService {
             if (consulting_room_id) {
                 const room = await this.consultingRoomRepository.findOne(consulting_room_id);
                 appointment.consultingRoom = room;
-                text += `${appointment.patient.folderNumber}, please proceed to consulting room ${room.name}`;
+                text += `${appointment.patient.id}, please proceed to consulting room ${room.name}`;
             }
 
             appointment.doctorStatus = action;
@@ -318,15 +326,15 @@ export class AppointmentService {
         }
     }
 
-    private async saveTransaction(patient: Patient, service: Service, amount, paymentType, hmoApprovalStatus, createdBy) {
+    private async saveTransaction(patient: Patient, service: Service, serviceCost: ServiceCost, amount, paymentType, createdBy) {
         const data = {
             patient,
-            serviceType: service,
+            serviceCost,
             next_location: 'vitals',
             amount,
             description: service.name,
             payment_type: paymentType,
-            transaction_type: 'appointment',
+            bill_source: 'appointment',
             hmo: patient.hmo,
             createdBy,
         };
@@ -342,7 +350,7 @@ export class AppointmentService {
         // find patient last appointment
         const appointments = await this.appointmentRepository.createQueryBuilder('appointment')
             .where('appointment.patient_id = :patient_id', { patient_id })
-            .andWhere('appointment.service_id = :service_id', { service_id })
+            .andWhere('appointment.service_cost_id = :service_id', { service_id })
             .select(['appointment.createdAt as created_at'])
             .orderBy('appointment.createdAt', 'DESC')
             .limit(gracePeriodParams[0])
@@ -364,7 +372,7 @@ export class AppointmentService {
     private async verifyNoOfVisits(noOfVisits, patient_id, service_id) {
         const appointments = await this.appointmentRepository.createQueryBuilder('appointment')
             .where('appointment.patient_id = :patient_id', { patient_id })
-            .andWhere('appointment.service_id = :service_id', { service_id })
+            .andWhere('appointment.service_cost_id = :service_id', { service_id })
             .select(['appointment.createdAt as created_at'])
             .orderBy('appointment.createdAt', 'DESC')
             .limit(noOfVisits)

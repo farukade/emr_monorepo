@@ -9,8 +9,8 @@ import { LabourDeliveryRecordRepository } from './repositories/labour-delivery-r
 import { LabourRiskAssessmentRepository } from './repositories/labour-risk-assessment.repository';
 import { PatientRepository } from '../repositories/patient.repository';
 import { StaffRepository } from '../../hr/staff/staff.repository';
-import { LabTestRepository } from '../../settings/lab/lab.test.repository';
 import { AppGateway } from '../../../app.gateway';
+import { LabTestRepository } from '../../settings/lab/repositories/lab.test.repository';
 
 @Module({
   imports: [TypeOrmModule.forFeature([

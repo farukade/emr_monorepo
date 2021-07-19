@@ -6,8 +6,7 @@ import { RoomCategory } from '../entities/room_category.entity';
 import { Room } from '../entities/room.entity';
 import { RoomCategoryRepository } from './room.category.repository';
 import { RoomRepository } from './room.repository';
-import { getConnection } from 'typeorm';
-import { Hmo } from '../../hmo/entities/hmo.entity';
+import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repository';
 
 @Injectable()
 export class RoomService {
@@ -16,10 +15,13 @@ export class RoomService {
         private roomRepository: RoomRepository,
         @InjectRepository(RoomCategoryRepository)
         private roomCategoryRepository: RoomCategoryRepository,
-    ) {}
+        @InjectRepository(HmoSchemeRepository)
+        private hmoSchemeRepository: HmoSchemeRepository,
+    ) {
+    }
 
     async getAllRooms(): Promise<Room[]> {
-        return this.roomRepository.find({relations: ['category']});
+        return this.roomRepository.find({ relations: ['category'] });
     }
 
     async getRoomById(id: string): Promise<Room> {
@@ -69,20 +71,16 @@ export class RoomService {
         ROOM CATEGORY SERVICES
     */
     async getRoomsCategory(hmo_id: number): Promise<RoomCategory[]> {
-        if(hmo_id)
-        {
-             const query = this.roomCategoryRepository.createQueryBuilder('q')
-            .innerJoin(Room, 'rooms', 'room.id = q.id')
-            .select('q.id, q.name, q.price, q.discount, q.hmo_id')
-            .addSelect('rooms.id as room_id, rooms.name as room_name')
-            .where('q.hmo_id = :hmo_id', { hmo_id }).getMany();
-            return query;
+        if (hmo_id) {
+            const scheme = await this.hmoSchemeRepository.findOne(hmo_id);
+
+            return this.roomCategoryRepository.find({
+                where: { hmo: scheme },
+                relations: ['rooms', 'hmo'],
+            });
+        } else {
+            return this.roomCategoryRepository.find({ relations: ['rooms', 'hmo'] });
         }
-        else
-        {
-            return this.roomCategoryRepository.find({relations: ['rooms', 'hmo']});
-        }
-        
     }
 
     async createRoomCategory(roomCategoryDto: RoomCategoryDto): Promise<RoomCategory> {
@@ -91,13 +89,16 @@ export class RoomService {
 
     async updateRoomCategory(id: string, roomCategoryDto: RoomCategoryDto): Promise<RoomCategory> {
         const { name, price, hmo_id, hmo_tarrif } = roomCategoryDto;
-        const hmo = await getConnection().getRepository(Hmo).findOne(hmo_id);
+
+        const hmo = await this.hmoSchemeRepository.findOne(hmo_id);
+
         const category = await this.roomCategoryRepository.findOne(id);
         category.name = name;
         category.price = price;
         category.hmo = hmo;
         category.hmoTarrif = hmo_tarrif;
         await category.save();
+
         return category;
     }
 

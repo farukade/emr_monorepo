@@ -29,39 +29,37 @@ export class DiagnosisService {
                 [diagnoses, total] = await this.diagnosisRepository.findAndCount({
                     skip,
                     take: limit,
-                    order: { procedureCode: 'ASC' },
+                    order: { code: 'ASC' },
                 });
             } else {
                 [diagnoses, total] = await this.diagnosisRepository.findAndCount({
                     where: [
-                        { procedureCode: Raw(alias => `LOWER(${alias}) Like '%${search.toLowerCase()}%'`) },
-                        { icd10Code: Raw(alias => `LOWER(${alias}) Like '%${search.toLowerCase()}%'`) },
+                        { code: Raw(alias => `LOWER(${alias}) Like '%${search.toLowerCase()}%'`) },
                         { description: Raw(alias => `LOWER(${alias}) Like '%${search.toLowerCase()}%'`) },
                     ],
                     skip,
                     take: limit,
-                    order: { procedureCode: 'ASC' },
+                    order: { code: 'ASC' },
                 });
             }
         } else {
             if (search === '') {
                 [diagnoses, total] = await this.diagnosisRepository.findAndCount({
-                    where: { procedureCode: Raw(alias => `LOWER(${alias}) Like '${alphaBet.toLowerCase()}%'`) },
+                    where: { code: Raw(alias => `LOWER(${alias}) Like '${alphaBet.toLowerCase()}%'`) },
                     skip,
                     take: limit,
-                    order: { procedureCode: 'ASC' },
+                    order: { code: 'ASC' },
                 });
             } else {
                 [diagnoses, total] = await this.diagnosisRepository.createQueryBuilder('d')
-                    .where('LOWER(d.procedureCode) Like :alphabet', { alphabet: `${alphaBet.toLowerCase()}%` })
+                    .where('LOWER(d.code) Like :alphabet', { alphabet: `${alphaBet.toLowerCase()}%` })
                     .andWhere(new Brackets(qb => {
-                        qb.where('LOWER(d.procedureCode) Like :procedureCode', { procedureCode: `%${search.toLowerCase()}%` })
-                            .orWhere('LOWER(d.icd10Code) Like :icd10Code', { icd10Code: `%${search.toLowerCase()}%` })
+                        qb.where('LOWER(d.code) Like :code', { code: `%${search.toLowerCase()}%` })
                             .orWhere('LOWER(d.description) Like :description', { description: `%${search.toLowerCase()}%` });
                     }))
                     .skip(skip)
                     .take(limit)
-                    .orderBy({ 'd.procedureCode': 'ASC' })
+                    .orderBy({ 'd.code': 'ASC' })
                     .getManyAndCount();
             }
         }
@@ -80,20 +78,10 @@ export class DiagnosisService {
         const search = q || '';
 
         if (diagnosisType && diagnosisType !== '') {
-            if (diagnosisType === '10') {
-                return this.diagnosisRepository.createQueryBuilder('d')
-                    .where('"diagnosisType" = :type', { type: diagnosisType })
-                    .andWhere(new Brackets(qb => {
-                        qb.where('UPPER(d.icd10Code) Like :icd10Code', { icd10Code: `%${search.toUpperCase()}%` })
-                            .orWhere('LOWER(d.description) Like :description', { description: `%${search.toLowerCase()}%` });
-                    }))
-                    .getMany();
-            }
-
             return this.diagnosisRepository.createQueryBuilder('d')
-                .where('"diagnosisType" = :type', { type: diagnosisType })
+                .where('"type" = :type', { type: diagnosisType })
                 .andWhere(new Brackets(qb => {
-                    qb.where('UPPER(d.procedureCode) Like :procedureCode', { procedureCode: `%${search.toUpperCase()}%` })
+                    qb.where('UPPER(d.code) Like :code', { code: `%${search.toUpperCase()}%` })
                         .orWhere('LOWER(d.description) Like :description', { description: `%${search.toLowerCase()}%` });
                 }))
                 .getMany();
@@ -101,8 +89,7 @@ export class DiagnosisService {
 
         return await this.diagnosisRepository.find({
             where: [
-                { procedureCode: Raw(alias => `LOWER(${alias}) Like '%${search.toLowerCase()}%'`) },
-                { icd10Code: Raw(alias => `LOWER(${alias}) Like '%${search.toLowerCase()}%'`) },
+                { code: Raw(alias => `LOWER(${alias}) Like '%${search.toLowerCase()}%'`) },
                 { description: Raw(alias => `LOWER(${alias}) Like '%${search.toLowerCase()}%'`) },
             ],
         });
@@ -121,18 +108,17 @@ export class DiagnosisService {
                     const descriptionKey = keys.find(k => k && k.trim() === 'DESCRIPTION');
 
                     const data = {
-                        procedureCode: row['PROCEDURE CODE'],
-                        icd10Code: row['ICD10 CODE'],
+                        code: row['PROCEDURE CODE'],
                         description: row[descriptionKey],
-                        diagnosisType,
+                        type: diagnosisType,
                     };
                     content.push(data);
                 })
                 .on('end', async () => {
                     for (const item of content) {
-                        if (item.procedureCode.charAt(0) === '-') {
-                            const procedureCode = item.procedureCode.substring(1);
-                            const diagnoses = alphabets.map(a => ({ ...item, procedureCode: `${a}${procedureCode}` }));
+                        if (item.code.charAt(0) === '-') {
+                            const code = item.code.substring(1);
+                            const diagnoses = alphabets.map(a => ({ ...item, code: `${a}${code}` }));
                             for (const diagItem of diagnoses) {
                                 content.push(diagItem);
                             }
@@ -140,20 +126,11 @@ export class DiagnosisService {
                     }
 
                     for (const item of content) {
-                        if (item.procedureCode.charAt(0) !== '-') {
-                            if (item.diagnosisType === '2') {
-                                // check if procedure exists
-                                const procedureFind = await this.diagnosisRepository.findOne({ where: { procedureCode: item.procedureCode } });
-                                if (!procedureFind) {
-                                    await this.diagnosisRepository.save({ ...item, icd10Code: null });
-                                }
-                            } else {
-                                // check if procedure exists
-                                const procedure = await this.diagnosisRepository.findOne({ where: { icd10Code: item.icd10Code } });
-                                if (!procedure) {
-                                    // save procedure
-                                    await this.diagnosisRepository.save({ ...item, icd10Code: item.icd10Code === '' ? null : item.icd10Code });
-                                }
+                        if (item.code.charAt(0) !== '-') {
+                            // check if diagnosis exists
+                            const diagnosisFind = await this.diagnosisRepository.findOne({ where: { code: item.code } });
+                            if (!diagnosisFind) {
+                                await this.diagnosisRepository.save(item);
                             }
                         }
                     }
@@ -167,13 +144,12 @@ export class DiagnosisService {
     }
 
     async updateDiagnosis(id: string, diagnosisUpdateDto: DiagnosisUpdateDto): Promise<Diagnosis> {
-        const { procedureCode, icd10Code, description, diagnosisType } = diagnosisUpdateDto;
-        const procedure = await this.diagnosisRepository.findOne(id);
-        procedure.procedureCode = procedureCode;
-        procedure.icd10Code = icd10Code;
-        procedure.description = description;
-        procedure.diagnosisType = diagnosisType;
-        await procedure.save();
-        return procedure;
+        const { code, description, type } = diagnosisUpdateDto;
+        const diagnosis = await this.diagnosisRepository.findOne(id);
+        diagnosis.code = code;
+        diagnosis.description = description;
+        diagnosis.type = type;
+        await diagnosis.save();
+        return diagnosis;
     }
 }

@@ -1,6 +1,6 @@
 import * as jwt from 'jsonwebtoken';
 import { appService } from '../../app.service';
-import { User } from '../../modules/hr/entities/user.entity';
+import { User } from '../../modules/auth/entities/user.entity';
 
 export class JWTHelper {
   /**

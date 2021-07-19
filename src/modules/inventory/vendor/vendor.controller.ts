@@ -1,8 +1,8 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Request, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
-import { Vendor } from './vendor.entity';
-import { VendorDto } from './vendor.dto';
-import { VendorService } from './vendor.service';
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, Request, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { VendorService } from './vendor.service';
+import { VendorDto } from '../dto/vendor.dto';
+import { Pagination } from '../../../common/paginate/paginate.interface';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('inventory/vendors')
@@ -12,14 +12,17 @@ export class VendorController {
 
     @Get('')
     all(
+        @Query() urlParams,
         @Request() request,
-    ): Promise<Vendor[]> {
-        return this.vendorService.getAll();
+    ): Promise<Pagination> {
+        const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
+        const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
+        return this.vendorService.fetchAll({ page, limit }, urlParams);
     }
 
     @Post('/')
     @UsePipes(ValidationPipe)
-    create(@Body() vendorDto: VendorDto): Promise<Vendor> {
+    create(@Body() vendorDto: VendorDto): Promise<any> {
         return this.vendorService.create(vendorDto);
     }
 
@@ -28,7 +31,7 @@ export class VendorController {
     update(
         @Param('id') id: string,
         @Body() vendorDto: VendorDto,
-    ): Promise<Vendor> {
+    ): Promise<any> {
         return this.vendorService.update(id, vendorDto);
     }
 

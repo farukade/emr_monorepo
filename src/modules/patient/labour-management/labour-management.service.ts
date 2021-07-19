@@ -7,7 +7,6 @@ import { LabourRiskAssessmentRepository } from './repositories/labour-risk-asses
 import { LabourDeliveryRecordRepository } from './repositories/labour-delivery-record.repository';
 import { LabourEnrollmentDto } from './dto/labour-enrollment.dto';
 import { PatientRepository } from '../repositories/patient.repository';
-import { Patient } from '../entities/patient.entity';
 import * as moment from 'moment';
 import { LabourMeasurementDto } from './dto/labour-measurement.dto';
 import { StaffRepository } from '../../hr/staff/staff.repository';
@@ -20,10 +19,8 @@ import { LabourRiskAssessment } from './entities/labour_risk_assessment.entity';
 import { LabourDeliveryRecord } from './entities/labour_delivery_record.entity';
 import { LabourEnrollment } from './entities/labour_enrollment.entity';
 import { PaginationOptionsInterface } from '../../../common/paginate';
-import { LabTestRepository } from '../../settings/lab/lab.test.repository';
-import { RequestPaymentHelper } from '../../../common/utils/RequestPaymentHelper';
-import { PatientRequestHelper } from '../../../common/utils/PatientRequestHelper';
 import { AppGateway } from '../../../app.gateway';
+import { LabTestRepository } from '../../settings/lab/repositories/lab.test.repository';
 
 @Injectable()
 export class LabourManagementService {
@@ -55,7 +52,7 @@ export class LabourManagementService {
         const query = this.labourEnrollmentRepository.createQueryBuilder('enrollment')
             .innerJoinAndSelect('enrollment.patient', 'patient')
             .select('enrollment.*')
-            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.folderNumber, patient.date_of_birth');
+            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.date_of_birth');
 
         if (startDate && startDate !== '') {
             const start = moment(startDate).startOf('day').toISOString();
@@ -91,7 +88,7 @@ export class LabourManagementService {
         const enrollment = this.labourEnrollmentRepository.createQueryBuilder('enrollment')
             .innerJoinAndSelect('enrollment.patient', 'patient')
             .select('enrollment.*')
-            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.folderNumber, patient.hmo_id, patient.date_of_birth')
+            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.date_of_birth')
             .where('enrollment.id = :id', { id })
             .getRawOne();
 

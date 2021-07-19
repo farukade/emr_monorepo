@@ -1,16 +1,13 @@
-import { IsNotEmpty } from "class-validator";
-
 export class TransactionDto {
-   
+
     patient_id: string;
 
-    
-    serviceType: string[];
+    hmo_id: string;
 
-    
+    service_id: string;
+
     amount: number;
 
- 
     payment_type: string;
 
     description: string;

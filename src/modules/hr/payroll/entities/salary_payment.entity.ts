@@ -8,10 +8,7 @@ import { Department } from '../../../settings/entities/department.entity';
 @Entity({ name: 'salary_payments' })
 export class SalaryPayment extends CustomBaseEntity {
 
-    @Column({ type: 'varchar' })
-    emp_code: string;
-
-    @ManyToOne(() => StaffDetails, { nullable: true })
+    @ManyToOne(() => StaffDetails)
     @JoinColumn({ name: 'staff_id' })
     staff: StaffDetails;
 
@@ -40,17 +37,9 @@ export class SalaryPayment extends CustomBaseEntity {
     @Column({ type: 'smallint', default: 0 })
     status: number;
 
-    @OneToMany(
-        () => SalaryPaymentAllowance,
-        allowances => allowances.payment,
-        { eager: true, onDelete: 'CASCADE' },
-    )
+    @OneToMany(() => SalaryPaymentAllowance, allowances => allowances.payment, { eager: true, onDelete: 'CASCADE' })
     allowances: SalaryPaymentAllowance[];
 
-    @OneToMany(
-        () => SalaryPaymentDeduction,
-        deductions => deductions.payment,
-        { eager: true, onDelete: 'CASCADE' },
-    )
+    @OneToMany(() => SalaryPaymentDeduction, deductions => deductions.payment, { eager: true, onDelete: 'CASCADE' })
     deductions: SalaryPaymentDeduction[];
 }

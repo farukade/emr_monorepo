@@ -11,10 +11,7 @@ export abstract class CustomBaseEntity extends BaseEntity {
     @PrimaryGeneratedColumn('increment')
     id: number;
 
-    @Column({ type: 'boolean', default: true })
-    isActive: boolean;
-
-    @Column({ type: 'varchar', length: 300, nullable: true })
+    @Column({ type: 'varchar', length: 300, default: 'it-admin' })
     createdBy: string;
 
     @Column({ type: 'varchar', length: 300, nullable: true })

@@ -144,7 +144,7 @@ export class AppraisalController {
     @Get('download-sample')
     @Header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     @Header('Content-Disposition', 'attachment; filename=sample-performace-appraisal.csv')
-    async downloadRoaster(@Res() res) {
+    async downloadRoster(@Res() res) {
         const resp = await this.appraisalService.downloadAppraisalSample();
         if (resp.message === 'Completed') {
             res.sendFile(join(__dirname, '../../../../') + '/sample-performance-appraisal.csv');

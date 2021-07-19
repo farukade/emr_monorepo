@@ -91,7 +91,6 @@ export class PayrollService {
 
                     if (staff.department) {
                         payrollData.push({
-                            emp_code: staff.emp_code,
                             staff_name: `${staff.first_name} ${staff.last_name}`,
                             staff,
                             department: staff.department,
@@ -118,7 +117,8 @@ export class PayrollService {
 
         if (staffIds.length) {
             for (const id of staffIds) {
-                const payroll = await this.salaryPaymentRepository.findOne({ where: { emp_code: id, payment_month, status: 0 } });
+                const staff = await this.staffRepository.findOne(id);
+                const payroll = await this.salaryPaymentRepository.findOne({ where: { staff, payment_month, status: 0 } });
                 if (payroll) {
                     payroll.status = 1;
                     payroll.save();

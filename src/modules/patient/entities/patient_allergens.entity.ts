@@ -2,7 +2,7 @@ import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 import { Entity, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { Patient } from './patient.entity';
 import { Encounter } from '../consultation/encouter.entity';
-import { Stock } from '../../inventory/entities/stock.entity';
+import { DrugGeneric } from '../../inventory/entities/drug_generic.entity';
 
 @Entity({name: 'patient_allergens'})
 export class PatientAllergen extends CustomBaseEntity {
@@ -13,9 +13,9 @@ export class PatientAllergen extends CustomBaseEntity {
     @Column()
     allergy: string;
 
-    @ManyToOne(type => Stock, { nullable: true })
-    @JoinColumn({ name: 'drug_id' })
-    drug: Stock;
+    @ManyToOne(type => DrugGeneric, { nullable: true })
+    @JoinColumn({ name: 'drug_generic_id' })
+    drugGeneric: DrugGeneric;
 
     @Column()
     severity: string;

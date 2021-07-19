@@ -15,8 +15,8 @@ import { PaginationOptionsInterface } from '../../../common/paginate';
 import { PatientVitalRepository } from '../repositories/patient_vitals.repository';
 import { PatientRequestHelper } from '../../../common/utils/PatientRequestHelper';
 import { Pagination } from '../../../common/paginate/paginate.interface';
-import { UserRepository } from '../../hr/user.repository';
 import { NicuRepository } from '../nicu/nicu.repository';
+import { AuthRepository } from '../../auth/auth.repository';
 
 @Injectable()
 export class AdmissionsService {
@@ -25,8 +25,8 @@ export class AdmissionsService {
         private admissionRepository: AdmissionsRepository,
         @InjectRepository(AdmissionClinicalTaskRepository)
         private clinicalTaskRepository: AdmissionClinicalTaskRepository,
-        @InjectRepository(UserRepository)
-        private userRepository: UserRepository,
+        @InjectRepository(AuthRepository)
+        private authRepository: AuthRepository,
         @InjectRepository(PatientRepository)
         private patientRepository: PatientRepository,
         @InjectRepository(StaffRepository)
@@ -48,7 +48,7 @@ export class AdmissionsService {
             .leftJoinAndSelect('q.room', 'room')
             .leftJoinAndSelect('q.nicu', 'nicu')
             .select('q.id, q.createdAt as admission_date, q.createdBy as admitted_by, q.reason, q.status')
-            .addSelect('CONCAT(patient.other_names || \' \' || patient.surname) as patient_name, patient.id as patient_id, patient.folderNumber as patient_folderNumber, patient.gender as patient_gender')
+            .addSelect('CONCAT(patient.other_names || \' \' || patient.surname) as patient_name, patient.id as patient_id, patient.gender as patient_gender')
             .addSelect('room.name as suite, room.floor as floor');
 
         if (type === 'in-admission') {
@@ -224,7 +224,7 @@ export class AdmissionsService {
                 relations: ['nextOfKin', 'immunization', 'hmo'],
             });
 
-            const user = await this.userRepository.findOne({
+            const user = await this.authRepository.findOne({
                 where: { username: request.createdBy },
                 relations: ['details'],
             });

@@ -2,7 +2,7 @@ import { EntityRepository, Repository } from 'typeorm';
 import { StaffDetails } from './entities/staff_details.entity';
 import { StaffDto } from './dto/staff.dto';
 import { Department } from '../../settings/entities/department.entity';
-import { User } from '../entities/user.entity';
+import { User } from '../../auth/entities/user.entity';
 
 @EntityRepository(StaffDetails)
 export class StaffRepository extends Repository<StaffDetails> {
@@ -42,7 +42,7 @@ export class StaffRepository extends Repository<StaffDetails> {
             staff.profile_pic = (pic) ? pic.filename : '';
             staff.specialization = specialization;
             staff.user = user;
-            staff.emp_code = 'DHS ' + Math.floor(Math.random() * 90000);
+            staff.employeeNumber = staffDto.employee_number;
             staff.createdBy = username;
 
             const rs = await staff.save();

@@ -1,23 +1,11 @@
 import { IsNotEmpty } from 'class-validator';
 
 export class ServiceDto {
-  @IsNotEmpty()
-  name: string;
+    @IsNotEmpty()
+    name: string;
 
-  tariff: string;
+    category_id: string;
 
-  sub_category_id: string;
-  
-  category_id: string;
-
-  hmo_id: string;
-
-  hmo_tariff: string;
-
-  noOfVisits: number;
-
-  gracePeriod: string;
-
-  note: string;
+    code: string;
 
 }

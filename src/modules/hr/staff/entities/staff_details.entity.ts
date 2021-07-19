@@ -1,7 +1,7 @@
 import { Column, Entity, OneToMany, ManyToOne, JoinColumn, OneToOne } from 'typeorm';
 import { CustomBaseEntity } from '../../../../common/entities/custom-base.entity';
 import { Department } from '../../../settings/entities/department.entity';
-import { User } from '../../entities/user.entity';
+import { User } from '../../../auth/entities/user.entity';
 import { Transactions } from '../../../finance/transactions/transaction.entity';
 import { Specialization } from '../../../settings/entities/specialization.entity';
 import { ConsultingRoom } from '../../../settings/entities/consulting-room.entity';
@@ -21,6 +21,9 @@ export class StaffDetails extends CustomBaseEntity {
 
     @Column({ type: 'varchar', length: 300, nullable: true })
     address: string;
+
+    @Column({ type: 'varchar', length: 300, nullable: true, name: 'employee_number' })
+    employeeNumber: string;
 
     @Column({ type: 'varchar', length: 300, nullable: true })
     phone_number: string;
@@ -94,9 +97,6 @@ export class StaffDetails extends CustomBaseEntity {
     @Column({ type: 'varchar', length: 300, nullable: true })
     monthly_salary: string;
 
-    @Column({ type: 'varchar', length: 20, nullable: true })
-    emp_code: string;
-
     @Column({ type: 'boolean', nullable: false, default: false })
     is_consultant: boolean;
 
@@ -104,11 +104,11 @@ export class StaffDetails extends CustomBaseEntity {
     @JoinColumn({ name: 'department_id' })
     department: Department;
 
-    @ManyToOne(type => Specialization)
+    @ManyToOne(type => Specialization, { nullable: true })
     @JoinColumn({ name: 'specialization_id' })
-    specialization?: Specialization;
+    specialization: Specialization;
 
-    @ManyToOne(type => ConsultingRoom)
+    @ManyToOne(type => ConsultingRoom, { nullable: true })
     @JoinColumn({ name: 'consulting_room_id' })
     room: ConsultingRoom;
 
@@ -120,6 +120,9 @@ export class StaffDetails extends CustomBaseEntity {
     immunizations: Immunization;
 
     @OneToMany(type => Transactions, transaction => transaction.staff)
-    transactions!: Transactions;
+    transactions: Transactions;
+
+    @Column({ type: 'boolean', default: true })
+    isActive: boolean;
 
 }

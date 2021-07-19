@@ -6,12 +6,18 @@ import { PatientRequestItem } from './patient_request_items.entity';
 import { IvfEnrollment } from '../ivf/entities/ivf_enrollment.entity';
 import { Transactions } from '../../finance/transactions/transaction.entity';
 import { Encounter } from '../consultation/encouter.entity';
+import { AntenatalEnrollment } from '../antenatal/entities/antenatal-enrollment.entity';
+import { Admission } from '../admissions/entities/admission.entity';
 
-@Entity({name: 'patient_requests'})
+@Entity({ name: 'patient_requests' })
 export class PatientRequest extends CustomBaseEntity {
 
-    @Column({ nullable: true })
+    @Column({ nullable: true, name: 'group_code' })
     code: string;
+
+    @ManyToOne(type => Patient)
+    @JoinColumn({ name: 'patient_id' })
+    patient: Patient;
 
     @Column()
     requestType: string;
@@ -20,39 +26,34 @@ export class PatientRequest extends CustomBaseEntity {
     requestNote: string;
 
     @Column({ type: 'boolean', default: false })
-    isFilled: boolean;
-
-    @Column({ type: 'boolean', default: false })
     urgent: boolean;
 
-    @ManyToOne(type => Patient)
-    @JoinColumn({name: 'patient_id'})
-    patient: Patient;
-
-    @Column({type: 'smallint', default: 0})
+    @Column({ type: 'smallint', default: 0 })
     status: number;
 
-    @Column({ nullable: true, name: 'procedure_id' })
-    procedureId: number;
+    @OneToOne(type => Admission, { nullable: true })
+    @JoinColumn({ name: 'admission_id' })
+    admission: Admission;
 
-    @Column({ nullable: true, name: 'antenatal_id' })
-    antenatalId: number;
+    @ManyToOne(() => Encounter, item => item.requests, { nullable: true, eager: true })
+    @JoinColumn({ name: 'encounter_id' })
+    encounter: Encounter;
+
+    @ManyToOne(type => IvfEnrollment, { nullable: true })
+    @JoinColumn({ name: 'ivf_id' })
+    ivf: IvfEnrollment;
+
+    @ManyToOne(() => AntenatalEnrollment, { nullable: true })
+    @JoinColumn({ name: 'antenatal_id' })
+    antenatal: AntenatalEnrollment;
+
+    @OneToOne(type => Transactions, data => data.request)
+    @JoinColumn({ name: 'transaction_id' })
+    transaction: Transactions;
 
     @OneToMany(type => AdmissionClinicalTask, task => task.request)
     task: AdmissionClinicalTask;
 
     @OneToMany(type => PatientRequestItem, items => items.request)
     items: PatientRequestItem[];
-
-    @ManyToOne(type => IvfEnrollment)
-    @JoinColumn({name: 'ivf_id'})
-    ivf: IvfEnrollment;
-
-    @OneToOne(type => Transactions, data => data.request)
-    @JoinColumn({ name: 'transaction_id' })
-    transaction: Transactions;
-
-    @ManyToOne(() => Encounter, item => item.requests, { nullable: true, eager: true })
-    @JoinColumn({ name: 'encounter_id' })
-    encounter: Encounter;
 }

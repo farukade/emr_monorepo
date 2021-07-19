@@ -2,20 +2,17 @@ import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 import { Entity, ManyToOne, JoinColumn, Column, OneToOne } from 'typeorm';
 import { Patient } from '../../patient/entities/patient.entity';
 import { ConsultingRoom } from '../../settings/entities/consulting-room.entity';
-import { Service } from '../../settings/entities/service.entity';
 import { ServiceCategory } from '../../settings/entities/service_category.entity';
 import { Encounter } from '../../patient/consultation/encouter.entity';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 import { Transactions } from '../../finance/transactions/transaction.entity';
 import { Department } from '../../settings/entities/department.entity';
+import { ServiceCost } from '../../settings/entities/service_cost.entity';
 
 @Entity({ name: 'appointments' })
 export class Appointment extends CustomBaseEntity {
 
-    @ManyToOne(
-        () => Patient,
-        patient => patient.appointments,
-    )
+    @ManyToOne(() => Patient, patient => patient.appointments)
     @JoinColumn({ name: 'patient_id' })
     patient: Patient;
 
@@ -31,13 +28,13 @@ export class Appointment extends CustomBaseEntity {
     @JoinColumn({ name: 'consulting_room_id' })
     consultingRoom: ConsultingRoom;
 
-    @ManyToOne(type => ServiceCategory, { nullable: true })
+    @ManyToOne(type => ServiceCategory, { eager: true })
     @JoinColumn({ name: 'service_category_id' })
     serviceCategory: ServiceCategory;
 
-    @ManyToOne(type => Service, { nullable: true })
-    @JoinColumn({ name: 'service_id' })
-    serviceType: Service;
+    @ManyToOne(type => ServiceCost, { eager: true })
+    @JoinColumn({ name: 'service_cost_id' })
+    service: ServiceCost;
 
     @Column({ nullable: true })
     duration: string;
@@ -75,4 +72,7 @@ export class Appointment extends CustomBaseEntity {
     @OneToOne(type => Transactions, { nullable: true })
     @JoinColumn({ name: 'transaction_id' })
     transaction: Transactions;
+
+    @Column({ type: 'boolean', default: true })
+    isActive: boolean;
 }

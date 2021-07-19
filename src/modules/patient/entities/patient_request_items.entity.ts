@@ -1,14 +1,15 @@
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne } from 'typeorm';
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 import { LabTest } from '../../settings/entities/lab_test.entity';
-import { Stock } from '../../inventory/entities/stock.entity';
 import { PatientRequest } from './patient_requests.entity';
-import { Service } from '../../settings/entities/service.entity';
 import { PatientDocument } from './patient_documents.entity';
-import { PatientVital } from './patient_vitals.entity';
 import { PatientDiagnosis } from './patient_diagnosis.entity';
 import { Immunization } from '../immunization/entities/immunization.entity';
 import { Transactions } from '../../finance/transactions/transaction.entity';
+import { Drug } from '../../inventory/entities/drug.entity';
+import { DrugBatch } from '../../inventory/entities/batches.entity';
+import { DrugGeneric } from '../../inventory/entities/drug_generic.entity';
+import { ServiceCost } from '../../settings/entities/service_cost.entity';
 
 @Entity({ name: 'patient_request_items' })
 export class PatientRequestItem extends CustomBaseEntity {
@@ -20,13 +21,21 @@ export class PatientRequestItem extends CustomBaseEntity {
     @JoinColumn({ name: 'lab_test_id' })
     labTest: LabTest;
 
-    @ManyToOne(type => Stock, { nullable: true, eager: true })
+    @ManyToOne(type => Drug, { nullable: true, eager: true })
     @JoinColumn({ name: 'drug_id' })
-    drug: Stock;
+    drug: Drug;
 
-    @ManyToOne(type => Service, { nullable: true, eager: true })
-    @JoinColumn({ name: 'service_id' })
-    service: Service;
+    @ManyToOne(type => DrugBatch, { nullable: true, eager: true })
+    @JoinColumn({ name: 'drug_batch_id' })
+    drugBatch: DrugBatch;
+
+    @ManyToOne(type => DrugGeneric, { nullable: true, eager: true })
+    @JoinColumn({ name: 'drug_generic_id' })
+    drugGeneric: DrugGeneric;
+
+    @ManyToOne(type => ServiceCost, { nullable: true, eager: true })
+    @JoinColumn({ name: 'service_cost_id' })
+    service: ServiceCost;
 
     @Column({ type: 'smallint', default: 0 })
     filled: number;
@@ -34,7 +43,7 @@ export class PatientRequestItem extends CustomBaseEntity {
     @Column({ type: 'smallint', default: 0, name: 'fill_quantity' })
     fillQuantity: number;
 
-    @Column({ type: 'varchar', length: 300, nullable: true, name: 'filled_by' })
+    @Column({ type: 'varchar', nullable: true, name: 'filled_by' })
     filledBy: string;
 
     @Column({ nullable: true, name: 'filled_at' })
@@ -43,16 +52,31 @@ export class PatientRequestItem extends CustomBaseEntity {
     @Column({ type: 'smallint', default: 0 })
     cancelled: number;
 
-    @Column({ type: 'varchar', length: 300, nullable: true, name: 'cancelled_by' })
+    @Column({ type: 'varchar', nullable: true, name: 'cancelled_by' })
     cancelledBy: string;
+
+    @Column({ type: 'varchar', nullable: true, name: 'cancel_note' })
+    cancelNote: string;
 
     @Column({ nullable: true, name: 'cancelled_at' })
     cancelledAt: string;
 
     @Column({ type: 'smallint', default: 0 })
+    substituted: number;
+
+    @Column({ nullable: true, name: 'substituted_at' })
+    substitutedAt: string;
+
+    @Column({ type: 'varchar', nullable: true, name: 'substituted_by' })
+    substitutedBy: string;
+
+    @Column({ type: 'varchar', nullable: true, name: 'substitution_reason' })
+    substitutionReason: string;
+
+    @Column({ type: 'smallint', default: 0 })
     received: number;
 
-    @Column({ type: 'varchar', length: 300, nullable: true, name: 'received_by' })
+    @Column({ type: 'varchar', nullable: true, name: 'received_by' })
     receivedBy: string;
 
     @Column({ nullable: true, name: 'received_at' })
@@ -61,7 +85,7 @@ export class PatientRequestItem extends CustomBaseEntity {
     @Column({ type: 'smallint', default: 0 })
     approved: number;
 
-    @Column({ type: 'varchar', length: 300, nullable: true, name: 'approved_by' })
+    @Column({ type: 'varchar', nullable: true, name: 'approved_by' })
     approvedBy: string;
 
     @Column({ nullable: true, name: 'approved_at' })

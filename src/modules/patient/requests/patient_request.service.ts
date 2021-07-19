@@ -1,12 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from '../../hr/entities/user.entity';
+import { User } from '../../auth/entities/user.entity';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 import * as moment from 'moment';
 import { PatientRequestHelper } from '../../../common/utils/PatientRequestHelper';
 import { RequestPaymentHelper } from '../../../common/utils/RequestPaymentHelper';
 import { PatientRequestRepository } from '../repositories/patient_request.repository';
-import { HmoRepository } from '../../hmo/hmo.repository';
 import { PatientRequestItemRepository } from '../repositories/patient_request_items.repository';
 import { PatientRepository } from '../repositories/patient.repository';
 import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
@@ -17,7 +16,9 @@ import { AdmissionClinicalTask } from '../admissions/entities/admission-clinical
 import { generatePDF } from '../../../common/utils/utils';
 import { AdmissionsRepository } from '../admissions/repositories/admissions.repository';
 import * as path from 'path';
-import { Stock } from 'src/modules/inventory/entities/stock.entity';
+import { Drug } from '../../inventory/entities/drug.entity';
+import { DrugBatch } from '../../inventory/entities/batches.entity';
+import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repository';
 
 @Injectable()
 export class PatientRequestService {
@@ -25,8 +26,8 @@ export class PatientRequestService {
         private readonly appGateway: AppGateway,
         @InjectRepository(PatientRequestRepository)
         private patientRequestRepository: PatientRequestRepository,
-        @InjectRepository(HmoRepository)
-        private hmoRepository: HmoRepository,
+        @InjectRepository(HmoSchemeRepository)
+        private hmoSchemeRepository: HmoSchemeRepository,
         @InjectRepository(PatientRequestItemRepository)
         private patientRequestItemRepository: PatientRequestItemRepository,
         @InjectRepository(PatientRepository)
@@ -84,7 +85,7 @@ export class PatientRequestService {
 
         let result = [];
         for (const item of items) {
-            item.hmo = await this.hmoRepository.findOne(item.hmo_id);
+            item.hmo = await this.hmoSchemeRepository.findOne(item.hmo_id);
 
             item.items = await this.patientRequestItemRepository.find({ where: { request: item }, relations: ['diagnosis', 'transaction'] });
 
@@ -120,7 +121,7 @@ export class PatientRequestService {
             .innerJoin(StaffDetails, 'staff1', 'staff1.user_id = creator.id')
             .select('q.id, q.requestType, q.code, q.createdAt, q.status, q.urgent, q.requestNote, q.isFilled')
             .addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
-            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id, patient.hmo_id as hmo_id')
+            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id')
             .where('q.patient_id = :patient_id', { patient_id })
             .andWhere('q.requestType = :requestType', { requestType });
 
@@ -158,7 +159,7 @@ export class PatientRequestService {
 
         let result = [];
         for (const item of items) {
-            item.hmo = await this.hmoRepository.findOne(item.hmo_id);
+            item.hmo = await this.hmoSchemeRepository.findOne(item.hmo_scheme_id);
 
             item.items = await this.patientRequestItemRepository.find({ where: { request: item }, relations: ['diagnosis', 'transaction'] });
 
@@ -279,8 +280,11 @@ export class PatientRequestService {
             });
 
             for (const item of items) {
-                const drug = await getConnection().getRepository(Stock).findOne(item.drug.id);
+                const batch = await getConnection().getRepository(DrugBatch).findOne(item.batch_id);
+                const drug = await getConnection().getRepository(Drug).findOne(batch.drug.id);
                 const requestItem = await this.patientRequestItemRepository.findOne(item.id);
+                requestItem.drugBatch = batch;
+                requestItem.drugGeneric = drug.generic;
                 requestItem.filled = 1;
                 requestItem.fillQuantity = item.fillQuantity;
                 requestItem.filledAt = moment().format('YYYY-MM-DD HH:mm:ss');
@@ -295,7 +299,7 @@ export class PatientRequestService {
                 amount: total_amount,
                 description: 'Payment for pharmacy request',
                 payment_type: patient.hmo.id === 1 ? '' : 'HMO',
-                transaction_type: 'pharmacy',
+                bill_source: 'pharmacy',
                 // tslint:disable-next-line:max-line-length
                 transaction_details: items.map(i => ({
                     id: i.id,
@@ -323,7 +327,6 @@ export class PatientRequestService {
 
             const transaction = { ...payment.generatedMaps[0] };
 
-            request.isFilled = true;
             request.transaction = await this.transactionsRepository.findOne(transaction.id);
             const res = await request.save();
 
@@ -528,7 +531,6 @@ export class PatientRequestService {
             await requestItem.save();
 
             const request = await this.patientRequestRepository.findOne(requestItem.request.id);
-            request.isFilled = true;
             await request.save();
 
             const rs = await this.patientRequestItemRepository.findOne({ where: { id }, relations: ['diagnosis', 'transaction'] });

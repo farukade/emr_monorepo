@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { PermissionsDto } from './dto/permissions.dto';
 import { Permission } from '../entities/permission.entity';
 import { PermissionRepository } from './permission.repository';
-import { User } from '../../hr/entities/user.entity';
+import { User } from '../../auth/entities/user.entity';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 
 @Injectable()

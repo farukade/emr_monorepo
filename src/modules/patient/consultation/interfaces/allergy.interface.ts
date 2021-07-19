@@ -3,5 +3,5 @@ export class IAllergyInterface {
     reaction: string;
     category: any;
     severity: any;
-    drug: any;
+    generic: any;
 }

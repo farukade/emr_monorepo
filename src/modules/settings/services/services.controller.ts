@@ -1,28 +1,9 @@
-import {
-    Controller,
-    Get,
-    Post,
-    Patch,
-    UsePipes,
-    ValidationPipe,
-    Body,
-    Param,
-    Delete,
-    UseInterceptors,
-    UploadedFile,
-    Header,
-    Res,
-    Request, Query, UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Post, Patch, UsePipes, ValidationPipe, Body, Param, Delete, Request, Query, UseGuards} from '@nestjs/common';
 import { ServicesService } from './services.service';
 import { Service } from '../entities/service.entity';
 import { ServiceCategory } from '../entities/service_category.entity';
 import { ServiceDto } from './dto/service.dto';
 import { ServiceCategoryDto } from './dto/service.category.dto';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname, join } from 'path';
-import { ServicesUploadRateDto } from './dto/service.upload.dto';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import { AuthGuard } from '@nestjs/passport';
 
@@ -47,14 +28,8 @@ export class ServicesController {
     @Get('/category/:id')
     getServicesByCategory(
         @Param('id') id: number,
-        @Request() req,
     ): Promise<Service[]> {
-        return this.servicesService.getServicesByCategory(id, req.query.hmo_id);
-    }
-
-    @Get('/consultations')
-    getConsultationServices(): Promise<Service[]> {
-        return this.servicesService.getConsultationServices();
+        return this.servicesService.getServicesByCategory(id);
     }
 
     @Post()
@@ -80,33 +55,24 @@ export class ServicesController {
         return this.servicesService.deleteService(id, req.user.username);
     }
 
-    @Post('/upload-services')
-    @UseInterceptors(FileInterceptor('file', {
-        storage: diskStorage({
-            filename: (req, file, cb) => {
-                const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('');
-                return cb(null, `${randomName}${extname(file.originalname)}`);
-            },
-        }),
-    }))
-    uploadServices(
-        @UploadedFile() file,
-        @Body() uploadDto: ServicesUploadRateDto,
-    ) {
-        return this.servicesService.doUploadServices(uploadDto, file);
-    }
+    // @Post('/upload-services')
+    // @UseInterceptors(FileInterceptor('file', {
+    //     storage: diskStorage({
+    //         filename: (req, file, cb) => {
+    //             const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('');
+    //             return cb(null, `${randomName}${extname(file.originalname)}`);
+    //         },
+    //     }),
+    // }))
+    // uploadServices(
+    //     @UploadedFile() file,
+    //     @Body() uploadDto: ServicesUploadRateDto,
+    //     @Request() req,
+    // ) {
+    //     return this.servicesService.doUploadServices(uploadDto, file, req.user.username);
+    // }
 
-    @Get('download-services')
-    @Header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    @Header('Content-Disposition', 'attachment; filename=services.csv')
-    async downloadServices(
-        @Res() res) {
-        const message = await this.servicesService.downloadServices();
-        if (message === 'Completed') {
-            res.sendFile(join(__dirname, '../../../../') + '/services.csv');
-        }
-    }
-
+    // categories
     @Get('/categories')
     getCategories(): Promise<ServiceCategory[]> {
         return this.servicesService.getServicesCategory();
@@ -125,7 +91,7 @@ export class ServicesController {
         return this.servicesService.createServiceCategory(serviceCategoryDto);
     }
 
-    @Patch('categories/:id/update')
+    @Patch('/categories/:id')
     @UsePipes(ValidationPipe)
     updateCategory(
         @Param('id') id: number,

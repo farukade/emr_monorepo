@@ -2,34 +2,36 @@ import { CustomBaseEntity } from '../../../../common/entities/custom-base.entity
 import { Entity, ManyToOne, Column, JoinColumn, OneToMany, OneToOne } from 'typeorm';
 import { Patient } from '../../entities/patient.entity';
 import { Room } from '../../../settings/entities/room.entity';
-import { StaffDetails } from '../../../hr/staff/entities/staff_details.entity';
 import { AdmissionClinicalTask } from './admission-clinical-task.entity';
 import { AdmissionCareGiver } from './admission-care-giver.entity';
 import { Nicu } from '../../nicu/entities/nicu.entity';
+import { StaffDetails } from '../../../hr/staff/entities/staff_details.entity';
 
-@Entity({ name: 'admissions'})
+@Entity({ name: 'admissions' })
 export class Admission extends CustomBaseEntity {
     @ManyToOne(() => Patient)
+    @JoinColumn({ name: 'patient_id' })
     patient: Patient;
 
-    @Column()
+    @Column({ nullable: true, name: 'health_state' })
     healthState: string;
 
-    @Column({})
-    riskToFall: boolean = false;
+    @Column({ default: false, name: 'risk_to_fall' })
+    riskToFall: boolean;
 
-    @ManyToOne(() => Room)
+    @ManyToOne(() => Room, { nullable: true })
+    @JoinColumn({ name: 'room_id' })
     room: Room;
+
+    @Column({ nullable: true, name: 'room_assigned_at' })
+    roomAssignedAt: string;
+
+    @ManyToOne(() => StaffDetails, { nullable: true })
+    @JoinColumn({ name: 'room_assigned_by' })
+    roomAssignedBy: StaffDetails;
 
     @Column()
     reason: string;
-
-    @Column()
-    anticipatedDischargeDate: string;
-
-    @ManyToOne(() => StaffDetails)
-    @JoinColumn({name: 'staff_id'})
-    careGiver: StaffDetails;
 
     @OneToMany(() => AdmissionClinicalTask, tasks => tasks.admission)
     tasks: AdmissionClinicalTask;
@@ -39,8 +41,18 @@ export class Admission extends CustomBaseEntity {
     nicu: Nicu;
 
     @OneToMany(() => AdmissionCareGiver, givers => givers.admission)
-    care_givers: AdmissionCareGiver;
+    careGivers: AdmissionCareGiver;
 
-    @Column({ type: 'smallint', default: 0})
+    @Column({ type: 'smallint', default: 0 })
     status: number;
+
+    @Column({ nullable: true, name: 'date_discharged' })
+    dateDischarged: string;
+
+    @ManyToOne(() => StaffDetails, { nullable: true })
+    @JoinColumn({ name: 'discharged_by' })
+    dischargedBy: StaffDetails;
+
+    @Column({ nullable: true, name: 'discharge_note' })
+    dischargeNote: string;
 }

@@ -1,38 +1,28 @@
-import {
-    Controller,
-    Post,
-    Body,
-    Patch,
-    Param,
-    Get,
-    Delete,
-    UsePipes,
-    ValidationPipe,
-    Query,
-    Request,
-    UseInterceptors, UploadedFile, UseGuards,
+import { Controller, Post, Body, Patch, Param, Get, Delete, UsePipes, ValidationPipe, Query, Request, UseInterceptors, UploadedFile, UseGuards,
 } from '@nestjs/common';
 import { StaffDto } from './dto/staff.dto';
 import { StaffDetails } from './entities/staff_details.entity';
 import { StaffService } from './staff.service';
-import {FileInterceptor} from '@nestjs/platform-express';
-import { extname, join } from 'path';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { extname } from 'path';
 import { diskStorage } from 'multer';
 import { AuthGuard } from '@nestjs/passport';
+import { Pagination } from '../../../common/paginate/paginate.interface';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('hr/staffs')
 export class StaffController {
-    constructor( private staffService: StaffService) {}
-
-    @Get()
-    listStaffs() {
-        return this.staffService.getStaffs();
+    constructor(private staffService: StaffService) {
     }
 
-    @Get('all-staffs')
-    listAllStaffs() {
-        return this.staffService.getAllStaffs();
+    @Get()
+    listStaffs(
+        @Query() urlParams,
+        @Request() request,
+    ): Promise<Pagination> {
+        const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
+        const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
+        return this.staffService.getStaffs({ page, limit }, urlParams);
     }
 
     @Get('find')
@@ -82,7 +72,7 @@ export class StaffController {
         @Param('id') id: string,
         @Body() staffDto: StaffDto,
         @UploadedFile() pic,
-    ): Promise <any> {
+    ): Promise<any> {
         return this.staffService.updateStaffDetails(id, staffDto, pic);
     }
 

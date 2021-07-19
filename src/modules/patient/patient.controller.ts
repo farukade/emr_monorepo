@@ -49,7 +49,7 @@ export class PatientController {
             },
         }),
     }))
-    saveNewPatientCall(
+    saveNewPatient(
         @Body() patientDto: PatientDto,
         @UploadedFile() pic,
         @Request() req,

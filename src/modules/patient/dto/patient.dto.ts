@@ -59,5 +59,5 @@ export class PatientDto {
 
     admitTo: string;
 
-    folderNumber: string;
+    legacyId: string;
 }

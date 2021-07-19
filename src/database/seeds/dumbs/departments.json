@@ -3,8 +3,7 @@
   {"name": "IVF"},
   {"name": "Paediatrics"},
   {"name": "Obstetrics & Gynaecology"},
-  {"name": "Admin"},
-  {"name": "Account"},
+  {"name": "Accounts"},
   {"name": "Nursing" },
   {"name": "Pharmacy" },
   {"name": "Laboratory"},
@@ -20,5 +19,6 @@
   {"name": "Logistics"},
   {"name": "Security"},
   {"name": "Human Resources"},
-  {"name": "Records"}
+  {"name": "Records"},
+  {"name": "Store"}
 ]

@@ -2,16 +2,16 @@ import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 import { Entity, Column, OneToOne, JoinColumn, OneToMany, ManyToOne } from 'typeorm';
 import { PatientNOK } from './patient-next-of-kin.entity';
 import { Appointment } from '../../frontdesk/appointment/appointment.entity';
-import { Hmo } from '../../hmo/entities/hmo.entity';
 import { Transactions } from '../../finance/transactions/transaction.entity';
 import { Immunization } from '../immunization/entities/immunization.entity';
 import { Nicu } from '../nicu/entities/nicu.entity';
+import { HmoScheme } from '../../hmo/entities/hmo_scheme.entity';
 
 @Entity({ name: 'patients' })
 export class Patient extends CustomBaseEntity {
 
-    @Column({ type: 'varchar', nullable: true })
-    folderNumber: string;
+    @Column({ type: 'varchar', nullable: true, name: 'legacy_patient_id' })
+    legacyPatientId: string;
 
     @Column({ type: 'varchar' })
     surname: string;
@@ -22,7 +22,7 @@ export class Patient extends CustomBaseEntity {
     @Column({ type: 'varchar' })
     other_names: string;
 
-    @Column({ type: 'varchar' })
+    @Column({ type: 'varchar', nullable: true })
     date_of_birth: string;
 
     @Column({ type: 'varchar', nullable: true })
@@ -34,7 +34,7 @@ export class Patient extends CustomBaseEntity {
     @Column({ type: 'varchar', nullable: true })
     email: string;
 
-    @Column({ type: 'varchar' })
+    @Column({ type: 'varchar', nullable: true, name: 'phone_number' })
     phoneNumber: string;
 
     @Column({ default: false })
@@ -52,15 +52,37 @@ export class Patient extends CustomBaseEntity {
     @Column({ type: 'varchar', nullable: true })
     referredBy: string;
 
-    @OneToOne(type => PatientNOK, { cascade: true, nullable: true })
-    @JoinColumn()
-    nextOfKin?: PatientNOK;
+    @OneToOne(type => PatientNOK, { nullable: true })
+    @JoinColumn({ name: 'next_of_kin_id' })
+    nextOfKin: PatientNOK;
 
-    @Column({ nullable: true })
+    @Column({ nullable: true, name: 'last_appointment_date' })
     lastAppointmentDate: string;
 
-    @Column({ nullable: true, default: 0 })
+    @Column({ nullable: true, default: 0, name: 'number_of_visits' })
     noOfVisits: number;
+
+    @ManyToOne(type => HmoScheme, { nullable: true })
+    @JoinColumn({ name: 'hmo_scheme_id' })
+    hmo: HmoScheme;
+
+    @Column({ default: false, name: 'is_admitted' })
+    isAdmitted: boolean;
+
+    @Column({ default: false, name: 'is_staff' })
+    isStaff: boolean;
+
+    @Column({ type: 'float8', default: 0, name: 'credit_limit' })
+    creditLimit: number;
+
+    @Column({ nullable: true, name: 'credit_limit_expiry_date' })
+    creditLimitExpiryDate: string;
+
+    @Column({ nullable: true, name: 'blood_group' })
+    bloodGroup: string;
+
+    @Column({ nullable: true, name: 'blood_type' })
+    bloodType: string;
 
     @OneToMany(type => Appointment, appointment => appointment.patient)
     appointments: Appointment[];
@@ -73,20 +95,4 @@ export class Patient extends CustomBaseEntity {
 
     @OneToMany(type => Nicu, nicu => nicu.patient)
     nicu: Nicu[];
-
-    @ManyToOne(() => Hmo)
-    @JoinColumn({ name: 'hmo_id' })
-    hmo: Hmo;
-
-    @Column({ default: false })
-    isAdmitted: boolean;
-
-    @Column({ default: false })
-    isStaff: boolean;
-
-    @Column({ type: 'float8', default: 0, name: 'credit_limit' })
-    creditLimit: number;
-
-    @Column({ nullable: true, name: 'credit_limit_expiry_date' })
-    creditLimitExpiryDate: string;
 }

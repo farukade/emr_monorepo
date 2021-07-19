@@ -8,7 +8,6 @@ import { Brackets, Connection, getConnection } from 'typeorm';
 import { PatientVitalRepository } from './repositories/patient_vitals.repository';
 import { PatientVital } from './entities/patient_vitals.entity';
 import * as moment from 'moment';
-import { HmoRepository } from '../hmo/hmo.repository';
 import { VoucherRepository } from '../finance/vouchers/voucher.repository';
 import { Voucher } from '../finance/vouchers/voucher.entity';
 import { PatientDocument } from './entities/patient_documents.entity';
@@ -30,10 +29,13 @@ import { PatientRequestItemRepository } from './repositories/patient_request_ite
 import { PatientDiagnosisRepository } from './repositories/patient_diagnosis.repository';
 import { PatientDiagnosis } from './entities/patient_diagnosis.entity';
 import { MailService } from '../mail/mail.service';
-import { Service } from '../settings/entities/service.entity';
 import { Transactions } from '../finance/transactions/transaction.entity';
 import { PatientAlert } from './entities/patient_alert.entity';
 import { PatientAlertRepository } from './repositories/patient_alert.repository';
+import { HmoSchemeRepository } from '../hmo/repositories/hmo_scheme.repository';
+import { ServiceCategoryRepository } from '../settings/services/repositories/service_category.repository';
+import { ServiceRepository } from '../settings/services/repositories/service.repository';
+import { ServiceCostRepository } from '../settings/services/repositories/service_cost.repository';
 
 @Injectable()
 export class PatientService {
@@ -45,8 +47,8 @@ export class PatientService {
         private patientNOKRepository: PatientNOKRepository,
         @InjectRepository(PatientVitalRepository)
         private patientVitalRepository: PatientVitalRepository,
-        @InjectRepository(HmoRepository)
-        private hmoRepository: HmoRepository,
+        @InjectRepository(HmoSchemeRepository)
+        private hmoSchemeRepository: HmoSchemeRepository,
         @InjectRepository(VoucherRepository)
         private voucherRepository: VoucherRepository,
         @InjectRepository(PatientDocumentRepository)
@@ -73,6 +75,12 @@ export class PatientService {
         private patientDiagnosisRepository: PatientDiagnosisRepository,
         @InjectRepository(PatientAlertRepository)
         private patientAlertRepository: PatientAlertRepository,
+        @InjectRepository(ServiceCategoryRepository)
+        private serviceCategoryRepository: ServiceCategoryRepository,
+        @InjectRepository(ServiceRepository)
+        private serviceRepository: ServiceRepository,
+        @InjectRepository(ServiceCostRepository)
+        private serviceCostRepository: ServiceCostRepository,
     ) {
     }
 
@@ -86,7 +94,7 @@ export class PatientService {
             query.andWhere(new Brackets(qb => {
                 qb.where('LOWER(p.surname) Like :surname', { surname: `%${q.toLowerCase()}%` })
                     .orWhere('LOWER(p.other_names) Like :other_names', { other_names: `%${q.toLowerCase()}%` })
-                    .orWhere('p.folderNumber Like :folderNumber', { folderNumber: `%${q}%` })
+                    .orWhere('p.legacy_patient_id Like :id', { legacy_patient_id: `%${q}%` })
                     .orWhere('CAST(p.id AS text) = :id', { id: `%${q}%` });
             }));
         }
@@ -114,8 +122,8 @@ export class PatientService {
         for (const patient of patients) {
             patient.immunization = await this.immunizationRepository.find({ where: { patient } });
 
-            if (patient.hmo_id) {
-                patient.hmo = await this.hmoRepository.findOne(patient.hmo_id);
+            if (patient.hmo_scheme_id) {
+                patient.hmo = await this.hmoSchemeRepository.findOne(patient.hmo_scheme_id);
             }
 
             if (patient.nextOfKin_id) {
@@ -147,7 +155,8 @@ export class PatientService {
             .andWhere(new Brackets(qb => {
                 qb.where('LOWER(p.surname) Like :surname', { surname: `%${param.toLowerCase()}%` })
                     .orWhere('LOWER(p.other_names) Like :other_names', { other_names: `%${param.toLowerCase()}%` })
-                    .orWhere('p.folderNumber Like :folderNumber', { folderNumber: `%${param}%` })
+                    .orWhere('p.legacy_patient_id Like :legacy_id', { legacy_id: `%${param}%` })
+                    .orWhere('p.phone_number Like :phone_number', { phone_number: `%${param}%` })
                     .orWhere('CAST(p.id AS text) LIKE :id', { id: `%${param}%` });
             }))
             .getRawMany();
@@ -157,8 +166,8 @@ export class PatientService {
                 where: { patient },
             });
 
-            if (patient.hmo_id) {
-                patient.hmo = await this.hmoRepository.findOne(patient.hmo_id);
+            if (patient.hmo_scheme_id) {
+                patient.hmo = await this.hmoSchemeRepository.findOne(patient.hmo_scheme_id);
             }
 
             if (patient.nextOfKin_id) {
@@ -180,9 +189,19 @@ export class PatientService {
 
     async saveNewPatient(patientDto: PatientDto, createdBy: string, pic): Promise<any> {
         try {
-            const { hmoId } = patientDto;
+            const { hmoId, email, phoneNumber } = patientDto;
 
-            const hmo = await this.hmoRepository.findOne(hmoId);
+            const emailFound = await this.patientRepository.findOne({ where: { email } });
+            if (emailFound) {
+                return { success: false, message: 'email already exists, please use another email address' };
+            }
+
+            const phoneFound = await this.patientRepository.findOne({ where: { phoneNumber } });
+            if (phoneFound) {
+                return { success: false, message: 'phone number already exists, please use another phone number.' };
+            }
+
+            const hmo = await this.hmoSchemeRepository.findOne(hmoId);
             const nok = await this.patientNOKRepository.saveNOK(patientDto);
 
             const patient = await this.patientRepository.savePatient(patientDto, nok, hmo, createdBy, pic);
@@ -190,15 +209,17 @@ export class PatientService {
             const splits = patient.other_names.split(' ');
             const message = `Dear ${patient.surname} ${splits.length > 0 ? splits[0] : patient.other_names}, welcome to the DEDA Family. Your ID/Folder number is ${formatPID(patient.id)}. Kindly save the number and provide it at all your appointment visits. Thank you.`;
 
-            const service = await getConnection().getRepository(Service).findOne(1);
+            const category = await this.serviceCategoryRepository.findOne({ where: { name: 'registration' } });
+            const service = await this.serviceRepository.findOne({ where: { category } });
+            const serviceCost = await this.serviceCostRepository.findOne({ where: { item: service, hmo } });
 
             const data = {
                 patient,
-                amount: parseFloat(service.hmoTarrif),
+                amount: serviceCost.tariff,
                 description: 'Payment for Patient Registration',
                 payment_type: (hmo.name !== 'Private') ? 'HMO' : '',
-                transaction_type: 'registration',
-                transaction_details: service,
+                bill_source: category.name,
+                service: serviceCost,
                 createdBy,
                 status: 0,
                 hmo,
@@ -227,6 +248,7 @@ export class PatientService {
 
             return { success: true, patient: pat };
         } catch (err) {
+            console.log(err);
             return { success: false, message: err.message };
         }
     }
@@ -234,11 +256,10 @@ export class PatientService {
     async saveNewOpdPatient(patientDto: OpdPatientDto, createdBy: string, pic): Promise<any> {
         try {
             const patient = new Patient();
-            patient.folderNumber = patientDto.folderNumber;
             patient.surname = patientDto.surname.toLocaleLowerCase();
             patient.other_names = patientDto.other_names.toLocaleLowerCase();
             patient.address = patientDto.address.toLocaleLowerCase();
-            patient.date_of_birth = patientDto.date_of_birth;
+            patient.date_of_birth = moment(patientDto.date_of_birth).format('YYYY-MM-DD');
             patient.gender = patientDto.gender;
             patient.email = patientDto.email;
             patient.phoneNumber = patientDto.phoneNumber;
@@ -284,7 +305,7 @@ export class PatientService {
             patient.nextOfKin.phoneNumber = patientDto.nok_phoneNumber;
             patient.nextOfKin.maritalStatus = patientDto.nok_maritalStatus;
             patient.nextOfKin.ethnicity = patientDto.nok_ethnicity;
-            patient.hmo = await this.hmoRepository.findOne(patientDto.hmoId);
+            patient.hmo = await this.hmoSchemeRepository.findOne(patientDto.hmoId);
             if (pic) {
                 patient.profile_pic = pic.filename;
             }
@@ -492,7 +513,7 @@ export class PatientService {
 
         let result = [];
         for (const transaction of transactions) {
-            transaction.hmo = await this.hmoRepository.findOne(transaction.hmo_id);
+            transaction.hmo = await this.hmoSchemeRepository.findOne(transaction.hmo_scheme_id);
 
             transaction.staff = await getStaff(transaction.lastChangedBy);
 

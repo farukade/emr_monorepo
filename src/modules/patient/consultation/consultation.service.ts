@@ -12,7 +12,6 @@ import * as moment from 'moment';
 import { PatientAllergenRepository } from '../repositories/patient_allergen.repository';
 import { PatientNote } from '../entities/patient_note.entity';
 import { PatientAllergen } from '../entities/patient_allergens.entity';
-import { StockRepository } from '../../inventory/stock.repository';
 import { PatientDiagnosis } from '../entities/patient_diagnosis.entity';
 import { PatientPhysicalExam } from '../entities/patient_physical_exam.entity';
 import { PatientReviewOfSystem } from '../entities/patient_review_of_system.entity';
@@ -27,6 +26,7 @@ import { Connection, getRepository } from 'typeorm';
 import { getStaff } from '../../../common/utils/utils';
 import { PatientNoteRepository } from '../repositories/patient_note.repository';
 import { PatientDiagnosisRepository } from '../repositories/patient_diagnosis.repository';
+import { DrugGenericRepository } from '../../inventory/pharmacy/generic/generic.repository';
 
 @Injectable()
 export class ConsultationService {
@@ -43,8 +43,8 @@ export class ConsultationService {
         private patientRepository: PatientRepository,
         @InjectRepository(AppointmentRepository)
         private appointmentRepository: AppointmentRepository,
-        @InjectRepository(StockRepository)
-        private stockRepository: StockRepository,
+        @InjectRepository(DrugGenericRepository)
+        private drugGenericRepository: DrugGenericRepository,
         @InjectRepository(QueueSystemRepository)
         private queueSystemRepository: QueueSystemRepository,
         @InjectRepository(ConsumableRepository)
@@ -128,7 +128,7 @@ export class ConsultationService {
 
                 item.appointment = await this.appointmentRepository.findOne({
                     where: { id: item.appointment_id },
-                    relations: ['whomToSee', 'serviceType', 'consultingRoom', 'department'],
+                    relations: ['whomToSee', 'consultingRoom', 'department'],
                 });
 
                 result = [...result, item];
@@ -157,7 +157,7 @@ export class ConsultationService {
 
             const appointment = await this.appointmentRepository.findOne({
                 where: { id: appointment_id },
-                relations: ['patient', 'whomToSee', 'serviceType', 'consultingRoom', 'transaction', 'department'],
+                relations: ['patient', 'whomToSee', 'consultingRoom', 'transaction', 'department'],
             });
 
             const encounter = new Encounter();
@@ -211,11 +211,11 @@ export class ConsultationService {
             }
 
             for (const allergen of param.allergies) {
-                const drug = allergen.drug ? await this.stockRepository.findOne(allergen.drug) : null;
+                const generic = allergen.generic ? await this.drugGenericRepository.findOne(allergen.generic) : null;
                 const patientAllergen = new PatientAllergen();
                 patientAllergen.category = allergen.category.value;
                 patientAllergen.allergy = allergen.allergen;
-                patientAllergen.drug = drug;
+                patientAllergen.drugGeneric = generic;
                 patientAllergen.severity = allergen.severity.value;
                 patientAllergen.reaction = allergen.reaction;
                 patientAllergen.patient = patient;
@@ -359,7 +359,7 @@ export class ConsultationService {
                 newAppointment.whomToSee = appointment.whomToSee;
                 newAppointment.appointment_date = appointmentDate;
                 newAppointment.serviceCategory = appointment.serviceCategory;
-                newAppointment.serviceType = appointment.serviceType;
+                newAppointment.service = appointment.service;
                 newAppointment.amountToPay = '0.00';
                 newAppointment.description = nextAppointment.description;
                 newAppointment.department = appointment.department;

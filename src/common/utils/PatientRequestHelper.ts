@@ -7,7 +7,8 @@ import { PatientRequestItem } from '../../modules/patient/entities/patient_reque
 import { LabTest } from '../../modules/settings/entities/lab_test.entity';
 import { Service } from '../../modules/settings/entities/service.entity';
 import { PatientDiagnosis } from '../../modules/patient/entities/patient_diagnosis.entity';
-import { Stock } from '../../modules/inventory/entities/stock.entity';
+import { DrugBatch } from '../../modules/inventory/entities/batches.entity';
+import { Drug } from '../../modules/inventory/entities/drug.entity';
 
 export class PatientRequestHelper {
     constructor(private patientRequestRepo: PatientRequestRepository) {
@@ -90,7 +91,8 @@ export class PatientRequestHelper {
             } else {
                 let regimenItems = [];
                 for (const item of items) {
-                    const drug = await getConnection().getRepository(Stock).findOne(item.drug_id);
+                    const drugBatch = await getConnection().getRepository(DrugBatch).findOne(item.drug_batch_id);
+                    const drug = await getConnection().getRepository(Drug).findOne(drugBatch.drug.id);
 
                     let refills = 0;
                     try {
@@ -101,7 +103,9 @@ export class PatientRequestHelper {
 
                     const requestItem = {
                         request: regimen,
-                        drug,
+                        drugBatch,
+                        drug: drugBatch.drug,
+                        drugGeneric: drug.generic,
                         doseQuantity: item.dose_quantity,
                         refillable: refills > 0,
                         refills,

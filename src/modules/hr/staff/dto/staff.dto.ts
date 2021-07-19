@@ -59,7 +59,7 @@ export class StaffDto {
 
     username: string;
 
-    password: string;
+    employee_number: string;
 
     email: string;
 

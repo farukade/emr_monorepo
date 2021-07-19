@@ -17,4 +17,7 @@ export class PerformanceAppraisalPeriod extends CustomBaseEntity {
     @Column()
     endDate: string;
 
+    @Column({ type: 'boolean', default: true })
+    isActive: boolean;
+
 }

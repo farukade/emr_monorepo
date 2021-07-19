@@ -3,9 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { JWTHelper } from '../../common/utils/JWTHelper';
 import { LoginUserDto } from './dto/login-user.dto';
-import { User } from '../hr/entities/user.entity';
+import { User } from './entities/user.entity';
 import { AuthRepository } from './auth.repository';
 import { StaffRepository } from '../hr/staff/staff.repository';
+import * as moment from 'moment';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -26,7 +28,7 @@ export class AuthService {
     async getUser(username: string): Promise<User> {
         const user = await this.getUserByUsername(username);
 
-        const staff = await this.staffRepository.findOne({ where: { user }, relations: ['department', 'room'] });
+        const staff = await this.staffRepository.findOne({ where: { user }, relations: ['department', 'room', 'specialization'] });
         const newUser = JSON.parse(JSON.stringify(user));
         newUser.details = staff;
         newUser.permissions = await this.setPermissions(newUser.role.permissions);
@@ -45,12 +47,12 @@ export class AuthService {
         if (user) {
             const isSame = await this.compareHash(loginUserDto.password, user.password);
             if (isSame) {
-                user.lastLogin = new Date().toString();
+                user.lastLogin = moment().format('YYYY-MM-DD HH:mm:ss');
                 await user.save();
                 const { expires_in, token } = await JWTHelper.createToken(
                     { username: user.username, userId: user.id },
                 );
-                const staff = await this.staffRepository.findOne({ where: { user }, relations: ['department', 'room'] });
+                const staff = await this.staffRepository.findOne({ where: { user }, relations: ['department', 'room', 'specialization'] });
                 if (staff && !staff.isActive) {
                     // tslint:disable-next-line:no-shadowed-variable
                     const error = 'This account is disabled. Please Contact ICT.';
@@ -68,6 +70,57 @@ export class AuthService {
             }
         }
         const error = 'Invalid Username or password';
+        throw new BadRequestException(error);
+    }
+
+    async changePassword(id: number, changePswdDto: ChangePasswordDto) {
+        const user = await this.authRepository.findOne(id, { relations: ['role', 'role.permissions'] });
+
+        if (changePswdDto.repassword !== changePswdDto.password) {
+            const pswdError = 'Passwords are not the same';
+            throw new BadRequestException(pswdError);
+        }
+
+        if (user) {
+            user.password = await this.getHash(changePswdDto.repassword);
+            user.passwordChanged = true;
+            await user.save();
+
+            const { expires_in, token } = await JWTHelper.createToken(
+                { username: user.username, userId: user.id },
+            );
+            const staff = await this.staffRepository.findOne({ where: { user }, relations: ['department', 'room', 'specialization'] });
+            if (staff && !staff.isActive) {
+                // tslint:disable-next-line:no-shadowed-variable
+                const error = 'This account is disabled. Please Contact ICT.';
+                throw new BadRequestException(error);
+            }
+
+            const newUser = JSON.parse(JSON.stringify(user));
+            newUser.token = token;
+            newUser.expires_in = expires_in;
+            newUser.details = staff;
+            newUser.permissions = await this.setPermissions(newUser.role.permissions);
+            delete newUser.role.permissions;
+            delete newUser.password;
+            return newUser;
+        }
+
+        const error = 'User not found!';
+        throw new BadRequestException(error);
+    }
+
+    async resetPassword(id: number) {
+        const user = await this.authRepository.findOne(id, { relations: ['role', 'role.permissions'] });
+
+        if (user) {
+            user.password = await this.getHash('password');
+            await user.save();
+
+            return JSON.parse(JSON.stringify(user));
+        }
+
+        const error = 'User not found!';
         throw new BadRequestException(error);
     }
 
@@ -100,15 +153,9 @@ export class AuthService {
         return false;
     }
 
-    generateVeridicationCode() {
-        const min = 10000;
-        const max = 910000;
-        const code = Math.round(Math.random() * (max - min) + min);
-        return code.toString();
-    }
-
     // tslint:disable-next-line:no-empty
-    static validateToken() {}
+    static validateToken() {
+    }
 
     async setPermissions(permissions) {
         const data = [];

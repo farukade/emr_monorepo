@@ -3,13 +3,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { StaffRepository } from './staff.repository';
 import { StaffDto } from './dto/staff.dto';
 import { StaffDetails } from './entities/staff_details.entity';
-import { UserRepository } from '../user.repository';
 import { RoleRepository } from '../../settings/roles-permissions/role.repository';
 import { DepartmentRepository } from '../../settings/departments/department.repository';
 import * as bcrypt from 'bcrypt';
-import {getRepository, Like} from 'typeorm';
-import {Specialization} from '../../settings/entities/specialization.entity';
-import {ConsultingRoom} from '../../settings/entities/consulting-room.entity';
+import { Brackets, getRepository, Like } from 'typeorm';
+import { Specialization } from '../../settings/entities/specialization.entity';
+import { ConsultingRoom } from '../../settings/entities/consulting-room.entity';
+import { Pagination } from '../../../common/paginate/paginate.interface';
+import { PaginationOptionsInterface } from '../../../common/paginate';
+import { AuthRepository } from '../../auth/auth.repository';
 
 @Injectable()
 export class StaffService {
@@ -17,37 +19,46 @@ export class StaffService {
     constructor(
         @InjectRepository(StaffRepository)
         private staffRepository: StaffRepository,
-        @InjectRepository(UserRepository)
-        private userRepository: UserRepository,
+        @InjectRepository(AuthRepository)
+        private authRepository: AuthRepository,
         @InjectRepository(RoleRepository)
         private roleRepository: RoleRepository,
         @InjectRepository(DepartmentRepository)
         private departmentRepository: DepartmentRepository,
-    ) {}
-
-    async getStaffs(): Promise<StaffDetails[]> {
-        const staffs = await this.staffRepository.find({
-            where: {
-                isActive: true,
-            },
-            relations: ['department', 'user', 'user.role', 'specialization']});
-
-        return staffs;
+    ) {
     }
 
-    async getAllStaffs(): Promise<StaffDetails[]> {
-        const staffs = await this.staffRepository.find({relations: ['department', 'user', 'user.role', 'specialization']});
+    async getStaffs(options: PaginationOptionsInterface, params): Promise<Pagination> {
+        const page = options.page - 1;
 
-        return staffs;
+        const [result, total] = await this.staffRepository.findAndCount({
+            relations: ['department', 'user', 'user.role', 'specialization'],
+            take: options.limit,
+            skip: (page * options.limit),
+        });
+
+        return {
+            result,
+            lastPage: Math.ceil(total / options.limit),
+            itemsPerPage: options.limit,
+            totalPages: total,
+            currentPage: options.page,
+        };
     }
 
     async findStaffs(param): Promise<StaffDetails[]> {
         const { q } = param;
-        return this.staffRepository.find({where: [
-            {first_name: Like(`%${q.toLocaleLowerCase()}%`)},
-            {last_name: Like(`%${q.toLocaleLowerCase()}%`)},
-            {emp_code: Like(`%${q}%`)},
-        ]});
+
+        return await this.staffRepository.createQueryBuilder('p')
+            .select('s.*')
+            .andWhere(new Brackets(qb => {
+                qb.where('LOWER(s.first_name) Like :first_name', { first_name: `%${q.toLowerCase()}%` })
+                    .orWhere('LOWER(s.last_name) Like :last_name', { last_name: `%${q.toLowerCase()}%` })
+                    .orWhere('LOWER(s.employee_number) Like :employee_number', { employee_number: `%${q.toLowerCase()}%` })
+                    .orWhere('p.phone_number Like :phone_number', { phone_number: `%${q}%` })
+                    .orWhere('CAST(s.id AS text) LIKE :id', { id: `%${q}%` });
+            }))
+            .getRawMany();
     }
 
     async addNewStaff(staffDto: StaffDto, pic, username): Promise<any> {
@@ -61,9 +72,9 @@ export class StaffService {
             specialization = await getRepository(Specialization).findOne(staffDto.specialization_id);
         }
         // save user
-        const user = await this.userRepository.save({
+        const user = await this.authRepository.save({
             username: staffDto.username.toLocaleLowerCase(),
-            password: await this.getHash(staffDto.password),
+            password: await this.getHash('password'),
             role,
         });
 
@@ -84,7 +95,7 @@ export class StaffService {
                 throw new NotFoundException(`Department not found`);
             }
             // find staff
-            const staff = await this.staffRepository.findOne(id, {relations: ['user', 'user.role']});
+            const staff = await this.staffRepository.findOne(id, { relations: ['user', 'user.role'] });
             if (!staff) {
                 throw new NotFoundException(`Staff with ID '${id}' not found`);
             }
@@ -95,32 +106,28 @@ export class StaffService {
                 specialization = await getRepository(Specialization).findOne(staffDto.specialization_id);
             }
             // update user details
-            const user = await this.userRepository.findOne(staff.user.id);
+            const user = await this.authRepository.findOne(staff.user.id);
             user.role = role;
-            user.username = staffDto.username;
-            if (staffDto.password) {
-                user.password = await this.getHash(staffDto.password);
-            }
             user.save();
 
-            staff.first_name     = staffDto.first_name.toLocaleLowerCase();
-            staff.last_name      = staffDto.last_name.toLocaleLowerCase();
-            staff.other_names    = staffDto.other_names.toLocaleLowerCase();
-            staff.address        = staffDto.address;
-            staff.phone_number   = staffDto.phone_number;
-            staff.email          = staffDto.email;
-            staff.nationality    = staffDto.nationality;
+            staff.first_name = staffDto.first_name.toLocaleLowerCase();
+            staff.last_name = staffDto.last_name.toLocaleLowerCase();
+            staff.other_names = staffDto.other_names.toLocaleLowerCase();
+            staff.address = staffDto.address;
+            staff.phone_number = staffDto.phone_number;
+            staff.email = staffDto.email;
+            staff.nationality = staffDto.nationality;
             staff.state_of_origin = staffDto.state_of_origin;
-            staff.lga            = staffDto.lga;
-            staff.bank_name      = staffDto.bank_name;
+            staff.lga = staffDto.lga;
+            staff.bank_name = staffDto.bank_name;
             staff.account_number = staffDto.account_number;
-            staff.pension_mngr   = staffDto.pension_mngr;
-            staff.gender         = staffDto.gender;
+            staff.pension_mngr = staffDto.pension_mngr;
+            staff.gender = staffDto.gender;
             staff.marital_status = staffDto.marital_status;
             staff.number_of_children = staffDto.number_of_children;
-            staff.religion       = staffDto.religion;
-            staff.date_of_birth  = staffDto.date_of_birth;
-            staff.next_of_kin    = staffDto.next_of_kin;
+            staff.religion = staffDto.religion;
+            staff.date_of_birth = staffDto.date_of_birth;
+            staff.next_of_kin = staffDto.next_of_kin;
             staff.next_of_kin_dob = staffDto.next_of_kin_dob;
             staff.next_of_kin_address = staffDto.next_of_kin_address;
             staff.next_of_kin_relationship = staffDto.next_of_kin_relationship;
@@ -138,9 +145,9 @@ export class StaffService {
             }
             await staff.save();
 
-            return {success: true, staff};
+            return { success: true, staff };
         } catch (err) {
-            return {success: false, message: err.message};
+            return { success: false, message: err.message };
         }
     }
 
@@ -149,9 +156,9 @@ export class StaffService {
             const result = await this.staffRepository.findOne(id);
             result.isActive = false;
             await result.save();
-            return {success: true, result};
+            return { success: true, result };
         } catch (e) {
-            return {success: false, message: e.message };
+            return { success: false, message: e.message };
         }
     }
 
@@ -160,13 +167,13 @@ export class StaffService {
             const result = await this.staffRepository.findOne(id);
             result.isActive = true;
             await result.save();
-            return {success: true, result};
+            return { success: true, result };
         } catch (e) {
-            return {success: false, message: e.message};
+            return { success: false, message: e.message };
         }
     }
 
-    async setConsultingRoom({userId, roomId}) {
+    async setConsultingRoom({ userId, roomId }) {
         try {
             // find room
             const room = await getRepository(ConsultingRoom).findOne(roomId);
@@ -176,9 +183,9 @@ export class StaffService {
                 .set({ room })
                 .where('id = :id', { id: userId })
                 .execute();
-            return {success: true, room};
+            return { success: true, room };
         } catch (e) {
-            return {success: false, message: e.message};
+            return { success: false, message: e.message };
         }
     }
 
@@ -187,9 +194,9 @@ export class StaffService {
             const staff = await this.staffRepository.findOne(staffId);
             staff.room = null;
             await staff.save();
-            return {success: true};
+            return { success: true };
         } catch (e) {
-            return {success: false, message: e.message};
+            return { success: false, message: e.message };
         }
     }
 
