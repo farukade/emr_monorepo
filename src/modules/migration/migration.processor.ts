@@ -92,27 +92,24 @@ export class MigrationProcessor {
 
         try {
             const connection = await mysqlConnect();
-            let count = 0;
 
-            let [rows] = await connection.execute('SELECT * FROM `diagnoses_full`');
+            let [rows] = await connection.execute('SELECT * FROM `diagnoses`');
             for (const item of rows) {
                 const diagnosisFind = await this.diagnosisRepository.findOne({ where: { code: item.code } });
                 if (!diagnosisFind) {
-                    count++;
                     await this.diagnosisRepository.save({ ...item, description: item.case });
                 }
             }
 
-            [rows] = await connection.execute('SELECT * FROM `diagnoses`');
+            [rows] = await connection.execute('SELECT * FROM `diagnoses_full`');
             for (const item of rows) {
                 const diagnosisFind = await this.diagnosisRepository.findOne({ where: { code: item.code } });
                 if (!diagnosisFind) {
-                    count++;
                     await this.diagnosisRepository.save({ ...item, description: item.case });
                 }
             }
             await connection.end();
-            return { count };
+            return true;
         } catch (error) {
             console.log(error);
             this.logger.error('migration failed', error.stack);

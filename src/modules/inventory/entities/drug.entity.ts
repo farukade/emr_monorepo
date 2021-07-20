@@ -11,7 +11,7 @@ export class Drug extends CustomBaseEntity {
     @Column({ type: 'varchar', length: 300 })
     code: string;
 
-    @ManyToOne(type => DrugGeneric, { eager: true })
+    @ManyToOne(type => DrugGeneric, item => item.drugs, { eager: true })
     @JoinColumn({ name: 'drug_generic_id' })
     generic: DrugGeneric;
 

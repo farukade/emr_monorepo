@@ -1,6 +1,8 @@
-import { Column, Entity, ManyToOne, JoinColumn } from 'typeorm';
+import { Column, Entity, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 import { DrugCategory } from './drug_category.entity';
+import { Transactions } from '../../finance/transactions/transaction.entity';
+import { Drug } from './drug.entity';
 
 @Entity({ name: 'drug_generics' })
 export class DrugGeneric extends CustomBaseEntity {
@@ -19,4 +21,7 @@ export class DrugGeneric extends CustomBaseEntity {
 
     @Column({ default: 0, name: 'low_stock_level' })
     lowStockLevel: number;
+
+    @OneToMany(type => Drug, item => item.generic)
+    drugs: Drug[];
 }
