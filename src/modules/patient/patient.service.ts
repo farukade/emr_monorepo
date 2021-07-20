@@ -137,7 +137,7 @@ export class PatientService {
                 .andWhere('q.payment_type != :type', { type: 'HMO' })
                 .getRawMany();
 
-            patient.outstanding = patient.creditLimit > 0 ? 0 : transactions.reduce((totalAmount, item) => totalAmount + item.balance, 0);
+            patient.outstanding = Math.abs(patient.creditLimit > 0 ? 0 : transactions.reduce((totalAmount, item) => totalAmount + item.balance, 0));
         }
 
         return {
@@ -189,7 +189,7 @@ export class PatientService {
                 .andWhere('q.payment_type != :type', { type: 'HMO' })
                 .getRawMany();
 
-            patient.outstanding = patient.creditLimit > 0 ? 0 : transactions.reduce((total, item) => total + item.balance, 0);
+            patient.outstanding = Math.abs(patient.creditLimit > 0 ? 0 : transactions.reduce((total, item) => total + item.balance, 0));
         }
 
         return patients;
@@ -262,7 +262,7 @@ export class PatientService {
 
             const transactions = await this.transactionsRepository.find({ where: { patient, status: 0 } });
 
-            const outstanding = patient.creditLimit > 0 ? 0 : transactions.reduce((total, item) => total + item.balance, 0);
+            const outstanding = Math.abs(patient.creditLimit > 0 ? 0 : transactions.reduce((total, item) => total + item.balance, 0));
             const pat = { ...patient, outstanding };
 
             return { success: true, patient: pat };
@@ -557,7 +557,7 @@ export class PatientService {
             totalPages: total,
             currentPage: options.page,
             total_amount: totalAmount,
-            outstanding_amount: outstanding,
+            outstanding_amount: Math.abs(outstanding),
         };
     }
 
