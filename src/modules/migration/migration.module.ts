@@ -19,6 +19,11 @@ import { DrugGenericRepository } from '../inventory/pharmacy/generic/generic.rep
 import { ServiceCostRepository } from '../settings/services/repositories/service_cost.repository';
 import { DrugBatchRepository } from '../inventory/pharmacy/batches/batches.repository';
 import { DrugRepository } from '../inventory/pharmacy/drug/drug.repository';
+import { LabTestCategoryRepository } from '../settings/lab/repositories/lab.category.repository';
+import { SpecimenRepository } from '../settings/lab/repositories/specimen.repository';
+import { LabTestRepository } from '../settings/lab/repositories/lab.test.repository';
+import { GroupRepository } from '../settings/lab/repositories/group.repository';
+import { GroupTestRepository } from '../settings/lab/repositories/group_tests.repository';
 
 @Module({
     imports: [
@@ -47,6 +52,11 @@ import { DrugRepository } from '../inventory/pharmacy/drug/drug.repository';
             DrugCategoryRepository,
             DrugGenericRepository,
             DrugBatchRepository,
+            LabTestCategoryRepository,
+            SpecimenRepository,
+            LabTestRepository,
+            GroupRepository,
+            GroupTestRepository,
         ]),
     ],
     providers: [MigrationService, MigrationProcessor],

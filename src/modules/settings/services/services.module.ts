@@ -8,6 +8,7 @@ import { HmoOwnerRepository } from '../../hmo/repositories/hmo.repository';
 import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repository';
 import { LabTestCategoryRepository } from '../lab/repositories/lab.category.repository';
 import { LabTestRepository } from '../lab/repositories/lab.test.repository';
+import { ServiceCostRepository } from './repositories/service_cost.repository';
 
 @Module({
     imports: [
@@ -18,6 +19,7 @@ import { LabTestRepository } from '../lab/repositories/lab.test.repository';
             LabTestRepository,
             HmoOwnerRepository,
             HmoSchemeRepository,
+            ServiceCostRepository,
         ]),
     ],
     providers: [ServicesService],

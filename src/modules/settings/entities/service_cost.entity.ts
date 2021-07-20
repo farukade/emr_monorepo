@@ -6,6 +6,9 @@ import { Service } from './service.entity';
 @Entity({ name: 'service_costs' })
 export class ServiceCost extends CustomBaseEntity {
 
+    @Column({ type: 'varchar', nullable: true })
+    code: string;
+
     @ManyToOne(type => Service, { eager: true })
     @JoinColumn({ name: 'service_id' })
     item: Service;

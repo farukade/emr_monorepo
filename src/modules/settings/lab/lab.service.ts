@@ -22,6 +22,7 @@ import { SpecimenRepository } from './repositories/specimen.repository';
 import { GroupRepository } from './repositories/group.repository';
 import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repository';
 import { GroupTestRepository } from './repositories/group_tests.repository';
+import { ServiceCostRepository } from '../services/repositories/service_cost.repository';
 
 @Injectable()
 export class LabService {
@@ -40,6 +41,8 @@ export class LabService {
         private hmoSchemeRepository: HmoSchemeRepository,
         @InjectRepository(GroupTestRepository)
         private groupTestRepository: GroupTestRepository,
+        @InjectRepository(ServiceCostRepository)
+        private serviceCostRepository: ServiceCostRepository,
     ) {
     }
 
@@ -58,24 +61,28 @@ export class LabService {
         let total = 0;
         if (q && q.length > 0) {
             [result, total] = await this.labTestRepository.findAndCount({
-                where: { name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`), hmo },
-                relations: ['category', 'hmo'],
+                where: { name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`) },
                 order: { name: 'ASC' },
                 take: options.limit,
                 skip: (page * options.limit),
             });
         } else {
             [result, total] = await this.labTestRepository.findAndCount({
-                where: { hmo },
-                relations: ['category', 'hmo'],
                 order: { name: 'ASC' },
                 take: options.limit,
                 skip: (page * options.limit),
             });
         }
 
+        let rs = [];
+        for (const item of result) {
+            item.service = await this.serviceCostRepository.findOne({ where: { code: item.code, hmo } });
+
+            rs = [...rs, item];
+        }
+
         return {
-            result,
+            result: rs,
             lastPage: Math.ceil(total / options.limit),
             itemsPerPage: options.limit,
             totalPages: total,
@@ -84,51 +91,45 @@ export class LabService {
     }
 
     async getTestsUnpaginated(params): Promise<any> {
-        const { q, hmo_id } = params;
-        const hmo = await this.hmoSchemeRepository.findOne(hmo_id);
+        const { q } = params;
 
         let result;
         if (q && q.length > 0) {
             result = await this.labTestRepository.find({
-                where: { name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`), hmo },
-                relations: ['category', 'hmo'],
+                where: { name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`) },
                 order: { name: 'ASC' },
             });
         } else {
             result = await this.labTestRepository.find({
-                where: { hmo },
-                relations: ['category', 'hmo'],
                 order: { name: 'ASC' },
             });
         }
 
-        return {success: true, result};
+        return { success: true, result };
     }
 
     async createLabTest(labTestDto: LabTestDto, createdBy: string): Promise<LabTest> {
-        const { lab_category_id, hmo_id } = labTestDto;
+        const { lab_category_id } = labTestDto;
         const category = await this.labTestCategoryRepo.findOne(lab_category_id);
-        const hmo = await this.hmoSchemeRepository.findOne(hmo_id);
 
-        return this.labTestRepository.saveLabTest(labTestDto, category, createdBy, hmo);
+        return this.labTestRepository.saveLabTest(labTestDto, category, createdBy);
     }
 
     async updateLabTest(id: string, labTestDto: LabTestDto, updatedBy: string): Promise<LabTest> {
-        const { lab_category_id, hmo_id } = labTestDto;
+        const { lab_category_id } = labTestDto;
 
         const category = await this.labTestCategoryRepo.findOne(lab_category_id);
-        const labTest = await this.labTestRepository.findOne({ where: { id }, relations: ['hmo'] });
-        const hmo = await this.hmoSchemeRepository.findOne(hmo_id);
+        const labTest = await this.labTestRepository.findOne(id);
 
         try {
-            return this.labTestRepository.updateLabTest(labTestDto, labTest, category, updatedBy, hmo);
+            return this.labTestRepository.updateLabTest(labTestDto, labTest, category, updatedBy);
         } catch (e) {
             throw new NotFoundException('could not update lab test');
         }
     }
 
     async deleteLabTest(id: number, username): Promise<LabTest> {
-        const test = await this.labTestRepository.findOne(id, { relations: ['hmo'] });
+        const test = await this.labTestRepository.findOne(id);
 
         if (!test) {
             throw new NotFoundException(`Lab test with ID '${id}' not found`);
@@ -273,26 +274,13 @@ export class LabService {
         LAB GROUPS
     */
 
-    async getGroups(param): Promise<any[]> {
-        const { hmo_id } = param;
-
-        let result = [];
-
-        if (hmo_id && hmo_id !== '') {
-            const hmo = await this.hmoSchemeRepository.findOne(hmo_id);
-            result = await this.groupRepository.find({ where: { hmo }, relations: ['hmo', 'tests'] });
-        } else {
-            result = await this.groupRepository.find({ relations: ['hmo', 'tests'] });
-        }
-
-        return result;
+    async getGroups(): Promise<Group[]> {
+        return await this.groupRepository.find({ relations: ['tests'] });
     }
 
     async createGroup(groupDto: GroupDto, createdBy: string): Promise<any> {
         try {
-            const hmo = await this.hmoSchemeRepository.findOne(groupDto.hmo_id);
-
-            const group = await this.groupRepository.saveGroup(groupDto, createdBy, hmo);
+            const group = await this.groupRepository.saveGroup(groupDto, createdBy);
 
             let tests = [];
             for (const item of groupDto.lab_tests) {
@@ -309,7 +297,7 @@ export class LabService {
             return { ...group, tests };
         } catch (e) {
             console.log(e);
-            throw new NotFoundException('could not group');
+            throw new NotFoundException('could not create group');
         }
     }
 

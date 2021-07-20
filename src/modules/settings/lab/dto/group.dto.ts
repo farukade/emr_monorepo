@@ -7,6 +7,4 @@ export class GroupDto {
     lab_tests: any;
 
     description;
-
-    hmo_id;
 }

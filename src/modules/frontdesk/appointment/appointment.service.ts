@@ -108,7 +108,7 @@ export class AppointmentService {
         for (const item of appointments) {
             const appointment = await this.appointmentRepository.findOne({
                 where: { id: item.id },
-                relations: ['patient', 'whomToSee', 'serviceCost', 'consultingRoom', 'transaction', 'department'],
+                relations: ['patient', 'whomToSee', 'consultingRoom', 'transaction', 'department'],
             });
 
             const patientProfile = await this.patientRepository.findOne({
@@ -136,7 +136,7 @@ export class AppointmentService {
 
         const appointments = await this.appointmentRepository.find({
             where: { patient },
-            relations: ['patient', 'whomToSee', 'serviceCost', 'consultingRoom', 'encounter', 'transaction', 'department'],
+            relations: ['patient', 'whomToSee', 'consultingRoom', 'encounter', 'transaction', 'department'],
         });
 
         return appointments;
@@ -145,7 +145,7 @@ export class AppointmentService {
     async getAppointment(id: number): Promise<Appointment> {
         const appointment = await this.appointmentRepository.findOne({
             where: { id },
-            relations: ['patient', 'whomToSee', 'serviceCost', 'consultingRoom', 'encounter', 'transaction', 'department'],
+            relations: ['patient', 'whomToSee', 'consultingRoom', 'encounter', 'transaction', 'department'],
         });
 
         return appointment;
@@ -154,7 +154,7 @@ export class AppointmentService {
 
     async saveNewAppointment(appointmentDto: AppointmentDto, username: string): Promise<any> {
         try {
-            const { patient_id, doctor_id, consulting_room_id, service_id, sendToQueue, department_id, consultation_id } = appointmentDto;
+            const { patient_id, doctor_id, consulting_room_id, service, sendToQueue, department_id, consultation_id } = appointmentDto;
 
             // find patient details
             const patient = await this.patientRepository.findOne(patient_id, { relations: ['hmo'] });
@@ -162,7 +162,7 @@ export class AppointmentService {
                 return { success: false, message: 'please select a patient' };
             }
 
-            const hmo = patient.hmo;
+            let hmo = patient.hmo;
 
             // find doctor
             let doctor = null;
@@ -177,8 +177,19 @@ export class AppointmentService {
             }
 
             // find service
-            const service = await this.serviceRepository.findOne(service_id);
-            const serviceCost = await this.serviceCostRepository.findOne({ where: { item: service, hmo } });
+            let serviceCost = await this.serviceCostRepository.findOne({
+                where: { code: service.code, hmo },
+            });
+
+            if (!serviceCost || (serviceCost && serviceCost.tariff === 0)) {
+                hmo = await this.hmoSchemeRepository.findOne({
+                    where: { name: 'Private' },
+                });
+
+                serviceCost = await this.serviceCostRepository.findOne({
+                    where: { code: service.code, hmo },
+                });
+            }
 
             // find department
             const department = await this.departmentRepository.findOne(department_id);
@@ -193,8 +204,7 @@ export class AppointmentService {
             await patient.save();
 
             let queue;
-            let paymentType = '';
-            let hmoApprovalStatus = 0;
+            let paymentType = null;
 
             // add patient
             appointment.patient = patient;
@@ -209,7 +219,6 @@ export class AppointmentService {
                         queue = await this.queueSystemRepository.saveQueue(appointment, 'paypoint');
                     } else {
                         paymentType = 'HMO';
-                        hmoApprovalStatus = 1;
                         // update appointment status
                         appointment.status = 'Pending HMO Approval';
 
@@ -219,7 +228,7 @@ export class AppointmentService {
                     }
 
                     // save payment
-                    const payment = await this.saveTransaction(patient, service, serviceCost, amount, paymentType, username);
+                    const payment = await this.saveTransaction(patient, hmo, service, serviceCost, amount, paymentType, username, appointment);
                     appointment.transaction = payment;
                     await appointment.save();
                     // send queue message
@@ -326,17 +335,20 @@ export class AppointmentService {
         }
     }
 
-    private async saveTransaction(patient: Patient, service: Service, serviceCost: ServiceCost, amount, paymentType, createdBy) {
+    private async saveTransaction(patient: Patient, hmo, service: Service, serviceCost: ServiceCost, amount, paymentType, createdBy, appointment) {
         const data = {
             patient,
-            serviceCost,
-            next_location: 'vitals',
             amount,
             description: service.name,
             payment_type: paymentType,
-            bill_source: 'appointment',
-            hmo: patient.hmo,
+            bill_source: service.category.name,
+            service: serviceCost,
             createdBy,
+            hmo,
+            next_location: 'vitals',
+            appointment,
+            transaction_type: 'debit',
+            balance: amount * -1,
         };
 
         return await this.transactionsRepository.save(data);

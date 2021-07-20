@@ -5,7 +5,7 @@ import { Group } from './group.entity';
 
 @Entity({ name: 'lab_group_tests' })
 export class GroupTest extends CustomBaseEntity {
-    @ManyToOne(type => Group, request => request.tests)
+    @ManyToOne(type => Group)
     @JoinColumn({ name: 'group_id' })
     group: Group;
 

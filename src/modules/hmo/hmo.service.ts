@@ -284,6 +284,7 @@ export class HmoService {
             }
 
             transaction.hmo_approval_code = approvalCode;
+            transaction.balance = 0;
             transaction.lastChangedBy = username;
 
             await transaction.save();
@@ -303,27 +304,6 @@ export class HmoService {
             this.appGateway.server.emit('paypoint-queue', { queue });
 
             return { success: true, transaction, queue };
-        } catch (error) {
-            return { success: false, message: error.message };
-        }
-
-    }
-
-    async transferToPaypoint(params, username) {
-        const { id } = params;
-        try {
-
-            const transaction = await this.transactionsRepository.findOne(id, { relations: ['patient', 'hmo'] });
-            if (!transaction) {
-                throw new NotFoundException(`Transaction was not found`);
-            }
-
-            transaction.payment_type = '';
-            transaction.lastChangedBy = username;
-
-            const rs = await transaction.save();
-
-            return { success: true, transaction: rs };
         } catch (error) {
             return { success: false, message: error.message };
         }

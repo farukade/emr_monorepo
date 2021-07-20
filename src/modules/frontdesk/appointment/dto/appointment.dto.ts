@@ -24,10 +24,9 @@ export class AppointmentDto {
     sendToQueue: boolean;
 
     @IsNotEmpty()
-    service_id: string;
+    service: any;
 
     @IsNotEmpty()
     consulting_room_id: string;
 
-    duration: string;
 }

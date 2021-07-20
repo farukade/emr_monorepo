@@ -86,7 +86,7 @@ export class CafeteriaService {
     }
 
     async saveSales(param: CafeteriaSalesDto, username: string): Promise<any> {
-        const { user_type, user_id, sub_total, vat, total_amount, amount_paid, balance, payment_type, items } = param;
+        const { user_type, user_id, sub_total, vat, total_amount, amount_paid, change, payment_type, items } = param;
         try {
             let emptyStock = [];
             for (const sale of items) {
@@ -106,8 +106,10 @@ export class CafeteriaService {
             transaction.vat = vat;
             transaction.amount = total_amount;
             transaction.amount_paid = amount_paid;
-            transaction.balance = balance * -1;
+            transaction.change = change * -1;
             transaction.payment_type = payment_type;
+            transaction.transaction_type = 'debit';
+            transaction.balance = 0;
             transaction.status = 1;
             transaction.createdBy = username;
             transaction.lastChangedBy = username;

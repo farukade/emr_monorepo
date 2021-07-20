@@ -13,7 +13,7 @@ import { ServiceCost } from '../../settings/entities/service_cost.entity';
 
 @Entity({ name: 'patient_request_items' })
 export class PatientRequestItem extends CustomBaseEntity {
-    @ManyToOne(type => PatientRequest, request => request.items)
+    @OneToOne(type => PatientRequest, request => request.item)
     @JoinColumn({ name: 'request_id' })
     request: PatientRequest;
 

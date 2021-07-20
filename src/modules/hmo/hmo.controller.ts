@@ -105,12 +105,4 @@ export class HmoController {
     ) {
         return this.hmoService.processTransaction(param, req.user);
     }
-
-    @Post('transactions/transfer')
-    transferTransaction(
-        @Body() param,
-        @Request() req,
-    ) {
-        return this.hmoService.transferToPaypoint(param, req.user.username);
-    }
 }

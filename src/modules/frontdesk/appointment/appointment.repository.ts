@@ -31,7 +31,6 @@ export class AppointmentRepository extends Repository<Appointment> {
         appointment.serviceCategory = service.category;
         appointment.service = serviceCost;
         appointment.amountToPay = amount;
-        appointment.duration = appointmentDto.duration;
         appointment.description = appointmentDto.description;
         appointment.referredBy = appointmentDto.referredBy;
         appointment.referralCompany = appointmentDto.referralCompany;

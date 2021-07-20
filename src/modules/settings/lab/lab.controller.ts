@@ -183,7 +183,7 @@ export class LabController {
     getGroups(
         @Query() param,
     ): Promise<any[]> {
-        return this.labService.getGroups(param);
+        return this.labService.getGroups();
     }
 
     @Post('/groups')

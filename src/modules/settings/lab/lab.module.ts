@@ -9,6 +9,7 @@ import { ParameterRepository } from './repositories/parameter.repository';
 import { SpecimenRepository } from './repositories/specimen.repository';
 import { GroupRepository } from './repositories/group.repository';
 import { GroupTestRepository } from './repositories/group_tests.repository';
+import { ServiceCostRepository } from '../services/repositories/service_cost.repository';
 
 @Module({
     imports: [
@@ -20,6 +21,7 @@ import { GroupTestRepository } from './repositories/group_tests.repository';
             GroupRepository,
             GroupTestRepository,
             HmoSchemeRepository,
+            ServiceCostRepository,
         ]),
     ],
     controllers: [LabController],

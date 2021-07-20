@@ -1,31 +1,15 @@
 import { Column, Entity, ManyToOne, JoinColumn } from 'typeorm';
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 import { LabTestCategory } from './lab_test_category.entity';
-import { HmoScheme } from '../../hmo/entities/hmo_scheme.entity';
 
 @Entity({ name: 'lab_tests' })
 export class LabTest extends CustomBaseEntity {
+
+    @Column({ type: 'varchar', nullable: true })
+    code: string;
+
     @Column({ type: 'varchar', length: 300 })
     name: string;
-
-    @Column({ type: 'varchar', length: 300 })
-    price: string;
-
-    @Column({ type: 'varchar', nullable: true })
-    test_type: string;
-
-    @Column({ type: 'varchar', nullable: true })
-    slug: string;
-
-    @Column({ type: 'varchar', nullable: true })
-    description: string;
-
-    @Column({ type: 'varchar', nullable: true })
-    hmoPrice: string;
-
-    @ManyToOne(type => HmoScheme, { nullable: true })
-    @JoinColumn({ name: 'hmo_scheme_id' })
-    hmo: HmoScheme;
 
     @ManyToOne(type => LabTestCategory, { eager: true })
     @JoinColumn({ name: 'lab_test_category_id' })

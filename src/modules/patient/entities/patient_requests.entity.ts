@@ -4,7 +4,6 @@ import { Patient } from './patient.entity';
 import { AdmissionClinicalTask } from '../admissions/entities/admission-clinical-task.entity';
 import { PatientRequestItem } from './patient_request_items.entity';
 import { IvfEnrollment } from '../ivf/entities/ivf_enrollment.entity';
-import { Transactions } from '../../finance/transactions/transaction.entity';
 import { Encounter } from '../consultation/encouter.entity';
 import { AntenatalEnrollment } from '../antenatal/entities/antenatal-enrollment.entity';
 import { Admission } from '../admissions/entities/admission.entity';
@@ -19,7 +18,7 @@ export class PatientRequest extends CustomBaseEntity {
     @JoinColumn({ name: 'patient_id' })
     patient: Patient;
 
-    @Column()
+    @Column({})
     requestType: string;
 
     @Column({ nullable: true })
@@ -47,13 +46,9 @@ export class PatientRequest extends CustomBaseEntity {
     @JoinColumn({ name: 'antenatal_id' })
     antenatal: AntenatalEnrollment;
 
-    @OneToOne(type => Transactions, data => data.request)
-    @JoinColumn({ name: 'transaction_id' })
-    transaction: Transactions;
-
     @OneToMany(type => AdmissionClinicalTask, task => task.request)
     task: AdmissionClinicalTask;
 
-    @OneToMany(type => PatientRequestItem, items => items.request)
-    items: PatientRequestItem[];
+    @OneToOne(type => PatientRequestItem, item => item.request)
+    item: PatientRequestItem;
 }

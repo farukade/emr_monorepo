@@ -3,7 +3,10 @@ import { Transactions } from '../../modules/finance/transactions/transaction.ent
 import { Patient } from '../../modules/patient/entities/patient.entity';
 import { PatientRequestItem } from '../../modules/patient/entities/patient_request_items.entity';
 import { PatientRequest } from '../../modules/patient/entities/patient_requests.entity';
-import { getStaff } from './utils';
+import { ServiceCost } from '../../modules/settings/entities/service_cost.entity';
+import { HmoScheme } from '../../modules/hmo/entities/hmo_scheme.entity';
+import { ServiceCategory } from '../../modules/settings/entities/service_category.entity';
+import { Admission } from '../../modules/patient/admissions/entities/admission.entity';
 
 export class RequestPaymentHelper {
     static async clinicalLabPayment(labRequests, patient: Patient, createdBy, bill) {
@@ -11,113 +14,114 @@ export class RequestPaymentHelper {
         let payments = [];
 
         for (const request of labRequests) {
-            const labRequest = await getConnection().getRepository(PatientRequest).findOne(request.id, { relations: ['items'] });
+            const labRequest = await getConnection().getRepository(PatientRequest).findOne(request.id, { relations: ['item'] });
 
-            let results = [];
-            for (const item of labRequest.items) {
-                const labRequestItem = await getConnection().getRepository(PatientRequestItem).findOne(item.id);
+            const labRequestItem = await getConnection().getRepository(PatientRequestItem).findOne(labRequest.item.id);
 
-                const labTest = labRequestItem.labTest;
+            let hmo = patient.hmo;
 
-                const data = {
-                    patient,
-                    amount: parseFloat(labTest.hmoPrice),
-                    description: 'Payment for clinical lab',
-                    payment_type: (patient.hmo.name !== 'Private') ? 'HMO' : '',
-                    bill_source: 'lab',
-                    transaction_details: labTest,
-                    createdBy,
-                    status: bill,
-                    patientRequestItem: labRequestItem,
-                    hmo: patient.hmo,
-                };
+            const labTest = labRequestItem.labTest;
 
-                const result = await this.save(data);
-                const payment = result.generatedMaps[0];
+            let serviceCost = await getConnection().getRepository(ServiceCost).findOne({
+                where: { code: labTest.code, hmo },
+            });
 
-                const transaction = await getConnection().getRepository(Transactions).findOne(payment.id);
-
-                labRequestItem.transaction = transaction;
-                await labRequestItem.save();
-
-                payments = [...payments, transaction];
-
-                item.transaction = transaction;
-
-                results = [...results, item];
+            if (!serviceCost || (serviceCost && serviceCost.tariff === 0)) {
+                hmo = await getConnection().getRepository(HmoScheme).findOne({ where: { name: 'Private' } });
+                serviceCost = await getConnection().getRepository(ServiceCost).findOne({
+                    where: { code: labTest.code, hmo },
+                });
             }
 
-            requests = [...requests, { ...request, items: results }];
+            const category = await getConnection().getRepository(ServiceCategory).findOne({ where: { name: 'labs' } });
+
+            const admission = await getConnection().getRepository(Admission).findOne({ where: { patient } });
+
+            const data = {
+                patient,
+                amount: serviceCost.tariff,
+                description: 'Payment for clinical lab',
+                payment_type: (hmo.name !== 'Private') ? 'HMO' : '',
+                bill_source: category.name,
+                service: serviceCost,
+                createdBy,
+                status: bill,
+                patientRequestItem: labRequestItem,
+                hmo,
+                is_admitted: (admission !== null),
+                transaction_type: 'debit',
+                balance: serviceCost.tariff * -1,
+            };
+
+            const result = await this.save(data);
+            const payment = result.generatedMaps[0];
+
+            const transaction = await getConnection().getRepository(Transactions).findOne(payment.id);
+
+            labRequestItem.transaction = transaction;
+            await labRequestItem.save();
+
+            payments = [...payments, transaction];
+
+            requests = [...requests, { ...request, item: { ...labRequestItem, transaction } }];
         }
 
         return { labRequest: requests, transactions: payments };
     }
-
-    // static async pharmacyPayment(requestBody, patient: Patient, createdBy) {
-    //     let totalAmount = 0;
-    //     const items = [];
-    //     for (const body of requestBody) {
-    //         const drug = await getConnection().getRepository(Stock).findOne(body.drug_id);
-    //         totalAmount += parseFloat(drug.sales_price);
-    //         items.push({ name: drug.name, amount: drug.sales_price });
-    //     }
-    //     const data = {
-    //         patient,
-    //         amount: totalAmount,
-    //         description: 'Payment for pharmacy request',
-    //         payment_type: (patient.hmo.name !== 'Private') ? 'HMO' : '',
-    //         bill_source: 'billing',
-    //         transaction_details: items,
-    //         createdBy,
-    //         hmo: patient.hmo,
-    //     };
-    //     const payment = await this.save(data);
-    //     return { payment: payment.generatedMaps[0] };
-    // }
 
     static async servicePayment(patientRequests, patient: Patient, createdBy, requestType, bill) {
         let requests = [];
         let payments = [];
 
         for (const request of patientRequests) {
-            const serviceRequest = await getConnection().getRepository(PatientRequest).findOne(request.id, { relations: ['items'] });
+            const labRequest = await getConnection().getRepository(PatientRequest).findOne(request.id, { relations: ['item'] });
 
-            let results = [];
-            for (const item of serviceRequest.items) {
-                const patientRequestItem = await getConnection().getRepository(PatientRequestItem).findOne(item.id);
+            const patientRequestItem = await getConnection().getRepository(PatientRequestItem).findOne(labRequest.item.id);
 
-                const service = patientRequestItem.service;
+            let hmo = patient.hmo;
 
-                const data = {
-                    patient,
-                    // amount: parseFloat(service.hmoTarrif),
-                    description: `Payment for ${requestType}`,
-                    payment_type: (patient.hmo.name !== 'Private') ? 'HMO' : '',
-                    bill_source: requestType,
-                    transaction_details: service,
-                    createdBy,
-                    status: bill,
-                    patientRequestItem,
-                    request: serviceRequest,
-                    hmo: patient.hmo,
-                };
+            const service = patientRequestItem.service;
 
-                const result = await this.save(data);
-                const payment = result.generatedMaps[0];
+            let serviceCost = await getConnection().getRepository(ServiceCost).findOne({
+                where: { code: service.code, hmo },
+            });
 
-                const transaction = await getConnection().getRepository(Transactions).findOne(payment.id);
-
-                patientRequestItem.transaction = transaction;
-                await patientRequestItem.save();
-
-                payments = [...payments, transaction];
-
-                item.transaction = transaction;
-
-                results = [...results, item];
+            if (!serviceCost || (serviceCost && serviceCost.tariff === 0)) {
+                hmo = await getConnection().getRepository(HmoScheme).findOne({ where: { name: 'Private' } });
+                serviceCost = await getConnection().getRepository(ServiceCost).findOne({
+                    where: { code: service.code, hmo },
+                });
             }
 
-            requests = [...requests, { ...request, items: results }];
+            const admission = await getConnection().getRepository(Admission).findOne({ where: { patient } });
+
+            const data = {
+                patient,
+                amount: serviceCost.tariff,
+                description: `Payment for ${requestType}`,
+                payment_type: (hmo.name !== 'Private') ? 'HMO' : '',
+                bill_source: requestType,
+                service: serviceCost,
+                createdBy,
+                status: bill,
+                patientRequestItem,
+                hmo,
+                is_admitted: (admission !== null),
+                transaction_type: 'debit',
+                balance: serviceCost.tariff * -1,
+            };
+
+            const result = await this.save(data);
+            const payment = result.generatedMaps[0];
+
+            const transaction = await getConnection().getRepository(Transactions).findOne(payment.id);
+
+            patientRequestItem.transaction = transaction;
+            await patientRequestItem.save();
+
+            payments = [...payments, transaction];
+
+            requests = [...requests, { ...request, item: { ...patientRequestItem, transaction } }];
         }
 
         return { request: requests, transactions: payments };

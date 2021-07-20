@@ -14,10 +14,6 @@ export class Group extends CustomBaseEntity {
     @Column({type: 'varchar', nullable: true})
     description: string;
 
-    @ManyToOne(type => HmoScheme, {nullable: true})
-    @JoinColumn({ name: 'hmo_scheme_id' })
-    hmo: HmoScheme;
-
     @OneToMany(type => GroupTest, items => items.group)
     tests: GroupTest;
 }

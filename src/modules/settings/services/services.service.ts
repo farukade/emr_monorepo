@@ -13,6 +13,7 @@ import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repositor
 import { LabTestCategoryRepository } from '../lab/repositories/lab.category.repository';
 import { LabTestRepository } from '../lab/repositories/lab.test.repository';
 import { ServiceRepository } from './repositories/service.repository';
+import { ServiceCostRepository } from './repositories/service_cost.repository';
 
 @Injectable()
 export class ServicesService {
@@ -27,13 +28,17 @@ export class ServicesService {
         private labTestRepository: LabTestRepository,
         @InjectRepository(HmoSchemeRepository)
         private hmoSchemeRepository: HmoSchemeRepository,
+        @InjectRepository(ServiceCostRepository)
+        private serviceCostRepository: ServiceCostRepository,
     ) {
     }
 
     async getAllServices(options: PaginationOptionsInterface, params): Promise<Pagination> {
-        const { q } = params;
+        const { q, hmo_id } = params;
 
         const page = options.page - 1;
+
+        const hmo = await this.hmoSchemeRepository.findOne(hmo_id);
 
         let result;
         let total = 0;
@@ -54,8 +59,15 @@ export class ServicesService {
             });
         }
 
+        let rs = [];
+        for (const item of result) {
+            item.service = await this.serviceCostRepository.findOne({ where: { code: item.code, hmo } });
+
+            rs = [...rs, item];
+        }
+
         return {
-            result,
+            result: rs,
             lastPage: Math.ceil(total / options.limit),
             itemsPerPage: options.limit,
             totalPages: total,
@@ -73,8 +85,16 @@ export class ServicesService {
         return found;
     }
 
-    async getServicesByCategory(id: number): Promise<Service[]> {
-        const category = await this.serviceCategoryRepository.findOne(id);
+    async getServicesByCategory(slug: string, params): Promise<Service[]> {
+        const { q } = params;
+
+        const category = await this.serviceCategoryRepository.findOne({ where: { slug } });
+
+        if (q && q !== '') {
+            return await this.serviceRepository.find({
+                where: { name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`), category },
+            });
+        }
 
         return await this.serviceRepository.find({ where: { category } });
     }

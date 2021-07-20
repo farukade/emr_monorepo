@@ -19,6 +19,11 @@ import { DrugGenericRepository } from '../inventory/pharmacy/generic/generic.rep
 import { DrugRepository } from '../inventory/pharmacy/drug/drug.repository';
 import { DrugBatchRepository } from '../inventory/pharmacy/batches/batches.repository';
 import { ILike, Like } from 'typeorm';
+import { LabTestCategoryRepository } from '../settings/lab/repositories/lab.category.repository';
+import { SpecimenRepository } from '../settings/lab/repositories/specimen.repository';
+import { LabTestRepository } from '../settings/lab/repositories/lab.test.repository';
+import { GroupRepository } from '../settings/lab/repositories/group.repository';
+import { GroupTest } from '../settings/entities/group_tests.entity';
 
 @Processor(process.env.MIGRATION_QUEUE_NAME)
 export class MigrationProcessor {
@@ -55,6 +60,14 @@ export class MigrationProcessor {
         private drugRepository: DrugRepository,
         @InjectRepository(DrugBatchRepository)
         private drugBatchRepository: DrugBatchRepository,
+        @InjectRepository(LabTestCategoryRepository)
+        private labTestCategoryRepository: LabTestCategoryRepository,
+        @InjectRepository(SpecimenRepository)
+        private specimenRepository: SpecimenRepository,
+        @InjectRepository(LabTestRepository)
+        private labTestRepository: LabTestRepository,
+        @InjectRepository(GroupRepository)
+        private groupRepository: GroupRepository,
     ) {
     }
 
@@ -238,6 +251,7 @@ export class MigrationProcessor {
                 await this.serviceCostRepository.save({
                     item: service,
                     hmo,
+                    code: item.item_code,
                     tariff: item.selling_price,
                 });
             }
@@ -318,6 +332,60 @@ export class MigrationProcessor {
                     costPrice: 0,
                     expirationDate: item.expiration_date,
                 });
+            }
+
+            await connection.end();
+            return true;
+        } catch (error) {
+            console.log(error);
+            this.logger.error('migration failed', error.stack);
+        }
+    }
+
+    @Process('lab')
+    async migrateLab(job: Job<any>): Promise<any> {
+        this.logger.log('migrating lab');
+
+        try {
+            const connection = await mysqlConnect();
+
+            let [rows] = await connection.execute('SELECT * FROM `labtests_config_category`');
+            for (const item of rows) {
+                await this.labTestCategoryRepository.save({ name: item.name });
+            }
+
+            [rows] = await connection.execute('SELECT * FROM `lab_specimen`');
+            for (const item of rows) {
+                await this.specimenRepository.save({ name: item.name });
+            }
+
+            [rows] = await connection.execute('SELECT labtests_config.*, labtests_config_category.name as lab_category FROM `labtests_config` left join labtests_config_category on labtests_config_category.id=labtests_config.category_id');
+            for (const item of rows) {
+                const category = await this.labTestCategoryRepository.findOne({ name: item.lab_category });
+
+                await this.labTestRepository.save({
+                    code: item.billing_code,
+                    name: item.name,
+                    category,
+                });
+            }
+
+            [rows] = await connection.execute('SELECT * FROM `lab_combo`');
+            for (const item of rows) {
+                await this.groupRepository.save({ name: item.name, slug: slugify(item.name) });
+            }
+
+            [rows] = await connection.execute('SELECT labtests_config.billing_code, lab_combo.name as lc FROM `lab_combo_data` join lab_combo on lab_combo.id=lab_combo_data.lab_combo_id join labtests_config on labtests_config.id=lab_combo_data.lab_id');
+            for (const item of rows) {
+                const lab = await this.labTestRepository.findOne({ code: item.billing_code });
+                if (item.lc && item.lc !== '') {
+                    const group = await this.groupRepository.findOne({ slug: slugify(item.lc) });
+
+                    const groupTest = new GroupTest();
+                    groupTest.group = group;
+                    groupTest.labTest = lab;
+                    await groupTest.save();
+                }
             }
 
             await connection.end();

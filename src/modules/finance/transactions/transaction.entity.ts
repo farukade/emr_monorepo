@@ -43,17 +43,20 @@ export class Transactions extends CustomBaseEntity {
     @Column({ type: 'float4', nullable: true })
     amount_paid: number;
 
-    @Column({ type: 'float4', nullable: true })
-    balance: number;
+    @Column({ type: 'float4', default: 0.0 })
+    change: number;
 
-    @Column({ type: 'float4', nullable: true })
-    remaining: number;
+    @Column({ type: 'float4', default: 0.0 })
+    balance: number;
 
     @Column({ nullable: true })
     description: string;
 
     @Column({ nullable: true })
     payment_type: string;
+
+    @Column({ nullable: true })
+    transaction_type: string;
 
     @Column({ nullable: true })
     part_payment_expiry_date: string;
@@ -79,10 +82,6 @@ export class Transactions extends CustomBaseEntity {
     @ManyToOne(type => PatientRequestItem, item => item.transaction, { nullable: true, eager: true })
     @JoinColumn({ name: 'patient_request_item_id' })
     patientRequestItem: PatientRequestItem;
-
-    @ManyToOne(type => PatientRequest, { nullable: true })
-    @JoinColumn({ name: 'patient_request_id' })
-    request: PatientRequest;
 
     @ManyToOne(type => Appointment, { nullable: true })
     @JoinColumn({ name: 'appointment_id' })

@@ -84,6 +84,9 @@ export class Patient extends CustomBaseEntity {
     @Column({ nullable: true, name: 'blood_type' })
     bloodType: string;
 
+    @Column({ default: false, name: 'is_out_patient' })
+    isOpd: boolean;
+
     @OneToMany(type => Appointment, appointment => appointment.patient)
     appointments: Appointment[];
 

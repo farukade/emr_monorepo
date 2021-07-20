@@ -15,7 +15,7 @@ export class CafeteriaSalesDto {
     @IsNotEmpty()
     amount_paid: number;
 
-    balance: number;
+    change: number;
 
     payment_type: string;
 

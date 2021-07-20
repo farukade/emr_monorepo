@@ -10,7 +10,7 @@ import { PatientRequestItemRepository } from '../repositories/patient_request_it
 import { PatientRepository } from '../repositories/patient.repository';
 import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
 import { AppGateway } from '../../../app.gateway';
-import { Brackets, getConnection } from 'typeorm';
+import { getConnection } from 'typeorm';
 import { Transactions } from '../../finance/transactions/transaction.entity';
 import { AdmissionClinicalTask } from '../admissions/entities/admission-clinical-task.entity';
 import { generatePDF } from '../../../common/utils/utils';
@@ -50,7 +50,7 @@ export class PatientRequestService {
             .leftJoin('q.patient', 'patient')
             .leftJoin(User, 'creator', 'q.createdBy = creator.username')
             .innerJoin(StaffDetails, 'staff1', 'staff1.user_id = creator.id')
-            .select('q.id, q.requestType, q.code, q.createdAt, q.status, q.urgent, q.requestNote, q.isFilled')
+            .select('q.id, q.requestType, q.code, q.createdAt, q.status, q.urgent, q.requestNote')
             .addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
             .addSelect('CONCAT(patient.other_names || \' \' || patient.surname) as patient_name, patient.id as patient_id')
             .where('q.requestType = :requestType', { requestType });
@@ -68,10 +68,6 @@ export class PatientRequestService {
             query.andWhere(`CAST(q.createdAt as text) LIKE '%${today}%'`);
         }
 
-        if (status === 'Filled') {
-            query.andWhere('q.isFilled = :filled', { filled: true });
-        }
-
         if (status === 'Completed') {
             query.andWhere('q.status = :status', { status: 1 });
         }
@@ -85,19 +81,17 @@ export class PatientRequestService {
 
         let result = [];
         for (const item of items) {
-            item.hmo = await this.hmoSchemeRepository.findOne(item.hmo_id);
-
-            item.items = await this.patientRequestItemRepository.find({ where: { request: item }, relations: ['diagnosis', 'transaction'] });
+            const request = await this.patientRequestRepository.findOne({ where: { id: item.id }, relations: ['item'] });
 
             const patient = await this.patientRepository.findOne(item.patient_id, {
                 relations: ['nextOfKin', 'immunization', 'hmo'],
             });
 
-            item.patient = patient;
+            const transaction = await this.transactionsRepository.findOne({
+                where: { patientRequestItem: request.item },
+            });
 
-            item.transaction = await this.transactionsRepository.findOne({ where: { request: item } });
-
-            result = [...result, item];
+            result = [...result, { ...item, ...request, patient, transaction }];
         }
 
         return {
@@ -119,7 +113,7 @@ export class PatientRequestService {
             .leftJoin('q.patient', 'patient')
             .leftJoin(User, 'creator', 'q.createdBy = creator.username')
             .innerJoin(StaffDetails, 'staff1', 'staff1.user_id = creator.id')
-            .select('q.id, q.requestType, q.code, q.createdAt, q.status, q.urgent, q.requestNote, q.isFilled')
+            .select('q.id, q.requestType, q.code, q.createdAt, q.status, q.urgent, q.requestNote')
             .addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
             .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id')
             .where('q.patient_id = :patient_id', { patient_id })
@@ -146,10 +140,6 @@ export class PatientRequestService {
             query.andWhere('q.antenatalId = :item_id', { item_id });
         }
 
-        if (filled) {
-            query.andWhere(`q.isFilled = ${true}`);
-        }
-
         const count = await query.getCount();
 
         const items = await query.orderBy({
@@ -159,19 +149,17 @@ export class PatientRequestService {
 
         let result = [];
         for (const item of items) {
-            item.hmo = await this.hmoSchemeRepository.findOne(item.hmo_scheme_id);
-
-            item.items = await this.patientRequestItemRepository.find({ where: { request: item }, relations: ['diagnosis', 'transaction'] });
+            const request = await this.patientRequestRepository.findOne({ where: { id: item.id }, relations: ['item'] });
 
             const patient = await this.patientRepository.findOne(item.patient_id, {
                 relations: ['nextOfKin', 'immunization', 'hmo'],
             });
 
-            item.patient = patient;
+            const transaction = await this.transactionsRepository.findOne({
+                where: { patientRequestItem: request.item },
+            });
 
-            item.transaction = await this.transactionsRepository.findOne({ where: { request: item } });
-
-            result = [...result, item];
+            result = [...result, { ...item, ...request, patient, transaction }];
         }
 
         return {
@@ -191,7 +179,7 @@ export class PatientRequestService {
         let res = {};
         const patient = await this.patientRepository.findOne(patient_id, { relations: ['hmo'] });
         switch (requestType) {
-            case 'lab':
+            case 'labs':
                 // save request
                 let labRequest = await PatientRequestHelper.handleLabRequest(param, patient, createdBy);
                 if (labRequest.success) {
@@ -204,14 +192,14 @@ export class PatientRequestService {
                 }
                 res = labRequest;
                 break;
-            case 'pharmacy':
+            case 'drugs':
                 let pharmacyReq = await PatientRequestHelper.handlePharmacyRequest(param, patient, createdBy);
                 if (pharmacyReq.success) {
                     pharmacyReq = { ...pharmacyReq };
                 }
                 res = pharmacyReq;
                 break;
-            case 'radiology':
+            case 'scans':
                 let request = await PatientRequestHelper.handleServiceRequest(param, patient, createdBy, requestType);
                 if (request.success) {
                     // save transaction
@@ -238,7 +226,7 @@ export class PatientRequestService {
                 res = procedure;
                 break;
 
-            case 'immunization':
+            case 'vaccines':
                 let immunizationReq = await PatientRequestHelper.handleVaccinationRequest(param, patient, createdBy);
                 if (immunizationReq.success) {
                     // save transaction
@@ -255,14 +243,14 @@ export class PatientRequestService {
 
     async receiveSpecimen(id: number, username: string) {
         try {
-            const request = await this.patientRequestItemRepository.findOne(id);
-            request.received = 1;
-            request.receivedBy = username;
-            request.receivedAt = moment().format('YYYY-MM-DD HH:mm:ss');
-            request.lastChangedBy = username;
-            await request.save();
+            const request = await this.patientRequestRepository.findOne(id, { relations: ['item'] });
 
-            const rs = await this.patientRequestItemRepository.findOne({ where: { id }, relations: ['diagnosis', 'transaction'] });
+            const item = await this.patientRequestItemRepository.findOne(request.item.id);
+            item.received = 1;
+            item.receivedBy = username;
+            item.receivedAt = moment().format('YYYY-MM-DD HH:mm:ss');
+            item.lastChangedBy = username;
+            const rs = await item.save();
 
             return { success: true, data: rs };
         } catch (e) {
@@ -273,7 +261,7 @@ export class PatientRequestService {
     async doFillRequest(param, requestId, updatedBy) {
         const { patient_id, total_amount, items } = param;
         try {
-            const request = await this.patientRequestRepository.findOne(requestId);
+            const request = await this.patientRequestRepository.findOne(requestId, { relations: ['item'] });
 
             const patient = await this.patientRepository.findOne(patient_id, {
                 relations: ['nextOfKin', 'immunization', 'hmo'],
@@ -300,6 +288,8 @@ export class PatientRequestService {
                 description: 'Payment for pharmacy request',
                 payment_type: patient.hmo.id === 1 ? '' : 'HMO',
                 bill_source: 'pharmacy',
+                transaction_type: 'debit',
+                balance: total_amount * -1,
                 // tslint:disable-next-line:max-line-length
                 transaction_details: items.map(i => ({
                     id: i.id,
@@ -327,7 +317,6 @@ export class PatientRequestService {
 
             const transaction = { ...payment.generatedMaps[0] };
 
-            request.transaction = await this.transactionsRepository.findOne(transaction.id);
             const res = await request.save();
 
             this.appGateway.server.emit('paypoint-queue', transaction);
@@ -342,103 +331,102 @@ export class PatientRequestService {
     }
 
     async doApproveResult(id: number, params, username) {
-        const { type, request_item_id } = params;
+        const { type } = params;
 
-        const result = await this.patientRequestRepository.findOne({ where: { id }, relations: ['patient', 'items', 'transaction'] });
+        const request = await this.patientRequestRepository.findOne(id, { relations: ['item'] });
+
+        const item = await this.patientRequestItemRepository.findOne(request.item.id);
 
         switch (type) {
-            case 'lab':
-            case 'radiology':
+            case 'labs':
+            case 'scans':
                 try {
-                    const item = await this.patientRequestItemRepository.findOne({
-                        where: { id: request_item_id },
-                        relations: ['diagnosis', 'transaction'],
-                    });
                     item.approved = 1;
                     item.approvedBy = username;
                     item.approvedAt = moment().format('YYYY-MM-DD HH:mm:ss');
                     item.lastChangedBy = username;
-                    const res = await item.save();
+                    const rs = await item.save();
 
-                    result.status = 1;
-                    await result.save();
+                    request.status = 1;
+                    await request.save();
 
-                    return { success: true, data: res };
+                    return { success: true, data: rs };
                 } catch (e) {
                     return { success: false, message: e.message };
                 }
-            case 'pharmacy':
+            case 'drugs':
             default:
-                try {
-                    const patient = result.patient;
-                    const admission = await this.admissionRepository.findOne({ where: { patient } });
-
-                    let resultItems = [];
-                    for (const item of result.items) {
-                        const requestItem = await this.patientRequestItemRepository.findOne(item.id, { relations: ['diagnosis'] });
-
-                        requestItem.approved = 1;
-                        requestItem.approvedBy = username;
-                        requestItem.approvedAt = moment().format('YYYY-MM-DD HH:mm:ss');
-                        requestItem.lastChangedBy = username;
-                        const rs = await requestItem.save();
-
-                        resultItems = [...resultItems, rs];
-                    }
-
-                    let results = [];
-                    for (const item of result.items) {
-                        // @ts-ignore
-                        const { vaccine } = item;
-                        if (vaccine) {
-                            const newTask = new AdmissionClinicalTask();
-
-                            newTask.task = 'Immunization';
-                            newTask.title = `Give ${item.drug.name} Immediately`;
-                            newTask.taskType = 'regimen';
-                            newTask.drug = { ...item.drug, vaccine };
-                            newTask.dose = 1;
-                            newTask.interval = 1;
-                            newTask.intervalType = 'immediately';
-                            newTask.frequency = 'Immediately';
-                            newTask.taskCount = 1;
-                            newTask.startTime = moment().format('YYYY-MM-DD HH:mm:ss');
-                            newTask.nextTime = moment().format('YYYY-MM-DD HH:mm:ss');
-                            newTask.patient = patient;
-                            newTask.admission = admission;
-                            newTask.createdBy = username;
-                            newTask.request = result;
-
-                            const rs = await newTask.save();
-                            results = [...results, rs];
-                        }
-                    }
-
-                    result.status = 1;
-                    result.lastChangedBy = username;
-                    const res = await result.save();
-
-                    return { success: true, data: { ...res, items: resultItems } };
-                } catch (e) {
-                    return { success: false, message: e.message };
-                }
+            // try {
+            //     const patient = result.patient;
+            //     const admission = await this.admissionRepository.findOne({ where: { patient } });
+            //
+            //     let resultItems = [];
+            //     for (const item of result.items) {
+            //         const requestItem = await this.patientRequestItemRepository.findOne(item.id, { relations: ['diagnosis'] });
+            //
+            //         requestItem.approved = 1;
+            //         requestItem.approvedBy = username;
+            //         requestItem.approvedAt = moment().format('YYYY-MM-DD HH:mm:ss');
+            //         requestItem.lastChangedBy = username;
+            //         const rs = await requestItem.save();
+            //
+            //         resultItems = [...resultItems, rs];
+            //     }
+            //
+            //     let results = [];
+            //     for (const item of result.items) {
+            //         // @ts-ignore
+            //         const { vaccine } = item;
+            //         if (vaccine) {
+            //             const newTask = new AdmissionClinicalTask();
+            //
+            //             newTask.task = 'Immunization';
+            //             newTask.title = `Give ${item.drug.name} Immediately`;
+            //             newTask.taskType = 'regimen';
+            //             newTask.drug = { ...item.drug, vaccine };
+            //             newTask.dose = 1;
+            //             newTask.interval = 1;
+            //             newTask.intervalType = 'immediately';
+            //             newTask.frequency = 'Immediately';
+            //             newTask.taskCount = 1;
+            //             newTask.startTime = moment().format('YYYY-MM-DD HH:mm:ss');
+            //             newTask.nextTime = moment().format('YYYY-MM-DD HH:mm:ss');
+            //             newTask.patient = patient;
+            //             newTask.admission = admission;
+            //             newTask.createdBy = username;
+            //             newTask.request = result;
+            //
+            //             const rs = await newTask.save();
+            //             results = [...results, rs];
+            //         }
+            //     }
+            //
+            //     result.status = 1;
+            //     result.lastChangedBy = username;
+            //     const res = await result.save();
+            //
+            //     return { success: true, data: { ...res, items: resultItems } };
+            // } catch (e) {
+            //     return { success: false, message: e.message };
+            // }
         }
     }
 
     async fillResult(id: string, param, username: string) {
         try {
             const { parameters, note, result } = param;
-            const request = await this.patientRequestItemRepository.findOne(id);
-            request.filled = 1;
-            request.filledBy = username;
-            request.filledAt = moment().format('YYYY-MM-DD HH:mm:ss');
-            request.parameters = parameters;
-            request.note = note;
-            request.result = result;
-            request.lastChangedBy = username;
-            await request.save();
 
-            const rs = await this.patientRequestItemRepository.findOne({ where: { id }, relations: ['diagnosis', 'transaction'] });
+            const request = await this.patientRequestRepository.findOne(id, { relations: ['item'] });
+
+            const item = await this.patientRequestItemRepository.findOne(request.item.id);
+            item.filled = 1;
+            item.filledBy = username;
+            item.filledAt = moment().format('YYYY-MM-DD HH:mm:ss');
+            item.parameters = parameters;
+            item.note = note;
+            item.result = result;
+            item.lastChangedBy = username;
+            const rs = await item.save();
 
             return { success: true, data: rs };
         } catch (e) {
@@ -448,25 +436,25 @@ export class PatientRequestService {
 
     async rejectResult(id: string, params, username: string) {
         try {
-            const request = await this.patientRequestItemRepository.findOne(id);
-            request.filled = 0;
-            request.filledBy = null;
-            request.filledAt = null;
-            request.parameters = request.parameters.map(p => ({
+            const request = await this.patientRequestRepository.findOne(id, { relations: ['item'] });
+
+            const item = await this.patientRequestItemRepository.findOne(request.item.id);
+            item.filled = 0;
+            item.filledBy = null;
+            item.filledAt = null;
+            item.parameters = item.parameters.map(p => ({
                 ...p,
                 inference: '',
                 value: '',
             }));
-            request.result = null;
-            request.lastChangedBy = username;
+            item.result = null;
+            item.lastChangedBy = username;
 
             if (params.type === 'radiology') {
-                request.document = null;
+                item.document = null;
             }
 
-            await request.save();
-
-            const rs = await this.patientRequestItemRepository.findOne({ where: { id }, relations: ['diagnosis', 'transaction'] });
+            const rs = await item.save();
 
             return { success: true, data: rs };
         } catch (e) {
@@ -478,15 +466,15 @@ export class PatientRequestService {
         try {
             const { resources, start_date, end_date } = params;
 
-            const request = await this.patientRequestItemRepository.findOne(id);
-            request.resources = resources;
-            request.scheduledDate = true;
-            request.scheduledStartDate = start_date;
-            request.scheduledEndDate = end_date;
-            request.lastChangedBy = username;
-            await request.save();
+            const request = await this.patientRequestRepository.findOne(id, { relations: ['item'] });
 
-            const rs = await this.patientRequestItemRepository.findOne({ where: { id }, relations: ['diagnosis', 'transaction'] });
+            const item = await this.patientRequestItemRepository.findOne(request.item.id);
+            item.resources = resources;
+            item.scheduledDate = true;
+            item.scheduledStartDate = start_date;
+            item.scheduledEndDate = end_date;
+            item.lastChangedBy = username;
+            const rs = await item.save();
 
             return { success: true, data: rs };
         } catch (e) {
@@ -498,19 +486,18 @@ export class PatientRequestService {
         try {
             const { date } = params;
 
-            const requestItem = await this.patientRequestItemRepository.findOne(id, { relations: ['request'] });
-            requestItem.startedDate = date;
-            requestItem.approved = 1;
-            requestItem.approvedBy = username;
-            requestItem.approvedAt = moment().format('YYYY-MM-DD HH:mm:ss');
-            requestItem.lastChangedBy = username;
-            await requestItem.save();
+            const request = await this.patientRequestRepository.findOne(id, { relations: ['item'] });
 
-            const request = await this.patientRequestRepository.findOne(requestItem.request.id);
+            const item = await this.patientRequestItemRepository.findOne(request.item.id);
+            item.startedDate = date;
+            item.approved = 1;
+            item.approvedBy = username;
+            item.approvedAt = moment().format('YYYY-MM-DD HH:mm:ss');
+            item.lastChangedBy = username;
+            const rs = await item.save();
+
             request.status = 1;
             await request.save();
-
-            const rs = await this.patientRequestItemRepository.findOne({ where: { id }, relations: ['diagnosis', 'transaction'] });
 
             return { success: true, data: rs };
         } catch (e) {
@@ -522,18 +509,15 @@ export class PatientRequestService {
         try {
             const { date } = params;
 
-            const requestItem = await this.patientRequestItemRepository.findOne(id, { relations: ['request'] });
-            requestItem.finishedDate = date;
-            requestItem.filled = 1;
-            requestItem.filledBy = username;
-            requestItem.filledAt = moment().format('YYYY-MM-DD HH:mm:ss');
-            requestItem.lastChangedBy = username;
-            await requestItem.save();
+            const request = await this.patientRequestRepository.findOne(id, { relations: ['item'] });
 
-            const request = await this.patientRequestRepository.findOne(requestItem.request.id);
-            await request.save();
-
-            const rs = await this.patientRequestItemRepository.findOne({ where: { id }, relations: ['diagnosis', 'transaction'] });
+            const item = await this.patientRequestItemRepository.findOne(request.item.id);
+            item.finishedDate = date;
+            item.filled = 1;
+            item.filledBy = username;
+            item.filledAt = moment().format('YYYY-MM-DD HH:mm:ss');
+            item.lastChangedBy = username;
+            const rs = await item.save();
 
             return { success: true, data: rs };
         } catch (e) {
@@ -542,25 +526,34 @@ export class PatientRequestService {
     }
 
     async deleteRequest(id: string, params, username: string) {
-        // const { type } = params;
-        const requestItem = await this.patientRequestItemRepository.findOne(id);
-        if (!requestItem) {
-            throw new NotFoundException(`Request with ID '${id}' not found`);
-        }
+        const { type } = params;
+        const request = await this.patientRequestRepository.findOne(id, { relations: ['item'] });
 
-        requestItem.cancelled = 1;
-        requestItem.cancelledBy = username;
-        requestItem.cancelledAt = moment().format('YYYY-MM-DD HH:mm:ss');
-        requestItem.lastChangedBy = username;
-        requestItem.deletedBy = username;
-        await requestItem.save();
+        const item = await this.patientRequestItemRepository.findOne(request.item.id);
 
-        const request = await this.patientRequestRepository.findOne(params.request_id);
+        item.cancelled = 1;
+        item.cancelledBy = username;
+        item.cancelledAt = moment().format('YYYY-MM-DD HH:mm:ss');
+        item.lastChangedBy = username;
+        item.deletedBy = username;
+        const rs = await item.save();
+
         request.deletedBy = username;
         await request.save();
 
         try {
-            const transaction = await this.transactionsRepository.findOne({ where: { patientRequestItem: requestItem } });
+            const transaction = await this.transactionsRepository.findOne({ where: { patientRequestItem: item } });
+
+            if (transaction.status === 1) {
+                await this.transactionsRepository.save({
+                    ...transaction,
+                    transaction_type: 'credit',
+                    balance: transaction.amount_paid,
+                    amount_paid: 0,
+                    status: 1,
+                });
+            }
+
             transaction.deletedBy = username;
             await transaction.save();
             await transaction.softRemove();
@@ -568,21 +561,9 @@ export class PatientRequestService {
             console.log(e);
         }
 
-        try {
-            const transaction = await this.transactionsRepository.findOne({ where: { request } });
-            transaction.deletedBy = username;
-            await transaction.save();
-            await transaction.softRemove();
-        } catch (e) {
-            console.log(e);
-        }
-
-        await requestItem.softRemove();
+        await item.softRemove();
 
         await request.softRemove();
-
-        const rs = await this.patientRequestRepository.findOne(params.request_id, { withDeleted: true });
-        rs.items = await this.patientRequestItemRepository.find({ where: { id }, withDeleted: true, relations: ['diagnosis', 'transaction'] });
 
         return { success: true, data: rs };
     }
@@ -591,7 +572,7 @@ export class PatientRequestService {
         try {
             const { print_group, type } = params;
 
-            const request = await this.patientRequestRepository.findOne(id, { relations: ['patient', 'items'] });
+            const request = await this.patientRequestRepository.findOne(id, { relations: ['patient', 'item'] });
 
             const patient = request.patient;
 
@@ -599,12 +580,12 @@ export class PatientRequestService {
             let results;
             const printGroup = parseInt(print_group, 10);
             if (printGroup === 1) {
-                results = await this.patientRequestRepository.find({ where: { code: request.code }, relations: ['patient', 'items'] });
+                results = await this.patientRequestRepository.find({ where: { code: request.code }, relations: ['patient', 'item'] });
             } else {
                 results = [request];
             }
 
-            const specimen = [...results.map(r => r.items.map(i => i.labTest.specimens.map(s => s.label)))];
+            const specimen = [...results.map(r => r.item.labTest.specimens?.map(s => s.label))];
 
             const date = new Date();
             const filename = `${type}-${date.getTime()}.pdf`;

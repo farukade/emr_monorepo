@@ -137,7 +137,7 @@ export class PatientService {
                 .andWhere('q.payment_type != :type', { type: 'HMO' })
                 .getRawMany();
 
-            patient.outstanding = patient.creditLimit > 0 ? 0 : transactions.reduce((totalAmount, item) => totalAmount + item.amount, 0);
+            patient.outstanding = patient.creditLimit > 0 ? 0 : transactions.reduce((totalAmount, item) => totalAmount + item.balance, 0);
         }
 
         return {
@@ -149,17 +149,25 @@ export class PatientService {
         };
     }
 
-    async findPatient(param: string): Promise<Patient[]> {
-        const patients = await this.patientRepository.createQueryBuilder('p')
+    async findPatient(param): Promise<Patient[]> {
+        const { q, isOpd } = param;
+
+        const query = this.patientRepository.createQueryBuilder('p')
             .select('p.*')
             .andWhere(new Brackets(qb => {
-                qb.where('LOWER(p.surname) Like :surname', { surname: `%${param.toLowerCase()}%` })
-                    .orWhere('LOWER(p.other_names) Like :other_names', { other_names: `%${param.toLowerCase()}%` })
-                    .orWhere('p.legacy_patient_id Like :legacy_id', { legacy_id: `%${param}%` })
-                    .orWhere('p.phone_number Like :phone_number', { phone_number: `%${param}%` })
-                    .orWhere('CAST(p.id AS text) LIKE :id', { id: `%${param}%` });
-            }))
-            .getRawMany();
+                qb.where('LOWER(p.surname) Like :surname', { surname: `%${q.toLowerCase()}%` })
+                    .orWhere('LOWER(p.other_names) Like :other_names', { other_names: `%${q.toLowerCase()}%` })
+                    .orWhere('p.legacy_patient_id Like :legacy_id', { legacy_id: `%${q}%` })
+                    .orWhere('p.phone_number Like :phone_number', { phone_number: `%${q}%` })
+                    .orWhere('CAST(p.id AS text) LIKE :id', { id: `%${q}%` });
+            }));
+
+        if (isOpd && isOpd !== '') {
+            const isOutPatient = (isOpd === 1);
+            query.andWhere('p.is_out_patient Like :isOutPatient', { isOutPatient });
+        }
+
+        const patients = await query.getRawMany();
 
         for (const patient of patients) {
             patient.immunization = await this.immunizationRepository.find({
@@ -181,7 +189,7 @@ export class PatientService {
                 .andWhere('q.payment_type != :type', { type: 'HMO' })
                 .getRawMany();
 
-            patient.outstanding = patient.creditLimit > 0 ? 0 : transactions.reduce((total, item) => total + item.amount, 0);
+            patient.outstanding = patient.creditLimit > 0 ? 0 : transactions.reduce((total, item) => total + item.balance, 0);
         }
 
         return patients;
@@ -201,7 +209,7 @@ export class PatientService {
                 return { success: false, message: 'phone number already exists, please use another phone number.' };
             }
 
-            const hmo = await this.hmoSchemeRepository.findOne(hmoId);
+            let hmo = await this.hmoSchemeRepository.findOne(hmoId);
             const nok = await this.patientNOKRepository.saveNOK(patientDto);
 
             const patient = await this.patientRepository.savePatient(patientDto, nok, hmo, createdBy, pic);
@@ -211,7 +219,16 @@ export class PatientService {
 
             const category = await this.serviceCategoryRepository.findOne({ where: { name: 'registration' } });
             const service = await this.serviceRepository.findOne({ where: { category } });
-            const serviceCost = await this.serviceCostRepository.findOne({ where: { item: service, hmo } });
+            let serviceCost = await this.serviceCostRepository.findOne({ where: { code: service.code, hmo } });
+            if (!serviceCost || (serviceCost && serviceCost.tariff === 0)) {
+                hmo = await this.hmoSchemeRepository.findOne({
+                    where: { name: 'Private' },
+                });
+
+                serviceCost = await this.serviceCostRepository.findOne({
+                    where: { code: service.code, hmo },
+                });
+            }
 
             const data = {
                 patient,
@@ -223,6 +240,8 @@ export class PatientService {
                 createdBy,
                 status: 0,
                 hmo,
+                transaction_type: 'debit',
+                balance: serviceCost.tariff * -1,
             };
 
             await this.save(data);
@@ -243,7 +262,7 @@ export class PatientService {
 
             const transactions = await this.transactionsRepository.find({ where: { patient, status: 0 } });
 
-            const outstanding = patient.creditLimit > 0 ? 0 : transactions.reduce((total, item) => total + item.amount, 0);
+            const outstanding = patient.creditLimit > 0 ? 0 : transactions.reduce((total, item) => total + item.balance, 0);
             const pat = { ...patient, outstanding };
 
             return { success: true, patient: pat };
@@ -255,6 +274,8 @@ export class PatientService {
 
     async saveNewOpdPatient(patientDto: OpdPatientDto, createdBy: string, pic): Promise<any> {
         try {
+            console.log(patientDto);
+
             const patient = new Patient();
             patient.surname = patientDto.surname.toLocaleLowerCase();
             patient.other_names = patientDto.other_names.toLocaleLowerCase();
@@ -267,13 +288,17 @@ export class PatientService {
             if (pic) {
                 patient.profile_pic = pic.filename;
             }
+            console.log(patient);
+
+            return { success: false, message: 'could not save patient' };
+
             await patient.save();
             // save appointment
             const appointment = await this.appointmentRepository.saveOPDAppointment(patient, patientDto.opdType);
             // send new opd socket message
             this.appGateway.server.emit('new-opd-queue', appointment);
 
-            return { success: true, patient };
+            // return { success: true, patient };
         } catch (err) {
             return { success: false, message: err.message };
         }
@@ -521,7 +546,7 @@ export class PatientService {
         }
 
         const outstanding = transactions.filter(t => t.status !== 1 && t.payment_type !== 'HMO')
-            .reduce((sumTotal, item) => sumTotal + item.amount, 0);
+            .reduce((sumTotal, item) => sumTotal + item.balance, 0);
 
         const totalAmount = transactions.reduce((sumTotal, item) => sumTotal + item.amount, 0);
 
@@ -638,17 +663,15 @@ export class PatientService {
             doc.createdBy = createdBy;
             const rs = await doc.save();
 
-            if (param.document_type === 'radiology') {
+            if (param.document_type === 'scans') {
                 requestItem.filled = 1;
                 requestItem.filledBy = createdBy;
                 requestItem.filledAt = moment().format('YYYY-MM-DD HH:mm:ss');
                 requestItem.lastChangedBy = createdBy;
                 requestItem.document = rs;
-                await requestItem.save();
+                const res = await requestItem.save();
 
-                const item = await this.patientRequestItemRepository.findOne({ where: { id: param.id }, relations: ['diagnosis', 'transaction'] });
-
-                return { success: true, data: item };
+                return { success: true, data: res };
             }
 
             return { success: true, document: rs };

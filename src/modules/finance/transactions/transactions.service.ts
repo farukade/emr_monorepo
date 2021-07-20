@@ -153,7 +153,7 @@ export class TransactionsService {
             }
 
             if (transaction.service_cost_id) {
-                transaction.service = await this.serviceRepository.findOne(transaction.service_cost_id);
+                transaction.service = await this.serviceCostRepository.findOne(transaction.service_cost_id);
             }
         }
 
@@ -171,11 +171,15 @@ export class TransactionsService {
         // find patient record
         const patient = await this.patientRepository.findOne(patient_id);
 
-        const hmo = await this.hmoSchemeRepository.findOne(hmo_id);
+        let hmo = await this.hmoSchemeRepository.findOne(hmo_id);
 
         const service = await this.serviceRepository.findOne(service_id);
 
-        const serviceCost = await this.serviceCostRepository.findOne({ where: { item: service, hmo } });
+        let serviceCost = await this.serviceCostRepository.findOne({ where: { item: service, hmo } });
+        if (!serviceCost || (serviceCost && serviceCost.tariff === 0)) {
+            hmo = await this.hmoSchemeRepository.findOne({ where: { name: 'Private' } });
+            serviceCost = await this.serviceCostRepository.findOne({ where: { item: service, hmo } });
+        }
 
         const item = { name: service.name, amount: serviceCost.tariff };
 
@@ -191,8 +195,10 @@ export class TransactionsService {
                 createdBy,
                 lastChangedBy: createdBy,
                 status: 1,
-                hmo: patient.hmo,
+                hmo,
                 service: serviceCost,
+                transaction_type: 'debit',
+                balance: amount * -1,
             });
             return { success: true, transaction };
         } catch (error) {
@@ -206,6 +212,7 @@ export class TransactionsService {
             const transaction = await this.transactionsRepository.findOne(id);
             transaction.hmo_approval_code = code;
             transaction.status = 1;
+            transaction.balance = 0;
             transaction.lastChangedBy = createdBy;
             await transaction.save();
 
@@ -217,11 +224,15 @@ export class TransactionsService {
         // find patient record
         const patient = await this.patientRepository.findOne(patient_id);
 
-        const hmo = await this.hmoSchemeRepository.findOne(hmo_id);
+        let hmo = await this.hmoSchemeRepository.findOne(hmo_id);
 
         const service = await this.serviceRepository.findOne(service_id);
 
-        const serviceCost = await this.serviceCostRepository.findOne({ where: { item: service, hmo } });
+        let serviceCost = await this.serviceCostRepository.findOne({ where: { item: service, hmo } });
+        if (!serviceCost || (serviceCost && serviceCost.tariff === 0)) {
+            hmo = await this.hmoSchemeRepository.findOne({ where: { name: 'Private' } });
+            serviceCost = await this.serviceCostRepository.findOne({ where: { item: service, hmo } });
+        }
 
         const item = { name: service.name, amount: serviceCost.tariff };
 
@@ -234,7 +245,7 @@ export class TransactionsService {
             transaction.transaction_details = [item];
             transaction.lastChangedBy = createdBy;
             transaction.hmo_approval_code = code;
-            transaction.hmo = patient.hmo;
+            transaction.hmo = hmo;
             transaction.service = serviceCost;
             const data = await transaction.save();
 
@@ -247,6 +258,7 @@ export class TransactionsService {
     async approve(id: number, createdBy): Promise<any> {
         const transaction = await this.transactionsRepository.findOne(id);
         transaction.status = 1;
+        transaction.balance = 0;
         transaction.lastChangedBy = createdBy;
         const rs = await transaction.save();
 
@@ -262,6 +274,7 @@ export class TransactionsService {
 
         transaction.payment_type = '';
         transaction.amount = serviceCost.tariff;
+        transaction.balance = serviceCost.tariff * -1;
         transaction.transaction_details = { ...transaction.transaction_details, amount: serviceCost.tariff };
         transaction.hmo = hmo;
         transaction.lastChangedBy = createdBy;
@@ -291,7 +304,7 @@ export class TransactionsService {
     async processTransaction(id: number, transactionDto: ProcessTransactionDto, updatedBy): Promise<any> {
         const { voucher_id, amount_paid, voucher_amount, payment_type, patient_id, is_part_payment } = transactionDto;
         try {
-            const transaction = await this.transactionsRepository.findOne(id, { relations: ['patient', 'staff', 'patientRequestItem', 'request', 'appointment', 'hmo'] });
+            const transaction = await this.transactionsRepository.findOne(id, { relations: ['patient', 'staff', 'appointment', 'hmo'] });
 
             if (is_part_payment && amount_paid < transaction.amount) {
                 const duration = await getConnection().getRepository(Settings).findOne({ where: { slug: 'part-payment-duration' } });
@@ -309,8 +322,9 @@ export class TransactionsService {
                 balance.staff = transaction.staff;
                 balance.service = transaction.service;
                 balance.patientRequestItem = transaction.patientRequestItem;
-                balance.request = transaction.request;
                 balance.appointment = transaction.appointment;
+                balance.transaction_type = transaction.transaction_type;
+                balance.balance = (transaction.amount - amount_paid) * -1;
                 balance.status = -1;
                 balance.part_payment_expiry_date = date;
                 balance.hmo = transaction.hmo;
@@ -336,9 +350,7 @@ export class TransactionsService {
                 await voucher.save();
             }
 
-            if (is_part_payment && amount_paid < transaction.amount) {
-                transaction.remaining = transaction.amount - amount_paid;
-            }
+            transaction.balance = 0;
 
             let queue;
             if (transaction.next_location && transaction.next_location === 'vitals') {
@@ -378,9 +390,10 @@ export class TransactionsService {
         try {
             let transactions = [];
             for (const item of items) {
-                const transaction = await this.transactionsRepository.findOne(item.id, { relations: ['patient', 'staff', 'patientRequestItem', 'request', 'appointment', 'hmo'] });
+                const transaction = await this.transactionsRepository.findOne(item.id, { relations: ['patient', 'staff', 'appointment', 'hmo'] });
 
                 transaction.amount_paid = item.amount;
+                transaction.balance = 0;
                 transaction.payment_type = payment_type;
 
                 let queue;

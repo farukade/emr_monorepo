@@ -114,6 +114,8 @@ export class NicuService {
                 createdBy,
                 status: 0,
                 hmo: patient.hmo,
+                transaction_type: 'debit',
+                balance: accommodation.amount * -1,
             };
 
             await this.save(data);

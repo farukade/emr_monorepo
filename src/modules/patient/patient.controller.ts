@@ -33,9 +33,9 @@ export class PatientController {
 
     @Get('find')
     findPatientRecord(
-        @Query('q') q: string,
+        @Query() param,
     ): Promise<Patient[]> {
-        return this.patientService.findPatient(q);
+        return this.patientService.findPatient(param);
     }
 
     @Post('save')
@@ -68,7 +68,7 @@ export class PatientController {
             },
         }),
     }))
-    saveNewOpdCall(
+    saveNewOpdPatient(
         @Body() opdPatientDto: OpdPatientDto,
         @UploadedFile() pic,
         @Request() req,

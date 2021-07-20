@@ -25,11 +25,12 @@ export class ServicesController {
     }
 
     // get services by category id
-    @Get('/category/:id')
+    @Get('/category/:slug')
     getServicesByCategory(
-        @Param('id') id: number,
+        @Param('slug') slug: string,
+        @Query() urlParams,
     ): Promise<Service[]> {
-        return this.servicesService.getServicesByCategory(id);
+        return this.servicesService.getServicesByCategory(slug, urlParams);
     }
 
     @Post()

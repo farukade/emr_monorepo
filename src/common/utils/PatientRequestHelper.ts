@@ -5,10 +5,11 @@ import { Immunization } from '../../modules/patient/immunization/entities/immuni
 import * as moment from 'moment';
 import { PatientRequestItem } from '../../modules/patient/entities/patient_request_items.entity';
 import { LabTest } from '../../modules/settings/entities/lab_test.entity';
-import { Service } from '../../modules/settings/entities/service.entity';
 import { PatientDiagnosis } from '../../modules/patient/entities/patient_diagnosis.entity';
 import { DrugBatch } from '../../modules/inventory/entities/batches.entity';
 import { Drug } from '../../modules/inventory/entities/drug.entity';
+import { ServiceCost } from '../../modules/settings/entities/service_cost.entity';
+import { HmoScheme } from '../../modules/hmo/entities/hmo_scheme.entity';
 
 export class PatientRequestHelper {
     constructor(private patientRequestRepo: PatientRequestRepository) {
@@ -26,17 +27,17 @@ export class PatientRequestHelper {
                 .getCount();
 
             const nextId = `00000${requestCount + 1}`;
-            const code = `DH/${moment().format('MM')}/${nextId.slice(-5)}`;
+            const code = `LR/${moment().format('MM')}/${nextId.slice(-5)}`;
 
             let result = [];
             for (const item of tests) {
                 const data = {
                     code,
-                    requestType,
                     patient,
+                    requestType,
                     requestNote: request_note,
-                    createdBy,
                     urgent,
+                    createdBy,
                 };
                 const res = await this.save(data);
                 const lab = res.generatedMaps[0];
@@ -240,22 +241,34 @@ export class PatientRequestHelper {
                 .getCount();
 
             const nextId = `00000${requestCount + 1}`;
-            const code = `DH/${moment().format('MM')}/${nextId.slice(-5)}`;
+            const code = `${requestType.toUpperCase().substring(0, 1)}R/${moment().format('MM')}/${nextId.slice(-5)}`;
+
+            let hmo = patient.hmo;
 
             let result = [];
             for (const item of tests) {
                 const data = {
                     code,
-                    requestType,
                     patient,
-                    urgent,
+                    requestType,
                     requestNote: request_note,
+                    urgent,
                     createdBy,
                 };
                 const res = await this.save(data);
                 const request = res.generatedMaps[0];
 
-                const service = await getConnection().getRepository(Service).findOne(item.id);
+                let service = await getConnection().getRepository(ServiceCost).findOne({
+                    where: { code: item.code, hmo },
+                });
+
+                if (!service || (service && service.tariff === 0)) {
+                    hmo = await getConnection().getRepository(HmoScheme).findOne({ where: { name: 'Private' } });
+
+                    service = await getConnection().getRepository(ServiceCost).findOne({
+                        where: { code: item.code, hmo },
+                    });
+                }
 
                 const requestItem = {
                     request,
