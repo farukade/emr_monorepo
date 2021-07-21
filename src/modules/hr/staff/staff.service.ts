@@ -58,6 +58,7 @@ export class StaffService {
                     .orWhere('p.phone_number Like :phone_number', { phone_number: `%${q}%` })
                     .orWhere('CAST(s.id AS text) LIKE :id', { id: `%${q}%` });
             }))
+            .take(20)
             .getRawMany();
     }
 

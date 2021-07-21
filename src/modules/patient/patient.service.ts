@@ -167,7 +167,7 @@ export class PatientService {
             query.andWhere('p.is_out_patient Like :isOutPatient', { isOutPatient });
         }
 
-        const patients = await query.getRawMany();
+        const patients = await query.take(20).getRawMany();
 
         for (const patient of patients) {
             patient.immunization = await this.immunizationRepository.find({

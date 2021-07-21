@@ -42,6 +42,9 @@ export class PatientRequest extends CustomBaseEntity {
     @JoinColumn({ name: 'ivf_id' })
     ivf: IvfEnrollment;
 
+    @Column({ nullable: true, name: 'procedure_id' })
+    procedure: number;
+
     @ManyToOne(() => AntenatalEnrollment, { nullable: true })
     @JoinColumn({ name: 'antenatal_id' })
     antenatal: AntenatalEnrollment;

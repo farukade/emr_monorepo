@@ -58,13 +58,17 @@ export class TransactionsService {
             query.where('q.bill_source = :type', { type: bill_source });
         }
 
-        if (startDate && startDate !== '') {
-            const start = moment(startDate).endOf('day').toISOString();
-            query.andWhere(`q.createdAt >= '${start}'`);
-        }
-        if (endDate && endDate !== '') {
-            const end = moment(endDate).endOf('day').toISOString();
-            query.andWhere(`q.createdAt <= '${end}'`);
+        if (startDate && startDate !== '' && endDate && endDate !== '' && endDate === startDate) {
+            query.andWhere(`DATE(q.createdAt) = '${startDate}'`);
+        } else {
+            if (startDate && startDate !== '') {
+                const start = moment(startDate).endOf('day').toISOString();
+                query.andWhere(`q.createdAt >= '${start}'`);
+            }
+            if (endDate && endDate !== '') {
+                const end = moment(endDate).endOf('day').toISOString();
+                query.andWhere(`q.createdAt <= '${end}'`);
+            }
         }
 
         if (payment_type && payment_type !== '') {
@@ -114,7 +118,7 @@ export class TransactionsService {
     }
 
     async fetchPending(options: PaginationOptionsInterface, params): Promise<Pagination> {
-        const { startDate, endDate, patient_id } = params;
+        const { startDate, endDate, patient_id, bill_source } = params;
 
         const query = this.transactionsRepository.createQueryBuilder('q').select('q.*');
 
@@ -135,6 +139,10 @@ export class TransactionsService {
 
         if (patient_id && patient_id !== '') {
             query.andWhere('q.patient_id = :patient_id', { patient_id });
+        }
+
+        if (bill_source && bill_source !== '') {
+            query.where('q.bill_source = :type', { type: bill_source });
         }
 
         const page = options.page - 1;

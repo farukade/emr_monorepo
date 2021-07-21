@@ -318,14 +318,14 @@ export class ConsultationService {
             }
 
             if (investigations.radiologyRequest) {
-                const request = await PatientRequestHelper.handleServiceRequest(investigations.radiologyRequest, patient, createdBy, 'radiology');
+                const request = await PatientRequestHelper.handleServiceRequest(investigations.radiologyRequest, patient, createdBy, 'scans');
                 if (request.success) {
                     // save transaction
                     const payment = await RequestPaymentHelper.servicePayment(
                         request.data,
                         patient,
                         createdBy,
-                        'radiology',
+                        'scans',
                         investigations.radiologyRequest.pay_later,
                     );
                     this.appGateway.server.emit('paypoint-queue', { payment: payment.transactions });
@@ -360,7 +360,7 @@ export class ConsultationService {
                 newAppointment.appointment_date = appointmentDate;
                 newAppointment.serviceCategory = appointment.serviceCategory;
                 newAppointment.service = appointment.service;
-                newAppointment.amountToPay = '0.00';
+                newAppointment.amountToPay = 0.00;
                 newAppointment.description = nextAppointment.description;
                 newAppointment.department = appointment.department;
                 newAppointment.createdBy = createdBy;

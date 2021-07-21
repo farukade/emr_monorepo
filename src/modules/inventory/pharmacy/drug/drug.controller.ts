@@ -5,7 +5,7 @@ import { DrugDto } from '../../dto/drug.dto';
 import { DrugService } from './drug.service';
 
 @UseGuards(AuthGuard('jwt'))
-@Controller('inventory/cafeteria')
+@Controller('inventory/drugs')
 export class DrugController {
     constructor(private drugService: DrugService) {
     }

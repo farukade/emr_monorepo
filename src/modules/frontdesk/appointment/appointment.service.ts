@@ -13,7 +13,7 @@ import { ServiceRepository } from '../../settings/services/repositories/service.
 import { Patient } from '../../patient/entities/patient.entity';
 import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
 import { AppGateway } from '../../../app.gateway';
-import { Brackets, getRepository } from 'typeorm';
+import { Brackets, getConnection, getRepository } from 'typeorm';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import { PaginationOptionsInterface } from '../../../common/paginate';
@@ -194,10 +194,8 @@ export class AppointmentService {
             // find department
             const department = await this.departmentRepository.findOne(department_id);
 
-            const amount = serviceCost.tariff;
-
             // tslint:disable-next-line:max-line-length
-            const appointment = await this.appointmentRepository.saveAppointment(appointmentDto, patient, consultingRoom, doctor, amount, service, serviceCost, department);
+            const appointment = await this.appointmentRepository.saveAppointment(appointmentDto, patient, consultingRoom, doctor, service, serviceCost, department);
 
             // update patient appointment date
             patient.lastAppointmentDate = moment().format('YYYY-MM-DD');
@@ -206,45 +204,53 @@ export class AppointmentService {
             let queue;
             let paymentType = null;
 
-            // add patient
-            appointment.patient = patient;
+            if (hmo.name === 'Private') {
+                // update appointment status
+                appointment.status = 'Pending Paypoint Approval';
+                await appointment.save();
+            } else {
+                // update appointment status
+                paymentType = 'HMO';
+                appointment.status = 'Pending HMO Approval';
+                await appointment.save();
+            }
 
-            if (sendToQueue) {
-                if (consultation_id !== 'follow-up') {
+            if (consultation_id !== 'follow-up') {
+                // save payment
+                const payment = await this.saveTransaction(patient, hmo, service, serviceCost, paymentType, username, appointment);
+                await getConnection()
+                    .createQueryBuilder()
+                    .update(Appointment)
+                    .set({ transaction: payment })
+                    .where('id = :id', { id: appointment.id })
+                    .execute();
+
+                // send queue message
+                if (sendToQueue) {
                     if (hmo.name === 'Private') {
-                        // update appointment status
-                        appointment.status = 'Pending Paypoint Approval';
-                        await appointment.save();
-                        // save paypoint queue
-                        queue = await this.queueSystemRepository.saveQueue(appointment, 'paypoint');
+                        queue = await this.queueSystemRepository.saveQueue(appointment, 'paypoint', patient);
                     } else {
-                        paymentType = 'HMO';
-                        // update appointment status
-                        appointment.status = 'Pending HMO Approval';
-
-                        await appointment.save();
-                        // save HMO queue
-                        queue = await this.queueSystemRepository.saveQueue(appointment, 'hmo');
+                        queue = await this.queueSystemRepository.saveQueue(appointment, 'hmo', patient);
                     }
 
-                    // save payment
-                    const payment = await this.saveTransaction(patient, hmo, service, serviceCost, amount, paymentType, username, appointment);
-                    appointment.transaction = payment;
-                    await appointment.save();
-                    // send queue message
                     this.appGateway.server.emit('paypoint-queue', { queue, payment });
-                } else {
-                    queue = await this.queueSystemRepository.saveQueue(appointment, 'vitals');
+                }
+            } else {
+                // send queue message
+                if (sendToQueue) {
+                    queue = await this.queueSystemRepository.saveQueue(appointment, 'vitals', patient);
                     this.appGateway.server.emit('nursing-queue', { queue });
                 }
+            }
 
+            if (queue && sendToQueue) {
                 this.appGateway.server.emit('all-queues', { queue });
             }
-            const resp = { success: true, appointment };
 
             // go to front desk
-            this.appGateway.server.emit('new-appointment', resp);
-            return resp;
+            this.appGateway.server.emit('new-appointment', { success: true, appointment });
+
+            return { success: true, appointment };
         } catch (error) {
             console.log(error);
             return { success: false, message: error.message };
@@ -335,7 +341,9 @@ export class AppointmentService {
         }
     }
 
-    private async saveTransaction(patient: Patient, hmo, service: Service, serviceCost: ServiceCost, amount, paymentType, createdBy, appointment) {
+    private async saveTransaction(patient: Patient, hmo, service: Service, serviceCost: ServiceCost, paymentType, createdBy, appointment) {
+        const amount = serviceCost.tariff;
+
         const data = {
             patient,
             amount,

@@ -9,17 +9,22 @@ import { TransactionsRepository } from '../../finance/transactions/transactions.
 import { AdmissionsRepository } from '../admissions/repositories/admissions.repository';
 import { AppGateway } from '../../../app.gateway';
 import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repository';
+import { DrugRepository } from '../../inventory/pharmacy/drug/drug.repository';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([
-    PatientRequestRepository,
-    HmoSchemeRepository,
-    PatientRequestItemRepository,
-    PatientRepository,
-    TransactionsRepository,
-    AdmissionsRepository,
-  ])],
-  controllers: [PatientRequestController],
-  providers: [AppGateway, PatientRequestService],
+    imports: [
+        TypeOrmModule.forFeature([
+            PatientRequestRepository,
+            HmoSchemeRepository,
+            PatientRequestItemRepository,
+            PatientRepository,
+            TransactionsRepository,
+            AdmissionsRepository,
+            DrugRepository,
+        ]),
+    ],
+    controllers: [PatientRequestController],
+    providers: [AppGateway, PatientRequestService],
 })
-export class PatientRequestModule {}
+export class PatientRequestModule {
+}

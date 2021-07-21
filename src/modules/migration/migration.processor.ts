@@ -24,6 +24,7 @@ import { SpecimenRepository } from '../settings/lab/repositories/specimen.reposi
 import { LabTestRepository } from '../settings/lab/repositories/lab.test.repository';
 import { GroupRepository } from '../settings/lab/repositories/group.repository';
 import { GroupTest } from '../settings/entities/group_tests.entity';
+import * as moment from 'moment';
 
 @Processor(process.env.MIGRATION_QUEUE_NAME)
 export class MigrationProcessor {
@@ -321,13 +322,15 @@ export class MigrationProcessor {
                     where: { code: ILike(`%${item.drug_id}%`) },
                 });
 
+                const expirationDate = moment(item.expiration_date).isValid() ? moment(item.expiration_date).format('YYYY-MM-DD') : null;
+
                 await this.drugBatchRepository.save({
                     name: item.name,
                     drug,
                     quantity: item.quantity,
                     unitPrice: item.unit_price,
                     costPrice: 0,
-                    expirationDate: item.expiration_date,
+                    expirationDate,
                 });
             }
 

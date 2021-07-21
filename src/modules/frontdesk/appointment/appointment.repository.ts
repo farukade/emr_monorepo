@@ -17,12 +17,12 @@ export class AppointmentRepository extends Repository<Appointment> {
         patient: Patient,
         consultingRoom: ConsultingRoom,
         doctor: StaffDetails,
-        amount,
         service,
         serviceCost: ServiceCost,
         department: Department,
     ) {
         const appointmentDate = `${moment(appointmentDto.appointment_date).format('YYYY-MM-DD')} ${moment().format('HH:mm:ss')}`;
+
         const appointment = new Appointment();
         appointment.patient = patient;
         appointment.whomToSee = doctor;
@@ -30,7 +30,7 @@ export class AppointmentRepository extends Repository<Appointment> {
         appointment.appointment_date = appointmentDate;
         appointment.serviceCategory = service.category;
         appointment.service = serviceCost;
-        appointment.amountToPay = amount;
+        appointment.amountToPay = serviceCost.tariff;
         appointment.description = appointmentDto.description;
         appointment.referredBy = appointmentDto.referredBy;
         appointment.referralCompany = appointmentDto.referralCompany;
@@ -43,7 +43,7 @@ export class AppointmentRepository extends Repository<Appointment> {
     async saveOPDAppointment(patient, opdType) {
         const appointment = new Appointment();
         appointment.patient = patient;
-        appointment.amountToPay = '0';
+        appointment.amountToPay = 0;
         appointment.appointment_date = moment().format('YYYY-MM-DD HH:mm:ss');
         appointment.appointmentType = opdType;
         await appointment.save();

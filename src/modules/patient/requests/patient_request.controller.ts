@@ -67,8 +67,9 @@ export class PatientRequestController {
         @Param('requestId') requestId: number,
         @Query() urlParams,
         @Request() req,
+        @Body() body,
     ) {
-        return this.patientRequestService.doApproveResult(requestId, urlParams, req.user.username);
+        return this.patientRequestService.doApproveResult(requestId, urlParams, body, req.user.username);
     }
 
     @Patch(':requestId/reject-result')

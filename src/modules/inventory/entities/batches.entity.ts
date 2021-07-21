@@ -8,7 +8,7 @@ export class DrugBatch extends CustomBaseEntity {
     @Column({ type: 'varchar', length: 300 })
     name: string;
 
-    @ManyToOne(type => Drug, { nullable: true, eager: true })
+    @ManyToOne(type => Drug, { eager: true })
     @JoinColumn({ name: 'drug_id' })
     drug: Drug;
 

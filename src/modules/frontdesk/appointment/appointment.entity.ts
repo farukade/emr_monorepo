@@ -63,8 +63,8 @@ export class Appointment extends CustomBaseEntity {
     @Column({ type: 'smallint', default: 0 })
     canSeeDoctor: number;
 
-    @Column({ type: 'float4', default: 0 })
-    amountToPay: string;
+    @Column({ type: 'float8', default: 0 })
+    amountToPay: number;
 
     @OneToOne(type => Encounter, item => item.appointment, { eager: true })
     encounter: Encounter;

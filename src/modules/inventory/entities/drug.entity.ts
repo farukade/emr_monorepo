@@ -1,7 +1,8 @@
-import { Column, Entity, ManyToOne, JoinColumn } from 'typeorm';
+import { Column, Entity, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 import { DrugGeneric } from './drug_generic.entity';
 import { DrugManufacturer } from './drug_manufacturers.entity';
+import { DrugBatch } from './batches.entity';
 
 @Entity({ name: 'drugs' })
 export class Drug extends CustomBaseEntity {
@@ -27,4 +28,7 @@ export class Drug extends CustomBaseEntity {
     @ManyToOne(type => DrugManufacturer, { nullable: true })
     @JoinColumn({ name: 'manufacturer_id' })
     manufacturer: DrugManufacturer;
+
+    @OneToMany(type => DrugBatch, item => item.drug)
+    batches: DrugBatch[];
 }

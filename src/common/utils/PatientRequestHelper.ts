@@ -6,10 +6,10 @@ import * as moment from 'moment';
 import { PatientRequestItem } from '../../modules/patient/entities/patient_request_items.entity';
 import { LabTest } from '../../modules/settings/entities/lab_test.entity';
 import { PatientDiagnosis } from '../../modules/patient/entities/patient_diagnosis.entity';
-import { DrugBatch } from '../../modules/inventory/entities/batches.entity';
 import { Drug } from '../../modules/inventory/entities/drug.entity';
 import { ServiceCost } from '../../modules/settings/entities/service_cost.entity';
 import { HmoScheme } from '../../modules/hmo/entities/hmo_scheme.entity';
+import { DrugGeneric } from '../../modules/inventory/entities/drug_generic.entity';
 
 export class PatientRequestHelper {
     constructor(private patientRequestRepo: PatientRequestRepository) {
@@ -23,7 +23,7 @@ export class PatientRequestHelper {
                 .createQueryBuilder()
                 .select('*')
                 .from(PatientRequest, 'q')
-                .where('q.requestType = :type', { type: 'lab' })
+                .where('q.requestType = :type', { type: requestType })
                 .getCount();
 
             const nextId = `00000${requestCount + 1}`;
@@ -50,7 +50,7 @@ export class PatientRequestHelper {
                 };
                 const rs = await this.saveItem(requestItem);
 
-                lab.items = [rs.generatedMaps[0]];
+                lab.item = rs.generatedMaps[0];
 
                 result = [...result, lab];
             }
@@ -63,83 +63,77 @@ export class PatientRequestHelper {
     }
 
     static async handlePharmacyRequest(param, patient, createdBy) {
-        const { requestType, request_note, items, id, procedure_id } = param;
-
-        const data = {
-            requestType,
-            patient,
-            requestNote: request_note,
-            createdBy,
-            lastChangedBy: null,
-            procedureId: procedure_id,
-        };
-
-        let res;
+        const { requestType, request_note, items, procedure_id } = param;
         try {
-            if (id && id !== '') {
-                data.lastChangedBy = createdBy;
-                res = await this.update(data, id);
-            } else {
-                data.createdBy = createdBy;
-                res = await this.save(data);
-            }
+            const requestCount = await getConnection()
+                .createQueryBuilder()
+                .select('*')
+                .from(PatientRequest, 'q')
+                .groupBy('')
+                .where('q.requestType = :type', { type: requestType })
+                .getCount();
 
-            const regimen = res.generatedMaps[0];
+            const nextId = `00000${requestCount + 1}`;
+            const code = `DR/${moment().format('MM')}/${nextId.slice(-5)}`;
 
             let result = [];
-            // tslint:disable-next-line:no-empty
-            if (id && id !== '') {
-            } else {
-                let regimenItems = [];
-                for (const item of items) {
-                    const drugBatch = await getConnection().getRepository(DrugBatch).findOne(item.drug_batch_id);
-                    const drug = await getConnection().getRepository(Drug).findOne(drugBatch.drug.id);
+            for (const item of items) {
+                const data = {
+                    code,
+                    patient,
+                    requestType,
+                    requestNote: request_note,
+                    createdBy,
+                    lastChangedBy: null,
+                    procedure: procedure_id,
+                };
+                const res = await this.save(data);
+                const regimen = res.generatedMaps[0];
 
-                    let refills = 0;
-                    try {
-                        refills = item.refills ? parseInt(item.refills, 10) : 0;
-                    } catch (e) {
-                        refills = 0;
-                    }
+                const generic = item.generic ? await getConnection().getRepository(DrugGeneric).findOne(item.generic?.id) : null;
+                const drug = item.drug ? await getConnection().getRepository(Drug).findOne(item.drug?.id) : null;
 
-                    const requestItem = {
-                        request: regimen,
-                        drugBatch,
-                        drug: drugBatch.drug,
-                        drugGeneric: drug.generic,
-                        doseQuantity: item.dose_quantity,
-                        refillable: refills > 0,
-                        refills,
-                        frequency: item.frequency,
-                        frequencyType: item.frequencyType,
-                        duration: item.duration,
-                        externalPrescription: item.prescription,
-                        note: item.regimenInstruction,
-                    };
-
-                    const rs = await this.saveItem(requestItem);
-                    const reqItem = rs.generatedMaps[0];
-
-                    let diags = [];
-                    if (item.diagnosis) {
-                        for (const diag of item.diagnosis) {
-                            const i = new PatientDiagnosis();
-                            i.request = reqItem;
-                            i.patient = patient;
-                            i.item = diag;
-                            await i.save();
-
-                            diags = [...diags, i];
-                        }
-                    }
-
-                    regimenItems = [...regimenItems, { ...reqItem, diagnosis: diags }];
+                let refills = 0;
+                try {
+                    refills = item.refills ? parseInt(item.refills, 10) : 0;
+                } catch (e) {
+                    refills = 0;
                 }
 
-                regimen.items = regimenItems;
-            }
+                const requestItem = {
+                    request: regimen,
+                    drug,
+                    drugGeneric: generic,
+                    doseQuantity: item.dose_quantity,
+                    refillable: refills > 0,
+                    refills,
+                    frequency: item.frequency,
+                    frequencyType: item.frequencyType,
+                    duration: item.duration,
+                    externalPrescription: item.prescription,
+                    note: item.regimenInstruction,
+                };
 
-            result = [...result, regimen];
+                const rs = await this.saveItem(requestItem);
+                const reqItem = rs.generatedMaps[0];
+
+                let diags = [];
+                if (item.diagnosis) {
+                    for (const diag of item.diagnosis) {
+                        const i = new PatientDiagnosis();
+                        i.request = reqItem;
+                        i.patient = patient;
+                        i.item = diag;
+                        await i.save();
+
+                        diags = [...diags, i];
+                    }
+                }
+
+                regimen.item = { ...reqItem, diagnosis: diags };
+
+                result = [...result, regimen];
+            }
 
             return { success: true, data: result };
         } catch (error) {
@@ -149,7 +143,18 @@ export class PatientRequestHelper {
     }
 
     static async handleVaccinationRequest(param, patient, createdBy) {
-        const { requestType, date_due, request_note } = param;
+        const { date_due } = param;
+
+        const requestCount = await getConnection()
+            .createQueryBuilder()
+            .select('*')
+            .from(PatientRequest, 'q')
+            .groupBy('')
+            .where('q.requestType = :type', { type: 'drugs' })
+            .getCount();
+
+        const nextId = `00000${requestCount + 1}`;
+        const code = `PR/${moment().format('MM')}/${nextId.slice(-5)}`;
 
         const vaccines = await getConnection()
             .getRepository(Immunization)
@@ -186,21 +191,20 @@ export class PatientRequestHelper {
                 .execute();
         }
 
-        const data = {
-            requestType: 'pharmacy',
-            patient,
-            createdBy,
-            requestNote: 'immunization',
-        };
-
         try {
-            const res = await this.save(data);
-            const regimen = res.generatedMaps[0];
-
             let result = [];
-
-            let regimenItems = [];
             for (const item of body) {
+                const data = {
+                    code,
+                    patient,
+                    requestType: 'drugs',
+                    requestNote: 'immunization',
+                    createdBy,
+                    lastChangedBy: null,
+                };
+                const res = await this.save(data);
+                const regimen = res.generatedMaps[0];
+
                 const requestItem = {
                     request: regimen,
                     doseQuantity: item.dose_quantity,
@@ -216,12 +220,10 @@ export class PatientRequestHelper {
                 const rs = await this.saveItem(requestItem);
                 const reqItem = rs.generatedMaps[0];
 
-                regimenItems = [...regimenItems, reqItem];
+                regimen.item = { ...reqItem };
+
+                result = [...result, regimen];
             }
-
-            regimen.items = regimenItems;
-
-            result = [...result, regimen];
 
             return { success: true, data: result };
         } catch (error) {
