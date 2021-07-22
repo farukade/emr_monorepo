@@ -30,7 +30,7 @@ export class QueueSystemService {
         return await this.queueSystemRepository.find({
             where: { queueDate: today, status: 1 },
             relations: ['appointment', 'appointment.patient', 'appointment.whomToSee',
-                'appointment.consultingRoom', 'appointment.serviceCategory', 'appointment.serviceType'],
+                'appointment.consultingRoom', 'appointment.serviceCategory', 'appointment.service'],
             // take: 10,
             order: {
                 queueNumber: 'ASC',
@@ -43,9 +43,8 @@ export class QueueSystemService {
 
         return await this.queueSystemRepository.find({
             where: { queueDate: today, status: 1, queueType: 'vitals' },
-            relations: ['appointment', 'appointment.patient', 'appointment.whomToSee',
-                'appointment.consultingRoom', 'appointment.serviceCategory', 'appointment.serviceType'],
-            // take: 10,
+            relations: ['patient', 'appointment', 'appointment.patient', 'appointment.whomToSee',
+                'appointment.consultingRoom', 'appointment.serviceCategory', 'appointment.service'],
             order: {
                 queueNumber: 'ASC',
             },

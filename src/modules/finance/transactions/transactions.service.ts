@@ -126,7 +126,7 @@ export class TransactionsService {
             qb.where('q.status = 0').orWhere('q.status = -1');
         }));
 
-        query.andWhere('q.payment_type != :type', { type: 'HMO' });
+        query.andWhere('q.payment_type is null');
 
         if (startDate && startDate !== '') {
             const start = moment(startDate).endOf('day').toISOString();
@@ -375,7 +375,7 @@ export class TransactionsService {
                 if (!appointment) {
                     return { success: false, message: 'Cannot find appointment' };
                 }
-                queue = await this.queueSystemRepository.saveQueue(appointment, transaction.next_location);
+                queue = await this.queueSystemRepository.saveQueue(appointment, transaction.next_location, appointment.patient);
                 this.appGateway.server.emit('nursing-queue', { queue });
             }
 

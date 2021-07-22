@@ -1,6 +1,5 @@
-import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column } from 'typeorm';
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
-import { Vendor } from './vendor.entity';
 
 @Entity({ name: 'store_inventories' })
 export class StoreInventory extends CustomBaseEntity {

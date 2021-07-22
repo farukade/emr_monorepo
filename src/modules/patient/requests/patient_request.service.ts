@@ -605,8 +605,6 @@ export class PatientRequestService {
                 results = [request];
             }
 
-            const specimen = [...results.map(r => r.item.labTest.specimens?.map(s => s.label))];
-
             const date = new Date();
             const filename = `${type}-${date.getTime()}.pdf`;
             const filepath = path.resolve(__dirname, `../../../../public/result/${filename}`);
@@ -631,6 +629,8 @@ export class PatientRequestService {
                     break;
                 case 'lab':
                 default:
+                    const specimen = [...results.map(r => r.item.labTest.specimens?.map(s => s.label))];
+
                     content = {
                         ...data,
                         lab_id: request.code,
