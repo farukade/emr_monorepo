@@ -12,7 +12,7 @@ import { TransactionsRepository } from '../../finance/transactions/transactions.
 import { AppGateway } from '../../../app.gateway';
 import { getConnection } from 'typeorm';
 import { Transactions } from '../../finance/transactions/transaction.entity';
-import { generatePDF } from '../../../common/utils/utils';
+import { formatPID, generatePDF, getStaff } from '../../../common/utils/utils';
 import { AdmissionsRepository } from '../admissions/repositories/admissions.repository';
 import * as path from 'path';
 import { Drug } from '../../inventory/entities/drug.entity';
@@ -374,61 +374,61 @@ export class PatientRequestService {
                 }
             case 'drugs':
             default:
-            try {
-                const requests = await this.patientRequestRepository.find({
-                    where: { code },
-                    relations: ['item', 'patient'],
-                });
+                try {
+                    const requests = await this.patientRequestRepository.find({
+                        where: { code },
+                        relations: ['item', 'patient'],
+                    });
 
-                let resultItems = [];
-                for (const reqItem of requests) {
-                    const requestItem = await this.patientRequestItemRepository.findOne(reqItem.item.id);
+                    let resultItems = [];
+                    for (const reqItem of requests) {
+                        const requestItem = await this.patientRequestItemRepository.findOne(reqItem.item.id);
 
-                    requestItem.approved = 1;
-                    requestItem.approvedBy = username;
-                    requestItem.approvedAt = moment().format('YYYY-MM-DD HH:mm:ss');
-                    requestItem.lastChangedBy = username;
-                    const rs = await requestItem.save();
+                        requestItem.approved = 1;
+                        requestItem.approvedBy = username;
+                        requestItem.approvedAt = moment().format('YYYY-MM-DD HH:mm:ss');
+                        requestItem.lastChangedBy = username;
+                        const rs = await requestItem.save();
 
-                    resultItems = [...resultItems, rs];
-                }
-
-                for (const reqItem of requests) {
-                    const admission = await this.admissionRepository.findOne({ where: { patient: reqItem.patient } });
-
-                    // @ts-ignore
-                    const { vaccine } = reqItem.item;
-                    if (vaccine) {
-                        const newTask = new AdmissionClinicalTask();
-
-                        newTask.task = 'Immunization';
-                        newTask.title = `Give ${reqItem.item.drug.name} Immediately`;
-                        newTask.taskType = 'regimen';
-                        newTask.drug = { ...reqItem.item.drug, vaccine };
-                        newTask.dose = 1;
-                        newTask.interval = 1;
-                        newTask.intervalType = 'immediately';
-                        newTask.frequency = 'Immediately';
-                        newTask.taskCount = 1;
-                        newTask.startTime = moment().format('YYYY-MM-DD HH:mm:ss');
-                        newTask.nextTime = moment().format('YYYY-MM-DD HH:mm:ss');
-                        newTask.patient = reqItem.patient;
-                        newTask.admission = admission;
-                        newTask.createdBy = username;
-                        newTask.request = reqItem;
-
-                        await newTask.save();
+                        resultItems = [...resultItems, rs];
                     }
 
-                    reqItem.status = 1;
-                    reqItem.lastChangedBy = username;
-                    await reqItem.save();
-                }
+                    for (const reqItem of requests) {
+                        const admission = await this.admissionRepository.findOne({ where: { patient: reqItem.patient } });
 
-                return { success: true, data: resultItems };
-            } catch (e) {
-                return { success: false, message: e.message };
-            }
+                        // @ts-ignore
+                        const { vaccine } = reqItem.item;
+                        if (vaccine) {
+                            const newTask = new AdmissionClinicalTask();
+
+                            newTask.task = 'Immunization';
+                            newTask.title = `Give ${reqItem.item.drug.name} Immediately`;
+                            newTask.taskType = 'regimen';
+                            newTask.drug = { ...reqItem.item.drug, vaccine };
+                            newTask.dose = 1;
+                            newTask.interval = 1;
+                            newTask.intervalType = 'immediately';
+                            newTask.frequency = 'Immediately';
+                            newTask.taskCount = 1;
+                            newTask.startTime = moment().format('YYYY-MM-DD HH:mm:ss');
+                            newTask.nextTime = moment().format('YYYY-MM-DD HH:mm:ss');
+                            newTask.patient = reqItem.patient;
+                            newTask.admission = admission;
+                            newTask.createdBy = username;
+                            newTask.request = reqItem;
+
+                            await newTask.save();
+                        }
+
+                        reqItem.status = 1;
+                        reqItem.lastChangedBy = username;
+                        await reqItem.save();
+                    }
+
+                    return { success: true, data: resultItems };
+                } catch (e) {
+                    return { success: false, message: e.message };
+                }
         }
     }
 
@@ -496,7 +496,11 @@ export class PatientRequestService {
             item.lastChangedBy = username;
             const rs = await item.save();
 
-            return { success: true, data: rs };
+            const transaction = await this.transactionsRepository.findOne({
+                where: { patientRequestItem: item },
+            });
+
+            return { success: true, data: { ...rs, transaction } };
         } catch (e) {
             return { success: false, message: e.message };
         }
@@ -519,7 +523,11 @@ export class PatientRequestService {
             request.status = 1;
             await request.save();
 
-            return { success: true, data: rs };
+            const transaction = await this.transactionsRepository.findOne({
+                where: { patientRequestItem: item },
+            });
+
+            return { success: true, data: { ...rs, transaction } };
         } catch (e) {
             return { success: false, message: e.message };
         }
@@ -539,7 +547,11 @@ export class PatientRequestService {
             item.lastChangedBy = username;
             const rs = await item.save();
 
-            return { success: true, data: rs };
+            const transaction = await this.transactionsRepository.findOne({
+                where: { patientRequestItem: item },
+            });
+
+            return { success: true, data: { ...rs, transaction } };
         } catch (e) {
             return { success: false, message: e.message };
         }
@@ -594,7 +606,7 @@ export class PatientRequestService {
 
             const request = await this.patientRequestRepository.findOne(id, { relations: ['patient', 'item'] });
 
-            const patient = request.patient;
+            const patient = await this.patientRepository.findOne(request.patient.id, { relations: ['hmo'] });
 
             // tslint:disable-next-line:prefer-const
             let results;
@@ -617,13 +629,18 @@ export class PatientRequestService {
                 age: moment().diff(dob, 'years'),
                 filepath,
                 results,
+                patient_id: formatPID(patient.id),
                 logo: `${process.env.ENDPOINT}/public/images/logo.png`,
             };
 
             let content;
             switch (type) {
-                case 'regimen':
-                    content = { ...data };
+                case 'drugs':
+                    content = {
+                        ...data,
+                        regimen_id: request.code,
+                        prescribed_by: await getStaff(results[0].createdBy),
+                    };
 
                     await generatePDF('regimen-prescription', content);
                     break;

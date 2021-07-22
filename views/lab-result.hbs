@@ -12,10 +12,10 @@
     <div style="color: #636363; font-size: 14px; padding: 0px;">
         <table style="margin-top: 20px; width: 100%;">
             <tr>
-                <td>
+                <td style="vertical-align: top">
                     <div style="display: flex; align-content: space-between; width: 100%;">
                         <div style="font-size: 14px; font-weight: 500; color: #111111; margin-right: 12px;">NAME:</div>
-                        <div style="font-size: 14px; font-weight: 500; color: #7D7D7D; text-transform: capitalize;">{{ patient.surname }} {{ patient.other_names }}</div>
+                        <div style="font-size: 14px; font-weight: 500; color: #7D7D7D; text-transform: capitalize;">{{ patient.other_names }} {{ patient.surname }}</div>
                     </div>
                     <div style="display: flex;">
                         <div style="font-size: 14px; font-weight: 500; color: #111111; margin-right: 12px;">HOSPITAL
@@ -30,7 +30,7 @@
                         <div style="font-size: 14px; font-weight: 500; color: #7D7D7D;">ROUTINE</div>
                     </div>
                 </td>
-                <td>
+                <td style="vertical-align: top">
                     <div style="display: flex;">
                         <div style="font-size: 14px; font-weight: 500; color: #111111; margin-right: 12px;">SEX:</div>
                         <div style="font-size: 14px; font-weight: 500; color: #7D7D7D;">{{ patient.gender }}</div>
@@ -46,7 +46,7 @@
                         <div style="font-size: 14px; font-weight: 500; color: #7D7D7D;">{{ specimen }}</div>
                     </div>
                 </td>
-                <td>
+                <td style="vertical-align: top">
                     <div style="display: flex;">
                         <div style="font-size: 14px; font-weight: 500; color: #111111; margin-right: 12px;">AGE:</div>
                         <div style="font-size: 14px; font-weight: 500; color: #7D7D7D;">{{ age }}years</div>
@@ -62,16 +62,15 @@
     <div style="padding: 35px 0px">
         <table style="width: 100%;">
             {{#each results}}
-                {{#each items}}
                 <tr>
-                    <td><h3 style="margin:0px;text-align: center;">{{ labTest.category.name }}</h3></td>
+                    <td><h3 style="margin:0px;text-align: center;">{{ item.labTest.category.name }}</h3></td>
                 </tr>
                 <tr>
                     <td>
-                        {{#if labTest.hasParameters}}
+                        {{#if item.labTest.hasParameters}}
                         <table style="width: 100%;">
                             <tr>
-                                <td colspan="2" style="color: #111; font-size: 14px; font-weight: 500; text-transform: uppercase;">{{ labTest.name }}</td>
+                                <td colspan="2" style="color: #111; font-size: 14px; font-weight: 500; text-transform: uppercase;">{{ item.labTest.name }}</td>
                             </tr>
                             <tr>
                                 <td style="padding-top: 12px;width: 50%;">
@@ -108,17 +107,16 @@
                         <table style="width: 100%;">
                             <tr>
                                 <td style="color: #111; font-size: 14px; font-weight: 500; text-align: center; border: 1px solid rgba(0,0,0,0.05);width: 50%;">
-                                    {{labTest.name}}
+                                    {{item.labTest.name}}
                                 </td>
                                 <td style="color: #7D7D7D; font-size: 14px; font-weight: 500; text-align: center; border: 1px solid rgba(0,0,0,0.05);width: 50%;">
-                                    {{result}}
+                                    {{item.result}}
                                 </td>
                             </tr>
                         </table>
                         {{/if}}
                     </td>
                 </tr>
-                {{/each}}
             {{/each}}
             <tr>
                 <td>

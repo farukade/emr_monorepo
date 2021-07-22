@@ -93,10 +93,14 @@ export class ServicesService {
         if (q && q !== '') {
             return await this.serviceRepository.find({
                 where: { name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`), category },
+                take: 20,
             });
         }
 
-        return await this.serviceRepository.find({ where: { category } });
+        return await this.serviceRepository.find({
+            where: { category },
+            take: 20,
+        });
     }
 
     async createService(serviceDto: ServiceDto): Promise<Service> {

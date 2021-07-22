@@ -170,6 +170,7 @@ export const formatPID = id => {
 
 export const getStaff = async (username: string): Promise<StaffDetails> => {
     const connection = getConnection();
+    // tslint:disable-next-line:no-shadowed-variable
     const user = await connection.getRepository(User).findOne({ where: { username } });
 
     return await connection.getRepository(StaffDetails).findOne({

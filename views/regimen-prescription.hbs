@@ -8,51 +8,42 @@
     <div style="color: #636363; font-size: 14px;text-align: center;margin-top: 10px">
         Plot 1847 Cadastral Zone B07, Behind ABC Cargo, Katampe, Abuja, Nigeria. ☎ +2348184227707<br/>email: dedahospital@yahoo.com, website: https://www.dedahospital.com
     </div>
-    <h2 style="text-align: center; margin: 34px 0 0;">Laboratory Test Result</h2>
+    <h2 style="text-align: center; margin: 34px 0 0;">Prescription Request</h2>
     <div style="color: #636363; font-size: 14px; padding: 0px;">
         <table style="margin-top: 20px; width: 100%;">
             <tr>
-                <td>
+                <td style="vertical-align: top">
                     <div style="display: flex; align-content: space-between; width: 100%;">
                         <div style="font-size: 14px; font-weight: 500; color: #111111; margin-right: 12px;">NAME:</div>
                         <div style="font-size: 14px; font-weight: 500; color: #7D7D7D; text-transform: capitalize;">{{ patient.surname }} {{ patient.other_names }}</div>
                     </div>
                     <div style="display: flex;">
-                        <div style="font-size: 14px; font-weight: 500; color: #111111; margin-right: 12px;">HOSPITAL
-                            NO:
-                        </div>
-                        <div style="font-size: 14px; font-weight: 500; color: #7D7D7D;">-</div>
-                    </div>
-                    <div style="display: flex;">
-                        <div style="font-size: 14px; font-weight: 500; color: #111111; margin-right: 12px;">TEST
-                            REQUESTED:
-                        </div>
-                        <div style="font-size: 14px; font-weight: 500; color: #7D7D7D;">ROUTINE</div>
+                        <div style="font-size: 14px; font-weight: 500; color: #111111; margin-right: 12px;">EMR ID:</div>
+                        <div style="font-size: 14px; font-weight: 500; color: #7D7D7D;">{{ patient_id }}</div>
                     </div>
                 </td>
-                <td>
+                <td style="vertical-align: top">
                     <div style="display: flex;">
-                        <div style="font-size: 14px; font-weight: 500; color: #111111; margin-right: 12px;">SEX:</div>
-                        <div style="font-size: 14px; font-weight: 500; color: #7D7D7D;">{{ patient.gender }}</div>
+                        <div style="font-size: 14px; font-weight: 500; color: #111111; margin-right: 12px;">SCHEME:</div>
+                        <div style="font-size: 14px; font-weight: 500; color: #7D7D7D;">{{ patient.hmo.name }}</div>
                     </div>
                     <div style="display: flex;">
-                        <div style="font-size: 14px; font-weight: 500; color: #111111; margin-right: 12px;">LAB ID:
-                        </div>
-                        <div style="font-size: 14px; font-weight: 500; color: #7D7D7D;">{{ lab_id }}</div>
-                    </div>
-                    <div style="display: flex;">
-                        <div style="font-size: 14px; font-weight: 500; color: #111111; margin-right: 12px;">SPECIMEN:
-                        </div>
-                        <div style="font-size: 14px; font-weight: 500; color: #7D7D7D;">{{ specimen }}</div>
+                        <div style="font-size: 14px; font-weight: 500; color: #111111; margin-right: 12px;">AGE/SEX:</div>
+                        <div style="font-size: 14px; font-weight: 500; color: #7D7D7D;">{{ age }}years / {{ patient.gender }}</div>
                     </div>
                 </td>
-                <td>
+                <td style="vertical-align: top">
                     <div style="display: flex;">
-                        <div style="font-size: 14px; font-weight: 500; color: #111111; margin-right: 12px;">AGE:</div>
-                        <div style="font-size: 14px; font-weight: 500; color: #7D7D7D;">{{ age }}years</div>
+                        <div style="font-size: 14px; font-weight: 500; color: #111111; margin-right: 12px;">PRESCRIBED BY:</div>
+                        <div style="font-size: 14px; font-weight: 500; color: #7D7D7D;">{{ prescribed_by.first_name }} {{ prescribed_by.last_name }}</div>
                     </div>
                     <div style="display: flex;">
-                        <div style="font-size: 14px; font-weight: 500; color: #111111; margin-right: 12px;">DATE:</div>
+                        <div style="font-size: 14px; font-weight: 500; color: #111111; margin-right: 12px;">PRESCRIPTION ID:
+                        </div>
+                        <div style="font-size: 14px; font-weight: 500; color: #7D7D7D;">{{ regimen_id }}</div>
+                    </div>
+                    <div style="display: flex;">
+                        <div style="font-size: 14px; font-weight: 500; color: #111111; margin-right: 12px;">REQUEST DATE:</div>
                         <div style="font-size: 14px; font-weight: 500; color: #7D7D7D;">{{ date }}</div>
                     </div>
                 </td>
@@ -61,69 +52,26 @@
     </div>
     <div style="padding: 35px 0px">
         <table style="width: 100%;">
+            <thead>
+            <tr>
+                <th style="text-align: left">Drug Name</th>
+                <th style="text-align: left">Instruction/Dosage</th>
+                <th style="text-align: left">Comment</th>
+                <th style="text-align: left">Quantity</th>
+            </tr>
+            </thead>
             {{#each results}}
-                {{#each items}}
                 <tr>
-                    <td><h3 style="margin:0px;text-align: center;">{{ labTest.category.name }}</h3></td>
+                    <td>{{ item.drug.name }}</td>
+                    <td>{{ item.doseQuantity }} {{ item.drug.unitOfMeasure }}, {{ frequency }} {{ frequencyType }} for {{ duration }} Days</td>
+                    <td>{{ item.note }}</td>
+                    <td>Quantity Dispensed: {{ item.fillQuantity }} {{ item.drug.unitOfMeasure }}</td>
                 </tr>
-                <tr>
-                    <td>
-                        {{#if labTest.hasParameters}}
-                        <table style="width: 100%;">
-                            <tr>
-                                <td colspan="2" style="color: #111; font-size: 14px; font-weight: 500; text-transform: uppercase;">{{ labTest.name }}</td>
-                            </tr>
-                            <tr>
-                                <td style="padding-top: 12px;width: 50%;">
-                                    <table style="border: 1px solid rgba(0,0,0,0.05);width: 100%;">
-                                        <tr>
-                                            <td style="text-transform: uppercase; letter-spacing: 1px; color: #111; font-size: 14px; font-weight: 500; text-align: center;">
-                                                REFERENCE
-                                            </td>
-                                            <td style="text-transform: uppercase; letter-spacing: 1px; color: #111; font-size: 14px; font-weight: 500; text-align: center;">
-                                                RESULT
-                                            </td>
-                                            <td style="text-transform: uppercase; letter-spacing: 1px; color: #111; font-size: 14px; font-weight: 500; text-align: center;">
-                                                NORMAL RANGE
-                                            </td>
-                                        </tr>
-                                        {{#each parameters}}
-                                        <tr>
-                                            <td style="color: #111; font-size: 14px; font-weight: 500; text-align: center; border-top: 1px solid rgba(0,0,0,0.05);">
-                                                {{name}}
-                                            </td>
-                                            <td style="color: #7D7D7D; font-size: 14px; font-weight: 500; text-align: center; border-top: 1px solid rgba(0,0,0,0.05);">
-                                                {{value}}
-                                            </td>
-                                            <td style="color: #7D7D7D; font-size: 14px; font-weight: 500; text-align: center; border-top: 1px solid rgba(0,0,0,0.05);">
-                                                {{reference}}
-                                            </td>
-                                        </tr>
-                                        {{/each}}
-                                    </table>
-                                </td>
-                            </tr>
-                        </table>
-                        {{else}}
-                        <table style="width: 100%;">
-                            <tr>
-                                <td style="color: #111; font-size: 14px; font-weight: 500; text-align: center; border: 1px solid rgba(0,0,0,0.05);width: 50%;">
-                                    {{labTest.name}}
-                                </td>
-                                <td style="color: #7D7D7D; font-size: 14px; font-weight: 500; text-align: center; border: 1px solid rgba(0,0,0,0.05);width: 50%;">
-                                    {{result}}
-                                </td>
-                            </tr>
-                        </table>
-                        {{/if}}
-                    </td>
-                </tr>
-                {{/each}}
             {{/each}}
             <tr>
                 <td>
                     <div style="width: 240px;border-bottom: 1px dotted #000000;margin-top: 120px;"></div>
-                    <div style="width: 240px;margin-top:4px;text-align: center;font-size: 14px;font-weight: 500;">(Med. Scientist)</div>
+                    <div style="width: 240px;margin-top:4px;text-align: center;font-size: 14px;font-weight: 500;">(Pharmacist)</div>
                 </td>
             </tr>
         </table>
