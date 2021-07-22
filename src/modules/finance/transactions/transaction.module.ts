@@ -13,6 +13,7 @@ import { AppointmentRepository } from '../../frontdesk/appointment/appointment.r
 import { AppGateway } from '../../../app.gateway';
 import { ServiceCostRepository } from '../../settings/services/repositories/service_cost.repository';
 import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repository';
+import { PatientRequestItemRepository } from '../../patient/repositories/patient_request_items.repository';
 
 @Module({
     imports: [TypeOrmModule.forFeature([
@@ -26,6 +27,7 @@ import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repositor
         QueueSystemRepository,
         ServiceCostRepository,
         HmoSchemeRepository,
+        PatientRequestItemRepository,
     ])],
     controllers: [TransactionsController],
     providers: [AppGateway, TransactionsService],

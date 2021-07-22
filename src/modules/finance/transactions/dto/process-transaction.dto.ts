@@ -11,7 +11,7 @@ export class ProcessTransactionDto {
     voucher_amount: number;
 
     @IsNotEmpty()
-    payment_type: string;
+    payment_method: string;
 
     is_part_payment: number;
 

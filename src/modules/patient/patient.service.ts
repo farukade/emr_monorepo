@@ -134,7 +134,7 @@ export class PatientService {
                 .select('q.*')
                 .where('q.status = :status', { status: 0 })
                 .andWhere('q.patient_id = :patient_id', { patient_id: patient.id })
-                .andWhere('q.payment_type != :type', { type: 'HMO' })
+                .andWhere('q.payment_type = :type', { type: 'self' })
                 .getRawMany();
 
             patient.outstanding = Math.abs(patient.creditLimit > 0 ? 0 : transactions.reduce((totalAmount, item) => totalAmount + item.balance, 0));
@@ -186,7 +186,7 @@ export class PatientService {
                 .select('q.*')
                 .where('q.status = :status', { status: 0 })
                 .andWhere('q.patient_id = :patient_id', { patient_id: patient.id })
-                .andWhere('q.payment_type != :type', { type: 'HMO' })
+                .andWhere('q.payment_type = :type', { type: 'self' })
                 .getRawMany();
 
             patient.outstanding = Math.abs(patient.creditLimit > 0 ? 0 : transactions.reduce((total, item) => total + item.balance, 0));
@@ -234,7 +234,7 @@ export class PatientService {
                 patient,
                 amount: serviceCost.tariff,
                 description: 'Payment for Patient Registration',
-                payment_type: (hmo.name !== 'Private') ? 'HMO' : '',
+                payment_type: (hmo.name !== 'Private') ? 'HMO' : 'self',
                 bill_source: category.name,
                 service: serviceCost,
                 createdBy,
@@ -545,7 +545,7 @@ export class PatientService {
             result = [...result, transaction];
         }
 
-        const outstanding = transactions.filter(t => t.status !== 1 && t.payment_type !== 'HMO')
+        const outstanding = transactions.filter(t => t.status !== 1 && t.payment_type === 'self')
             .reduce((sumTotal, item) => sumTotal + item.balance, 0);
 
         const totalAmount = transactions.reduce((sumTotal, item) => sumTotal + item.amount, 0);

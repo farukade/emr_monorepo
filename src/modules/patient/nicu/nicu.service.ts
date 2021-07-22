@@ -107,7 +107,7 @@ export class NicuService {
                 patient,
                 amount: accommodation.amount,
                 description: `Payment for ${accommodation.name} - Nicu`,
-                payment_type: (patient.hmo.name !== 'Private') ? 'HMO' : '',
+                payment_type: (patient.hmo.name !== 'Private') ? 'HMO' : 'self',
                 bill_source: 'nicu-accommodation',
                 is_admitted: true,
                 transaction_details: accommodation,

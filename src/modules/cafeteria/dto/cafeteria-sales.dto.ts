@@ -17,7 +17,7 @@ export class CafeteriaSalesDto {
 
     change: number;
 
-    payment_type: string;
+    payment_method: string;
 
     items: any[];
 }

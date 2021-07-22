@@ -55,12 +55,7 @@ export class DrugService {
         let rs = [];
         for (const item of result) {
             item.batches = await this.drugBatchRepository.find({
-                where: {
-                    expirationDate: Raw(alias => `DATE(${alias}) > :date`, {
-                        date: moment().format('YYYY-MM-DD'),
-                    }),
-                    drug: item,
-                },
+                where: { drug: item },
                 order: { expirationDate: 'ASC' },
             });
 

@@ -86,7 +86,7 @@ export class CafeteriaService {
     }
 
     async saveSales(param: CafeteriaSalesDto, username: string): Promise<any> {
-        const { user_type, user_id, sub_total, vat, total_amount, amount_paid, change, payment_type, items } = param;
+        const { user_type, user_id, sub_total, vat, total_amount, amount_paid, change, payment_method, items } = param;
         try {
             let emptyStock = [];
             for (const sale of items) {
@@ -107,7 +107,7 @@ export class CafeteriaService {
             transaction.amount = total_amount;
             transaction.amount_paid = amount_paid;
             transaction.change = change * -1;
-            transaction.payment_type = payment_type;
+            transaction.payment_method = payment_method;
             transaction.transaction_type = 'debit';
             transaction.balance = 0;
             transaction.status = 1;
@@ -140,6 +140,7 @@ export class CafeteriaService {
             }
 
             transaction.transaction_details = data;
+            transaction.payment_type = ''; // HMO/self
             await transaction.save();
 
             return { success: true, transaction };

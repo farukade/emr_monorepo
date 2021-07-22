@@ -348,7 +348,7 @@ export class AppointmentService {
             patient,
             amount,
             description: service.name,
-            payment_type: paymentType,
+            payment_type: (hmo.name !== 'Private') ? 'HMO' : 'self',
             bill_source: service.category.name,
             service: serviceCost,
             createdBy,

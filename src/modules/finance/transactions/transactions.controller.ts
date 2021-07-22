@@ -41,14 +41,14 @@ export class TransactionsController {
         return this.transactionsService.save(transactionDto, req.user.username);
     }
 
-    @Patch('/:id/update')
+    @Patch('/:id/pay')
     @UsePipes(ValidationPipe)
-    updateTransaction(
+    hmoCode(
         @Param('id') id: string,
         @Body() transactionDto: TransactionDto,
         @Request() req,
     ): Promise<any> {
-        return this.transactionsService.update(id, transactionDto, req.user.username, req.query.hmo_approval_code);
+        return this.transactionsService.pay(id, transactionDto, req.user.username);
     }
 
     @Patch('/:id/approve')
@@ -67,15 +67,6 @@ export class TransactionsController {
         @Request() req,
     ): Promise<any> {
         return this.transactionsService.transfer(id, req.user.username);
-    }
-
-    @Patch('/:id/decline')
-    @UsePipes(ValidationPipe)
-    declineTransaction(
-        @Param('id') id: number,
-        @Request() req,
-    ): Promise<any> {
-        return this.transactionsService.decline(id, req.user.username);
     }
 
     @Post('/:id/process')

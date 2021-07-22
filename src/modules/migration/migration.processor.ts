@@ -309,8 +309,6 @@ export class MigrationProcessor {
                     name: item.name,
                     code: item.billing_code,
                     generic,
-                    basePrice: item.base_price,
-                    unitCost: item.unit_cost,
                     unitOfMeasure: item.stock_uom,
                     manufacturer,
                 });

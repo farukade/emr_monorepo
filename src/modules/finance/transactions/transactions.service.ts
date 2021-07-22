@@ -20,6 +20,7 @@ import { Settings } from '../../settings/entities/settings.entity';
 import { ServiceCost } from '../../settings/entities/service_cost.entity';
 import { ServiceCostRepository } from '../../settings/services/repositories/service_cost.repository';
 import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repository';
+import { PatientRequestItemRepository } from '../../patient/repositories/patient_request_items.repository';
 
 @Injectable()
 export class TransactionsService {
@@ -43,16 +44,19 @@ export class TransactionsService {
         private hmoSchemeRepository: HmoSchemeRepository,
         @InjectRepository(QueueSystemRepository)
         private queueSystemRepository: QueueSystemRepository,
+        @InjectRepository(PatientRequestItemRepository)
+        private patientRequestItemRepository: PatientRequestItemRepository,
         private readonly appGateway: AppGateway,
     ) {
     }
 
     async fetchList(options: PaginationOptionsInterface, params): Promise<Pagination> {
-        const { startDate, endDate, patient_id, staff_id, payment_type, bill_source } = params;
+        const { startDate, endDate, patient_id, staff_id, bill_source, status } = params;
 
         const page = options.page - 1;
 
-        const query = this.transactionsRepository.createQueryBuilder('q').select('q.*');
+        const query = this.transactionsRepository.createQueryBuilder('q').select('q.*')
+            .where('q.payment_type = :type', { type: 'self' });
 
         if (bill_source && bill_source !== '') {
             query.where('q.bill_source = :type', { type: bill_source });
@@ -71,10 +75,6 @@ export class TransactionsService {
             }
         }
 
-        if (payment_type && payment_type !== '') {
-            query.andWhere(`q.payment_type = '${payment_type}'`);
-        }
-
         if (patient_id && patient_id !== '') {
             query.andWhere('q.patient_id = :patient_id', { patient_id });
         }
@@ -83,9 +83,9 @@ export class TransactionsService {
             query.andWhere('q.staff_id = :staff_id', { staff_id });
         }
 
-        // if (status) {
-        //     query.andWhere('q.status = :status', {status});
-        // }
+        if (status && status !== '') {
+            query.andWhere('q.status = :status', { status });
+        }
 
         const transactions = await query.offset(page * options.limit)
             .limit(options.limit)
@@ -106,6 +106,10 @@ export class TransactionsService {
             if (transaction.service_cost_id) {
                 transaction.service = await this.serviceCostRepository.findOne(transaction.service_cost_id);
             }
+
+            if (transaction.patient_request_item_id) {
+                transaction.patientRequestItem = await this.patientRequestItemRepository.findOne(transaction.patient_request_item_id, { relations: ['request'] });
+            }
         }
 
         return {
@@ -120,13 +124,12 @@ export class TransactionsService {
     async fetchPending(options: PaginationOptionsInterface, params): Promise<Pagination> {
         const { startDate, endDate, patient_id, bill_source } = params;
 
-        const query = this.transactionsRepository.createQueryBuilder('q').select('q.*');
+        const query = this.transactionsRepository.createQueryBuilder('q').select('q.*')
+            .where('q.payment_type = :type', { type: 'self' });
 
         query.where(new Brackets(qb => {
             qb.where('q.status = 0').orWhere('q.status = -1');
         }));
-
-        query.andWhere('q.payment_type is null');
 
         if (startDate && startDate !== '') {
             const start = moment(startDate).endOf('day').toISOString();
@@ -163,6 +166,10 @@ export class TransactionsService {
             if (transaction.service_cost_id) {
                 transaction.service = await this.serviceCostRepository.findOne(transaction.service_cost_id);
             }
+
+            if (transaction.patient_request_item_id) {
+                transaction.patientRequestItem = await this.patientRequestItemRepository.findOne(transaction.patient_request_item_id, { relations: ['request'] });
+            }
         }
 
         return {
@@ -175,7 +182,7 @@ export class TransactionsService {
     }
 
     async save(transactionDto: TransactionDto, createdBy): Promise<any> {
-        const { patient_id, hmo_id, service_id, amount, description, payment_type } = transactionDto;
+        const { patient_id, hmo_id, service_id, amount, description } = transactionDto;
         // find patient record
         const patient = await this.patientRepository.findOne(patient_id);
 
@@ -196,8 +203,8 @@ export class TransactionsService {
                 patient,
                 amount,
                 description,
-                payment_type,
-                bill_source: 'billing',
+                payment_type: hmo.name === 'Private' ? 'self' : 'HMO',
+                bill_source: service.category.name,
                 transaction_details: [item],
                 amount_paid: amount,
                 createdBy,
@@ -214,59 +221,23 @@ export class TransactionsService {
         }
     }
 
-    async update(id: string, transactionDto: TransactionDto, createdBy, code: string): Promise<any> {
+    async pay(id: string, { hmo_approval_code }, createdBy): Promise<any> {
+        const transaction = await this.transactionsRepository.findOne(id);
+        transaction.hmo_approval_code = hmo_approval_code;
+        transaction.status = 1;
+        transaction.balance = 0;
+        transaction.payment_method = 'HMO';
+        transaction.lastChangedBy = createdBy;
+        await transaction.save();
 
-        if (code) {
-            const transaction = await this.transactionsRepository.findOne(id);
-            transaction.hmo_approval_code = code;
-            transaction.status = 1;
-            transaction.balance = 0;
-            transaction.lastChangedBy = createdBy;
-            await transaction.save();
-
-            return { success: true, transaction };
-        }
-
-        const { patient_id, service_id, hmo_id, amount, description, payment_type } = transactionDto;
-
-        // find patient record
-        const patient = await this.patientRepository.findOne(patient_id);
-
-        let hmo = await this.hmoSchemeRepository.findOne(hmo_id);
-
-        const service = await this.serviceRepository.findOne(service_id);
-
-        let serviceCost = await this.serviceCostRepository.findOne({ where: { item: service, hmo } });
-        if (!serviceCost || (serviceCost && serviceCost.tariff === 0)) {
-            hmo = await this.hmoSchemeRepository.findOne({ where: { name: 'Private' } });
-            serviceCost = await this.serviceCostRepository.findOne({ where: { item: service, hmo } });
-        }
-
-        const item = { name: service.name, amount: serviceCost.tariff };
-
-        try {
-            const transaction = await this.transactionsRepository.findOne(id);
-            transaction.patient = patient;
-            transaction.amount = amount;
-            transaction.description = description;
-            transaction.payment_type = payment_type;
-            transaction.transaction_details = [item];
-            transaction.lastChangedBy = createdBy;
-            transaction.hmo_approval_code = code;
-            transaction.hmo = hmo;
-            transaction.service = serviceCost;
-            const data = await transaction.save();
-
-            return { success: true, transaction: data };
-        } catch (error) {
-            return { success: false, message: error.message };
-        }
+        return { success: true, transaction };
     }
 
     async approve(id: number, createdBy): Promise<any> {
         const transaction = await this.transactionsRepository.findOne(id);
         transaction.status = 1;
         transaction.balance = 0;
+        transaction.payment_method = 'HMO';
         transaction.lastChangedBy = createdBy;
         const rs = await transaction.save();
 
@@ -280,7 +251,7 @@ export class TransactionsService {
 
         const serviceCost = await this.serviceCostRepository.findOne({ where: { id: transaction.service.id, hmo } });
 
-        transaction.payment_type = '';
+        transaction.payment_type = 'self';
         transaction.amount = serviceCost.tariff;
         transaction.balance = serviceCost.tariff * -1;
         transaction.transaction_details = { ...transaction.transaction_details, amount: serviceCost.tariff };
@@ -291,26 +262,8 @@ export class TransactionsService {
         return { success: true, transaction: rs };
     }
 
-    async decline(id: number, createdBy): Promise<any> {
-        const transaction = await this.transactionsRepository.findOne(id);
-
-        let amount = 0;
-        if (transaction.bill_source === 'registration') {
-            amount = parseFloat(transaction.transaction_details.tariff);
-        } else {
-            amount = parseFloat(transaction.transaction_details.price);
-        }
-
-        transaction.payment_type = '';
-        transaction.status = 0;
-        transaction.amount = amount;
-        const rs = await transaction.save();
-
-        return { success: true, transaction };
-    }
-
     async processTransaction(id: number, transactionDto: ProcessTransactionDto, updatedBy): Promise<any> {
-        const { voucher_id, amount_paid, voucher_amount, payment_type, patient_id, is_part_payment } = transactionDto;
+        const { voucher_id, amount_paid, voucher_amount, payment_method, patient_id, is_part_payment } = transactionDto;
         try {
             const transaction = await this.transactionsRepository.findOne(id, { relations: ['patient', 'staff', 'appointment', 'hmo'] });
 
@@ -340,8 +293,8 @@ export class TransactionsService {
             }
 
             transaction.amount_paid = amount_paid;
-            transaction.payment_type = payment_type;
-            if (payment_type === 'Voucher') {
+            transaction.payment_method = payment_method;
+            if (payment_method === 'Voucher') {
                 const voucher = await this.voucherRepository.findOne(voucher_id, { relations: ['patient'] });
 
                 if (voucher.patient.id !== patient_id) {
@@ -394,7 +347,7 @@ export class TransactionsService {
     }
 
     async processBulkTransaction(transactionDto: ProcessTransactionDto, updatedBy): Promise<any> {
-        const { payment_type, items } = transactionDto;
+        const { payment_method, items } = transactionDto;
         try {
             let transactions = [];
             for (const item of items) {
@@ -402,7 +355,6 @@ export class TransactionsService {
 
                 transaction.amount_paid = item.amount;
                 transaction.balance = 0;
-                transaction.payment_type = payment_type;
 
                 let queue;
                 if (transaction.next_location && transaction.next_location === 'vitals') {
@@ -424,6 +376,7 @@ export class TransactionsService {
 
                 transaction.next_location = null;
                 transaction.status = 1;
+                transaction.payment_method = payment_method;
                 transaction.lastChangedBy = updatedBy;
                 const rs = await transaction.save();
 
