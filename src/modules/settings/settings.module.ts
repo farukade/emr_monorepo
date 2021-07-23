@@ -8,7 +8,6 @@ import { DepartmentModule } from './departments/department.module';
 import { LeaveCategoryModule } from './leave-category/leave-category.module';
 import { SpecializationModule } from './specialization/specialization.module';
 import { DiagnosisModule } from './diagnosis/diagnosis.module';
-import { ConsumableModule } from './consumable/consumable.module';
 import { AntenatalPackageModule } from './antenatal-packages/antenatal-package.module';
 import { NicuAccommodationModule } from './nicu-accommodation/accommodation.module';
 import { PaymentMethodModule } from './payment-methods/pm.module';
@@ -29,7 +28,6 @@ import { SettingsService } from './settings.service';
         LeaveCategoryModule,
         SpecializationModule,
         DiagnosisModule,
-        ConsumableModule,
         AntenatalPackageModule,
         NicuAccommodationModule,
         PaymentMethodModule,

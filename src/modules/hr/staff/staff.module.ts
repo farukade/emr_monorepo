@@ -6,6 +6,7 @@ import { StaffRepository } from './staff.repository';
 import { RoleRepository } from '../../settings/roles-permissions/role.repository';
 import { DepartmentRepository } from '../../settings/departments/department.repository';
 import { AuthRepository } from '../../auth/auth.repository';
+import { AppointmentRepository } from '../../frontdesk/appointment/appointment.repository';
 
 @Module({
     imports: [TypeOrmModule.forFeature([
@@ -13,6 +14,7 @@ import { AuthRepository } from '../../auth/auth.repository';
         AuthRepository,
         RoleRepository,
         DepartmentRepository,
+        AppointmentRepository,
     ])],
     controllers: [StaffController],
     providers: [StaffService],

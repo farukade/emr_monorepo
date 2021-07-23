@@ -73,11 +73,18 @@ export class AppointmentController {
         return this.appointmentService.cancelAppointment(id, req.user);
     }
 
-    @Patch('accept-decline')
+    @Patch('accept')
     acceptDeclineAppointment(
         @Body() param,
         @Request() req,
     ) {
-        return this.appointmentService.updateDoctorStatus(param, req.user);
+        return this.appointmentService.acceptAppointment(param, req.user);
+    }
+
+    @Get(':id/repeat-prompt')
+    repeatPrompt(
+        @Param('id') id: number,
+    ) {
+        return this.appointmentService.repeatPrompt(id);
     }
 }

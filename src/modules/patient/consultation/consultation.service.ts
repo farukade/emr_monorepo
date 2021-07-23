@@ -19,7 +19,6 @@ import { AppGateway } from '../../../app.gateway';
 import { QueueSystemRepository } from '../../frontdesk/queue-system/queue-system.repository';
 import { PatientHistory } from '../entities/patient_history.entity';
 import { PatientConsumable } from '../entities/patient_consumable.entity';
-import { ConsumableRepository } from '../../settings/consumable/consumable.repository';
 import { Appointment } from '../../frontdesk/appointment/appointment.entity';
 import { AuthRepository } from '../../auth/auth.repository';
 import { Connection, getRepository } from 'typeorm';
@@ -27,6 +26,7 @@ import { getStaff } from '../../../common/utils/utils';
 import { PatientNoteRepository } from '../repositories/patient_note.repository';
 import { PatientDiagnosisRepository } from '../repositories/patient_diagnosis.repository';
 import { DrugGenericRepository } from '../../inventory/pharmacy/generic/generic.repository';
+import { StoreInventoryRepository } from '../../inventory/store/store.repository';
 
 @Injectable()
 export class ConsultationService {
@@ -47,8 +47,8 @@ export class ConsultationService {
         private drugGenericRepository: DrugGenericRepository,
         @InjectRepository(QueueSystemRepository)
         private queueSystemRepository: QueueSystemRepository,
-        @InjectRepository(ConsumableRepository)
-        private consumableRepository: ConsumableRepository,
+        @InjectRepository(StoreInventoryRepository)
+        private storeInventoryRepository: StoreInventoryRepository,
         @InjectRepository(PatientNoteRepository)
         private patientNoteRepository: PatientNoteRepository,
         @InjectRepository(AuthRepository)
@@ -285,7 +285,7 @@ export class ConsultationService {
 
             if (param.consumables) {
                 for (const item of param.consumables.items) {
-                    const consumableItem = await this.consumableRepository.findOne(item.item.id);
+                    const consumableItem = await this.storeInventoryRepository.findOne(item.item.id);
                     const consumable = new PatientConsumable();
                     consumable.quantity = item.quantity;
                     consumable.consumable = consumableItem;

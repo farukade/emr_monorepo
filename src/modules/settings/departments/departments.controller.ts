@@ -3,7 +3,6 @@ import { DepartmentsService } from './departments.service';
 import { Department } from '../entities/department.entity';
 import { DepartmentDto } from './dto/department.dto';
 import { AuthGuard } from '@nestjs/passport';
-import { Consumable } from '../entities/consumable.entity';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('departments')

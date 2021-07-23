@@ -6,12 +6,14 @@ import { StaffDetails } from './entities/staff_details.entity';
 import { RoleRepository } from '../../settings/roles-permissions/role.repository';
 import { DepartmentRepository } from '../../settings/departments/department.repository';
 import * as bcrypt from 'bcrypt';
-import { Brackets, getRepository, Like } from 'typeorm';
+import { Brackets, getRepository, Like, Raw } from 'typeorm';
 import { Specialization } from '../../settings/entities/specialization.entity';
 import { ConsultingRoom } from '../../settings/entities/consulting-room.entity';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import { PaginationOptionsInterface } from '../../../common/paginate';
 import { AuthRepository } from '../../auth/auth.repository';
+import { AppointmentRepository } from '../../frontdesk/appointment/appointment.repository';
+import * as moment from 'moment';
 
 @Injectable()
 export class StaffService {
@@ -25,6 +27,8 @@ export class StaffService {
         private roleRepository: RoleRepository,
         @InjectRepository(DepartmentRepository)
         private departmentRepository: DepartmentRepository,
+        @InjectRepository(AppointmentRepository)
+        private appointmentRepository: AppointmentRepository,
     ) {
     }
 
@@ -195,6 +199,22 @@ export class StaffService {
             const staff = await this.staffRepository.findOne(staffId);
             staff.room = null;
             await staff.save();
+
+            const appointment = await this.appointmentRepository.findOne({
+                where: {
+                    whomToSee: staff,
+                    appointment_date: Raw(alias => `DATE(${alias}) = '${moment().format('YYYY-MM-DD')}'`),
+                    doctorStatus: 1,
+                    status: 'Approved',
+                },
+            });
+            if (appointment) {
+                appointment.doctorStatus = 0;
+                appointment.whomToSee = null;
+                appointment.consultingRoom = null;
+                await appointment.save();
+            }
+
             return { success: true };
         } catch (e) {
             return { success: false, message: e.message };

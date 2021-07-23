@@ -25,6 +25,7 @@ import { LabTestRepository } from '../settings/lab/repositories/lab.test.reposit
 import { GroupRepository } from '../settings/lab/repositories/group.repository';
 import { GroupTest } from '../settings/entities/group_tests.entity';
 import * as moment from 'moment';
+import { StoreInventoryRepository } from '../inventory/store/store.repository';
 
 @Processor(process.env.MIGRATION_QUEUE_NAME)
 export class MigrationProcessor {
@@ -69,6 +70,8 @@ export class MigrationProcessor {
         private labTestRepository: LabTestRepository,
         @InjectRepository(GroupRepository)
         private groupRepository: GroupRepository,
+        @InjectRepository(StoreInventoryRepository)
+        private storeInventoryRepository: StoreInventoryRepository,
     ) {
     }
 
@@ -384,6 +387,31 @@ export class MigrationProcessor {
                     groupTest.labTest = lab;
                     await groupTest.save();
                 }
+            }
+
+            await connection.end();
+            return true;
+        } catch (error) {
+            console.log(error);
+            this.logger.error('migration failed', error.stack);
+        }
+    }
+
+    @Process('store')
+    async migrateStore(job: Job<any>): Promise<any> {
+        this.logger.log('migrating store');
+
+        try {
+            const connection = await mysqlConnect();
+
+            const [rows] = await connection.execute('SELECT * FROM `insurance_billable_items` where item_group_category_id=11');
+            for (const item of rows) {
+                await this.storeInventoryRepository.save({
+                    name: item.item_description,
+                    slug: slugify(item.item_description),
+                    description: item.item_description,
+                    code: item.item_code,
+                });
             }
 
             await connection.end();

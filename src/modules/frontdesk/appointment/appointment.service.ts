@@ -17,10 +17,14 @@ import { Brackets, getConnection, getRepository } from 'typeorm';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import { PaginationOptionsInterface } from '../../../common/paginate';
-import { getStaff } from '../../../common/utils/utils';
+import { formatPID, getStaff, sendSMS } from '../../../common/utils/utils';
 import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repository';
 import { ServiceCostRepository } from '../../settings/services/repositories/service_cost.repository';
 import { ServiceCost } from '../../settings/entities/service_cost.entity';
+
+// tslint:disable-next-line:no-var-requires
+const Say = require('say').Say;
+const say = new Say('darwin' || 'win32' || 'linux');
 
 @Injectable()
 export class AppointmentService {
@@ -313,9 +317,8 @@ export class AppointmentService {
         return await appointment.softRemove();
     }
 
-    async updateDoctorStatus({ appointmentId, action, doctor_id, consulting_room_id }, user) {
+    async acceptAppointment({ appointmentId, action, doctor_id, consulting_room_id }, username: string) {
         try {
-            let text = '';
             const doctor = await getRepository(StaffDetails).findOne(doctor_id);
 
             const appointment = await this.getAppointment(appointmentId);
@@ -327,14 +330,45 @@ export class AppointmentService {
             if (consulting_room_id) {
                 const room = await this.consultingRoomRepository.findOne(consulting_room_id);
                 appointment.consultingRoom = room;
-                text += `${appointment.patient.id}, please proceed to consulting room ${room.name}`;
+
+                if (process.env.DEBUG === 'false') {
+                    const text = `Patient ${appointment.patient.id}, please proceed to consulting ${room.name}`;
+                    say.speak(text, null, 1.0, (err) => {
+                        if (err) {
+                            return console.error(err);
+                        }
+
+                        say.stop();
+                    });
+                }
             }
 
             appointment.doctorStatus = action;
+            appointment.lastChangedBy = username;
             await appointment.save();
-            console.log(text);
+
             this.appGateway.server.emit('appointment-update', { appointment, action });
-            this.appGateway.server.emit('speech-over', { speechText: text });
+            return { success: true };
+        } catch (e) {
+            return { success: false, message: e.message };
+        }
+    }
+
+    async repeatPrompt(appointmentId: number) {
+        try {
+            const appointment = await this.getAppointment(appointmentId);
+
+            if (process.env.DEBUG === 'false') {
+                const text = `Patient ${appointment.patient.id}, please proceed to consulting ${appointment.consultingRoom.name}`;
+                say.speak(text, null, 1.0, (err) => {
+                    if (err) {
+                        return console.error(err);
+                    }
+
+                    say.stop();
+                });
+            }
+
             return { success: true };
         } catch (e) {
             return { success: false, message: e.message };

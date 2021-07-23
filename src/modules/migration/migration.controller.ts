@@ -54,4 +54,12 @@ export class MigrationController {
     ): Promise<any> {
         return this.migrationService.queueMigration('lab');
     }
+
+    @Get('/store')
+    migrateStore(
+        @Query() urlParams,
+        @Request() request,
+    ): Promise<any> {
+        return this.migrationService.queueMigration('store');
+    }
 }

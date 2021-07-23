@@ -13,6 +13,9 @@ export class StoreInventory extends CustomBaseEntity {
     @Column({ type: 'varchar', nullable: true })
     description: string;
 
+    @Column({ type: 'varchar', nullable: true })
+    code: string;
+
     @Column({ type: 'integer', default: 0 })
     quantity: number;
 

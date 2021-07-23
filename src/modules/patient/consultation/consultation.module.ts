@@ -8,11 +8,11 @@ import { PatientRepository } from '../repositories/patient.repository';
 import { AppointmentRepository } from '../../frontdesk/appointment/appointment.repository';
 import { AppGateway } from '../../../app.gateway';
 import { QueueSystemRepository } from '../../frontdesk/queue-system/queue-system.repository';
-import { ConsumableRepository } from '../../settings/consumable/consumable.repository';
 import { AuthRepository } from '../../auth/auth.repository';
 import { PatientDiagnosisRepository } from '../repositories/patient_diagnosis.repository';
 import { PatientNoteRepository } from '../repositories/patient_note.repository';
 import { DrugGenericRepository } from '../../inventory/pharmacy/generic/generic.repository';
+import { StoreInventoryRepository } from '../../inventory/store/store.repository';
 
 @Module({
     imports: [TypeOrmModule.forFeature([
@@ -22,10 +22,10 @@ import { DrugGenericRepository } from '../../inventory/pharmacy/generic/generic.
         AppointmentRepository,
         DrugGenericRepository,
         QueueSystemRepository,
-        ConsumableRepository,
         AuthRepository,
         PatientDiagnosisRepository,
         PatientNoteRepository,
+        StoreInventoryRepository,
     ])],
     controllers: [ConsultationController],
     providers: [ AppGateway, ConsultationService],

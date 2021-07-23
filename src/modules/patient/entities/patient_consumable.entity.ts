@@ -1,15 +1,15 @@
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
-import { Consumable } from '../../settings/entities/consumable.entity';
 import { Patient } from './patient.entity';
 import { Encounter } from '../consultation/encouter.entity';
+import { StoreInventory } from '../../inventory/entities/store_inventory.entity';
 
 @Entity({ name: 'patient_consumables' })
 export class PatientConsumable extends CustomBaseEntity {
 
-    @ManyToOne(type => Consumable)
+    @ManyToOne(type => StoreInventory)
     @JoinColumn({ name: 'consumable_id' })
-    consumable: Consumable;
+    consumable: StoreInventory;
 
     @Column({ nullable: true })
     quantity: number;
