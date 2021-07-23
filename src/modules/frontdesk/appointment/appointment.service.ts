@@ -327,20 +327,24 @@ export class AppointmentService {
                 appointment.whomToSee = doctor;
             }
 
-            if (consulting_room_id) {
-                const room = await this.consultingRoomRepository.findOne(consulting_room_id);
-                appointment.consultingRoom = room;
+            try {
+                if (consulting_room_id) {
+                    const room = await this.consultingRoomRepository.findOne(consulting_room_id);
+                    appointment.consultingRoom = room;
 
-                if (process.env.DEBUG === 'false') {
-                    const text = `Patient ${appointment.patient.id}, please proceed to consulting ${room.name}`;
-                    say.speak(text, null, 1.0, (err) => {
-                        if (err) {
-                            return console.error(err);
-                        }
+                    if (process.env.DEBUG === 'true') {
+                        const text = `Patient ${appointment.patient.id}, please proceed to consulting ${room.name}`;
+                        say.speak(text, null, 1.0, (err) => {
+                            if (err) {
+                                return console.error(err);
+                            }
 
-                        say.stop();
-                    });
+                            say.stop();
+                        });
+                    }
                 }
+            } catch (e) {
+                console.log(e);
             }
 
             appointment.doctorStatus = action;
@@ -358,7 +362,7 @@ export class AppointmentService {
         try {
             const appointment = await this.getAppointment(appointmentId);
 
-            if (process.env.DEBUG === 'false') {
+            if (process.env.DEBUG === 'true') {
                 const text = `Patient ${appointment.patient.id}, please proceed to consulting ${appointment.consultingRoom.name}`;
                 say.speak(text, null, 1.0, (err) => {
                     if (err) {
