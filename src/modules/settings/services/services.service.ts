@@ -89,18 +89,31 @@ export class ServicesService {
         const { q } = params;
 
         const category = await this.serviceCategoryRepository.findOne({ where: { slug } });
+        const hmo = await this.hmoSchemeRepository.findOne({ where: { name: 'Private' } });
 
+        let query = [];
         if (q && q !== '') {
-            return await this.serviceRepository.find({
+            query = await this.serviceRepository.find({
                 where: { name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`), category },
+                take: 20,
+            });
+        } else {
+            query = await this.serviceRepository.find({
+                where: { category },
                 take: 20,
             });
         }
 
-        return await this.serviceRepository.find({
-            where: { category },
-            take: 20,
-        });
+        let result = [];
+        for (const item of query) {
+            const serviceCost = await this.serviceCostRepository.findOne({
+                where: { code: item.code, hmo },
+            });
+
+            result = [...result, { ...item, serviceCost }];
+        }
+
+        return result;
     }
 
     async createService(serviceDto: ServiceDto): Promise<Service> {

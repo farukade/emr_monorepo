@@ -44,6 +44,14 @@ export class AppointmentController {
         return this.appointmentService.getAppointment(id);
     }
 
+    @Get(':id/check-date')
+    getCheckDate(
+        @Param('id') id: number,
+        @Query() urlParams,
+    ) {
+        return this.appointmentService.checkDate(id, urlParams);
+    }
+
     @Get('/:patient_id/active')
     getActiveAppointment(
         @Param('patient_id') id: number,
@@ -70,7 +78,7 @@ export class AppointmentController {
         @Param('id') id: string,
         @Request() req,
     ) {
-        return this.appointmentService.cancelAppointment(id, req.user);
+        return this.appointmentService.cancelAppointment(id, req.user.username);
     }
 
     @Patch('accept')
@@ -78,7 +86,7 @@ export class AppointmentController {
         @Body() param,
         @Request() req,
     ) {
-        return this.appointmentService.acceptAppointment(param, req.user);
+        return this.appointmentService.acceptAppointment(param, req.user.username);
     }
 
     @Get(':id/repeat-prompt')

@@ -275,7 +275,27 @@ export class LabService {
     */
 
     async getGroups(): Promise<Group[]> {
-        return await this.groupRepository.find({ relations: ['tests'] });
+        const hmo = await this.hmoSchemeRepository.findOne({ where: { name: 'Private' } });
+
+        const query = await this.groupRepository.find({ relations: ['tests'] });
+
+        let result = [];
+        for (const item of query) {
+            let allTests = [];
+            for (const test of item.tests) {
+                const serviceCost = await this.serviceCostRepository.findOne({
+                    where: { code: test.labTest.code, hmo },
+                });
+
+                const labTest = { ...test.labTest, service: serviceCost };
+
+                allTests = [...allTests, { ...test, labTest }];
+            }
+
+            result = [...result, { ...item, tests: allTests }];
+        }
+
+        return result;
     }
 
     async createGroup(groupDto: GroupDto, createdBy: string): Promise<any> {

@@ -24,7 +24,6 @@ export class ServicesController {
         return this.servicesService.getAllServices({ page, limit }, urlParams);
     }
 
-    // get services by category id
     @Get('/category/:slug')
     getServicesByCategory(
         @Param('slug') slug: string,

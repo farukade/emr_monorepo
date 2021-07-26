@@ -8,12 +8,17 @@ import { getConnection } from 'typeorm';
 import { User } from '../../modules/auth/entities/user.entity';
 import { StaffDetails } from '../../modules/hr/staff/entities/staff_details.entity';
 import { LogEntity } from '../../modules/logger/entities/logger.entity';
+import { Appointment } from '../../modules/frontdesk/appointment/appointment.entity';
 
 // tslint:disable-next-line:no-var-requires
 const mysql = require('mysql2/promise');
 
 // tslint:disable-next-line:no-var-requires
 const bluebird = require('bluebird');
+
+// tslint:disable-next-line:no-var-requires
+const Say = require('say').Say;
+const say = new Say('darwin' || 'win32' || 'linux');
 
 const apiKey = process.env.API_KEY;
 const apiSecret = process.env.API_SECRET;
@@ -182,4 +187,22 @@ export const getStaff = async (username: string): Promise<StaffDetails> => {
 export const fixAmount = (amount) => {
     const price = amount.split(',').join('');
     return amount === '' ? 0 : price;
+};
+
+export const callPatient = (appointment: Appointment, room) => {
+    try {
+        if (process.env.DEBUG === 'false') {
+            const text = `Patient ${appointment.patient.id}, please proceed to consulting ${room.name}`;
+            say.speak(text, null, 1.0, (err) => {
+                if (err) {
+                    console.log(err);
+                } else {
+                    console.log('patient has been notified!');
+                    say.stop();
+                }
+            });
+        }
+    } catch (e) {
+        console.log(e);
+    }
 };

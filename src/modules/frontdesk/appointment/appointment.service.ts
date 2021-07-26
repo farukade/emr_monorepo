@@ -13,18 +13,15 @@ import { ServiceRepository } from '../../settings/services/repositories/service.
 import { Patient } from '../../patient/entities/patient.entity';
 import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
 import { AppGateway } from '../../../app.gateway';
-import { Brackets, getConnection, getRepository } from 'typeorm';
+import { Brackets, getConnection, getRepository, Not, Raw } from 'typeorm';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import { PaginationOptionsInterface } from '../../../common/paginate';
-import { formatPID, getStaff, sendSMS } from '../../../common/utils/utils';
+import { callPatient } from '../../../common/utils/utils';
 import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repository';
 import { ServiceCostRepository } from '../../settings/services/repositories/service_cost.repository';
 import { ServiceCost } from '../../settings/entities/service_cost.entity';
-
-// tslint:disable-next-line:no-var-requires
-const Say = require('say').Say;
-const say = new Say('darwin' || 'win32' || 'linux');
+import { StaffRepository } from '../../hr/staff/staff.repository';
 
 @Injectable()
 export class AppointmentService {
@@ -47,6 +44,8 @@ export class AppointmentService {
         private hmoSchemeRepository: HmoSchemeRepository,
         @InjectRepository(ServiceCostRepository)
         private serviceCostRepository: ServiceCostRepository,
+        @InjectRepository(StaffRepository)
+        private staffRepository: StaffRepository,
         private readonly appGateway: AppGateway,
     ) {
     }
@@ -154,6 +153,30 @@ export class AppointmentService {
 
         return appointment;
 
+    }
+
+    async checkDate(id: number, param): Promise<any> {
+        try {
+            const { date, staff_id } = param;
+
+            const doctor = await this.staffRepository.findOne({ id: staff_id });
+
+            const start = moment(date, 'YYYY-MM-DD HH:mm:ss').subtract(1, 'h').format('YYYY-MM-DD HH:mm:ss');
+            const end = moment(date, 'YYYY-MM-DD HH:mm:ss').add(1, 'h').format('YYYY-MM-DD HH:mm:ss');
+
+            const rs = await this.appointmentRepository.find({
+                where: {
+                    status: Not('Completed'),
+                    whomToSee: doctor,
+                    appointment_date: Raw(alias => `${alias} BETWEEN :start AND :end`, { start, end }),
+                },
+            });
+
+            return { success: true, available: (rs.length < 4) };
+        } catch (e) {
+            console.log(e);
+            return { success: false, message: 'could not check date' };
+        }
     }
 
     async saveNewAppointment(appointmentDto: AppointmentDto, username: string): Promise<any> {
@@ -327,24 +350,11 @@ export class AppointmentService {
                 appointment.whomToSee = doctor;
             }
 
-            try {
-                if (consulting_room_id) {
-                    const room = await this.consultingRoomRepository.findOne(consulting_room_id);
-                    appointment.consultingRoom = room;
+            if (consulting_room_id) {
+                const room = await this.consultingRoomRepository.findOne(consulting_room_id);
+                appointment.consultingRoom = room;
 
-                    if (process.env.DEBUG === 'true') {
-                        const text = `Patient ${appointment.patient.id}, please proceed to consulting ${room.name}`;
-                        say.speak(text, null, 1.0, (err) => {
-                            if (err) {
-                                return console.error(err);
-                            }
-
-                            say.stop();
-                        });
-                    }
-                }
-            } catch (e) {
-                console.log(e);
+                callPatient(appointment, room);
             }
 
             appointment.doctorStatus = action;
@@ -352,7 +362,7 @@ export class AppointmentService {
             await appointment.save();
 
             this.appGateway.server.emit('appointment-update', { appointment, action });
-            return { success: true };
+            return { success: true, appointment };
         } catch (e) {
             return { success: false, message: e.message };
         }
@@ -362,16 +372,7 @@ export class AppointmentService {
         try {
             const appointment = await this.getAppointment(appointmentId);
 
-            if (process.env.DEBUG === 'true') {
-                const text = `Patient ${appointment.patient.id}, please proceed to consulting ${appointment.consultingRoom.name}`;
-                say.speak(text, null, 1.0, (err) => {
-                    if (err) {
-                        return console.error(err);
-                    }
-
-                    say.stop();
-                });
-            }
+            callPatient(appointment, appointment.consultingRoom);
 
             return { success: true };
         } catch (e) {

@@ -14,6 +14,7 @@ import { ServiceCategoryRepository } from '../../settings/services/repositories/
 import { AppGateway } from '../../../app.gateway';
 import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repository';
 import { ServiceCostRepository } from '../../settings/services/repositories/service_cost.repository';
+import { StaffRepository } from '../../hr/staff/staff.repository';
 
 @Module({
     imports: [TypeOrmModule.forFeature([
@@ -28,6 +29,7 @@ import { ServiceCostRepository } from '../../settings/services/repositories/serv
         TransactionsRepository,
         HmoSchemeRepository,
         ServiceCostRepository,
+        StaffRepository,
     ])],
     controllers: [AppointmentController],
     providers: [AppGateway, AppointmentService],
