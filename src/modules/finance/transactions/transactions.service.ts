@@ -95,6 +95,8 @@ export class TransactionsService {
         const total = await query.getCount();
 
         for (const transaction of transactions) {
+            transaction.hmo = await this.hmoSchemeRepository.findOne(transaction.hmo_scheme_id);
+
             transaction.staff = await getStaff(transaction.lastChangedBy);
 
             if (transaction.patient_id) {

@@ -352,12 +352,10 @@ export class ConsultationService {
             }
 
             if (nextAppointment && nextAppointment.appointment_date && nextAppointment.appointment_date !== '') {
-                const appointmentDate = `${moment(nextAppointment.appointment_date).format('YYYY-MM-DD')} ${moment().format('HH:mm:ss')}`;
-
                 const newAppointment = new Appointment();
                 newAppointment.patient = patient;
                 newAppointment.whomToSee = appointment.whomToSee;
-                newAppointment.appointment_date = appointmentDate;
+                newAppointment.appointment_date = nextAppointment.appointment_date;
                 newAppointment.serviceCategory = appointment.serviceCategory;
                 newAppointment.service = appointment.service;
                 newAppointment.amountToPay = 0.00;

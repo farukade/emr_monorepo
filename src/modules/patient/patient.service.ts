@@ -542,6 +542,14 @@ export class PatientService {
 
             transaction.staff = await getStaff(transaction.lastChangedBy);
 
+            if (transaction.service_cost_id) {
+                transaction.service = await this.serviceCostRepository.findOne(transaction.service_cost_id);
+            }
+
+            if (transaction.patient_request_item_id) {
+                transaction.patientRequestItem = await this.patientRequestItemRepository.findOne(transaction.patient_request_item_id, { relations: ['request'] });
+            }
+
             result = [...result, transaction];
         }
 
