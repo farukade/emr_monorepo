@@ -189,17 +189,18 @@ export const fixAmount = (amount) => {
     return amount === '' ? 0 : price;
 };
 
-export const callPatient = (appointment: Appointment, room) => {
+export const callPatient = async (appointment: Appointment, room) => {
     try {
         if (process.env.DEBUG === 'false') {
             const text = `Patient ${appointment.patient.id}, please proceed to consulting ${room.name}`;
             say.speak(text, null, 1.0, (err) => {
                 if (err) {
-                    console.log(err);
-                } else {
-                    console.log('patient has been notified!');
-                    say.stop();
+                    console.error(err);
+                    return;
                 }
+
+                console.log('patient has been notified!');
+                say.stop();
             });
         }
     } catch (e) {

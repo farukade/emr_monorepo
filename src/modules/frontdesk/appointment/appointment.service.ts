@@ -354,7 +354,7 @@ export class AppointmentService {
                 const room = await this.consultingRoomRepository.findOne(consulting_room_id);
                 appointment.consultingRoom = room;
 
-                callPatient(appointment, room);
+                await callPatient(appointment, room);
             }
 
             appointment.doctorStatus = action;
@@ -373,7 +373,7 @@ export class AppointmentService {
         try {
             const appointment = await this.getAppointment(appointmentId);
 
-            callPatient(appointment, appointment.consultingRoom);
+            await callPatient(appointment, appointment.consultingRoom);
 
             return { success: true };
         } catch (e) {
