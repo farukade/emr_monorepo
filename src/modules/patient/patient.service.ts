@@ -213,7 +213,14 @@ export class PatientService {
             }
 
             let hmo = await this.hmoSchemeRepository.findOne(hmoId);
-            const nok = await this.patientNOKRepository.saveNOK(patientDto);
+
+            let nok = await this.patientNOKRepository.findOne({
+                where: [{ phoneNumber: patientDto.nok_phoneNumber }, { email: patientDto.nok_email }],
+            });
+
+            if(!nok){
+                nok = await this.patientNOKRepository.saveNOK(patientDto);
+            }
 
             const patient = await this.patientRepository.savePatient(patientDto, nok, hmo, createdBy, pic);
 
