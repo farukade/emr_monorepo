@@ -18,7 +18,7 @@ const bluebird = require('bluebird');
 
 // tslint:disable-next-line:no-var-requires
 const Say = require('say').Say;
-const say = new Say('darwin' || 'win32' || 'linux');
+const say = new Say();
 
 const apiKey = process.env.API_KEY;
 const apiSecret = process.env.API_SECRET;
