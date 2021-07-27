@@ -227,9 +227,12 @@ export class PatientService {
             const splits = patient.other_names.split(' ');
             const message = `Dear ${patient.surname} ${splits.length > 0 ? splits[0] : patient.other_names}, welcome to the DEDA Family. Your ID/Folder number is ${formatPID(patient.id)}. Kindly save the number and provide it at all your appointment visits. Thank you.`;
 
+            let serviceCost;
             const category = await this.serviceCategoryRepository.findOne({ where: { name: 'registration' } });
             const service = await this.serviceRepository.findOne({ where: { category } });
-            let serviceCost = await this.serviceCostRepository.findOne({ where: { code: service?.code, hmo } });
+            if (service) {
+                serviceCost = await this.serviceCostRepository.findOne({ where: { code: service.code, hmo } });
+            }
             if (!serviceCost || (serviceCost && serviceCost.tariff === 0)) {
                 hmo = await this.hmoSchemeRepository.findOne({
                     where: { name: 'Private' },
