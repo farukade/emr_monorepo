@@ -94,6 +94,7 @@ export class PatientService {
             query.andWhere(new Brackets(qb => {
                 qb.where('LOWER(p.surname) Like :surname', { surname: `%${q.toLowerCase()}%` })
                     .orWhere('LOWER(p.other_names) Like :other_names', { other_names: `%${q.toLowerCase()}%` })
+                    .orWhere('LOWER(p.email) Like :email', { email: `%${q.toLowerCase()}%` })
                     .orWhere('p.legacy_patient_id Like :id', { legacy_patient_id: `%${q}%` })
                     .orWhere('CAST(p.id AS text) = :id', { id: `%${q}%` });
             }));
@@ -157,6 +158,7 @@ export class PatientService {
             .andWhere(new Brackets(qb => {
                 qb.where('LOWER(p.surname) Like :surname', { surname: `%${q.toLowerCase()}%` })
                     .orWhere('LOWER(p.other_names) Like :other_names', { other_names: `%${q.toLowerCase()}%` })
+                    .orWhere('LOWER(p.email) Like :email', { email: `%${q.toLowerCase()}%` })
                     .orWhere('p.legacy_patient_id Like :legacy_id', { legacy_id: `%${q}%` })
                     .orWhere('p.phone_number Like :phone_number', { phone_number: `%${q}%` })
                     .orWhere('CAST(p.id AS text) LIKE :id', { id: `%${q}%` });
