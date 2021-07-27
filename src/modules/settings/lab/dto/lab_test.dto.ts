@@ -13,4 +13,6 @@ export class LabTestDto {
     specimens: any;
 
     hasParameters: boolean;
+
+    hmo_id: any;
 }

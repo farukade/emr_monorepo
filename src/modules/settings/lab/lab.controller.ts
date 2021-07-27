@@ -49,17 +49,16 @@ export class LabController {
         @Body() labTestDto: LabTestDto,
         @Request() req,
     ): Promise<any> {
-        const { parameters } = labTestDto;
         return this.labService.createLabTest(labTestDto, req.user.username);
     }
 
-    @Patch(':id/update')
+    @Patch(':id')
     @UsePipes(ValidationPipe)
     updateLabTest(
         @Param('id') id: string,
         @Body() labTestDto: LabTestDto,
         @Request() req,
-    ): Promise<LabTest> {
+    ): Promise<any> {
         return this.labService.updateLabTest(id, labTestDto, req.user.username);
     }
 
@@ -90,7 +89,7 @@ export class LabController {
         return this.labService.createCategory(labCategoryDto, req.user.username);
     }
 
-    @Put('categories/:id/update')
+    @Put('categories/:id')
     @UsePipes(ValidationPipe)
     updateCategory(
         @Param('id') id: number,
@@ -124,7 +123,7 @@ export class LabController {
         return this.labService.createParameter(parameterDto);
     }
 
-    @Patch('parameters/:id/update')
+    @Patch('parameters/:id')
     @UsePipes(ValidationPipe)
     updateParameter(
         @Param('id') id: string,

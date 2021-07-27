@@ -218,7 +218,7 @@ export class PatientService {
                 where: [{ phoneNumber: patientDto.nok_phoneNumber }, { email: patientDto.nok_email }],
             });
 
-            if(!nok){
+            if (!nok) {
                 nok = await this.patientNOKRepository.saveNOK(patientDto);
             }
 

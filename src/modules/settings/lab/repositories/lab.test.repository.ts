@@ -23,7 +23,7 @@ export class LabTestRepository extends Repository<LabTest> {
     async updateLabTest(labTestDto: LabTestDto, labTest: LabTest, category: LabTestCategory, updatedBy: string): Promise<LabTest> {
         const { name, parameters, specimens, hasParameters } = labTestDto;
 
-        const allParameters = await this.saveParameters(parameters, updatedBy);
+        const allParameters = await this.saveParameters(parameters || [], updatedBy);
 
         labTest.name = name;
         labTest.category = category;
