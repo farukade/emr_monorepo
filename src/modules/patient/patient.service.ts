@@ -221,7 +221,7 @@ export class PatientService {
 
             const category = await this.serviceCategoryRepository.findOne({ where: { name: 'registration' } });
             const service = await this.serviceRepository.findOne({ where: { category } });
-            let serviceCost = await this.serviceCostRepository.findOne({ where: { code: service.code, hmo } });
+            let serviceCost = await this.serviceCostRepository.findOne({ where: { code: service?.code, hmo } });
             if (!serviceCost || (serviceCost && serviceCost.tariff === 0)) {
                 hmo = await this.hmoSchemeRepository.findOne({
                     where: { name: 'Private' },
