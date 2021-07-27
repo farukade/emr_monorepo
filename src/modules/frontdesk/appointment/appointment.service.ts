@@ -364,6 +364,7 @@ export class AppointmentService {
             this.appGateway.server.emit('appointment-update', { appointment, action });
             return { success: true, appointment };
         } catch (e) {
+            console.log(e);
             return { success: false, message: e.message };
         }
     }
