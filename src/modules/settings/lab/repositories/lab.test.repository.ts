@@ -3,13 +3,15 @@ import { LabTest } from '../../entities/lab_test.entity';
 import { LabTestDto } from '../dto/lab_test.dto';
 import { LabTestCategory } from '../../entities/lab_test_category.entity';
 import { Parameter } from '../../entities/parameters.entity';
+import { Service } from '../../entities/service.entity';
 
 @EntityRepository(LabTest)
 export class LabTestRepository extends Repository<LabTest> {
 
-    async saveLabTest(labTestDto: LabTestDto, category: LabTestCategory, createdBy: string): Promise<LabTest> {
+    async saveLabTest(labTestDto: LabTestDto, category: LabTestCategory, createdBy: string, service: Service): Promise<LabTest> {
         const { name, parameters, specimens, hasParameters } = labTestDto;
         const labTest = new LabTest();
+        labTest.code = service.code;
         labTest.name = name;
         labTest.createdBy = createdBy;
         labTest.category = category;

@@ -25,7 +25,7 @@ export class DrugBatchController {
     create(
         @Body() drugBatchDto: DrugBatchDto,
     ): Promise<any> {
-        return;
+        return this.drugBatchService.create(drugBatchDto);
     }
 
     @Put('/:id')
@@ -34,7 +34,16 @@ export class DrugBatchController {
         @Param('id') id: string,
         @Body() drugBatchDto: DrugBatchDto,
     ): Promise<any> {
-        return;
+        return this.drugBatchService.update(id, drugBatchDto);
+    }
+
+    @Put('/:id/quantity')
+    @UsePipes(ValidationPipe)
+    updateQty(
+        @Param('id') id: string,
+        @Body() drugBatchDto: DrugBatchDto,
+    ): Promise<any> {
+        return this.drugBatchService.updateQty(id, drugBatchDto);
     }
 
     @Delete('/:id')

@@ -5,6 +5,7 @@ import { DrugController } from './drug.controller';
 import { DrugRepository } from './drug.repository';
 import { DrugBatchRepository } from '../batches/batches.repository';
 import { DrugGenericRepository } from '../generic/generic.repository';
+import { ManufacturerRepository } from '../../manufacturer/manufacturer.repository';
 
 @Module({
     imports: [
@@ -12,6 +13,7 @@ import { DrugGenericRepository } from '../generic/generic.repository';
             DrugRepository,
             DrugBatchRepository,
             DrugGenericRepository,
+            ManufacturerRepository,
         ]),
     ],
     providers: [DrugService],

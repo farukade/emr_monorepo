@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { VendorRepository } from './vendor.repository';
-import { Vendor } from '../entities/vendor.entity';
 import { VendorDto } from '../dto/vendor.dto';
 import { PaginationOptionsInterface } from '../../../common/paginate';
 import { Pagination } from '../../../common/paginate/paginate.interface';

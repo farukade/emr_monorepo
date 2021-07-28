@@ -4,9 +4,10 @@ import { Pagination } from '../../../../common/paginate/paginate.interface';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DrugRepository } from './drug.repository';
 import { Raw } from 'typeorm';
-import * as moment from 'moment';
 import { DrugBatchRepository } from '../batches/batches.repository';
 import { DrugGenericRepository } from '../generic/generic.repository';
+import { DrugDto } from '../../dto/drug.dto';
+import { ManufacturerRepository } from '../../manufacturer/manufacturer.repository';
 
 @Injectable()
 export class DrugService {
@@ -17,6 +18,8 @@ export class DrugService {
         private drugBatchRepository: DrugBatchRepository,
         @InjectRepository(DrugGenericRepository)
         private drugGenericRepository: DrugGenericRepository,
+        @InjectRepository(ManufacturerRepository)
+        private manufacturerRepository: ManufacturerRepository,
     ) {
     }
 
@@ -59,6 +62,8 @@ export class DrugService {
                 order: { expirationDate: 'ASC' },
             });
 
+            item.manufacturer = await this.manufacturerRepository.findOne(item.manufacturer_id);
+
             rs = [...rs, item];
         }
 
@@ -69,5 +74,25 @@ export class DrugService {
             totalPages: total,
             currentPage: options.page,
         };
+    }
+
+    async update(id, drugDto: DrugDto): Promise<any> {
+        try {
+            const { name, generic_id, unitOfMeasure, manufacturer_id } = drugDto;
+
+            const generic = await this.drugGenericRepository.findOne(generic_id);
+            const manufacturer = await this.manufacturerRepository.findOne(manufacturer_id);
+
+            const drug = await this.drugRepository.findOne(id);
+            drug.name = name;
+            drug.generic = generic;
+            drug.unitOfMeasure = unitOfMeasure;
+            drug.manufacturer = manufacturer;
+            const rs = await drug.save();
+
+            return { success: true, drug: rs };
+        } catch (e) {
+            return { success: false, message: 'error could not update drug' };
+        }
     }
 }

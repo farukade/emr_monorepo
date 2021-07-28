@@ -10,6 +10,8 @@ import { SpecimenRepository } from './repositories/specimen.repository';
 import { GroupRepository } from './repositories/group.repository';
 import { GroupTestRepository } from './repositories/group_tests.repository';
 import { ServiceCostRepository } from '../services/repositories/service_cost.repository';
+import { ServiceRepository } from '../services/repositories/service.repository';
+import { ServiceCategoryRepository } from '../services/repositories/service_category.repository';
 
 @Module({
     imports: [
@@ -21,6 +23,8 @@ import { ServiceCostRepository } from '../services/repositories/service_cost.rep
             GroupRepository,
             GroupTestRepository,
             HmoSchemeRepository,
+            ServiceRepository,
+            ServiceCategoryRepository,
             ServiceCostRepository,
         ]),
     ],

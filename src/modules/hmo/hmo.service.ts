@@ -101,6 +101,10 @@ export class HmoService {
         };
     }
 
+    async fetchScheme(name): Promise<HmoScheme> {
+        return this.hmoSchemeRepository.findOne({ where: { name } });
+    }
+
     async createHmo(hmoDto: HmoDto): Promise<Hmo> {
         return this.hmoOwnerRepository.saveHmo(hmoDto);
     }

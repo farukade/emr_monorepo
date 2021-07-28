@@ -163,14 +163,15 @@ const formatPhone = (num) => {
 
 };
 
-export const formatPID = id => {
-    let formattedId = String(id);
-    let len = 7 - formattedId.length;
+export const formatPID = (id, l: number = 8) => {
+    let zeros = '';
+    let len = 10;
     while (len >= 0) {
-        formattedId = '0' + formattedId;
+        zeros = '0' + zeros;
         len--;
     }
-    return formattedId;
+
+    return `${zeros}${String(id)}`.slice(0 - l);
 };
 
 export const getStaff = async (username: string): Promise<StaffDetails> => {

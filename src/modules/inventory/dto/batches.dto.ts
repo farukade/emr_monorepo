@@ -1,6 +1,12 @@
-import { IsNotEmpty } from 'class-validator';
 
 export class DrugBatchDto {
-    @IsNotEmpty()
-    name: string;
+    quantity: any;
+
+    expirationDate: any;
+
+    unitPrice: any;
+
+    vendor_id: any;
+
+    vendor: any;
 }

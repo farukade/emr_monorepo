@@ -5,7 +5,7 @@ import { ServiceCategoryDto } from './dto/service.category.dto';
 import { ServiceCategory } from '../entities/service_category.entity';
 import { Service } from '../entities/service.entity';
 import { ServiceCategoryRepository } from './repositories/service_category.repository';
-import { slugify } from '../../../common/utils/utils';
+import { formatPID, slugify } from '../../../common/utils/utils';
 import { PaginationOptionsInterface } from '../../../common/paginate';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import { Raw } from 'typeorm';
@@ -14,6 +14,7 @@ import { LabTestCategoryRepository } from '../lab/repositories/lab.category.repo
 import { LabTestRepository } from '../lab/repositories/lab.test.repository';
 import { ServiceRepository } from './repositories/service.repository';
 import { ServiceCostRepository } from './repositories/service_cost.repository';
+import { ServiceCost } from '../entities/service_cost.entity';
 
 @Injectable()
 export class ServicesService {
@@ -117,15 +118,48 @@ export class ServicesService {
     }
 
     async createService(serviceDto: ServiceDto): Promise<Service> {
-        const { category_id } = serviceDto;
+        const { category_id, tariff } = serviceDto;
 
         const category = await this.serviceCategoryRepository.findOne(category_id);
 
-        return this.serviceRepository.createService(serviceDto, category);
+        const lastService = await this.serviceRepository.findOne({
+            where: { category },
+            order: { code: 'DESC' },
+        });
+
+        let alphaCode;
+        let code;
+        if (lastService) {
+            alphaCode = lastService.code.substring(0, 2);
+            const num = lastService.code.slice(2);
+            const index = parseInt(num, 10) + 1;
+            code = `${alphaCode.toLocaleUpperCase()}${formatPID(index, lastService.code.length - 2)}`;
+        } else {
+            const names = category.name.split(' ');
+            alphaCode = names.length > 1 ? names.map(n => n.substring(0, 1)).join('') : category.name.substring(0, 2);
+            code = `${alphaCode.toLocaleUpperCase()}${formatPID(1)}`;
+        }
+
+        const service = await this.serviceRepository.createService(serviceDto, category, code);
+
+        const schemes = await this.hmoSchemeRepository.find();
+
+        for (const scheme of schemes) {
+            const serviceCost = new ServiceCost();
+            serviceCost.code = service.code;
+            serviceCost.item = service;
+            serviceCost.hmo = scheme;
+            serviceCost.tariff = tariff;
+
+            await serviceCost.save();
+        }
+
+        return service;
     }
 
-    async updateService(id: string, serviceDto: ServiceDto): Promise<Service> {
-        const { name, category_id } = serviceDto;
+    async updateService(id: string, serviceDto: ServiceDto): Promise<any> {
+        const { name, category_id, hmo_id } = serviceDto;
+
         const category = await this.serviceCategoryRepository.findOne(category_id);
 
         const service = await this.getServiceById(id);
@@ -133,7 +167,13 @@ export class ServicesService {
         service.category = category;
         await service.save();
 
-        return service;
+        const hmo = await this.hmoSchemeRepository.findOne(hmo_id);
+
+        const cost = await this.serviceCostRepository.findOne({
+            where: { code: service.code, hmo },
+        });
+
+        return { ...service, service: cost };
     }
 
     async deleteService(id: number, username: string): Promise<any> {

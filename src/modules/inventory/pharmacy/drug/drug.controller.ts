@@ -32,9 +32,9 @@ export class DrugController {
     @UsePipes(ValidationPipe)
     update(
         @Param('id') id: string,
-        @Body() dDto: DrugDto,
+        @Body() drugDto: DrugDto,
     ): Promise<any> {
-        return;
+        return this.drugService.update(id, drugDto);
     }
 
     @Delete('/:id')

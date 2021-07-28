@@ -13,7 +13,7 @@ export class ServicesController {
     constructor(private servicesService: ServicesService) {
     }
 
-    @Get()
+    @Get('')
     getServices(
         @Request() request,
         @Query() urlParams,
@@ -32,18 +32,18 @@ export class ServicesController {
         return this.servicesService.getServicesByCategory(slug, urlParams);
     }
 
-    @Post()
+    @Post('')
     @UsePipes(ValidationPipe)
     createService(@Body() serviceDto: ServiceDto): Promise<Service> {
         return this.servicesService.createService(serviceDto);
     }
 
-    @Patch('/:id/update')
+    @Patch('/:id')
     @UsePipes(ValidationPipe)
     updateService(
         @Param('id') id: string,
         @Body() serviceDto: ServiceDto,
-    ): Promise<Service> {
+    ): Promise<any> {
         return this.servicesService.updateService(id, serviceDto);
     }
 

@@ -4,19 +4,35 @@ import { Pagination } from '../../../../common/paginate/paginate.interface';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DrugBatchRepository } from './batches.repository';
 import { Raw } from 'typeorm';
+import { DrugBatchDto } from '../../dto/batches.dto';
+import { DrugBatch } from '../../entities/batches.entity';
+import { VendorRepository } from '../../vendor/vendor.repository';
+import { Vendor } from '../../entities/vendor.entity';
+import { DrugRepository } from '../drug/drug.repository';
+import * as moment from 'moment';
 
 @Injectable()
 export class DrugBatchService {
     constructor(
         @InjectRepository(DrugBatchRepository)
         private drugBatchRepository: DrugBatchRepository,
+        @InjectRepository(VendorRepository)
+        private vendorRepository: VendorRepository,
+        @InjectRepository(DrugRepository)
+        private drugRepository: DrugRepository,
     ) {
     }
 
     async fetchAll(options: PaginationOptionsInterface, params): Promise<Pagination> {
-        const { q } = params;
+        const { q, drug_id } = params;
 
         const page = options.page - 1;
+
+        let extra;
+        if (drug_id && drug_id !== '') {
+            const drug = await this.drugRepository.findOne(drug_id);
+            extra = { drug };
+        }
 
         let result;
         let total = 0;
@@ -24,6 +40,7 @@ export class DrugBatchService {
             [result, total] = await this.drugBatchRepository.findAndCount({
                 where: {
                     name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`),
+                    ...extra,
                 },
                 relations: ['vendor'],
                 order: { name: 'ASC' },
@@ -32,6 +49,7 @@ export class DrugBatchService {
             });
         } else {
             [result, total] = await this.drugBatchRepository.findAndCount({
+                where: { ...extra },
                 relations: ['vendor'],
                 order: { name: 'ASC' },
                 take: options.limit,
@@ -46,5 +64,87 @@ export class DrugBatchService {
             totalPages: total,
             currentPage: options.page,
         };
+    }
+
+    async create(drugBatchDto: DrugBatchDto): Promise<any> {
+        try {
+            const { quantity, expirationDate, unitPrice, vendor_id } = drugBatchDto;
+
+            let vendor;
+            if (drugBatchDto.vendor_id === '') {
+                if (drugBatchDto.vendor) {
+                    const item = new Vendor();
+                    item.name = drugBatchDto.vendor.label;
+                    vendor = await item.save();
+                }
+            } else {
+                vendor = await this.vendorRepository.findOne(drugBatchDto.vendor_id);
+            }
+
+            const month = moment().format('MM');
+            const year = moment().format('YYYY');
+
+            const batch = new DrugBatch();
+            batch.name = `BA/${month}/${year}`;
+            batch.quantity = quantity;
+            batch.expirationDate = expirationDate;
+            batch.unitPrice = unitPrice;
+            batch.vendor = vendor;
+            await batch.save();
+
+            return { success: true, batch };
+        } catch (e) {
+            return { success: false, message: 'error could not create batch' };
+        }
+    }
+
+    async update(id, drugBatchDto: DrugBatchDto): Promise<any> {
+        try {
+            const { quantity, expirationDate, unitPrice, vendor_id } = drugBatchDto;
+
+            let vendor;
+            if (drugBatchDto.vendor_id === '') {
+                if (drugBatchDto.vendor) {
+                    const item = new Vendor();
+                    item.name = drugBatchDto.vendor.label;
+                    vendor = await item.save();
+                }
+            } else {
+                vendor = await this.vendorRepository.findOne(drugBatchDto.vendor_id);
+            }
+
+            const batch = await this.drugBatchRepository.findOne(id);
+
+            const month = moment(batch.createdAt).format('MM');
+            const year = moment(batch.createdAt).format('YYYY');
+
+            if (!batch.name || (batch.name && batch.name === '')) {
+                batch.name = `BA/${month}/${year}`;
+            }
+            batch.quantity = quantity;
+            batch.expirationDate = expirationDate;
+            batch.unitPrice = unitPrice;
+            batch.vendor = vendor;
+            const rs = await batch.save();
+
+            return { success: true, batch: rs };
+        } catch (e) {
+            console.log(e);
+            return { success: false, message: 'error could not update batch' };
+        }
+    }
+
+    async updateQty(id, drugBatchDto: DrugBatchDto): Promise<any> {
+        try {
+            const { quantity } = drugBatchDto;
+
+            const batch = await this.drugBatchRepository.findOne(id);
+            batch.quantity = batch.quantity + parseInt(quantity, 10);
+            const rs = await batch.save();
+
+            return { success: true, batch: rs };
+        } catch (e) {
+            return { success: false, message: 'error could not update batch' };
+        }
     }
 }

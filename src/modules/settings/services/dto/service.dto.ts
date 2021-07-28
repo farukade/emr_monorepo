@@ -6,6 +6,10 @@ export class ServiceDto {
 
     category_id: string;
 
+    hmo_id: any;
+
     code: string;
+
+    tariff: any;
 
 }

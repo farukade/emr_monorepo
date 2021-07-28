@@ -15,4 +15,6 @@ export class LabTestDto {
     hasParameters: boolean;
 
     hmo_id: any;
+
+    tariff: any;
 }

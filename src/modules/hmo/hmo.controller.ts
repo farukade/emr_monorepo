@@ -6,6 +6,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { Pagination } from '../../common/paginate/paginate.interface';
 import { HmoSchemeDto } from './dto/hmo_scheme.dto';
 import { HmoType } from './entities/hmo_type.entity';
+import { HmoScheme } from './entities/hmo_scheme.entity';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('hmos')
@@ -33,6 +34,13 @@ export class HmoController {
         const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
 
         return this.hmoService.fetchSchemes({ page, limit }, params);
+    }
+
+    @Get('/schemes/:name')
+    getScheme(
+        @Param('name') name: string,
+    ): Promise<HmoScheme> {
+        return this.hmoService.fetchScheme(name);
     }
 
     @Post('/owners')

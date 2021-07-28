@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LabTest } from '../entities/lab_test.entity';
 import { LabTestCategory } from '../entities/lab_test_category.entity';
@@ -10,7 +10,7 @@ import { Specimen } from '../entities/specimen.entity';
 import { SpecimenDto } from './dto/specimen.dto';
 import { Group } from '../entities/group.entity';
 import { GroupDto } from './dto/group.dto';
-import { slugify } from '../../../common/utils/utils';
+import { formatPID, slugify } from '../../../common/utils/utils';
 import { PaginationOptionsInterface } from '../../../common/paginate';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import { getConnection, Like, Raw } from 'typeorm';
@@ -23,6 +23,9 @@ import { GroupRepository } from './repositories/group.repository';
 import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repository';
 import { GroupTestRepository } from './repositories/group_tests.repository';
 import { ServiceCostRepository } from '../services/repositories/service_cost.repository';
+import { ServiceCost } from '../entities/service_cost.entity';
+import { ServiceRepository } from '../services/repositories/service.repository';
+import { ServiceCategoryRepository } from '../services/repositories/service_category.repository';
 
 @Injectable()
 export class LabService {
@@ -41,6 +44,10 @@ export class LabService {
         private hmoSchemeRepository: HmoSchemeRepository,
         @InjectRepository(GroupTestRepository)
         private groupTestRepository: GroupTestRepository,
+        @InjectRepository(ServiceRepository)
+        private serviceRepository: ServiceRepository,
+        @InjectRepository(ServiceCategoryRepository)
+        private serviceCategoryRepository: ServiceCategoryRepository,
         @InjectRepository(ServiceCostRepository)
         private serviceCostRepository: ServiceCostRepository,
     ) {
@@ -108,23 +115,70 @@ export class LabService {
         return { success: true, result };
     }
 
-    async createLabTest(labTestDto: LabTestDto, createdBy: string): Promise<LabTest> {
-        const { lab_category_id } = labTestDto;
+    async createLabTest(labTestDto: LabTestDto, createdBy: string): Promise<any> {
+        const { lab_category_id, tariff } = labTestDto;
         const category = await this.labTestCategoryRepo.findOne(lab_category_id);
 
-        return this.labTestRepository.saveLabTest(labTestDto, category, createdBy);
+        const serviceCategory = await this.serviceCategoryRepository.findOne({
+            where: { slug: 'labs' },
+        });
+        const lastService = await this.serviceRepository.findOne({
+            where: { category: serviceCategory },
+            order: { code: 'DESC' },
+        });
+
+        let alphaCode;
+        let code;
+        if (lastService) {
+            alphaCode = lastService.code.substring(0, 2);
+            const num = lastService.code.slice(2);
+            const index = parseInt(num, 10) + 1;
+            code = `${alphaCode.toLocaleUpperCase()}${formatPID(index, lastService.code.length - 2)}`;
+        } else {
+            const names = serviceCategory.name.split(' ');
+            alphaCode = names.length > 1 ? names.map(n => n.substring(0, 1)).join('') : category.name.substring(0, 2);
+            code = `${alphaCode.toLocaleUpperCase()}${formatPID(1)}`;
+        }
+
+        const service = await this.serviceRepository.createService(labTestDto, serviceCategory, code);
+
+        const labTest = await this.labTestRepository.saveLabTest(labTestDto, category, createdBy, service);
+
+        const schemes = await this.hmoSchemeRepository.find();
+
+        for (const scheme of schemes) {
+            const serviceCost = new ServiceCost();
+            serviceCost.code = service.code;
+            serviceCost.item = service;
+            serviceCost.hmo = scheme;
+            serviceCost.tariff = tariff;
+
+            await serviceCost.save();
+        }
+
+        const hmo = await this.hmoSchemeRepository.findOne({
+            where: { name: 'Private' },
+        });
+
+        const cost = await this.serviceCostRepository.findOne({
+            where: { code: service.code, hmo },
+        });
+
+        return { ...labTest, service: cost };
     }
 
     async updateLabTest(id: string, labTestDto: LabTestDto, updatedBy: string): Promise<any> {
         const { lab_category_id, hmo_id } = labTestDto;
-
-        const hmo = await this.hmoSchemeRepository.findOne(hmo_id);
-        const category = await this.labTestCategoryRepo.findOne(lab_category_id);
-        const labTest = await this.labTestRepository.findOne(id);
-
-        const service = await this.serviceCostRepository.findOne({ where: { code: labTest.code, hmo } });
-
         try {
+
+            const hmo = await this.hmoSchemeRepository.findOne(hmo_id);
+            const category = await this.labTestCategoryRepo.findOne(lab_category_id);
+            const labTest = await this.labTestRepository.findOne(id);
+
+            const service = await this.serviceCostRepository.findOne({
+                where: { code: labTest.code, hmo },
+            });
+
             const query = await this.labTestRepository.updateLabTest(labTestDto, labTest, category, updatedBy);
 
             return { ...query, service };
