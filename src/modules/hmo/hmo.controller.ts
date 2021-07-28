@@ -105,12 +105,4 @@ export class HmoController {
     getHmoTypes(): Promise<HmoType[]> {
         return this.hmoService.getHmoTypes();
     }
-
-    @Post('transactions/process')
-    processTransaction(
-        @Body() param,
-        @Request() req,
-    ) {
-        return this.hmoService.processTransaction(param, req.user);
-    }
 }

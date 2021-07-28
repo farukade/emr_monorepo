@@ -251,7 +251,7 @@ export class TransactionsService {
 
         const hmo = await this.hmoSchemeRepository.findOne({ where: { name: 'Private' } });
 
-        const serviceCost = await this.serviceCostRepository.findOne({ where: { id: transaction.service.id, hmo } });
+        const serviceCost = await this.serviceCostRepository.findOne({ where: { code: transaction.service.code, hmo } });
 
         transaction.payment_type = 'self';
         transaction.amount = serviceCost.tariff;

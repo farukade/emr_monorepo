@@ -11,6 +11,8 @@ import { ServiceCategoryRepository } from '../settings/services/repositories/ser
 import { HmoOwnerRepository } from './repositories/hmo.repository';
 import { HmoSchemeRepository } from './repositories/hmo_scheme.repository';
 import { HmoTypeRepository } from './repositories/hmo_type.repository';
+import { ServiceCostRepository } from '../settings/services/repositories/service_cost.repository';
+import { PatientRequestItemRepository } from '../patient/repositories/patient_request_items.repository';
 
 @Module({
     imports: [TypeOrmModule.forFeature([
@@ -22,6 +24,8 @@ import { HmoTypeRepository } from './repositories/hmo_type.repository';
         QueueSystemRepository,
         PatientRepository,
         ServiceCategoryRepository,
+        ServiceCostRepository,
+        PatientRequestItemRepository,
     ])],
     controllers: [HmoController],
     providers: [AppGateway, HmoService],

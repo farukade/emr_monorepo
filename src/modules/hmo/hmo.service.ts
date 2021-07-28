@@ -19,6 +19,8 @@ import { HmoSchemeRepository } from './repositories/hmo_scheme.repository';
 import { HmoTypeRepository } from './repositories/hmo_type.repository';
 import { HmoScheme } from './entities/hmo_scheme.entity';
 import { HmoType } from './entities/hmo_type.entity';
+import { ServiceCostRepository } from '../settings/services/repositories/service_cost.repository';
+import { PatientRequestItemRepository } from '../patient/repositories/patient_request_items.repository';
 
 @Injectable()
 export class HmoService {
@@ -39,6 +41,10 @@ export class HmoService {
         private patientRepository: PatientRepository,
         @InjectRepository(ServiceCategoryRepository)
         private serviceCategory: ServiceCategoryRepository,
+        @InjectRepository(ServiceCostRepository)
+        private serviceCostRepository: ServiceCostRepository,
+        @InjectRepository(PatientRequestItemRepository)
+        private patientRequestItemRepository: PatientRequestItemRepository,
         private readonly appGateway: AppGateway,
     ) {
     }
@@ -262,6 +268,14 @@ export class HmoService {
 
             item.patient = patient;
 
+            if (item.service_cost_id) {
+                item.service = await this.serviceCostRepository.findOne(item.service_cost_id);
+            }
+
+            if (item.patient_request_item_id) {
+                item.patientRequestItem = await this.patientRequestItemRepository.findOne(item.patient_request_item_id, { relations: ['request'] });
+            }
+
             result = [...result, item];
         }
 
@@ -276,41 +290,5 @@ export class HmoService {
 
     async getHmoTypes(): Promise<HmoType[]> {
         return await this.hmoTypeRepository.find();
-    }
-
-    async processTransaction(params, { userId, username }) {
-        const { action, id, approvalCode } = params;
-        try {
-
-            const transaction = await this.transactionsRepository.findOne(id, { relations: ['patient', 'hmo'] });
-            if (!transaction) {
-                throw new NotFoundException(`Transaction was not found`);
-            }
-
-            transaction.hmo_approval_code = approvalCode;
-            transaction.balance = 0;
-            transaction.lastChangedBy = username;
-
-            await transaction.save();
-
-            // find appointment
-            const appointment = await getConnection().getRepository(Appointment).findOne({
-                where: { patient: transaction.patient, status: 'Pending HMO Approval' },
-                relations: ['patient'],
-            });
-            let queue = {};
-            if (appointment) {
-                appointment.status = 'Pending Paypoint Approval';
-                appointment.save();
-                // create new queue
-                queue = await this.queueSystemRepository.saveQueue(appointment, 'vitals');
-            }
-            this.appGateway.server.emit('paypoint-queue', { queue });
-
-            return { success: true, transaction, queue };
-        } catch (error) {
-            return { success: false, message: error.message };
-        }
-
     }
 }
