@@ -1,6 +1,6 @@
 import { OnQueueActive, OnQueueCompleted, OnQueueFailed, Process, Processor } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
-import { mysqlConnect, slugify } from '../../common/utils/utils';
+import { formatPID, hasNumber, mysqlConnect, slugify } from '../../common/utils/utils';
 import { Job } from 'bull';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LoggerRepository } from '../logger/logger.repository';
@@ -26,6 +26,9 @@ import { GroupRepository } from '../settings/lab/repositories/group.repository';
 import { GroupTest } from '../settings/entities/group_tests.entity';
 import * as moment from 'moment';
 import { StoreInventoryRepository } from '../inventory/store/store.repository';
+// @ts-ignore
+import * as startCase from 'lodash.startcase';
+import { CafeteriaInventoryRepository } from '../inventory/cafeteria/cafeteria.repository';
 
 @Processor(process.env.MIGRATION_QUEUE_NAME)
 export class MigrationProcessor {
@@ -72,6 +75,8 @@ export class MigrationProcessor {
         private groupRepository: GroupRepository,
         @InjectRepository(StoreInventoryRepository)
         private storeInventoryRepository: StoreInventoryRepository,
+        @InjectRepository(CafeteriaInventoryRepository)
+        private cafeteriaInventoryRepository: CafeteriaInventoryRepository,
     ) {
     }
 
@@ -404,14 +409,28 @@ export class MigrationProcessor {
         try {
             const connection = await mysqlConnect();
 
-            const [rows] = await connection.execute('SELECT * FROM `insurance_billable_items` where item_group_category_id=11');
+            let [rows] = await connection.execute('SELECT * FROM `store`');
+            let count = 0;
             for (const item of rows) {
-                await this.storeInventoryRepository.save({
-                    name: item.item_description,
-                    slug: slugify(item.item_description),
-                    description: item.item_description,
-                    code: item.item_code,
-                });
+                count++;
+
+                const code = `ST${formatPID(count, 8)}`;
+                const name = hasNumber(item.name) ? item.name : startCase(item.name.toLocaleLowerCase());
+                const unit = hasNumber(item.name) ? item.unit_of_measure : startCase(item.unit_of_measure.toLocaleLowerCase());
+
+                await this.storeInventoryRepository.save({ name, unitOfMeasure: unit, code });
+            }
+
+            [rows] = await connection.execute('SELECT * FROM `store_cafeteria`');
+            count = 0;
+            for (const item of rows) {
+                count++;
+
+                const code = `CA${formatPID(count, 8)}`;
+                const name = hasNumber(item.name) ? item.name : startCase(item.name.toLocaleLowerCase());
+                const unit = item.unit_of_measure;
+
+                await this.cafeteriaInventoryRepository.save({ name, unitOfMeasure: unit, code });
             }
 
             await connection.end();

@@ -208,3 +208,7 @@ export const callPatient = async (appointment: Appointment, room) => {
         console.log(e);
     }
 };
+
+export const hasNumber = (myString) => {
+    return /\d/.test(myString);
+};

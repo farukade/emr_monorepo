@@ -24,8 +24,9 @@ export class DrugBatchController {
     @UsePipes(ValidationPipe)
     create(
         @Body() drugBatchDto: DrugBatchDto,
+        @Request() req,
     ): Promise<any> {
-        return this.drugBatchService.create(drugBatchDto);
+        return this.drugBatchService.create(drugBatchDto, req.user.username);
     }
 
     @Put('/:id')
@@ -33,8 +34,9 @@ export class DrugBatchController {
     update(
         @Param('id') id: string,
         @Body() drugBatchDto: DrugBatchDto,
+        @Request() req,
     ): Promise<any> {
-        return this.drugBatchService.update(id, drugBatchDto);
+        return this.drugBatchService.update(id, drugBatchDto, req.user.username);
     }
 
     @Put('/:id/quantity')
@@ -42,8 +44,9 @@ export class DrugBatchController {
     updateQty(
         @Param('id') id: string,
         @Body() drugBatchDto: DrugBatchDto,
+        @Request() req,
     ): Promise<any> {
-        return this.drugBatchService.updateQty(id, drugBatchDto);
+        return this.drugBatchService.updateQty(id, drugBatchDto, req.user.username);
     }
 
     @Delete('/:id')

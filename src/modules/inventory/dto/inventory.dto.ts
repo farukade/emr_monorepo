@@ -1,21 +1,10 @@
-import { IsNotEmpty } from 'class-validator';
 
 export class InventoryDto {
-  name: string;
+    name: any;
 
-  drug_id: number;
+    quantity: any;
 
-  description: string;
+    unitPrice: any;
 
-  @IsNotEmpty()
-  quantity: number;
-
-  unit_price: any;
-
-  cost_price: any;
-
-  expiry_date: string;
-
-  vendor_id: number;
-
+    unitOfMeasure: any;
 }

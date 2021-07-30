@@ -7,6 +7,7 @@ import { CafeteriaInventoryModule } from './cafeteria/cafeteria.module';
 import { BatchesModule } from './pharmacy/batches/batches.module';
 import { GenericModule } from './pharmacy/generic/generic.module';
 import { DrugModule } from './pharmacy/drug/drug.module';
+import { InventoryActivityModule } from './activity/activity.module';
 
 @Module({
     imports: [
@@ -18,6 +19,7 @@ import { DrugModule } from './pharmacy/drug/drug.module';
         BatchesModule,
         GenericModule,
         DrugModule,
+        InventoryActivityModule,
     ],
     providers: [],
     controllers: [],

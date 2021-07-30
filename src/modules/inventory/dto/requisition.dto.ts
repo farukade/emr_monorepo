@@ -1,6 +1,9 @@
-import { IsNotEmpty } from 'class-validator';
-
 export class RequisitionDto {
-    @IsNotEmpty()
-    name: string;
+    staff_id: any;
+
+    category: string;
+
+    item_id: any;
+
+    quantity: any;
 }

@@ -1,7 +1,6 @@
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
-import { DrugBatch } from './batches.entity';
 import { CafeteriaInventory } from './cafeteria_inventory.entity';
 import { StoreInventory } from './store_inventory.entity';
 
@@ -11,17 +10,16 @@ export class Requisition extends CustomBaseEntity {
     @JoinColumn({ name: 'staff_id' })
     staff: StaffDetails;
 
+    @Column({ type: 'varchar' })
+    category: string;
+
     @ManyToOne(type => StoreInventory, { nullable: true })
     @JoinColumn({ name: 'store_inventory_id' })
-    storeInventory: StoreInventory;
-
-    @ManyToOne(type => DrugBatch, { nullable: true })
-    @JoinColumn({ name: 'drug_batch_id' })
-    drugBatch: DrugBatch;
+    store: StoreInventory;
 
     @ManyToOne(type => CafeteriaInventory, { nullable: true })
     @JoinColumn({ name: 'cafeteria_inventory_id' })
-    cafeteriaInventory: CafeteriaInventory;
+    cafeteria: CafeteriaInventory;
 
     @Column({ type: 'integer', default: 0 })
     quantity: number;
@@ -34,4 +32,16 @@ export class Requisition extends CustomBaseEntity {
 
     @Column({ nullable: true, name: 'approved_at' })
     approvedAt: string;
+
+    @Column({ type: 'smallint', default: 0 })
+    declined: number;
+
+    @Column({ type: 'varchar', nullable: true, name: 'declined_by' })
+    declinedBy: string;
+
+    @Column({ nullable: true, name: 'declined_at' })
+    declinedAt: string;
+
+    @Column({ nullable: true, name: 'decline_reason' })
+    declineReason: string;
 }

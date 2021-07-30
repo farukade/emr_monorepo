@@ -24,8 +24,9 @@ export class RequisitionController {
     @UsePipes(ValidationPipe)
     create(
         @Body() requisitionDto: RequisitionDto,
+        @Request() req,
     ): Promise<any> {
-        return;
+        return this.requisitionService.create(requisitionDto, req.user.username);
     }
 
     @Put('/:id')
@@ -33,15 +34,33 @@ export class RequisitionController {
     update(
         @Param('id') id: string,
         @Body() requisitionDto: RequisitionDto,
+        @Request() req,
     ): Promise<any> {
-        return;
+        return this.requisitionService.updateItem(id, requisitionDto, req.user.username);
     }
 
-    @Delete('/:id')
-    delete(
+    @Put('/:id/approve')
+    approve(
         @Param('id') id: number,
         @Request() req,
     ): Promise<any> {
-        return;
+        return this.requisitionService.approve(id, req.user.username);
+    }
+
+    @Put('/:id/decline')
+    decline(
+        @Param('id') id: number,
+        @Body() param,
+        @Request() req,
+    ): Promise<any> {
+        return this.requisitionService.decline(id, param, req.user.username);
+    }
+
+    @Delete('/:id')
+    deleteItem(
+        @Param('id') id: number,
+        @Request() req,
+    ): Promise<any> {
+        return this.requisitionService.deleteRequest(id, req.user.username);
     }
 }

@@ -24,8 +24,9 @@ export class CafeteriaInventoryController {
     @UsePipes(ValidationPipe)
     create(
         @Body() inventoryDto: InventoryDto,
+        @Request() req,
     ): Promise<any> {
-        return;
+        return this.cafeteriaInventoryService.createItem(inventoryDto, req.user.username);
     }
 
     @Put('/:id')
@@ -33,8 +34,19 @@ export class CafeteriaInventoryController {
     update(
         @Param('id') id: string,
         @Body() inventoryDto: InventoryDto,
+        @Request() req,
     ): Promise<any> {
-        return;
+        return this.cafeteriaInventoryService.updateItem(id, inventoryDto, req.user.username);
+    }
+
+    @Put('/:id/quantity')
+    @UsePipes(ValidationPipe)
+    updateQty(
+        @Param('id') id: string,
+        @Body() inventoryDto: InventoryDto,
+        @Request() req,
+    ): Promise<any> {
+        return this.cafeteriaInventoryService.updateQty(id, inventoryDto, req.user.username);
     }
 
     @Delete('/:id')

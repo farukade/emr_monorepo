@@ -5,6 +5,7 @@ import { DrugBatchController } from './batches.controller';
 import { DrugBatchService } from './batches.service';
 import { VendorRepository } from '../../vendor/vendor.repository';
 import { DrugRepository } from '../drug/drug.repository';
+import { InventoryActivityRepository } from '../../activity/activity.repository';
 
 @Module({
     imports: [
@@ -12,6 +13,7 @@ import { DrugRepository } from '../drug/drug.repository';
             DrugBatchRepository,
             VendorRepository,
             DrugRepository,
+            InventoryActivityRepository,
         ]),
     ],
     providers: [DrugBatchService],

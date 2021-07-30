@@ -10,6 +10,7 @@ import { VendorRepository } from '../../vendor/vendor.repository';
 import { Vendor } from '../../entities/vendor.entity';
 import { DrugRepository } from '../drug/drug.repository';
 import * as moment from 'moment';
+import { InventoryActivityRepository } from '../../activity/activity.repository';
 
 @Injectable()
 export class DrugBatchService {
@@ -20,6 +21,8 @@ export class DrugBatchService {
         private vendorRepository: VendorRepository,
         @InjectRepository(DrugRepository)
         private drugRepository: DrugRepository,
+        @InjectRepository(InventoryActivityRepository)
+        private inventoryActivityRepository: InventoryActivityRepository,
     ) {
     }
 
@@ -66,19 +69,19 @@ export class DrugBatchService {
         };
     }
 
-    async create(drugBatchDto: DrugBatchDto): Promise<any> {
+    async create(drugBatchDto: DrugBatchDto, username: string): Promise<any> {
         try {
             const { quantity, expirationDate, unitPrice, vendor_id } = drugBatchDto;
 
             let vendor;
-            if (drugBatchDto.vendor_id === '') {
+            if (vendor_id === '') {
                 if (drugBatchDto.vendor) {
                     const item = new Vendor();
                     item.name = drugBatchDto.vendor.label;
                     vendor = await item.save();
                 }
             } else {
-                vendor = await this.vendorRepository.findOne(drugBatchDto.vendor_id);
+                vendor = await this.vendorRepository.findOne(vendor_id);
             }
 
             const month = moment().format('MM');
@@ -90,27 +93,33 @@ export class DrugBatchService {
             batch.expirationDate = expirationDate;
             batch.unitPrice = unitPrice;
             batch.vendor = vendor;
-            await batch.save();
+            const rs = await batch.save();
 
-            return { success: true, batch };
+            await this.inventoryActivityRepository.saveActivity(
+                { batch: rs, quantity, unitPrice },
+                username,
+            );
+
+            return { success: true, batch: rs };
         } catch (e) {
+            console.log(e);
             return { success: false, message: 'error could not create batch' };
         }
     }
 
-    async update(id, drugBatchDto: DrugBatchDto): Promise<any> {
+    async update(id, drugBatchDto: DrugBatchDto, username: string): Promise<any> {
         try {
             const { quantity, expirationDate, unitPrice, vendor_id } = drugBatchDto;
 
             let vendor;
-            if (drugBatchDto.vendor_id === '') {
+            if (vendor_id === '') {
                 if (drugBatchDto.vendor) {
                     const item = new Vendor();
                     item.name = drugBatchDto.vendor.label;
                     vendor = await item.save();
                 }
             } else {
-                vendor = await this.vendorRepository.findOne(drugBatchDto.vendor_id);
+                vendor = await this.vendorRepository.findOne(vendor_id);
             }
 
             const batch = await this.drugBatchRepository.findOne(id);
@@ -127,6 +136,11 @@ export class DrugBatchService {
             batch.vendor = vendor;
             const rs = await batch.save();
 
+            await this.inventoryActivityRepository.saveActivity(
+                { batch: rs, quantity, unitPrice },
+                username,
+            );
+
             return { success: true, batch: rs };
         } catch (e) {
             console.log(e);
@@ -134,7 +148,7 @@ export class DrugBatchService {
         }
     }
 
-    async updateQty(id, drugBatchDto: DrugBatchDto): Promise<any> {
+    async updateQty(id, drugBatchDto: DrugBatchDto, username: string): Promise<any> {
         try {
             const { quantity } = drugBatchDto;
 
@@ -142,7 +156,12 @@ export class DrugBatchService {
             batch.quantity = batch.quantity + parseInt(quantity, 10);
             const rs = await batch.save();
 
-            return { success: true, batch: rs };
+            await this.inventoryActivityRepository.saveActivity(
+                { batch: rs, quantity, unitPrice: batch.unitPrice },
+                username,
+            );
+
+            return { success: true, item: rs };
         } catch (e) {
             return { success: false, message: 'error could not update batch' };
         }
