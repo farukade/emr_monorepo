@@ -104,7 +104,7 @@ export class MigrationProcessor {
 
             let [rows] = await connection.execute('SELECT * FROM `diagnoses`');
             for (const item of rows) {
-                const diagnosisFind = await this.diagnosisRepository.findOne({ where: { code: item.code } });
+                const diagnosisFind = await this.diagnosisRepository.findOne({ where: { code: item.code, type: item.type } });
                 if (!diagnosisFind) {
                     await this.diagnosisRepository.save({ ...item, description: item.case });
                 }
@@ -112,7 +112,7 @@ export class MigrationProcessor {
 
             [rows] = await connection.execute('SELECT * FROM `diagnoses_full`');
             for (const item of rows) {
-                const diagnosisFind = await this.diagnosisRepository.findOne({ where: { code: item.code } });
+                const diagnosisFind = await this.diagnosisRepository.findOne({ where: { code: item.code, type: item.type } });
                 if (!diagnosisFind) {
                     await this.diagnosisRepository.save({ ...item, description: item.case });
                 }
