@@ -96,7 +96,9 @@ export class RequisitionService {
         try {
             const { staff_id, category, item_id, quantity } = requisitionDto;
 
+            console.log(staff_id);
             const staff = await this.staffRepository.findOne(staff_id);
+            console.log(staff);
 
             const item = new Requisition();
             item.staff = staff;
