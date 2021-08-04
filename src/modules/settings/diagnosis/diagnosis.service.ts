@@ -84,7 +84,6 @@ export class DiagnosisService {
                     qb.where('UPPER(d.code) Like :code', { code: `%${search.toUpperCase()}%` })
                         .orWhere('LOWER(d.description) Like :description', { description: `%${search.toLowerCase()}%` });
                 }))
-                .take(20)
                 .getMany();
         }
 
@@ -93,7 +92,6 @@ export class DiagnosisService {
                 { code: Raw(alias => `LOWER(${alias}) Like '%${search.toLowerCase()}%'`) },
                 { description: Raw(alias => `LOWER(${alias}) Like '%${search.toLowerCase()}%'`) },
             ],
-            take: 20,
         });
     }
 
