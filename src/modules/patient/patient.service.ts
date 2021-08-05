@@ -635,12 +635,14 @@ export class PatientService {
         const { startDate, endDate, status } = urlParams;
 
         const query = this.patientNoteRepository.createQueryBuilder('q')
-            .innerJoin(Patient, 'patient', 'q.patient = patient.id')
-            .where('q.patient = :id', { id });
+            .where('q.patient_id = :id', { id })
+            .andWhere('q.type = :type', { type: 'diagnosis' });
+
         if (startDate && startDate !== '') {
             const start = moment(startDate).endOf('day').toISOString();
             query.andWhere(`q.createdAt >= '${start}'`);
         }
+
         if (endDate && endDate !== '') {
             const end = moment(endDate).endOf('day').toISOString();
             query.andWhere(`q.createdAt <= '${end}'`);
