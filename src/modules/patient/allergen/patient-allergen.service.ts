@@ -3,13 +3,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { PatientAllergyDto } from '../dto/patient.allergy.dto';
 import { PatientRepository } from '../repositories/patient.repository';
 import { Raw } from 'typeorm';
-import { PatientAllergenRepository } from '../repositories/patient_allergen.repository';
+import { PatientNoteRepository } from '../repositories/patient_note.repository';
 
 @Injectable()
 export class PatientAllergenService {
     constructor(
-        @InjectRepository(PatientAllergenRepository)
-        private patientAllergyRepository: PatientAllergenRepository,
+        @InjectRepository(PatientNoteRepository)
+        private patientNoteRepository: PatientNoteRepository,
         @InjectRepository(PatientRepository)
         private patientRepository: PatientRepository,
     ) {
@@ -27,15 +27,19 @@ export class PatientAllergenService {
         const patient = await this.patientRepository.findOne(patient_id);
 
         if (q && q.length > 0) {
-            [result, total] = await this.patientAllergyRepository.findAndCount({
-                where: { name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`), patient },
+            [result, total] = await this.patientNoteRepository.findAndCount({
+                where: {
+                    name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`),
+                    patient,
+                    type: 'allergy',
+                },
                 relations: ['patient'],
                 take: options.limit,
                 skip: (page * options.limit),
             });
         } else {
-            [result, total] = await this.patientAllergyRepository.findAndCount({
-                where: { patient },
+            [result, total] = await this.patientNoteRepository.findAndCount({
+                where: { patient, type: 'allergy' },
                 relations: ['patient'],
                 take: options.limit,
                 skip: (page * options.limit),
@@ -55,7 +59,7 @@ export class PatientAllergenService {
         const { patient_id } = param;
         try {
             param.patient = await this.patientRepository.findOne(patient_id);
-            const allergy = await this.patientAllergyRepository.save(param);
+            const allergy = await this.patientNoteRepository.save(param);
             allergy.createdBy = createdBy;
             allergy.save();
             return { success: true, allergy };
@@ -66,7 +70,7 @@ export class PatientAllergenService {
 
     async doUpdateAllergy(allergyId, param: PatientAllergyDto, updatedBy): Promise<any> {
         try {
-            const allergy = await this.patientAllergyRepository.findOne(allergyId);
+            const allergy = await this.patientNoteRepository.findOne(allergyId);
             allergy.category = param.category;
             allergy.allergy = param.allergy;
             allergy.severity = param.severity;
@@ -82,7 +86,7 @@ export class PatientAllergenService {
     }
 
     async deleteAllergen(id: number, username) {
-        const allergen = await this.patientAllergyRepository.findOne(id);
+        const allergen = await this.patientNoteRepository.findOne(id);
 
         if (!allergen) {
             throw new NotFoundException(`Patient allergen with ID '${id}' not found`);

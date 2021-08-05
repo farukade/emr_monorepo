@@ -26,8 +26,6 @@ import { Pagination } from '../../common/paginate/paginate.interface';
 import { PaginationOptionsInterface } from '../../common/paginate';
 import { ImmunizationRepository } from './immunization/repositories/immunization.repository';
 import { PatientRequestItemRepository } from './repositories/patient_request_items.repository';
-import { PatientDiagnosisRepository } from './repositories/patient_diagnosis.repository';
-import { PatientDiagnosis } from './entities/patient_diagnosis.entity';
 import { MailService } from '../mail/mail.service';
 import { Transactions } from '../finance/transactions/transaction.entity';
 import { PatientAlert } from './entities/patient_alert.entity';
@@ -36,6 +34,8 @@ import { HmoSchemeRepository } from '../hmo/repositories/hmo_scheme.repository';
 import { ServiceCategoryRepository } from '../settings/services/repositories/service_category.repository';
 import { ServiceRepository } from '../settings/services/repositories/service.repository';
 import { ServiceCostRepository } from '../settings/services/repositories/service_cost.repository';
+import { PatientNoteRepository } from './repositories/patient_note.repository';
+import { PatientNote } from './entities/patient_note.entity';
 
 @Injectable()
 export class PatientService {
@@ -71,8 +71,6 @@ export class PatientService {
         private immunizationRepository: ImmunizationRepository,
         @InjectRepository(PatientRequestItemRepository)
         private patientRequestItemRepository: PatientRequestItemRepository,
-        @InjectRepository(PatientDiagnosisRepository)
-        private patientDiagnosisRepository: PatientDiagnosisRepository,
         @InjectRepository(PatientAlertRepository)
         private patientAlertRepository: PatientAlertRepository,
         @InjectRepository(ServiceCategoryRepository)
@@ -81,6 +79,8 @@ export class PatientService {
         private serviceRepository: ServiceRepository,
         @InjectRepository(ServiceCostRepository)
         private serviceCostRepository: ServiceCostRepository,
+        @InjectRepository(PatientNoteRepository)
+        private patientNoteRepository: PatientNoteRepository,
     ) {
     }
 
@@ -631,10 +631,10 @@ export class PatientService {
         return { success: true };
     }
 
-    async getDiagnoses(id, urlParams): Promise<PatientDiagnosis[]> {
+    async getDiagnoses(id, urlParams): Promise<PatientNote[]> {
         const { startDate, endDate, status } = urlParams;
 
-        const query = this.patientDiagnosisRepository.createQueryBuilder('q')
+        const query = this.patientNoteRepository.createQueryBuilder('q')
             .innerJoin(Patient, 'patient', 'q.patient = patient.id')
             .where('q.patient = :id', { id });
         if (startDate && startDate !== '') {

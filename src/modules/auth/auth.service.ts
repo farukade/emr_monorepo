@@ -47,7 +47,19 @@ export class AuthService {
         if (user) {
             const isSame = await this.compareHash(loginUserDto.password, user.password);
             if (isSame) {
+
+                if (loginUserDto.bypass === 1) {
+                    // logout previous user
+                } else {
+                    const rs = await this.authRepository.findOne({ where: { isLoggedIn: true } });
+                    if (rs) {
+                        // return { error: 'already logged in' };
+                    }
+                }
+
                 user.lastLogin = moment().format('YYYY-MM-DD HH:mm:ss');
+                user.isLoggedIn = true;
+                user.macAddress = loginUserDto.address;
                 await user.save();
                 const { expires_in, token } = await JWTHelper.createToken(
                     { username: user.username, userId: user.id },
@@ -84,6 +96,7 @@ export class AuthService {
         if (user) {
             user.password = await this.getHash(changePswdDto.repassword);
             user.passwordChanged = true;
+            user.macAddress = changePswdDto.address;
             await user.save();
 
             const { expires_in, token } = await JWTHelper.createToken(
@@ -128,6 +141,8 @@ export class AuthService {
         const user = await this.getUserByUsername(username);
 
         if (user) {
+            user.isLoggedIn = false;
+            await user.save();
             return user;
         }
         const error = 'Invalid Username or password';
@@ -151,10 +166,6 @@ export class AuthService {
         }
 
         return false;
-    }
-
-    // tslint:disable-next-line:no-empty
-    static validateToken() {
     }
 
     async setPermissions(permissions) {

@@ -3,7 +3,6 @@ import { Entity, ManyToOne, Column, JoinColumn, OneToMany, OneToOne } from 'type
 import { Patient } from '../../entities/patient.entity';
 import { Room } from '../../../settings/entities/room.entity';
 import { AdmissionClinicalTask } from './admission-clinical-task.entity';
-import { AdmissionCareGiver } from './admission-care-giver.entity';
 import { Nicu } from '../../nicu/entities/nicu.entity';
 import { StaffDetails } from '../../../hr/staff/entities/staff_details.entity';
 
@@ -39,9 +38,6 @@ export class Admission extends CustomBaseEntity {
     @OneToOne(() => Nicu, item => item.admission)
     @JoinColumn({ name: 'nicu_id' })
     nicu: Nicu;
-
-    @OneToMany(() => AdmissionCareGiver, givers => givers.admission)
-    careGivers: AdmissionCareGiver;
 
     @Column({ type: 'smallint', default: 0 })
     status: number;

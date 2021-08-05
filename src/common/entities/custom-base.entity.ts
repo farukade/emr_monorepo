@@ -1,15 +1,11 @@
-import {
-    BaseEntity,
-    Column,
-    CreateDateColumn,
-    DeleteDateColumn,
-    PrimaryGeneratedColumn,
-    UpdateDateColumn,
-} from 'typeorm';
+import { BaseEntity, Column, CreateDateColumn, DeleteDateColumn, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
 export abstract class CustomBaseEntity extends BaseEntity {
     @PrimaryGeneratedColumn('increment')
     id: number;
+
+    @Column({ type: 'varchar', nullable: true, name: 'old_id' })
+    oldId: string;
 
     @Column({ type: 'varchar', length: 300, default: 'it-admin' })
     createdBy: string;

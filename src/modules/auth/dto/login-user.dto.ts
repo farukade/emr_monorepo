@@ -7,4 +7,7 @@ export class LoginUserDto {
 
     @IsNotEmpty()
     password: string;
+
+    address: string;
+    bypass: any;
 }

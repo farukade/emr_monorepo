@@ -7,7 +7,6 @@ import { PatientNOKRepository } from './repositories/patient.nok.repository';
 import { ServiceRepository } from '../settings/services/repositories/service.repository';
 import { PatientVitalRepository } from './repositories/patient_vitals.repository';
 import { PatientAntenatalRepository } from './repositories/patient_antenatal.repository';
-import { PatientAllergenRepository } from './repositories/patient_allergen.repository';
 import { VoucherRepository } from '../finance/vouchers/voucher.repository';
 import { PatientDocumentRepository } from './repositories/patient_document.repository';
 import { AntenatalModule } from './antenatal/antenatal.module';
@@ -26,7 +25,6 @@ import { AdmissionClinicalTaskRepository } from './admissions/repositories/admis
 import { AdmissionsRepository } from './admissions/repositories/admissions.repository';
 import { ImmunizationRepository } from './immunization/repositories/immunization.repository';
 import { PatientRequestItemRepository } from './repositories/patient_request_items.repository';
-import { PatientDiagnosisRepository } from './repositories/patient_diagnosis.repository';
 import { PatientRequestModule } from './requests/patient_request.module';
 import { IvfModule } from './ivf/ivf.module';
 import { PatientAllergenModule } from './allergen/patient-allergen.module';
@@ -40,6 +38,8 @@ import { HmoSchemeRepository } from '../hmo/repositories/hmo_scheme.repository';
 import { LabTestRepository } from '../settings/lab/repositories/lab.test.repository';
 import { ServiceCategoryRepository } from '../settings/services/repositories/service_category.repository';
 import { ServiceCostRepository } from '../settings/services/repositories/service_cost.repository';
+import { CareTeamModule } from './care-team/team.module';
+import { PatientNoteRepository } from './repositories/patient_note.repository';
 
 @Module({
     imports: [
@@ -51,7 +51,6 @@ import { ServiceCostRepository } from '../settings/services/repositories/service
             PatientVitalRepository,
             PatientAntenatalRepository,
             PatientRequestItemRepository,
-            PatientAllergenRepository,
             HmoSchemeRepository,
             ServiceRepository,
             ServiceCategoryRepository,
@@ -64,10 +63,10 @@ import { ServiceCostRepository } from '../settings/services/repositories/service
             AdmissionClinicalTaskRepository,
             AdmissionsRepository,
             LabTestRepository,
-            PatientDiagnosisRepository,
             PatientConsumableRepository,
             PatientAlertRepository,
             ServiceCostRepository,
+            PatientNoteRepository,
         ]),
         AntenatalModule,
         AdmissionsModule,
@@ -82,6 +81,7 @@ import { ServiceCostRepository } from '../settings/services/repositories/service
         PatientNoteModule,
         PatientFluidChartModule,
         MailModule,
+        CareTeamModule,
     ],
     controllers: [PatientController],
     providers: [AppGateway, PatientService],

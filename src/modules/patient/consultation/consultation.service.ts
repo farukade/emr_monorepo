@@ -9,22 +9,15 @@ import { PatientRequestHelper } from '../../../common/utils/PatientRequestHelper
 import { RequestPaymentHelper } from '../../../common/utils/RequestPaymentHelper';
 import { PaginationOptionsInterface } from '../../../common/paginate';
 import * as moment from 'moment';
-import { PatientAllergenRepository } from '../repositories/patient_allergen.repository';
 import { PatientNote } from '../entities/patient_note.entity';
-import { PatientAllergen } from '../entities/patient_allergens.entity';
-import { PatientDiagnosis } from '../entities/patient_diagnosis.entity';
-import { PatientPhysicalExam } from '../entities/patient_physical_exam.entity';
-import { PatientReviewOfSystem } from '../entities/patient_review_of_system.entity';
 import { AppGateway } from '../../../app.gateway';
 import { QueueSystemRepository } from '../../frontdesk/queue-system/queue-system.repository';
-import { PatientHistory } from '../entities/patient_history.entity';
 import { PatientConsumable } from '../entities/patient_consumable.entity';
 import { Appointment } from '../../frontdesk/appointment/appointment.entity';
 import { AuthRepository } from '../../auth/auth.repository';
 import { Connection, getRepository } from 'typeorm';
 import { getStaff } from '../../../common/utils/utils';
 import { PatientNoteRepository } from '../repositories/patient_note.repository';
-import { PatientDiagnosisRepository } from '../repositories/patient_diagnosis.repository';
 import { DrugGenericRepository } from '../../inventory/pharmacy/generic/generic.repository';
 import { StoreInventoryRepository } from '../../inventory/store/store.repository';
 
@@ -33,10 +26,6 @@ export class ConsultationService {
     constructor(
         private connection: Connection,
         private readonly appGateway: AppGateway,
-        @InjectRepository(PatientAllergenRepository)
-        private allergenRepository: PatientAllergenRepository,
-        @InjectRepository(PatientDiagnosisRepository)
-        private patientDiagnosisRepository: PatientDiagnosisRepository,
         @InjectRepository(EncounterRepository)
         private encounterRepository: EncounterRepository,
         @InjectRepository(PatientRepository)
@@ -100,29 +89,9 @@ export class ConsultationService {
                 const pns = await this.patientNoteRepository.createQueryBuilder('pn')
                     .where('pn.encounter_id = :id', { id: item.id }).getMany();
 
-                const pallg = await this.allergenRepository.createQueryBuilder('pa')
-                    .where('pa.encounter_id = :id', { id: item.id }).getMany();
-
-                const pd = await this.patientDiagnosisRepository.createQueryBuilder('pd')
-                    .where('pd.encounter_id = :id', { id: item.id }).getMany();
-
-                const ph = await getRepository(PatientHistory).createQueryBuilder('ph')
-                    .where('ph.encounter_id = :id', { id: item.id }).getMany();
-
-                const pros = await getRepository(PatientReviewOfSystem).createQueryBuilder('prs')
-                    .where('prs.encounter_id = :id', { id: item.id }).getMany();
-
-                const ppe = await getRepository(PatientPhysicalExam).createQueryBuilder('pe')
-                    .where('pe.encounter_id = :id', { id: item.id }).getMany();
-
                 const pc = await getRepository(PatientConsumable).createQueryBuilder('pc')
                     .where('pc.encounter_id = :id', { id: item.id }).getMany();
 
-                item.patient_allergens = pallg;
-                item.patient_diagnoses = pd;
-                item.patient_history = ph;
-                item.patient_review_of_systems = pros;
-                item.patient_physical_exams = ppe;
                 item.patient_consumables = pc;
                 item.patient_notes = pns;
 
@@ -149,10 +118,10 @@ export class ConsultationService {
     }
 
     async saveEncounter(patientId: number, param: EncounterDto, urlParam, createdBy) {
-        const { appointment_id } = urlParam;
-        const { investigations, nextAppointment } = param;
-
         try {
+            const { appointment_id } = urlParam;
+            const { investigations, nextAppointment } = param;
+
             const patient = await this.patientRepository.findOne(patientId, { relations: ['hmo'] });
 
             const appointment = await this.appointmentRepository.findOne({
@@ -160,10 +129,10 @@ export class ConsultationService {
                 relations: ['patient', 'whomToSee', 'consultingRoom', 'transaction', 'department'],
             });
 
-            const encounter = new Encounter();
-            encounter.patient = patient;
-            encounter.createdBy = createdBy;
-            await encounter.save();
+            const data = new Encounter();
+            data.patient = patient;
+            data.createdBy = createdBy;
+            const encounter = await data.save();
 
             const complain = param.complaints.replace(/(<([^>]+)>)/gi, '')
                 .replace(/&nbsp;/g, '')
@@ -179,6 +148,7 @@ export class ConsultationService {
                 complaint.patient = patient;
                 complaint.encounter = encounter;
                 complaint.type = 'complaints';
+                complaint.visit = 'encounter';
                 complaint.createdBy = createdBy;
                 await complaint.save();
             }
@@ -196,6 +166,7 @@ export class ConsultationService {
                 plan.patient = patient;
                 plan.encounter = encounter;
                 plan.type = 'treatment-plan';
+                plan.visit = 'encounter';
                 plan.createdBy = createdBy;
                 await plan.save();
             }
@@ -206,13 +177,14 @@ export class ConsultationService {
                 instruction.patient = patient;
                 instruction.encounter = encounter;
                 instruction.type = 'instruction';
+                instruction.visit = 'encounter';
                 instruction.createdBy = createdBy;
                 await instruction.save();
             }
 
             for (const allergen of param.allergies) {
                 const generic = allergen.generic ? await this.drugGenericRepository.findOne(allergen.generic) : null;
-                const patientAllergen = new PatientAllergen();
+                const patientAllergen = new PatientNote();
                 patientAllergen.category = allergen.category.value;
                 patientAllergen.allergy = allergen.allergen;
                 patientAllergen.drugGeneric = generic;
@@ -220,18 +192,22 @@ export class ConsultationService {
                 patientAllergen.reaction = allergen.reaction;
                 patientAllergen.patient = patient;
                 patientAllergen.encounter = encounter;
+                patientAllergen.visit = 'encounter';
+                patientAllergen.type = 'allergy';
                 patientAllergen.createdBy = createdBy;
                 await patientAllergen.save();
             }
 
             for (const diagnosis of param.diagnosis) {
-                const patientDiagnosis = new PatientDiagnosis();
-                patientDiagnosis.item = diagnosis.diagnosis;
+                const patientDiagnosis = new PatientNote();
+                patientDiagnosis.diagnosis = diagnosis.diagnosis;
                 patientDiagnosis.status = 'Active';
                 patientDiagnosis.patient = patient;
                 patientDiagnosis.encounter = encounter;
-                patientDiagnosis.type = diagnosis.type.value;
+                patientDiagnosis.diagnosisType = diagnosis.type.value;
                 patientDiagnosis.comment = diagnosis.comment;
+                patientDiagnosis.visit = 'encounter';
+                patientDiagnosis.type = 'diagnosis';
                 patientDiagnosis.createdBy = createdBy;
                 await patientDiagnosis.save();
             }
@@ -244,43 +220,58 @@ export class ConsultationService {
                 .split(':').join('');
 
             if (encodeURIComponent(his) !== '%E2%80%8B') {
-                const patHistory = new PatientHistory();
+                const patHistory = new PatientNote();
                 patHistory.description = param.medicalHistory;
                 patHistory.patient = patient;
                 patHistory.encounter = encounter;
+                patHistory.type = 'medical-history';
+                patHistory.visit = 'encounter';
                 patHistory.createdBy = createdBy;
                 await patHistory.save();
             }
 
-            // for (const diagnosis of param.medicalHistory) {
-            //     const patientDiagnosis = new PatientPastDiagnosis();
-            //     patientDiagnosis.item = diagnosis.diagnosis;
-            //     patientDiagnosis.diagnosedAt = diagnosis.date;
-            //     patientDiagnosis.patient = patient;
-            //     patientDiagnosis.encounter = encounter;
-            //     patientDiagnosis.comment = diagnosis.comment;
-            //     patientDiagnosis.createdBy = createdBy;
-            //     await patientDiagnosis.save();
-            // }
-
-            for (const exam of param.physicalExamination) {
-                const physicalExam = new PatientPhysicalExam();
-                physicalExam.category = exam.label;
-                physicalExam.description = exam.value;
-                physicalExam.patient = patient;
-                physicalExam.encounter = encounter;
-                physicalExam.createdBy = createdBy;
-                await physicalExam.save();
+            for (const item of param.patientHistorySelected) {
+                const history = new PatientNote();
+                history.category = item.category;
+                history.history = item.description;
+                history.patient = patient;
+                history.encounter = encounter;
+                history.type = 'patient-history';
+                history.visit = 'encounter';
+                history.createdBy = createdBy;
+                await history.save();
             }
 
+            let physicalExaminations = [];
+            for (const exam of param.physicalExamination) {
+                physicalExaminations = [...physicalExaminations, `${exam.label}: ${exam.value}`];
+            }
+
+            if (physicalExaminations.length > 0) {
+                const exam = new PatientNote();
+                exam.description = physicalExaminations.join(', ');
+                exam.patient = patient;
+                exam.encounter = encounter;
+                exam.type = 'physical-exam';
+                exam.visit = 'encounter';
+                exam.createdBy = createdBy;
+                await exam.save();
+            }
+
+            let reviewOfSystems = [];
             for (const exam of param.reviewOfSystem) {
-                const systemReview = new PatientReviewOfSystem();
-                systemReview.category = exam.label;
-                systemReview.description = exam.value;
-                systemReview.patient = patient;
-                systemReview.encounter = encounter;
-                systemReview.createdBy = createdBy;
-                await systemReview.save();
+                reviewOfSystems = [...reviewOfSystems, `${exam.label}: ${exam.value}`];
+            }
+
+            if (reviewOfSystems.length > 0) {
+                const review = new PatientNote();
+                review.description = reviewOfSystems.join(', ');
+                review.patient = patient;
+                review.encounter = encounter;
+                review.type = 'review-of-systems';
+                review.visit = 'encounter';
+                review.createdBy = createdBy;
+                await review.save();
             }
 
             if (param.consumables) {
@@ -297,16 +288,6 @@ export class ConsultationService {
                 }
             }
 
-            for (const item of param.patientHistorySelected) {
-                const history = new PatientHistory();
-                history.category = item.category;
-                history.description = item.description;
-                history.patient = patient;
-                history.encounter = encounter;
-                history.createdBy = createdBy;
-                await history.save();
-            }
-
             if (investigations.labRequest) {
                 const labRequest = await PatientRequestHelper.handleLabRequest(investigations.labRequest, patient, createdBy);
                 if (labRequest.success) {
@@ -318,7 +299,7 @@ export class ConsultationService {
             }
 
             if (investigations.radiologyRequest) {
-                const request = await PatientRequestHelper.handleServiceRequest(investigations.radiologyRequest, patient, createdBy, 'scans');
+                const request = await PatientRequestHelper.handleServiceRequest(investigations.radiologyRequest, patient, createdBy, 'scans', 'encounter');
                 if (request.success) {
                     // save transaction
                     const payment = await RequestPaymentHelper.servicePayment(
@@ -333,7 +314,7 @@ export class ConsultationService {
             }
 
             if (investigations.procedureRequest) {
-                const procedure = await PatientRequestHelper.handleServiceRequest(investigations.procedureRequest, patient, createdBy, 'procedure');
+                const procedure = await PatientRequestHelper.handleServiceRequest(investigations.procedureRequest, patient, createdBy, 'procedure', 'encounter');
                 if (procedure.success) {
                     // save transaction
                     const payment = await RequestPaymentHelper.servicePayment(
@@ -348,7 +329,7 @@ export class ConsultationService {
             }
 
             if (investigations.pharmacyRequest) {
-                await PatientRequestHelper.handlePharmacyRequest(investigations.pharmacyRequest, patient, createdBy);
+                await PatientRequestHelper.handlePharmacyRequest(investigations.pharmacyRequest, patient, createdBy, 'encounter');
             }
 
             if (nextAppointment && nextAppointment.appointment_date && nextAppointment.appointment_date !== '') {

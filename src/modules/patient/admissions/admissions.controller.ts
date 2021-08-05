@@ -1,21 +1,9 @@
-import {
-    Controller,
-    UseGuards,
-    Post,
-    Param,
-    Body,
-    Get,
-    Delete,
-    Request,
-    Query,
-    UsePipes,
-    ValidationPipe,
-    Patch,
-} from '@nestjs/common';
+import { Controller, UseGuards, Post, Param, Body, Get, Delete, Request, Query, UsePipes, ValidationPipe, Patch} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AdmissionsService } from './admissions.service';
 import { CreateAdmissionDto } from './dto/create-admission.dto';
 import { Pagination } from '../../../common/paginate/paginate.interface';
+import { SoapDto } from './dto/soap.dto';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('patient/admissions')
@@ -77,5 +65,25 @@ export class AdmissionsController {
         @Request() req,
     ) {
         return this.admissionService.saveClinicalTasks(id, params, req.user.userId);
+    }
+
+    @Get(':id/ward-rounds')
+    getWardRounds(
+        @Param('id') admissionId: number,
+        @Query() urlParams,
+        @Request() request,
+    ) {
+        const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 10;
+        const page = request.query.hasOwnProperty('page') ? request.query.page : 1;
+        return this.admissionService.getWardRounds(admissionId, { page, limit }, urlParams);
+    }
+
+    @Post(':id/soap')
+    saveSoap(
+        @Param('id') admissionId: number,
+        @Body() param: SoapDto,
+        @Request() req,
+    ) {
+        return this.admissionService.saveSoap(admissionId, param, req.user.username);
     }
 }

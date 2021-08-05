@@ -5,11 +5,11 @@ import { Immunization } from '../../modules/patient/immunization/entities/immuni
 import * as moment from 'moment';
 import { PatientRequestItem } from '../../modules/patient/entities/patient_request_items.entity';
 import { LabTest } from '../../modules/settings/entities/lab_test.entity';
-import { PatientDiagnosis } from '../../modules/patient/entities/patient_diagnosis.entity';
 import { Drug } from '../../modules/inventory/entities/drug.entity';
 import { ServiceCost } from '../../modules/settings/entities/service_cost.entity';
 import { HmoScheme } from '../../modules/hmo/entities/hmo_scheme.entity';
 import { DrugGeneric } from '../../modules/inventory/entities/drug_generic.entity';
+import { PatientNote } from '../../modules/patient/entities/patient_note.entity';
 
 export class PatientRequestHelper {
     constructor(private patientRequestRepo: PatientRequestRepository) {
@@ -62,7 +62,7 @@ export class PatientRequestHelper {
         }
     }
 
-    static async handlePharmacyRequest(param, patient, createdBy) {
+    static async handlePharmacyRequest(param, patient, createdBy, visit = '') {
         const { requestType, request_note, items, procedure_id } = param;
         try {
             const requestCount = await getConnection()
@@ -120,13 +120,21 @@ export class PatientRequestHelper {
                 let diags = [];
                 if (item.diagnosis) {
                     for (const diag of item.diagnosis) {
-                        const i = new PatientDiagnosis();
-                        i.request = reqItem;
-                        i.patient = patient;
-                        i.item = diag;
-                        await i.save();
+                        if (diag.diagnosis) {
+                            const i = new PatientNote();
+                            i.diagnosis = diag.diagnosis;
+                            i.status = 'Active';
+                            i.patient = patient;
+                            i.request = reqItem;
+                            i.diagnosisType = diag.type.value;
+                            i.comment = diag.comment;
+                            i.visit = visit;
+                            i.type = 'diagnosis';
+                            i.createdBy = createdBy;
+                            await i.save();
 
-                        diags = [...diags, i];
+                            diags = [...diags, i];
+                        }
                     }
                 }
 
@@ -231,7 +239,7 @@ export class PatientRequestHelper {
         }
     }
 
-    static async handleServiceRequest(param, patient, createdBy, type) {
+    static async handleServiceRequest(param, patient, createdBy, type, visit = '') {
         const { requestType, request_note, tests, diagnosis, urgent } = param;
 
         try {
@@ -285,13 +293,21 @@ export class PatientRequestHelper {
                     for (const reqItem of requestItems) {
                         let diags = [];
                         for (const diag of diagnosis) {
-                            const i = new PatientDiagnosis();
-                            i.request = reqItem;
-                            i.patient = patient;
-                            i.item = diag;
-                            await i.save();
+                            if (diag.diagnosis) {
+                                const i = new PatientNote();
+                                i.diagnosis = diag.diagnosis;
+                                i.status = 'Active';
+                                i.patient = patient;
+                                i.request = reqItem;
+                                i.diagnosisType = diag.type.value;
+                                i.comment = diag.comment;
+                                i.visit = visit;
+                                i.type = 'diagnosis';
+                                i.createdBy = createdBy;
+                                await i.save();
 
-                            diags = [...diags, i];
+                                diags = [...diags, i];
+                            }
                         }
 
                         items = [...items, { ...reqItem, diagnosis: diags }];

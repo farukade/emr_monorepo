@@ -166,6 +166,32 @@ export class MigrationProcessor {
         }
     }
 
+    @Process('staffs')
+    async migrateStaffs(job: Job<any>): Promise<any> {
+        this.logger.log('migrating staffs');
+        try {
+            const connection = await mysqlConnect();
+
+            const [rows] = await connection.execute('');
+            for (const item of rows) {
+                try {
+
+                    const staff = await this.patientRepository.save({});
+
+                    const login = await this.patientNOKRepository.save({
+                    });
+                } catch (e) {
+                    console.log(e);
+                }
+            }
+            await connection.end();
+            return true;
+        } catch (error) {
+            console.log(error);
+            this.logger.error('migration failed', error.stack);
+        }
+    }
+
     @Process('patients')
     async migratePatients(job: Job<any>): Promise<any> {
         this.logger.log('migrating patients');
@@ -190,6 +216,7 @@ export class MigrationProcessor {
                     }
 
                     const patient = await this.patientRepository.save({
+                        oldId: item.patient_ID,
                         id: +item.patient_ID,
                         legacyPatientId: item.legacy_patient_id,
                         surname: item.lname,

@@ -7,4 +7,6 @@ export class ChangePasswordDto {
 
     @IsNotEmpty()
     repassword: string;
+
+    address: string;
 }

@@ -12,8 +12,8 @@ import { PatientDocument } from './entities/patient_documents.entity';
 import { AuthGuard } from '@nestjs/passport';
 import { OpdPatientDto } from './dto/opd-patient.dto';
 import { Pagination } from '../../common/paginate/paginate.interface';
-import { PatientDiagnosis } from './entities/patient_diagnosis.entity';
 import { PatientAlert } from './entities/patient_alert.entity';
+import { PatientNote } from './entities/patient_note.entity';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('patient')
@@ -174,7 +174,7 @@ export class PatientController {
     getDiagnoses(
         @Param('id') id: string,
         @Query() urlParams,
-    ): Promise<PatientDiagnosis[]> {
+    ): Promise<PatientNote[]> {
         return this.patientService.getDiagnoses(id, urlParams);
     }
 

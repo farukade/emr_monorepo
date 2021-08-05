@@ -6,8 +6,9 @@ import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 
 @Entity({ name: 'users' })
 export class User extends CustomBaseEntity {
+
     @Column({ length: 50 })
-    @Index({unique: true})
+    @Index({ unique: true })
     username: string;
 
     @Column({ length: 100, nullable: true })
@@ -16,8 +17,14 @@ export class User extends CustomBaseEntity {
     @Column({ nullable: true })
     lastLogin: string;
 
+    @Column({ default: false, name: 'is_logged_in' })
+    isLoggedIn: boolean;
+
     @Column({ nullable: true, default: 0 })
     status: string;
+
+    @Column({ nullable: true, name: 'mac_address' })
+    macAddress: string;
 
     @Column({ default: false })
     passwordChanged: boolean;

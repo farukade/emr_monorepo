@@ -6,6 +6,7 @@ import { Transactions } from '../../finance/transactions/transaction.entity';
 import { Immunization } from '../immunization/entities/immunization.entity';
 import { Nicu } from '../nicu/entities/nicu.entity';
 import { HmoScheme } from '../../hmo/entities/hmo_scheme.entity';
+import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 
 @Entity({ name: 'patients' })
 export class Patient extends CustomBaseEntity {
@@ -69,8 +70,9 @@ export class Patient extends CustomBaseEntity {
     @Column({ default: false, name: 'is_admitted' })
     isAdmitted: boolean;
 
-    @Column({ default: false, name: 'is_staff' })
-    isStaff: boolean;
+    @OneToOne(() => StaffDetails, { nullable: true })
+    @JoinColumn({ name: 'staff_id' })
+    staff: StaffDetails;
 
     @Column({ type: 'float8', default: 0, name: 'credit_limit' })
     creditLimit: number;

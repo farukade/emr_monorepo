@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Delete } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PatientConsumableRepository } from './patient-consumable.repository';
 import { PaginationOptionsInterface } from '../../../common/paginate';

@@ -6,6 +6,10 @@ import { PaginationOptionsInterface } from '../../../common/paginate';
 import { PatientNote } from '../entities/patient_note.entity';
 import { AuthRepository } from '../../auth/auth.repository';
 import { getStaff } from '../../../common/utils/utils';
+import { AdmissionsRepository } from '../admissions/repositories/admissions.repository';
+import { PatientRequestItemRepository } from '../repositories/patient_request_items.repository';
+import { IvfEnrollmentRepository } from '../ivf/ivf_enrollment.repository';
+import { AntenatalEnrollmentRepository } from '../antenatal/enrollment.repository';
 
 @Injectable()
 export class PatientNoteService {
@@ -16,58 +20,61 @@ export class PatientNoteService {
         private patientNoteRepository: PatientNoteRepository,
         @InjectRepository(AuthRepository)
         private authRepository: AuthRepository,
+        @InjectRepository(AdmissionsRepository)
+        private admissionsRepository: AdmissionsRepository,
+        @InjectRepository(PatientRequestItemRepository)
+        private patientRequestItemRepository: PatientRequestItemRepository,
+        @InjectRepository(IvfEnrollmentRepository)
+        private ivfEnrollmentRepository: IvfEnrollmentRepository,
+        @InjectRepository(AntenatalEnrollmentRepository)
+        private enrollmentRepository: AntenatalEnrollmentRepository,
     ) {
     }
 
     async getNotes(options: PaginationOptionsInterface, params): Promise<any> {
-        const { patient_id, type, id } = params;
+        const { patient_id, type, admission_id, visit, ivf_id, antenatal_id, procedure_id } = params;
+
+        const query = this.patientNoteRepository.createQueryBuilder('q').select('q.*');
+
+        if (patient_id && patient_id !== '') {
+            query.andWhere('q.patient_id = :patient_id', { patient_id });
+        }
+
+        if (visit && visit !== '') {
+            query.andWhere('q.visit = :visit', { visit });
+        }
+
+        if (type && type !== '') {
+            query.andWhere('q.type = :type', { type });
+        }
+
+        if (admission_id && admission_id !== '') {
+            query.andWhere('q.admission_id = :admission_id', { admission_id });
+        }
+
+        if (ivf_id && ivf_id !== '') {
+            query.andWhere('q.ivf_id = :ivf_id', { ivf_id });
+        }
+
+        if (antenatal_id && antenatal_id !== '') {
+            query.andWhere('q.antenatal_id = :antenatal_id', { antenatal_id });
+        }
+
+        if (procedure_id && procedure_id !== '') {
+            query.andWhere('q.request_item_id = :procedure_id', { procedure_id });
+        }
 
         const page = options.page - 1;
 
-        const patient = await this.patientRepository.findOne(patient_id);
+        const items = await query.offset(page * options.limit)
+            .limit(options.limit)
+            .orderBy('q.createdAt', 'DESC')
+            .getRawMany();
 
-        let result;
-        let total = 0;
-        if (type && type !== '') {
-            if (id && id !== '') {
-                [result, total] = await this.patientNoteRepository.findAndCount({
-                    where: { patient, type, itemId: id },
-                    relations: ['patient'],
-                    order: { createdAt: 'DESC' },
-                    take: options.limit,
-                    skip: (page * options.limit),
-                });
-            } else {
-                [result, total] = await this.patientNoteRepository.findAndCount({
-                    where: { patient, type },
-                    relations: ['patient'],
-                    order: { createdAt: 'DESC' },
-                    take: options.limit,
-                    skip: (page * options.limit),
-                });
-            }
-        } else {
-            if (id && id !== '') {
-                [result, total] = await this.patientNoteRepository.findAndCount({
-                    where: { patient, itemId: id },
-                    relations: ['patient'],
-                    order: { createdAt: 'DESC' },
-                    take: options.limit,
-                    skip: (page * options.limit),
-                });
-            } else {
-                [result, total] = await this.patientNoteRepository.findAndCount({
-                    where: { patient },
-                    relations: ['patient'],
-                    order: { createdAt: 'DESC' },
-                    take: options.limit,
-                    skip: (page * options.limit),
-                });
-            }
-        }
+        const total = await query.getCount();
 
         let notes = [];
-        for (const item of result) {
+        for (const item of items) {
             const staff = await getStaff(item.createdBy);
 
             notes = [...notes, { ...item, staff }];
@@ -83,24 +90,40 @@ export class PatientNoteService {
     }
 
     async saveNote(param, createdBy) {
-        const { id, patient_id, description, type, category, specialty } = param;
+        const { patient_id, description, type, admission_id, note_type, specialty, procedure_id, ivf_id, antenatal_id } = param;
 
         const patient = await this.patientRepository.findOne(patient_id);
 
         const note = new PatientNote();
+        note.patient = patient;
         note.description = description;
         note.type = type;
-        note.category = category;
+
+        if (admission_id && admission_id !== '') {
+            note.admission = await this.admissionsRepository.findOne(admission_id);
+        }
+
+        if (procedure_id && procedure_id !== '') {
+            note.request = await this.patientRequestItemRepository.findOne(procedure_id);
+        }
+
+        if (ivf_id && ivf_id !== '') {
+            note.ivf = await this.ivfEnrollmentRepository.findOne(ivf_id);
+        }
+
+        if (antenatal_id && antenatal_id !== '') {
+            note.antenatal = await this.enrollmentRepository.findOne(antenatal_id);
+        }
+
         note.specialty = specialty;
-        note.patient = patient;
-        note.itemId = id;
+        note.noteType = note_type;
         note.createdBy = createdBy;
 
         const rs = await note.save();
 
         const staff = await getStaff(createdBy);
 
-        return { ...rs, staff };
+        return { ...rs, note_type: rs.noteType, staff };
     }
 
     async updateNote(id: number, param, username: string) {

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, Delete } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EnrollmentRepository } from './enrollment.repository';
+import { AntenatalEnrollmentRepository } from './enrollment.repository';
 import { EnrollmentDto } from './dto/enrollment.dto';
 import { PatientRepository } from '../repositories/patient.repository';
 import { PatientAntenatal } from '../entities/patient_antenatal.entity';
@@ -15,8 +15,8 @@ import { getStaff } from '../../../common/utils/utils';
 @Injectable()
 export class AntenatalService {
     constructor(
-        @InjectRepository(EnrollmentRepository)
-        private enrollmentRepository: EnrollmentRepository,
+        @InjectRepository(AntenatalEnrollmentRepository)
+        private enrollmentRepository: AntenatalEnrollmentRepository,
         @InjectRepository(PatientRepository)
         private patientRepository: PatientRepository,
         @InjectRepository(AntenatalVisitRepository)

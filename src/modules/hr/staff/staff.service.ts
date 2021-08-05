@@ -53,13 +53,13 @@ export class StaffService {
     async findStaffs(param): Promise<StaffDetails[]> {
         const { q } = param;
 
-        return await this.staffRepository.createQueryBuilder('p')
+        return await this.staffRepository.createQueryBuilder('s')
             .select('s.*')
             .andWhere(new Brackets(qb => {
                 qb.where('LOWER(s.first_name) Like :first_name', { first_name: `%${q.toLowerCase()}%` })
                     .orWhere('LOWER(s.last_name) Like :last_name', { last_name: `%${q.toLowerCase()}%` })
                     .orWhere('LOWER(s.employee_number) Like :employee_number', { employee_number: `%${q.toLowerCase()}%` })
-                    .orWhere('p.phone_number Like :phone_number', { phone_number: `%${q}%` })
+                    .orWhere('s.phone_number Like :phone_number', { phone_number: `%${q}%` })
                     .orWhere('CAST(s.id AS text) LIKE :id', { id: `%${q}%` });
             }))
             .take(20)

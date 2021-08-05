@@ -11,6 +11,7 @@ import { AppGateway } from '../../../app.gateway';
 import { PatientVitalRepository } from '../repositories/patient_vitals.repository';
 import { NicuRepository } from '../nicu/nicu.repository';
 import { AuthRepository } from '../../auth/auth.repository';
+import { PatientNoteRepository } from '../repositories/patient_note.repository';
 
 @Module({
     imports: [TypeOrmModule.forFeature([
@@ -22,6 +23,7 @@ import { AuthRepository } from '../../auth/auth.repository';
         RoomRepository,
         PatientVitalRepository,
         NicuRepository,
+        PatientNoteRepository,
     ])],
     controllers: [AdmissionsController],
     providers: [AppGateway, AdmissionsService],

@@ -3,13 +3,13 @@ import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 import { LabTest } from '../../settings/entities/lab_test.entity';
 import { PatientRequest } from './patient_requests.entity';
 import { PatientDocument } from './patient_documents.entity';
-import { PatientDiagnosis } from './patient_diagnosis.entity';
 import { Immunization } from '../immunization/entities/immunization.entity';
 import { Transactions } from '../../finance/transactions/transaction.entity';
 import { Drug } from '../../inventory/entities/drug.entity';
 import { DrugBatch } from '../../inventory/entities/batches.entity';
 import { DrugGeneric } from '../../inventory/entities/drug_generic.entity';
 import { ServiceCost } from '../../settings/entities/service_cost.entity';
+import { PatientNote } from './patient_note.entity';
 
 @Entity({ name: 'patient_request_items' })
 export class PatientRequestItem extends CustomBaseEntity {
@@ -144,9 +144,8 @@ export class PatientRequestItem extends CustomBaseEntity {
     @JoinColumn({ name: 'document_id' })
     document: PatientDocument;
 
-    @OneToMany(type => PatientDiagnosis, data => data.request, { eager: true })
-    @JoinColumn({ name: 'patient_diagnosis_id' })
-    diagnosis: PatientDiagnosis;
+    @OneToMany(type => PatientNote, data => data.request, { eager: true })
+    diagnosis: PatientNote[];
 
     @Column({ nullable: true })
     resources: string;

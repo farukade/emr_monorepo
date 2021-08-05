@@ -6,8 +6,6 @@ import { CreateAdmissionDto } from './dto/create-admission.dto';
 import { StaffRepository } from '../../hr/staff/staff.repository';
 import { PatientRepository } from '../repositories/patient.repository';
 import { RoomRepository } from '../../settings/room/room.repository';
-import { Admission } from './entities/admission.entity';
-import { AdmissionCareGiver } from './entities/admission-care-giver.entity';
 import { AdmissionClinicalTask } from './entities/admission-clinical-task.entity';
 import * as moment from 'moment';
 import { AppGateway } from '../../../app.gateway';
@@ -17,6 +15,10 @@ import { PatientRequestHelper } from '../../../common/utils/PatientRequestHelper
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import { NicuRepository } from '../nicu/nicu.repository';
 import { AuthRepository } from '../../auth/auth.repository';
+import { SoapDto } from './dto/soap.dto';
+import { PatientNoteRepository } from '../repositories/patient_note.repository';
+import { PatientNote } from '../entities/patient_note.entity';
+import { getStaff } from '../../../common/utils/utils';
 
 @Injectable()
 export class AdmissionsService {
@@ -38,6 +40,8 @@ export class AdmissionsService {
         private patientVitalRepository: PatientVitalRepository,
         @InjectRepository(NicuRepository)
         private nicuRepository: NicuRepository,
+        @InjectRepository(PatientNoteRepository)
+        private patientNoteRepository: PatientNoteRepository,
     ) {
     }
 
@@ -174,17 +178,6 @@ export class AdmissionsService {
         }
     }
 
-    private async saveCareGivers(admission: Admission, careGivers) {
-        for (const giver of careGivers) {
-            // find staff details
-            const staff = await this.staffRepository.findOne(giver);
-            const careGiver = new AdmissionCareGiver();
-            careGiver.admission = admission;
-            careGiver.staff = staff;
-            await careGiver.save();
-        }
-    }
-
     async getTasks(options: PaginationOptionsInterface, { patient_id }) {
         const query = this.clinicalTaskRepository.createQueryBuilder('q')
             .leftJoinAndSelect('q.patient', 'patient')
@@ -311,6 +304,118 @@ export class AdmissionsService {
             }
 
             return { success: true, results };
+        } catch (err) {
+            console.log(err);
+            return { success: false, message: err.message };
+        }
+    }
+
+    async getWardRounds(id: number, options: PaginationOptionsInterface, urlParams): Promise<any> {
+        try {
+            const {} = urlParams;
+
+            const admission = await this.admissionRepository.findOne(id);
+
+            const page = options.page - 1;
+
+            const [result, total] = await this.patientNoteRepository.findAndCount({
+                where: { admission, visit: 'soap' },
+                order: { createdAt: 'DESC' },
+                take: options.limit,
+                skip: (page * options.limit),
+            });
+
+            let notes = [];
+            for (const item of result) {
+                const staff = await getStaff(item.createdBy);
+
+                notes = [...notes, { ...item, staff }];
+            }
+
+            return {
+                result: notes,
+                lastPage: Math.ceil(total / options.limit),
+                itemsPerPage: options.limit,
+                totalPages: total,
+                currentPage: options.page,
+            };
+
+        } catch (err) {
+            return { success: false, error: `${err.message || 'problem fetching soap at the moment please try again later'}` };
+        }
+    }
+
+    async saveSoap(id: number, param: SoapDto, createdBy) {
+        try {
+            const { patient_id, complaints, treatmentPlan, physicalExaminationSummary } = param;
+
+            const admission = await this.admissionRepository.findOne(id);
+            const patient = await this.patientRepository.findOne(patient_id);
+
+            if (complaints !== '') {
+                const complaint = new PatientNote();
+                complaint.description = complaints;
+                complaint.patient = patient;
+                complaint.admission = admission;
+                complaint.type = 'complaints';
+                complaint.visit = 'soap';
+                complaint.createdBy = createdBy;
+                await complaint.save();
+            }
+
+            if (treatmentPlan !== '') {
+                const plan = new PatientNote();
+                plan.description = treatmentPlan;
+                plan.patient = patient;
+                plan.admission = admission;
+                plan.type = 'treatment-plan';
+                plan.visit = 'soap';
+                plan.createdBy = createdBy;
+                await plan.save();
+            }
+
+            if (physicalExaminationSummary !== '') {
+                const plan = new PatientNote();
+                plan.description = physicalExaminationSummary;
+                plan.patient = patient;
+                plan.admission = admission;
+                plan.type = 'physical-examination-summary';
+                plan.visit = 'soap';
+                plan.createdBy = createdBy;
+                await plan.save();
+            }
+
+            for (const diagnosis of param.diagnosis) {
+                const patientDiagnosis = new PatientNote();
+                patientDiagnosis.diagnosis = diagnosis.diagnosis;
+                patientDiagnosis.status = 'Active';
+                patientDiagnosis.patient = patient;
+                patientDiagnosis.admission = admission;
+                patientDiagnosis.diagnosisType = diagnosis.type.value;
+                patientDiagnosis.comment = diagnosis.comment;
+                patientDiagnosis.type = 'diagnosis';
+                patientDiagnosis.visit = 'soap';
+                patientDiagnosis.createdBy = createdBy;
+                await patientDiagnosis.save();
+            }
+
+            let reviewOfSystems = [];
+            for (const exam of param.reviewOfSystem) {
+                reviewOfSystems = [...reviewOfSystems, `${exam.label}: ${exam.value}`];
+            }
+
+            if (reviewOfSystems.length > 0) {
+                const review = new PatientNote();
+                review.description = reviewOfSystems.join(', ');
+                review.patient = patient;
+                review.admission = admission;
+                review.type = 'review-of-systems';
+                review.visit = 'soap';
+                review.createdBy = createdBy;
+                await review.save();
+            }
+
+            return { success: true };
         } catch (err) {
             console.log(err);
             return { success: false, message: err.message };

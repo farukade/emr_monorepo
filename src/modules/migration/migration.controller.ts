@@ -7,14 +7,6 @@ export class MigrationController {
         private migrationService: MigrationService,
     ) {}
 
-    @Get('/patients')
-    migratePatients(
-        @Query() urlParams,
-        @Request() request,
-    ): Promise<any> {
-        return this.migrationService.queueMigration('patients');
-    }
-
     @Get('/diagnosis')
     migrateDiagnosis(
         @Query() urlParams,
@@ -29,6 +21,22 @@ export class MigrationController {
         @Request() request,
     ): Promise<any> {
         return this.migrationService.queueMigration('hmo');
+    }
+
+    @Get('/staffs')
+    migrateStaff(
+        @Query() urlParams,
+        @Request() request,
+    ): Promise<any> {
+        return this.migrationService.queueMigration('staffs');
+    }
+
+    @Get('/patients')
+    migratePatients(
+        @Query() urlParams,
+        @Request() request,
+    ): Promise<any> {
+        return this.migrationService.queueMigration('patients');
     }
 
     @Get('/services')

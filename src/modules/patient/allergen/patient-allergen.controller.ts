@@ -2,7 +2,7 @@ import { Controller, Post, Body, Param, Request, Delete, UseGuards, Get, Query, 
 import { AuthGuard } from '@nestjs/passport';
 import { PatientAllergenService } from './patient-allergen.service';
 import { PatientAllergyDto } from '../dto/patient.allergy.dto';
-import { PatientAllergen } from '../entities/patient_allergens.entity';
+import { PatientNote } from '../entities/patient_note.entity';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('patient-allergens')
@@ -44,7 +44,7 @@ export class PatientAllergenController {
     deletePackage(
         @Param('id') id: number,
         @Request() req,
-    ): Promise<PatientAllergen> {
+    ): Promise<PatientNote> {
         return this.allergenService.deleteAllergen(id, req.user.username);
     }
 }

@@ -5,9 +5,23 @@ import { PatientNoteController } from './patient_note.controller';
 import { PatientNoteService } from './patient_note.service';
 import { PatientRepository } from '../repositories/patient.repository';
 import { AuthRepository } from '../../auth/auth.repository';
+import { AdmissionsRepository } from '../admissions/repositories/admissions.repository';
+import { PatientRequestItemRepository } from '../repositories/patient_request_items.repository';
+import { IvfEnrollmentRepository } from '../ivf/ivf_enrollment.repository';
+import { AntenatalEnrollmentRepository } from '../antenatal/enrollment.repository';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([PatientNoteRepository, PatientRepository, AuthRepository])],
+    imports: [
+        TypeOrmModule.forFeature([
+            PatientNoteRepository,
+            PatientRepository,
+            AuthRepository,
+            AdmissionsRepository,
+            PatientRequestItemRepository,
+            IvfEnrollmentRepository,
+            AntenatalEnrollmentRepository,
+        ]),
+    ],
     controllers: [PatientNoteController],
     providers: [PatientNoteService],
 })
