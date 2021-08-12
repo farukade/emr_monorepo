@@ -225,7 +225,7 @@ export class AppointmentService {
             const appointment = await this.appointmentRepository.saveAppointment(appointmentDto, patient, consultingRoom, doctor, service, serviceCost, department);
 
             // update patient appointment date
-            patient.lastAppointmentDate = moment().format('YYYY-MM-DD');
+            patient.last_appointment_date = moment().format('YYYY-MM-DD');
             await patient.save();
 
             let queue;

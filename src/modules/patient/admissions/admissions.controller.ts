@@ -1,4 +1,4 @@
-import { Controller, UseGuards, Post, Param, Body, Get, Delete, Request, Query, UsePipes, ValidationPipe, Patch} from '@nestjs/common';
+import { Controller, UseGuards, Post, Param, Body, Get, Delete, Request, Query, UsePipes, ValidationPipe, Patch, Put } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AdmissionsService } from './admissions.service';
 import { CreateAdmissionDto } from './dto/create-admission.dto';
@@ -30,6 +30,15 @@ export class AdmissionsController {
         @Request() req,
     ): Promise<any> {
         return this.admissionService.saveAdmission(id, createDto, req.user.username);
+    }
+
+    @Put(':id/start-discharge')
+    @UsePipes(ValidationPipe)
+    startDischarge(
+        @Param('id') id: number,
+        @Request() req,
+    ): Promise<any> {
+        return this.admissionService.startDischarge(id, req.user.username);
     }
 
     @Patch('/assign-bed')

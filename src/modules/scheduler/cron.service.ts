@@ -18,12 +18,12 @@ export class TasksService {
             });
 
             for (const patient of patients) {
-                const expiryDate = moment(patient.creditLimitExpiryDate, 'YYYY-MM-DD');
+                const expiryDate = moment(patient.credit_limit_expiry_date, 'YYYY-MM-DD');
                 if (moment().isSameOrAfter(expiryDate, 'day')) {
                     await getConnection()
                         .createQueryBuilder()
                         .update(Patient)
-                        .set({ creditLimit: 0, creditLimitExpiryDate: null })
+                        .set({ credit_limit: 0, credit_limit_expiry_date: null })
                         .where('id = :id', { id: patient.id })
                         .execute();
                 }

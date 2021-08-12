@@ -14,7 +14,8 @@
     "arrow-parens": false,
     "object-literal-sort-keys": false,
     "no-console": false,
-    "indent": [true]
+    "indent": [true],
+    "variable-name": [false]
   },
   "rulesDirectory": []
 }

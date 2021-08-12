@@ -35,36 +35,36 @@ export class ServicesService {
     }
 
     async getAllServices(options: PaginationOptionsInterface, params): Promise<Pagination> {
-        const { q, hmo_id } = params;
+        const { q, hmo_id, category_id } = params;
 
         const page = options.page - 1;
 
         const hmo = await this.hmoSchemeRepository.findOne(hmo_id);
 
-        let result;
-        let total = 0;
-        if (q && q.length > 0) {
-            [result, total] = await this.serviceRepository.findAndCount({
-                where: { name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`) },
-                relations: ['category'],
-                order: { name: 'ASC' },
-                take: options.limit,
-                skip: (page * options.limit),
-            });
-        } else {
-            [result, total] = await this.serviceRepository.findAndCount({
-                relations: ['category'],
-                order: { name: 'ASC' },
-                take: options.limit,
-                skip: (page * options.limit),
-            });
+        let where = {};
+
+        if (q && q !== '') {
+            where = { ...where, name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`) };
         }
+
+        if (category_id && category_id !== '') {
+            const category = await this.serviceCategoryRepository.findOne(category_id);
+            where = { ...where, category };
+        }
+
+        const [result, total] = await this.serviceRepository.findAndCount({
+            where,
+            relations: ['category'],
+            order: { name: 'ASC' },
+            take: options.limit,
+            skip: (page * options.limit),
+        });
 
         let rs = [];
         for (const item of result) {
-            item.service = await this.serviceCostRepository.findOne({ where: { code: item.code, hmo } });
+            const service = await this.serviceCostRepository.findOne({ where: { code: item.code, hmo } });
 
-            rs = [...rs, item];
+            rs = [...rs, { ...item, service }];
         }
 
         return {

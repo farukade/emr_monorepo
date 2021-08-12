@@ -132,6 +132,10 @@ export class PatientService {
                 patient.nextOfKin = await this.nextOfKinRepository.findOne(patient.nextOfKin_id);
             }
 
+            patient.admission = await this.admissionRepository.findOne({
+                where: { status: 0, patient },
+            });
+
             const transactions = await this.transactionsRepository.createQueryBuilder('q')
                 .select('q.*')
                 .where('q.status = :status', { status: 0 })
@@ -264,7 +268,7 @@ export class PatientService {
                     id: patient.id,
                     name: `${patient.other_names} ${patient.surname}`,
                     email: patient.email,
-                    phoneNumber: patient.phoneNumber,
+                    phoneNumber: patient.phone_number,
                     createdAt: patient.createdAt,
                     message,
                 };
@@ -275,7 +279,7 @@ export class PatientService {
 
             const transactions = await this.transactionsRepository.find({ where: { patient, status: 0 } });
 
-            const outstanding = Math.abs(patient.creditLimit > 0 ? 0 : transactions.reduce((total, item) => total + item.balance, 0));
+            const outstanding = Math.abs(patient.credit_limit > 0 ? 0 : transactions.reduce((total, item) => total + item.balance, 0));
             const pat = { ...patient, outstanding };
 
             return { success: true, patient: pat };
@@ -296,7 +300,7 @@ export class PatientService {
             patient.date_of_birth = moment(patientDto.date_of_birth).format('YYYY-MM-DD');
             patient.gender = patientDto.gender;
             patient.email = patientDto.email;
-            patient.phoneNumber = patientDto.phoneNumber;
+            patient.phone_number = patientDto.phoneNumber;
             patient.createdBy = createdBy;
             if (pic) {
                 patient.profile_pic = pic.filename;
@@ -327,7 +331,7 @@ export class PatientService {
             patient.occupation = patientDto.occupation;
             patient.gender = patientDto.gender;
             patient.email = patientDto.email;
-            patient.phoneNumber = patientDto.phoneNumber;
+            patient.phone_number = patientDto.phoneNumber;
             patient.maritalStatus = patientDto.maritalStatus;
             patient.ethnicity = patientDto.ethnicity;
             patient.referredBy = patientDto.referredBy;
@@ -715,8 +719,8 @@ export class PatientService {
     async doSaveCreditLimit(id, param, updatedBy): Promise<any> {
         try {
             const patient = await this.patientRepository.findOne(id);
-            patient.creditLimit = param.amount;
-            patient.creditLimitExpiryDate = param.expiry_date;
+            patient.credit_limit = param.amount;
+            patient.credit_limit_expiry_date = param.expiry_date;
             patient.lastChangedBy = updatedBy;
             const rs = await patient.save();
 

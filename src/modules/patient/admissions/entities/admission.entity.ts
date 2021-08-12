@@ -12,18 +12,18 @@ export class Admission extends CustomBaseEntity {
     @JoinColumn({ name: 'patient_id' })
     patient: Patient;
 
-    @Column({ nullable: true, name: 'health_state' })
-    healthState: string;
+    @Column({ nullable: true })
+    health_state: string;
 
-    @Column({ default: false, name: 'risk_to_fall' })
-    riskToFall: boolean;
+    @Column({ default: false })
+    risk_to_fall: boolean;
 
     @ManyToOne(() => Room, { nullable: true })
     @JoinColumn({ name: 'room_id' })
     room: Room;
 
-    @Column({ nullable: true, name: 'room_assigned_at' })
-    roomAssignedAt: string;
+    @Column({ nullable: true })
+    room_assigned_at: string;
 
     @ManyToOne(() => StaffDetails, { nullable: true })
     @JoinColumn({ name: 'room_assigned_by' })
@@ -42,13 +42,22 @@ export class Admission extends CustomBaseEntity {
     @Column({ type: 'smallint', default: 0 })
     status: number;
 
-    @Column({ nullable: true, name: 'date_discharged' })
-    dateDischarged: string;
+    @Column({ default: false })
+    start_discharge: boolean;
+
+    @Column({ type: 'text', nullable: true })
+    start_discharge_date: string;
+
+    @Column({ type: 'text', nullable: true })
+    start_discharge_by: string;
+
+    @Column({ type: 'text', nullable: true })
+    date_discharged: string;
 
     @ManyToOne(() => StaffDetails, { nullable: true })
     @JoinColumn({ name: 'discharged_by' })
     dischargedBy: StaffDetails;
 
-    @Column({ nullable: true, name: 'discharge_note' })
-    dischargeNote: string;
+    @Column({ nullable: true })
+    discharge_note: string;
 }

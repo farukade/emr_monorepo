@@ -46,22 +46,10 @@ export class AdmissionsService {
     }
 
     async getAdmissions(options: PaginationOptionsInterface, params): Promise<Pagination> {
-        const { startDate, endDate, patient_id, status, type, name } = params;
-        const query = this.admissionRepository.createQueryBuilder('q')
-            .leftJoinAndSelect('q.patient', 'patient')
-            .leftJoinAndSelect('q.room', 'room')
-            .leftJoinAndSelect('q.nicu', 'nicu')
-            .select('q.id, q.createdAt as admission_date, q.createdBy as admitted_by, q.reason, q.status')
-            .addSelect('CONCAT(patient.other_names || \' \' || patient.surname) as patient_name, patient.id as patient_id, patient.gender as patient_gender')
-            .addSelect('room.name as suite, room.floor as floor');
+        const { startDate, endDate, patient_id, status, name } = params;
 
-        if (type === 'in-admission') {
-            query.innerJoinAndSelect('q.room', 'room')
-                .leftJoin('room.category', 'category')
-                .addSelect('room.name as room_no, category.name as room_type');
-        }
-
-        query.where('q.nicu_id is null');
+        const query = this.admissionRepository.createQueryBuilder('q').select('q.*')
+            .where('q.nicu_id is null');
 
         if (startDate && startDate !== '') {
             const start = moment(startDate).endOf('day').toISOString();
@@ -97,13 +85,16 @@ export class AdmissionsService {
         let result = [];
         for (const item of admissions) {
             if (item.patient_id) {
-                const patient = await this.patientRepository.findOne(item.patient_id, { relations: ['nextOfKin', 'immunization', 'hmo'] });
-
-                item.patient = patient;
+                item.patient = await this.patientRepository.findOne(item.patient_id, {
+                    relations: ['nextOfKin', 'immunization', 'hmo'],
+                });
             }
 
             item.nicu = await this.nicuRepository.createQueryBuilder('n').select('n.*')
                 .where('n.admission_id = :id', { id: item.id }).getRawOne();
+
+            item.room = await this.roomRepository.findOne(item.room_id, { relations: ['category'] });
+            item.admitted_by = await getStaff(item.createdBy);
 
             result = [...result, item];
         }
@@ -121,29 +112,28 @@ export class AdmissionsService {
         const { healthState, riskToFall, reason, discharge_date, nicu } = createDto;
 
         // find patient info
-        const patient = await this.patientRepository.findOne(id, { relations: ['nextOfKin', 'immunization', 'hmo'] });
+        const patient = await this.patientRepository.findOne(id, {
+            relations: ['nextOfKin', 'immunization', 'hmo'],
+        });
 
         try {
             // save admission info
             const admission = await this.admissionRepository.save({
                 patient, healthState, riskToFall, reason,
-                anticipatedDischargeDate: discharge_date,
                 createdBy: username,
                 status: 0,
             });
 
-            patient.isAdmitted = true;
+            patient.is_admitted = true;
             await patient.save();
 
             if (nicu) {
                 // save to nicu
-                const admitNicu = await this.nicuRepository.save({
+                admission.nicu = await this.nicuRepository.save({
                     patient,
                     createdBy: username,
                     admission,
                 });
-
-                admission.nicu = admitNicu;
                 await admission.save();
             }
 
@@ -151,6 +141,24 @@ export class AdmissionsService {
             this.appGateway.server.emit('new-admission', admission);
 
             return { success: true, patient };
+        } catch (err) {
+            return { success: false, message: err.message };
+        }
+    }
+
+    async startDischarge(id: number, username): Promise<any> {
+        try {
+            const admission = await this.admissionRepository.findOne(id);
+
+            admission.start_discharge = true;
+            admission.start_discharge_date = moment().format('YYYY-MM-DD HH:mm:ss');
+            admission.start_discharge_by = username;
+            const rs = await admission.save();
+
+            // send start start socket message
+            this.appGateway.server.emit('start-discharge', rs);
+
+            return { success: true, admission: rs };
         } catch (err) {
             return { success: false, message: err.message };
         }
