@@ -26,6 +26,7 @@ import { GroupRepository } from '../settings/lab/repositories/group.repository';
 import { GroupTestRepository } from '../settings/lab/repositories/group_tests.repository';
 import { StoreInventoryRepository } from '../inventory/store/store.repository';
 import { CafeteriaInventoryRepository } from '../inventory/cafeteria/cafeteria.repository';
+import { RoomCategoryRepository } from '../settings/room/room.category.repository';
 
 @Module({
     imports: [
@@ -61,6 +62,7 @@ import { CafeteriaInventoryRepository } from '../inventory/cafeteria/cafeteria.r
             GroupTestRepository,
             StoreInventoryRepository,
             CafeteriaInventoryRepository,
+            RoomCategoryRepository,
         ]),
     ],
     providers: [MigrationService, MigrationProcessor],

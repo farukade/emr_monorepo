@@ -19,6 +19,9 @@ import { SoapDto } from './dto/soap.dto';
 import { PatientNoteRepository } from '../repositories/patient_note.repository';
 import { PatientNote } from '../entities/patient_note.entity';
 import { getStaff } from '../../../common/utils/utils';
+import { ServiceCostRepository } from '../../settings/services/repositories/service_cost.repository';
+import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
+import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repository';
 
 @Injectable()
 export class AdmissionsService {
@@ -42,6 +45,12 @@ export class AdmissionsService {
         private nicuRepository: NicuRepository,
         @InjectRepository(PatientNoteRepository)
         private patientNoteRepository: PatientNoteRepository,
+        @InjectRepository(ServiceCostRepository)
+        private serviceCostRepository: ServiceCostRepository,
+        @InjectRepository(TransactionsRepository)
+        private transactionsRepository: TransactionsRepository,
+        @InjectRepository(HmoSchemeRepository)
+        private hmoSchemeRepository: HmoSchemeRepository,
     ) {
     }
 
@@ -93,7 +102,10 @@ export class AdmissionsService {
             item.nicu = await this.nicuRepository.createQueryBuilder('n').select('n.*')
                 .where('n.admission_id = :id', { id: item.id }).getRawOne();
 
-            item.room = await this.roomRepository.findOne(item.room_id, { relations: ['category'] });
+            if (item.room_id) {
+                item.room = await this.roomRepository.findOne(item.room_id, { relations: ['category'] });
+            }
+
             item.admitted_by = await getStaff(item.createdBy);
 
             result = [...result, item];
@@ -164,23 +176,104 @@ export class AdmissionsService {
         }
     }
 
-    async saveAssignBed({ admission_id, room_id }) {
+    async completeDischarge(id: number, params, username): Promise<any> {
         try {
+            const { discharge_note } = params;
+
+            const admission = await this.admissionRepository.findOne(id, { relations: ['room', 'patient'] });
+
+            const staff = await getStaff(username);
+
+            admission.discharge_note = discharge_note;
+            admission.date_discharged = moment().format('YYYY-MM-DD HH:mm:ss');
+            admission.dischargedBy = staff;
+            admission.status = 1;
+            admission.lastChangedBy = username;
+            const rs = await admission.save();
+
+            const room = await this.roomRepository.findOne(admission.room.id);
+            if (room) {
+                room.status = 'Not Occupied';
+                room.admission_id = null;
+                await room.save();
+            }
+
+            const patient = await this.patientRepository.findOne(admission.patient.id);
+            patient.is_admitted = false;
+            await patient.save();
+
+            // send start start socket message
+            this.appGateway.server.emit('discharged', rs);
+
+            return { success: true, admission: rs };
+        } catch (err) {
+            return { success: false, message: err.message };
+        }
+    }
+
+    async saveAssignBed({ admission_id, room_id }, username: string) {
+        try {
+            // find admission
+            const admission = await this.admissionRepository.findOne(admission_id, { relations: ['patient'] });
+
+            // find patient
+            const patient_id = admission.patient.id;
+            const patient = await this.patientRepository.findOne(patient_id, { relations: ['hmo'] });
+
             // find room
-            const room = await this.roomRepository.findOne(room_id);
+            const room = await this.roomRepository.findOne(room_id, { relations: ['category'] });
             if (room.status === 'Occupied') {
                 return { success: false, message: 'room is already occupied' };
             }
 
+            // save room
             room.status = 'Occupied';
+            room.admission_id = admission.id;
             await room.save();
 
-            // find admission
-            const admission = await this.admissionRepository.findOne(admission_id);
+            // update admission with room
             admission.room = room;
-            await admission.save();
+            admission.room_assigned_at = moment().format('YYYY-MM-DD HH:mm:ss');
+            admission.room_assigned_by = username;
+            const rs = await admission.save();
 
-            return { success: true, admission };
+            // find service cost
+            let hmo = patient.hmo;
+            let serviceCost = await this.serviceCostRepository.findOne({
+                where: { code: room.category.code, hmo },
+            });
+
+            if (!serviceCost || (serviceCost && serviceCost.tariff === 0)) {
+                hmo = await this.hmoSchemeRepository.findOne({
+                    where: { name: 'Private' },
+                });
+
+                serviceCost = await this.serviceCostRepository.findOne({
+                    where: { code: room.category.code, hmo },
+                });
+            }
+
+            const amount = serviceCost.tariff;
+
+            // save transaction
+            const data = {
+                patient,
+                service: serviceCost,
+                amount,
+                balance: amount * -1,
+                description: `${room.category.name}, ${room.name} - Day 1`,
+                payment_type: (hmo.name !== 'Private') ? 'HMO' : 'self',
+                transaction_type: 'debit',
+                is_admitted: true,
+                bill_source: 'ward',
+                hmo,
+                createdBy: username,
+                admission,
+            };
+
+            await this.transactionsRepository.save(data);
+
+            return { success: true, admission: rs };
         } catch (e) {
             return { success: false, message: e.message };
         }
@@ -261,17 +354,16 @@ export class AdmissionsService {
         return result.softRemove();
     }
 
-    async saveClinicalTasks(patientId: number, params, createdById): Promise<any> {
+    async saveClinicalTasks(patientId: number, params, username: string): Promise<any> {
         try {
             const { tasks, prescription } = params;
 
             const patient = await this.patientRepository.findOne(patientId);
             const admission = await this.admissionRepository.findOne({ where: { patient: patient.id } });
-            const staff = await this.staffRepository.findOne({ where: { user: createdById }, relations: ['user'] });
 
             let request;
-            if (prescription.requests && prescription.requests.length > 0) {
-                request = await PatientRequestHelper.handlePharmacyRequest(prescription, patient, staff.user.username);
+            if (prescription.items && prescription.items.length > 0) {
+                request = await PatientRequestHelper.handlePharmacyRequest(prescription, patient, username);
             }
 
             let results = [];
@@ -284,7 +376,7 @@ export class AdmissionsService {
                     newTask.taskType = 'regimen';
                     newTask.dose = task.dose;
                     newTask.drug = task.drug;
-                    newTask.request = request?.data;
+                    newTask.request = request?.data && request?.data.length > 0 ? request.data[0] : null;
                     newTask.frequency = task.frequency;
                     newTask.taskCount = task.taskNumber;
                 } else if (task.title === 'Fluid Chart') {
@@ -305,7 +397,7 @@ export class AdmissionsService {
                 newTask.nextTime = task.startTime === '' ? moment().format('YYYY-MM-DD HH:mm:ss') : moment(task.startTime).format('YYYY-MM-DD HH:mm:ss');
                 newTask.patient = patient;
                 newTask.admission = admission;
-                newTask.createdBy = staff.user.username;
+                newTask.createdBy = username;
 
                 const rs = await newTask.save();
                 results = [...results, rs];

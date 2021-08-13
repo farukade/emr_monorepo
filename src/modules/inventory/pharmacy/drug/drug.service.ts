@@ -8,6 +8,7 @@ import { DrugBatchRepository } from '../batches/batches.repository';
 import { DrugGenericRepository } from '../generic/generic.repository';
 import { DrugDto } from '../../dto/drug.dto';
 import { ManufacturerRepository } from '../../manufacturer/manufacturer.repository';
+import { ServiceRepository } from '../../../settings/services/repositories/service.repository';
 
 @Injectable()
 export class DrugService {
@@ -20,6 +21,8 @@ export class DrugService {
         private drugGenericRepository: DrugGenericRepository,
         @InjectRepository(ManufacturerRepository)
         private manufacturerRepository: ManufacturerRepository,
+        @InjectRepository(ServiceRepository)
+        private serviceRepository: ServiceRepository,
     ) {
     }
 
@@ -89,6 +92,12 @@ export class DrugService {
             drug.unitOfMeasure = unitOfMeasure;
             drug.manufacturer = manufacturer;
             const rs = await drug.save();
+
+            const service = await this.serviceRepository.findOne({
+                where: { code: drug.code },
+            });
+            service.name = name;
+            await service.save();
 
             return { success: true, drug: rs };
         } catch (e) {

@@ -4,8 +4,8 @@ export abstract class CustomBaseEntity extends BaseEntity {
     @PrimaryGeneratedColumn('increment')
     id: number;
 
-    @Column({ type: 'varchar', nullable: true, name: 'old_id' })
-    oldId: string;
+    @Column({ type: 'varchar', nullable: true })
+    old_id: string;
 
     @Column({ type: 'varchar', length: 300, default: 'it-admin' })
     createdBy: string;
@@ -13,8 +13,8 @@ export abstract class CustomBaseEntity extends BaseEntity {
     @Column({ type: 'varchar', length: 300, nullable: true })
     lastChangedBy: string;
 
-    @DeleteDateColumn({ type: 'timestamp', nullable: true, name: 'deleted_at' })
-    deletedAt: Date;
+    @DeleteDateColumn({ type: 'timestamp', nullable: true })
+    deleted_at: Date;
 
     @Column({ type: 'varchar', length: 300, nullable: true })
     deletedBy: string;
@@ -22,6 +22,6 @@ export abstract class CustomBaseEntity extends BaseEntity {
     @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     createdAt: Date;
 
-    @UpdateDateColumn({ type: 'timestamp', name: 'updated_at', default: () => 'CURRENT_TIMESTAMP' })
-    updatedAt: Date;
+    @UpdateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+    updated_at: Date;
 }

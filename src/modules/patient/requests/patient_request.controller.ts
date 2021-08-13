@@ -7,7 +7,8 @@ import { PatientRequestService } from './patient_request.service';
 export class PatientRequestController {
     constructor(
         private patientRequestService: PatientRequestService,
-    ) {}
+    ) {
+    }
 
     @Get('list/:requestType')
     getRequests(

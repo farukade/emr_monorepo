@@ -143,7 +143,7 @@ export class PatientService {
                 .andWhere('q.payment_type = :type', { type: 'self' })
                 .getRawMany();
 
-            patient.outstanding = Math.abs(patient.creditLimit > 0 ? 0 : transactions.reduce((totalAmount, item) => totalAmount + item.balance, 0));
+            patient.outstanding = Math.abs(patient.credit_limit > 0 ? 0 : transactions.reduce((totalAmount, item) => totalAmount + item.balance, 0));
         }
 
         return {
@@ -196,7 +196,7 @@ export class PatientService {
                 .andWhere('q.payment_type = :type', { type: 'self' })
                 .getRawMany();
 
-            patient.outstanding = Math.abs(patient.creditLimit > 0 ? 0 : transactions.reduce((total, item) => total + item.balance, 0));
+            patient.outstanding = Math.abs(patient.credit_limit > 0 ? 0 : transactions.reduce((total, item) => total + item.balance, 0));
         }
 
         return patients;

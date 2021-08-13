@@ -45,7 +45,7 @@ export class PatientRequestService {
     }
 
     async listRequests(requestType, urlParams): Promise<any> {
-        const { startDate, endDate, status, page, limit, today } = urlParams;
+        const { startDate, endDate, status, page, limit, today, item_id, type } = urlParams;
 
         const queryLimit = limit ? parseInt(limit, 10) : 30;
         const offset = (page ? parseInt(page, 10) : 1) - 1;
@@ -74,6 +74,22 @@ export class PatientRequestService {
 
         if (status === 'Completed') {
             query.andWhere('q.status = :status', { status: 1 });
+        }
+
+        if (type && type === 'admission') {
+            query.andWhere('q.admission_id = :item_id', { item_id });
+        }
+
+        if (type && type === 'procedure') {
+            query.andWhere('q.procedure_id = :item_id', { item_id });
+        }
+
+        if (type && type === 'antenatal') {
+            query.andWhere('q.antenatal_id = :item_id', { item_id });
+        }
+
+        if (type && type === 'ivf') {
+            query.andWhere('q.ivf_id = :item_id', { item_id });
         }
 
         const count = await query.getCount();
@@ -124,12 +140,7 @@ export class PatientRequestService {
         const offset = (page ? parseInt(page, 10) : 1) - 1;
 
         const query = this.patientRequestRepository.createQueryBuilder('q')
-            .leftJoin('q.patient', 'patient')
-            .leftJoin(User, 'creator', 'q.createdBy = creator.username')
-            .innerJoin(StaffDetails, 'staff1', 'staff1.user_id = creator.id')
-            .select('q.id, q.requestType, q.code, q.createdAt, q.status, q.urgent, q.requestNote')
-            .addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
-            .addSelect('CONCAT(patient.surname || \' \' || patient.other_names) as patient_name, patient.id as patient_id')
+            .select('q.*')
             .where('q.patient_id = :patient_id', { patient_id })
             .andWhere('q.requestType = :requestType', { requestType });
 
@@ -146,6 +157,10 @@ export class PatientRequestService {
             query.andWhere(`CAST(q.createdAt as text) LIKE '%${today}%'`);
         }
 
+        if (type && type === 'admission') {
+            query.andWhere('q.admission_id = :item_id', { item_id });
+        }
+
         if (type && type === 'procedure') {
             query.andWhere('q.procedure_id = :item_id', { item_id });
         }
@@ -154,12 +169,18 @@ export class PatientRequestService {
             query.andWhere('q.antenatal_id = :item_id', { item_id });
         }
 
+        if (type && type === 'ivf') {
+            query.andWhere('q.ivf_id = :item_id', { item_id });
+        }
+
         const count = await query.getCount();
 
         const items = await query.orderBy({
             'q.urgent': 'DESC',
             'q.createdAt': 'DESC',
         }).limit(queryLimit).offset(offset * queryLimit).getRawMany();
+
+        console.log(items);
 
         let result = [];
         for (const req of items) {

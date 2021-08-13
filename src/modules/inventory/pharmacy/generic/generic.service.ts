@@ -5,6 +5,8 @@ import { Pagination } from '../../../../common/paginate/paginate.interface';
 import { DrugGenericRepository } from './generic.repository';
 import { Raw } from 'typeorm';
 import { DrugCategoryRepository } from '../drug/drug_category.repository';
+import { DrugRepository } from '../drug/drug.repository';
+import { DrugBatchRepository } from '../batches/batches.repository';
 
 @Injectable()
 export class DrugGenericService {
@@ -13,6 +15,10 @@ export class DrugGenericService {
         private drugGenericRepository: DrugGenericRepository,
         @InjectRepository(DrugCategoryRepository)
         private drugCategoryRepository: DrugCategoryRepository,
+        @InjectRepository(DrugRepository)
+        private drugRepository: DrugRepository,
+        @InjectRepository(DrugBatchRepository)
+        private drugBatchRepository: DrugBatchRepository,
     ) {
     }
 
@@ -21,27 +27,42 @@ export class DrugGenericService {
 
         const page = options.page - 1;
 
-        let result;
-        let total = 0;
-        if (q && q.length > 0) {
-            [result, total] = await this.drugGenericRepository.findAndCount({
-                where: { name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`) },
-                relations: ['category', 'drugs'],
-                order: { name: 'ASC' },
-                take: options.limit,
-                skip: (page * options.limit),
+        let where = {};
+
+        if (q && q !== '') {
+            where = { ...where, name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`) };
+        }
+
+        const [result, total] = await this.drugGenericRepository.findAndCount({
+            where,
+            relations: ['category'],
+            order: { name: 'ASC' },
+            take: options.limit,
+            skip: (page * options.limit),
+        });
+
+        let generics = [];
+        for (const item of result) {
+            const drugs = await this.drugRepository.find({
+                where: { generic: item },
+                relations: ['generic', 'manufacturer'],
             });
-        } else {
-            [result, total] = await this.drugGenericRepository.findAndCount({
-                relations: ['category', 'drugs'],
-                order: { name: 'ASC' },
-                take: options.limit,
-                skip: (page * options.limit),
-            });
+
+            let rs = [];
+            for (const drug of drugs) {
+                const batches = await this.drugBatchRepository.find({
+                    where: { drug },
+                    order: { expirationDate: 'ASC' },
+                });
+
+                rs = [...rs, { ...drug, batches }];
+            }
+
+            generics = [...generics, { ...item, drugs: rs }];
         }
 
         return {
-            result,
+            result: generics,
             lastPage: Math.ceil(total / options.limit),
             itemsPerPage: options.limit,
             totalPages: total,

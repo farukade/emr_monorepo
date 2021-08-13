@@ -33,16 +33,20 @@ export class RequestPaymentHelper {
                 });
             }
 
-            const category = await getConnection().getRepository(ServiceCategory).findOne({ where: { name: 'labs' } });
+            const category = await getConnection().getRepository(ServiceCategory).findOne({
+                where: { slug: 'labs' },
+            });
 
-            const admission = await getConnection().getRepository(Admission).findOne({ where: { patient } });
+            const admission = await getConnection().getRepository(Admission).findOne({
+                where: { patient, status: 0 },
+            });
 
             const data = {
                 patient,
                 amount: serviceCost.tariff,
                 description: 'Payment for clinical lab',
                 payment_type: (hmo.name !== 'Private') ? 'HMO' : 'self',
-                bill_source: category.name,
+                bill_source: category.slug,
                 service: serviceCost,
                 createdBy,
                 status: bill,
@@ -93,7 +97,9 @@ export class RequestPaymentHelper {
                 });
             }
 
-            const admission = await getConnection().getRepository(Admission).findOne({ where: { patient } });
+            const admission = await getConnection().getRepository(Admission).findOne({
+                where: { patient, status: 0 },
+            });
 
             const data = {
                 patient,

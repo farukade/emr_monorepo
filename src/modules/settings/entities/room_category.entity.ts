@@ -1,7 +1,6 @@
-import { Column, Entity, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
+import { Column, Entity, OneToMany } from 'typeorm';
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
-import {Room} from './room.entity';
-import { HmoScheme } from '../../hmo/entities/hmo_scheme.entity';
+import { Room } from './room.entity';
 
 @Entity({ name: 'room_categories' })
 export class RoomCategory extends CustomBaseEntity {
@@ -10,15 +9,8 @@ export class RoomCategory extends CustomBaseEntity {
     name: string;
 
     @Column({ type: 'varchar', length: 300, nullable: true })
-    price: string;
+    code: string;
 
-    @OneToMany(() => Room, room => room.category, { eager: true, onDelete: 'CASCADE' })
+    @OneToMany(() => Room, room => room.category, { eager: true })
     rooms: Room[];
-
-    @ManyToOne(type => HmoScheme, { nullable: true })
-    @JoinColumn({ name: 'hmo_scheme_id' })
-    hmo: HmoScheme;
-
-    @Column({type: 'varchar', nullable: true})
-    hmoTarrif: string;
 }

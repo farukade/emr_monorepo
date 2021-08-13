@@ -10,6 +10,7 @@ import { ServiceCost } from '../../modules/settings/entities/service_cost.entity
 import { HmoScheme } from '../../modules/hmo/entities/hmo_scheme.entity';
 import { DrugGeneric } from '../../modules/inventory/entities/drug_generic.entity';
 import { PatientNote } from '../../modules/patient/entities/patient_note.entity';
+import { Admission } from '../../modules/patient/admissions/entities/admission.entity';
 
 export class PatientRequestHelper {
     constructor(private patientRequestRepo: PatientRequestRepository) {
@@ -29,6 +30,10 @@ export class PatientRequestHelper {
             const nextId = `00000${requestCount + 1}`;
             const code = `LR/${moment().format('MM')}/${nextId.slice(-5)}`;
 
+            const admission = await getConnection().getRepository(Admission).findOne({
+                where: { patient, status: 0 },
+            });
+
             let result = [];
             for (const item of tests) {
                 const data = {
@@ -37,6 +42,7 @@ export class PatientRequestHelper {
                     requestType,
                     requestNote: request_note,
                     urgent,
+                    admission,
                     createdBy,
                 };
                 const res = await this.save(data);
@@ -76,6 +82,10 @@ export class PatientRequestHelper {
             const nextId = `00000${requestCount + 1}`;
             const code = `DR/${moment().format('MM')}/${nextId.slice(-5)}`;
 
+            const admission = await getConnection().getRepository(Admission).findOne({
+                where: { patient, status: 0 },
+            });
+
             let result = [];
             for (const item of items) {
                 const data = {
@@ -86,6 +96,7 @@ export class PatientRequestHelper {
                     createdBy,
                     lastChangedBy: null,
                     procedure: procedure_id,
+                    admission,
                 };
                 const res = await this.save(data);
                 const regimen = res.generatedMaps[0];
@@ -255,6 +266,10 @@ export class PatientRequestHelper {
 
             let hmo = patient.hmo;
 
+            const admission = await getConnection().getRepository(Admission).findOne({
+                where: { patient, status: 0 },
+            });
+
             let result = [];
             for (const item of tests) {
                 const data = {
@@ -264,6 +279,7 @@ export class PatientRequestHelper {
                     requestNote: request_note,
                     urgent,
                     createdBy,
+                    admission,
                 };
                 const res = await this.save(data);
                 const request = res.generatedMaps[0];

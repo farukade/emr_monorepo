@@ -79,10 +79,10 @@ export class ServicesController {
     }
 
     @Get('/categories/:slug')
-    getCategoryById(
-        @Param('name') name: string,
+    getServicesCategoryBySlug(
+        @Param('slug') slug: string,
     ): Promise<ServiceCategory> {
-        return this.servicesService.getServicesCategoryBySlug(name);
+        return this.servicesService.getServicesCategoryBySlug(slug);
     }
 
     @Post('/categories')

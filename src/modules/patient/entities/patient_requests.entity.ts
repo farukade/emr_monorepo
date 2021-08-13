@@ -30,7 +30,7 @@ export class PatientRequest extends CustomBaseEntity {
     @Column({ type: 'smallint', default: 0 })
     status: number;
 
-    @OneToOne(type => Admission, { nullable: true })
+    @ManyToOne(type => Admission, { nullable: true })
     @JoinColumn({ name: 'admission_id' })
     admission: Admission;
 

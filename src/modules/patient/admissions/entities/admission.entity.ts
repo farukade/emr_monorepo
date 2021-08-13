@@ -25,11 +25,10 @@ export class Admission extends CustomBaseEntity {
     @Column({ nullable: true })
     room_assigned_at: string;
 
-    @ManyToOne(() => StaffDetails, { nullable: true })
-    @JoinColumn({ name: 'room_assigned_by' })
-    roomAssignedBy: StaffDetails;
+    @Column({ type: 'varchar', nullable: true })
+    room_assigned_by: string;
 
-    @Column()
+    @Column({ type: 'varchar', nullable: true })
     reason: string;
 
     @OneToMany(() => AdmissionClinicalTask, tasks => tasks.admission)

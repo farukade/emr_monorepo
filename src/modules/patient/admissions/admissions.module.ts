@@ -12,6 +12,9 @@ import { PatientVitalRepository } from '../repositories/patient_vitals.repositor
 import { NicuRepository } from '../nicu/nicu.repository';
 import { AuthRepository } from '../../auth/auth.repository';
 import { PatientNoteRepository } from '../repositories/patient_note.repository';
+import { ServiceCostRepository } from '../../settings/services/repositories/service_cost.repository';
+import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
+import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repository';
 
 @Module({
     imports: [TypeOrmModule.forFeature([
@@ -24,6 +27,9 @@ import { PatientNoteRepository } from '../repositories/patient_note.repository';
         PatientVitalRepository,
         NicuRepository,
         PatientNoteRepository,
+        ServiceCostRepository,
+        TransactionsRepository,
+        HmoSchemeRepository,
     ])],
     controllers: [AdmissionsController],
     providers: [AppGateway, AdmissionsService],

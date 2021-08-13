@@ -168,20 +168,26 @@ export class LabService {
     }
 
     async updateLabTest(id: string, labTestDto: LabTestDto, updatedBy: string): Promise<any> {
-        const { lab_category_id, hmo_id } = labTestDto;
         try {
+            const { lab_category_id, hmo_id, name } = labTestDto;
 
             const hmo = await this.hmoSchemeRepository.findOne(hmo_id);
             const category = await this.labTestCategoryRepo.findOne(lab_category_id);
             const labTest = await this.labTestRepository.findOne(id);
 
-            const service = await this.serviceCostRepository.findOne({
+            const serviceCost = await this.serviceCostRepository.findOne({
                 where: { code: labTest.code, hmo },
             });
 
+            const service = await this.serviceRepository.findOne({
+                where: { code: labTest.code },
+            });
+            service.name = name;
+            await service.save();
+
             const query = await this.labTestRepository.updateLabTest(labTestDto, labTest, category, updatedBy);
 
-            return { ...query, service };
+            return { ...query, service: serviceCost };
         } catch (e) {
             throw new NotFoundException('could not update lab test');
         }

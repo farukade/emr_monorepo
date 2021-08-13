@@ -1,4 +1,4 @@
-import { EntityRepository, Repository, getRepository, getConnection } from 'typeorm';
+import { EntityRepository, Repository, getRepository } from 'typeorm';
 import { LabTest } from '../../entities/lab_test.entity';
 import { LabTestDto } from '../dto/lab_test.dto';
 import { LabTestCategory } from '../../entities/lab_test_category.entity';

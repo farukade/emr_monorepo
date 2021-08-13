@@ -208,7 +208,6 @@ export class ServicesService {
         const { name } = serviceCategoryDto;
         const category = await this.serviceCategoryRepository.findOne(id);
         category.name = name;
-        category.slug = slugify(name);
         await category.save();
         return category;
     }

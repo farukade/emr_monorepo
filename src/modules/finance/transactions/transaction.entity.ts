@@ -4,10 +4,10 @@ import { Patient } from '../../patient/entities/patient.entity';
 import { Voucher } from '../vouchers/voucher.entity';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 import { PatientRequestItem } from '../../patient/entities/patient_request_items.entity';
-import { PatientRequest } from '../../patient/entities/patient_requests.entity';
 import { Appointment } from '../../frontdesk/appointment/appointment.entity';
 import { HmoScheme } from '../../hmo/entities/hmo_scheme.entity';
 import { ServiceCost } from '../../settings/entities/service_cost.entity';
+import { Admission } from '../../patient/admissions/entities/admission.entity';
 
 @Entity({ name: 'transactions' })
 export class Transactions extends CustomBaseEntity {
@@ -89,6 +89,10 @@ export class Transactions extends CustomBaseEntity {
     @ManyToOne(type => Appointment, { nullable: true })
     @JoinColumn({ name: 'appointment_id' })
     appointment: Appointment;
+
+    @ManyToOne(type => Admission, { nullable: true })
+    @JoinColumn({ name: 'admission_id' })
+    admission: Admission;
 
     @ManyToOne(type => HmoScheme, { nullable: true })
     @JoinColumn({ name: 'hmo_scheme_id' })

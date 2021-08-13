@@ -29,6 +29,7 @@ import { StoreInventoryRepository } from '../inventory/store/store.repository';
 // @ts-ignore
 import * as startCase from 'lodash.startcase';
 import { CafeteriaInventoryRepository } from '../inventory/cafeteria/cafeteria.repository';
+import { RoomCategoryRepository } from '../settings/room/room.category.repository';
 
 @Processor(process.env.MIGRATION_QUEUE_NAME)
 export class MigrationProcessor {
@@ -77,6 +78,8 @@ export class MigrationProcessor {
         private storeInventoryRepository: StoreInventoryRepository,
         @InjectRepository(CafeteriaInventoryRepository)
         private cafeteriaInventoryRepository: CafeteriaInventoryRepository,
+        @InjectRepository(RoomCategoryRepository)
+        private roomCategoryRepository: RoomCategoryRepository,
     ) {
     }
 
@@ -178,8 +181,7 @@ export class MigrationProcessor {
 
                     const staff = await this.patientRepository.save({});
 
-                    const login = await this.patientNOKRepository.save({
-                    });
+                    const login = await this.patientNOKRepository.save({});
                 } catch (e) {
                     console.log(e);
                 }
@@ -216,7 +218,7 @@ export class MigrationProcessor {
                     }
 
                     const patient = await this.patientRepository.save({
-                        oldId: item.patient_ID,
+                        old_id: item.patient_ID,
                         id: +item.patient_ID,
                         legacyPatientId: item.legacy_patient_id,
                         surname: item.lname,
@@ -458,6 +460,30 @@ export class MigrationProcessor {
                 const unit = item.unit_of_measure;
 
                 await this.cafeteriaInventoryRepository.save({ name, unitOfMeasure: unit, code });
+            }
+
+            await connection.end();
+            return true;
+        } catch (error) {
+            console.log(error);
+            this.logger.error('migration failed', error.stack);
+        }
+    }
+
+    @Process('rooms')
+    async migrateRoom(job: Job<any>): Promise<any> {
+        this.logger.log('migrating rooms');
+
+        try {
+            const connection = await mysqlConnect();
+
+            const [rows] = await connection.execute('SELECT * FROM `ward`');
+            for (const item of rows) {
+                await this.roomCategoryRepository.save({
+                    name: item.name,
+                    code: item.billing_code,
+                    old_id: item.id,
+                });
             }
 
             await connection.end();

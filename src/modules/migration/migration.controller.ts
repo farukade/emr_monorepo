@@ -70,4 +70,12 @@ export class MigrationController {
     ): Promise<any> {
         return this.migrationService.queueMigration('store');
     }
+
+    @Get('/rooms')
+    migrateRooms(
+        @Query() urlParams,
+        @Request() request,
+    ): Promise<any> {
+        return this.migrationService.queueMigration('rooms');
+    }
 }

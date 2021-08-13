@@ -41,12 +41,22 @@ export class AdmissionsController {
         return this.admissionService.startDischarge(id, req.user.username);
     }
 
+    @Put(':id/complete-discharge')
+    @UsePipes(ValidationPipe)
+    completeDischarge(
+        @Param('id') id: number,
+        @Body() params,
+        @Request() req,
+    ): Promise<any> {
+        return this.admissionService.completeDischarge(id, params, req.user.username);
+    }
+
     @Patch('/assign-bed')
     assignBed(
         @Body() params,
         @Request() req,
     ) {
-        return this.admissionService.saveAssignBed(params);
+        return this.admissionService.saveAssignBed(params, req.user.username);
     }
 
     @Get('/tasks')
@@ -73,7 +83,7 @@ export class AdmissionsController {
         @Body() params,
         @Request() req,
     ) {
-        return this.admissionService.saveClinicalTasks(id, params, req.user.userId);
+        return this.admissionService.saveClinicalTasks(id, params, req.user.username);
     }
 
     @Get(':id/ward-rounds')
