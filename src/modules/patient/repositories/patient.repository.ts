@@ -8,25 +8,30 @@ import * as moment from 'moment';
 @EntityRepository(Patient)
 export class PatientRepository extends Repository<Patient> {
 
-    async savePatient(patientDto: PatientDto, nextOfkin: PatientNOK, hmo: HmoScheme, createdBy, pic) {
+    async savePatient(patientDto: PatientDto, nextOfkin: PatientNOK, hmo: HmoScheme, createdBy, pic, staff) {
 
         const patient = new Patient();
-        patient.legacy_patient_id     = patientDto.legacyId;
-        patient.surname             = patientDto.surname.toLocaleLowerCase();
-        patient.other_names         = patientDto.other_names.toLocaleLowerCase();
-        patient.address             = patientDto.address.toLocaleLowerCase();
-        patient.date_of_birth       = moment(patientDto.date_of_birth).format('YYYY-MM-DD');
-        patient.occupation          = patientDto.occupation;
-        patient.gender              = patientDto.gender;
-        patient.email               = patientDto.email;
-        patient.phone_number         = patientDto.phoneNumber;
-        patient.maritalStatus       = patientDto.maritalStatus;
-        patient.ethnicity           = patientDto.ethnicity || '';
-        patient.referredBy          = patientDto.referredBy;
-        patient.createdBy           = createdBy;
-        patient.nextOfKin           = nextOfkin;
-        patient.profile_pic         = (pic) ? pic.filename : '';
-        patient.hmo                 = hmo;
+        patient.legacy_patient_id = patientDto.legacyId;
+        patient.surname = patientDto.surname.toLocaleLowerCase();
+        patient.other_names = patientDto.other_names.toLocaleLowerCase();
+        patient.address = patientDto.address.toLocaleLowerCase();
+        patient.date_of_birth = moment(patientDto.date_of_birth).format('YYYY-MM-DD');
+        patient.occupation = patientDto.occupation;
+        patient.gender = patientDto.gender;
+        patient.email = patientDto.email;
+        patient.phone_number = patientDto.phoneNumber;
+        patient.maritalStatus = patientDto.maritalStatus;
+        patient.ethnicity = patientDto.ethnicity || '';
+        patient.referredBy = patientDto.referredBy;
+        patient.createdBy = createdBy;
+        patient.nextOfKin = nextOfkin;
+        patient.profile_pic = (pic) ? pic.filename : '';
+        patient.hmo = hmo;
+
+        if (staff) {
+            patient.staff = staff;
+        }
+
         return await patient.save();
     }
 }

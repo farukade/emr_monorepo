@@ -57,7 +57,7 @@ export class PatientDto {
 
     nok_ethnicity: string;
 
-    admitTo: string;
+    staff_id: any;
 
     legacyId: string;
 }

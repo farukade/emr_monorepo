@@ -189,7 +189,7 @@ export class AdmissionsService {
             admission.dischargedBy = staff;
             admission.status = 1;
             admission.lastChangedBy = username;
-            const rs = await admission.save();
+            await admission.save();
 
             const room = await this.roomRepository.findOne(admission.room.id);
             if (room) {
@@ -202,10 +202,12 @@ export class AdmissionsService {
             patient.is_admitted = false;
             await patient.save();
 
-            // send start start socket message
-            this.appGateway.server.emit('discharged', rs);
+            const discharged = await this.admissionRepository.findOne(id, { relations: ['room', 'patient'] });
 
-            return { success: true, admission: rs };
+            // send start start socket message
+            this.appGateway.server.emit('discharged', discharged);
+
+            return { success: true, admission: discharged };
         } catch (err) {
             return { success: false, message: err.message };
         }

@@ -6,11 +6,9 @@ import { HmoDto } from './dto/hmo.dto';
 import { ServiceRepository } from '../settings/services/repositories/service.repository';
 import { TransactionsRepository } from '../finance/transactions/transactions.repository';
 import * as moment from 'moment';
-import { getConnection, Like, Raw } from 'typeorm';
-import { Appointment } from '../frontdesk/appointment/appointment.entity';
+import { Like, Raw } from 'typeorm';
 import { QueueSystemRepository } from '../frontdesk/queue-system/queue-system.repository';
 import { PaginationOptionsInterface } from '../../common/paginate';
-import { AppGateway } from '../../app.gateway';
 import { Pagination } from '../../common/paginate/paginate.interface';
 import { PatientRepository } from '../patient/repositories/patient.repository';
 import { ServiceCategoryRepository } from '../settings/services/repositories/service_category.repository';
@@ -21,10 +19,12 @@ import { HmoScheme } from './entities/hmo_scheme.entity';
 import { HmoType } from './entities/hmo_type.entity';
 import { ServiceCostRepository } from '../settings/services/repositories/service_cost.repository';
 import { PatientRequestItemRepository } from '../patient/repositories/patient_request_items.repository';
+import { MigrationService } from '../migration/migration.service';
 
 @Injectable()
 export class HmoService {
     constructor(
+        private migrationService: MigrationService,
         @InjectRepository(HmoOwnerRepository)
         private hmoOwnerRepository: HmoOwnerRepository,
         @InjectRepository(HmoSchemeRepository)
@@ -45,7 +45,8 @@ export class HmoService {
         private serviceCostRepository: ServiceCostRepository,
         @InjectRepository(PatientRequestItemRepository)
         private patientRequestItemRepository: PatientRequestItemRepository,
-        private readonly appGateway: AppGateway,
+        @InjectRepository(ServiceCategoryRepository)
+        private serviceCategoryRepository: ServiceCategoryRepository,
     ) {
     }
 
@@ -115,29 +116,6 @@ export class HmoService {
         return this.hmoOwnerRepository.saveHmo(hmoDto);
     }
 
-    async createScheme(hmoSchemeDto: HmoSchemeDto): Promise<HmoScheme> {
-        try {
-            let hmoCompany;
-            if (hmoSchemeDto.hmo_id === '') {
-                const item = new Hmo();
-                item.name = hmoSchemeDto.hmo.label;
-                item.phoneNumber = hmoSchemeDto.phoneNumber;
-                item.address = hmoSchemeDto.address;
-                item.email = hmoSchemeDto.email;
-                hmoCompany = await item.save();
-            } else {
-                hmoCompany = await this.hmoOwnerRepository.findOne(hmoSchemeDto.hmo_id);
-            }
-
-            const type = await this.hmoTypeRepository.findOne(hmoSchemeDto.hmo_type_id);
-
-            return this.hmoSchemeRepository.saveScheme(hmoSchemeDto, hmoCompany, type);
-        } catch (error) {
-            console.log(error);
-            throw new BadRequestException(error);
-        }
-    }
-
     async updateHmo(id: string, hmoDto: HmoDto): Promise<any> {
         const { name, address, phoneNumber, email } = hmoDto;
         const hmo = await this.hmoOwnerRepository.findOne(id);
@@ -155,43 +133,6 @@ export class HmoService {
         return hmo;
     }
 
-    async updateScheme(id: string, hmoSchemeDto: HmoSchemeDto): Promise<any> {
-        const { name, address, phoneNumber, email, cacNumber, coverage, coverageType, logo, hmo_id, hmo_type_id } = hmoSchemeDto;
-        const scheme = await this.hmoSchemeRepository.findOne(id);
-
-        if (!scheme) {
-            return { success: false, message: `HMO Scheme with ${id} was not found` };
-        }
-
-        let hmoCompany;
-        if (hmoSchemeDto.hmo_id === '') {
-            const item = new Hmo();
-            item.name = hmoSchemeDto.hmo.label;
-            item.phoneNumber = hmoSchemeDto.phoneNumber;
-            item.address = hmoSchemeDto.address;
-            item.email = hmoSchemeDto.email;
-            hmoCompany = await item.save();
-        } else {
-            hmoCompany = await this.hmoOwnerRepository.findOne(hmoSchemeDto.hmo_id);
-        }
-
-        const type = await this.hmoTypeRepository.findOne(hmo_type_id);
-
-        scheme.name = name;
-        scheme.logo = logo;
-        scheme.address = address;
-        scheme.phoneNumber = phoneNumber;
-        scheme.email = email;
-        scheme.cacNumber = cacNumber;
-        scheme.coverage = coverage === '' ? null : coverage;
-        scheme.coverageType = coverageType;
-        scheme.owner = hmoCompany;
-        scheme.hmoType = type;
-        await scheme.save();
-
-        return scheme;
-    }
-
     async deleteHmo(id: number, username): Promise<Hmo> {
         // delete hmo
         const data = await this.hmoOwnerRepository.findOne(id);
@@ -204,6 +145,81 @@ export class HmoService {
         await data.save();
 
         return data.softRemove();
+    }
+
+    async createScheme(hmoSchemeDto: HmoSchemeDto): Promise<HmoScheme> {
+        try {
+            let hmoCompany;
+            if (hmoSchemeDto.hmo_id === '') {
+                const item = new Hmo();
+                item.name = hmoSchemeDto.hmo.label;
+                item.phoneNumber = hmoSchemeDto.phoneNumber;
+                item.address = hmoSchemeDto.address;
+                item.email = hmoSchemeDto.email;
+                hmoCompany = await item.save();
+            } else {
+                hmoCompany = await this.hmoOwnerRepository.findOne(hmoSchemeDto.hmo_id);
+            }
+
+            const type = await this.hmoTypeRepository.findOne(hmoSchemeDto.hmo_type_id);
+
+            const scheme = await this.hmoSchemeRepository.saveScheme(hmoSchemeDto, hmoCompany, type);
+
+            if (hmoSchemeDto.coverageType === 'partial') {
+                await this.migrationService.queueJob('tariffs', { scheme, coverage: hmoSchemeDto.coverage });
+            }
+
+            return scheme;
+        } catch (error) {
+            console.log(error);
+            throw new BadRequestException(error);
+        }
+    }
+
+    async updateScheme(id: string, hmoSchemeDto: HmoSchemeDto): Promise<any> {
+        const { name, address, phoneNumber, email, cacNumber, coverage, coverageType, logo, hmo_id, hmo_type_id } = hmoSchemeDto;
+        const scheme = await this.hmoSchemeRepository.findOne(id);
+
+        if (!scheme) {
+            return { success: false, message: `HMO Scheme with ${id} was not found` };
+        }
+
+        try {
+            let hmoCompany;
+            if (hmoSchemeDto.hmo_id === '') {
+                const item = new Hmo();
+                item.name = hmoSchemeDto.hmo.label;
+                item.phoneNumber = hmoSchemeDto.phoneNumber;
+                item.address = hmoSchemeDto.address;
+                item.email = hmoSchemeDto.email;
+                hmoCompany = await item.save();
+            } else {
+                hmoCompany = await this.hmoOwnerRepository.findOne(hmoSchemeDto.hmo_id);
+            }
+
+            const type = await this.hmoTypeRepository.findOne(hmo_type_id);
+
+            scheme.name = name;
+            scheme.logo = logo;
+            scheme.address = address;
+            scheme.phoneNumber = phoneNumber;
+            scheme.email = email;
+            scheme.cacNumber = cacNumber;
+            scheme.coverage = coverageType === 'full' ? 100 : coverage;
+            scheme.coverageType = coverageType;
+            scheme.owner = hmoCompany;
+            scheme.hmoType = type;
+            const rs = await scheme.save();
+
+            if (hmoSchemeDto.coverageType === 'partial') {
+                await this.migrationService.queueJob('tariffs', { scheme, coverage: hmoSchemeDto.coverage });
+            }
+
+            return { success: true, scheme: rs };
+        } catch (e) {
+            console.log(e);
+            return { success: false, message: 'error, could not save hmo scheme' };
+        }
     }
 
     async deleteScheme(id: number, username): Promise<Hmo> {

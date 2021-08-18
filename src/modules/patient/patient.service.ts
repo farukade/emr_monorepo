@@ -36,6 +36,7 @@ import { ServiceRepository } from '../settings/services/repositories/service.rep
 import { ServiceCostRepository } from '../settings/services/repositories/service_cost.repository';
 import { PatientNoteRepository } from './repositories/patient_note.repository';
 import { PatientNote } from './entities/patient_note.entity';
+import { StaffRepository } from '../hr/staff/staff.repository';
 
 @Injectable()
 export class PatientService {
@@ -81,6 +82,8 @@ export class PatientService {
         private serviceCostRepository: ServiceCostRepository,
         @InjectRepository(PatientNoteRepository)
         private patientNoteRepository: PatientNoteRepository,
+        @InjectRepository(StaffRepository)
+        private staffRepository: StaffRepository,
     ) {
     }
 
@@ -204,7 +207,7 @@ export class PatientService {
 
     async saveNewPatient(patientDto: PatientDto, createdBy: string, pic): Promise<any> {
         try {
-            const { hmoId, email, phoneNumber } = patientDto;
+            const { hmoId, email, phoneNumber, staff_id } = patientDto;
 
             const emailFound = await this.patientRepository.findOne({ where: { email } });
             if (emailFound) {
@@ -226,7 +229,12 @@ export class PatientService {
                 nok = await this.patientNOKRepository.saveNOK(patientDto);
             }
 
-            const patient = await this.patientRepository.savePatient(patientDto, nok, hmo, createdBy, pic);
+            let staff;
+            if (staff_id) {
+                staff = await this.staffRepository.findOne(staff_id);
+            }
+
+            const patient = await this.patientRepository.savePatient(patientDto, nok, hmo, createdBy, pic, staff);
 
             const splits = patient.other_names.split(' ');
             const message = `Dear ${patient.surname} ${splits.length > 0 ? splits[0] : patient.other_names}, welcome to the DEDA Family. Your ID/Folder number is ${formatPID(patient.id)}. Kindly save the number and provide it at all your appointment visits. Thank you.`;

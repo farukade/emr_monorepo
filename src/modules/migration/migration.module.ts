@@ -67,6 +67,7 @@ import { RoomCategoryRepository } from '../settings/room/room.category.repositor
     ],
     providers: [MigrationService, MigrationProcessor],
     controllers: [MigrationController],
+    exports: [MigrationService],
 })
 export class MigrationModule {
 }

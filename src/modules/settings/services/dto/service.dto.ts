@@ -8,8 +8,8 @@ export class ServiceDto {
 
     hmo_id: any;
 
-    code: string;
-
     tariff: any;
+
+    update_tariff: any;
 
 }

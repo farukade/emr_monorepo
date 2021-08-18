@@ -30,6 +30,7 @@ import { StoreInventoryRepository } from '../inventory/store/store.repository';
 import * as startCase from 'lodash.startcase';
 import { CafeteriaInventoryRepository } from '../inventory/cafeteria/cafeteria.repository';
 import { RoomCategoryRepository } from '../settings/room/room.category.repository';
+import { ServiceCost } from '../settings/entities/service_cost.entity';
 
 @Processor(process.env.MIGRATION_QUEUE_NAME)
 export class MigrationProcessor {
@@ -135,7 +136,7 @@ export class MigrationProcessor {
         try {
             const connection = await mysqlConnect();
 
-            const [rows] = await connection.execute('SELECT insurance_schemes.*, insurance_owners.id as company_id, insurance_owners.company_name, insurance_owners.address, insurance_owners.contact_phone, insurance_owners.contact_email, insurance_type.name as insurance_type_name FROM `insurance_schemes` left join insurance_owners on insurance_owners.id=insurance_schemes.scheme_owner_id left join insurance_type on insurance_type.id = insurance_schemes.insurance_type_id');
+            const [rows] = await connection.execute('SELECT insurance_schemes.*, insurance_schemes.id as scheme_id, insurance_owners.id as company_id, insurance_owners.company_name, insurance_owners.address, insurance_owners.contact_phone, insurance_owners.contact_email, insurance_type.name as insurance_type_name FROM `insurance_schemes` left join insurance_owners on insurance_owners.id=insurance_schemes.scheme_owner_id left join insurance_type on insurance_type.id = insurance_schemes.insurance_type_id');
             for (const item of rows) {
                 let hmoCompany = await this.hmoOwnerRepository.findOne(item.company_id);
 
@@ -146,6 +147,7 @@ export class MigrationProcessor {
                         address: item.address,
                         phoneNumber: item.contact_phone,
                         email: item.contact_email,
+                        old_id: item.company_id,
                     });
                 }
 
@@ -159,6 +161,7 @@ export class MigrationProcessor {
                     phoneNumber: item.phone,
                     email: item.email,
                     coverage: 100,
+                    old_id: item.scheme_id,
                 });
             }
             await connection.end();
@@ -261,6 +264,7 @@ export class MigrationProcessor {
                 await this.serviceCategoryRepository.save({
                     name,
                     slug: slugify(name),
+                    old_id: item.id,
                 });
             }
 
@@ -270,10 +274,11 @@ export class MigrationProcessor {
                     name: item.item_description,
                     code: item.item_code,
                     category: item.item_group_category_id,
+                    old_id: item.id,
                 });
             }
 
-            [rows] = await connection.execute('SELECT insurance_items_cost.item_code, insurance_items_cost.selling_price, insurance_schemes.scheme_name FROM `insurance_items_cost` left join insurance_schemes on insurance_schemes.id=insurance_items_cost.insurance_scheme_id');
+            [rows] = await connection.execute('SELECT insurance_items_cost.id as cost_id, insurance_items_cost.item_code, insurance_items_cost.selling_price, insurance_schemes.scheme_name FROM `insurance_items_cost` left join insurance_schemes on insurance_schemes.id=insurance_items_cost.insurance_scheme_id');
             for (const item of rows) {
                 const service = await this.serviceRepository.findOne({
                     where: { code: item.item_code },
@@ -288,6 +293,7 @@ export class MigrationProcessor {
                     hmo,
                     code: item.item_code,
                     tariff: item.selling_price,
+                    old_id: item.cost_id,
                 });
             }
 
@@ -324,6 +330,7 @@ export class MigrationProcessor {
 
                 await this.drugGenericRepository.save({
                     id: item.id,
+                    old_id: item.id,
                     name: item.name,
                     category,
                     form: item.form,
@@ -332,7 +339,7 @@ export class MigrationProcessor {
                 });
             }
 
-            [rows] = await connection.execute('SELECT drugs.name, drugs.billing_code, drug_generics.name as generic_name, drugs.base_price, drugs.unit_cost, drugs.stock_uom, drug_manufacturers.name as manufacturer_name FROM `drugs` left join drug_generics on drug_generics.id=drugs.drug_generic_id left join drug_manufacturers on drug_manufacturers.id=drugs.manufacturer_id');
+            [rows] = await connection.execute('SELECT drugs.id as drug_id, drugs.name, drugs.billing_code, drug_generics.name as generic_name, drugs.base_price, drugs.unit_cost, drugs.stock_uom, drug_manufacturers.name as manufacturer_name FROM `drugs` left join drug_generics on drug_generics.id=drugs.drug_generic_id left join drug_manufacturers on drug_manufacturers.id=drugs.manufacturer_id');
             for (const item of rows) {
                 const generic = await this.drugGenericRepository.findOne({
                     where: { name: item.generic_name },
@@ -348,18 +355,20 @@ export class MigrationProcessor {
                     generic,
                     unitOfMeasure: item.stock_uom,
                     manufacturer,
+                    old_id: item.drug_id,
                 });
             }
 
             [rows] = await connection.execute('SELECT drug_batch.*, drugs.name as drug_name FROM `drug_batch` left join drugs on drugs.id=drug_batch.drug_id');
             for (const item of rows) {
                 const drug = await this.drugRepository.findOne({
-                    where: { code: ILike(`%${item.drug_id}%`) },
+                    where: { old_id: item.drug_id },
                 });
 
                 const expirationDate = moment(item.expiration_date).isValid() ? moment(item.expiration_date).format('YYYY-MM-DD') : null;
 
                 await this.drugBatchRepository.save({
+                    old_id: item.id,
                     name: item.name,
                     drug,
                     quantity: item.quantity,
@@ -394,7 +403,7 @@ export class MigrationProcessor {
                 await this.specimenRepository.save({ name: item.name });
             }
 
-            [rows] = await connection.execute('SELECT labtests_config.*, labtests_config_category.name as lab_category FROM `labtests_config` left join labtests_config_category on labtests_config_category.id=labtests_config.category_id');
+            [rows] = await connection.execute('SELECT labtests_config.*, labtests_config.id as lab_id, labtests_config_category.name as lab_category FROM `labtests_config` left join labtests_config_category on labtests_config_category.id=labtests_config.category_id');
             for (const item of rows) {
                 const category = await this.labTestCategoryRepository.findOne({ name: item.lab_category });
 
@@ -402,6 +411,7 @@ export class MigrationProcessor {
                     code: item.billing_code,
                     name: item.name,
                     category,
+                    old_id: item.lab_id,
                 });
             }
 
@@ -491,6 +501,46 @@ export class MigrationProcessor {
         } catch (error) {
             console.log(error);
             this.logger.error('migration failed', error.stack);
+        }
+    }
+
+    @Process('tariffs')
+    async updateCoverage(job: Job<any>): Promise<any> {
+        const { scheme, coverage } = job.data;
+
+        const privateHmo = await this.hmoSchemeRepository.findOne({ where: { name: 'Private' } });
+        if (privateHmo.name === scheme.name) {
+            this.logger.log('cannot change private services');
+            return;
+        }
+
+        const serviceCosts = await this.serviceCostRepository.find({ hmo: scheme });
+
+        if (serviceCosts.length > 0) {
+            for (const cost of serviceCosts) {
+                const privateCost = await this.serviceCostRepository.findOne({
+                    where: { hmo: privateHmo, code: cost.code },
+                });
+
+                if (privateCost.tariff > 0) {
+                    cost.tariff = privateCost.tariff - ((parseFloat(coverage) * privateCost.tariff) / 100);
+                    await cost.save();
+                }
+            }
+        } else {
+            const services = await this.serviceRepository.find();
+            for (const service of services) {
+                const privateCost = await this.serviceCostRepository.findOne({
+                    where: { hmo: privateHmo, code: service.code },
+                });
+
+                const cost = new ServiceCost();
+                cost.code = service.code;
+                cost.item = service;
+                cost.tariff = privateCost.tariff - ((parseFloat(coverage) * privateCost.tariff) / 100);
+                cost.hmo = scheme;
+                await cost.save();
+            }
         }
     }
 }

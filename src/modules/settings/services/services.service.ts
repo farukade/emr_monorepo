@@ -5,7 +5,7 @@ import { ServiceCategoryDto } from './dto/service.category.dto';
 import { ServiceCategory } from '../entities/service_category.entity';
 import { Service } from '../entities/service.entity';
 import { ServiceCategoryRepository } from './repositories/service_category.repository';
-import { formatPID, slugify } from '../../../common/utils/utils';
+import { formatPID } from '../../../common/utils/utils';
 import { PaginationOptionsInterface } from '../../../common/paginate';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import { Raw } from 'typeorm';
@@ -15,6 +15,8 @@ import { LabTestRepository } from '../lab/repositories/lab.test.repository';
 import { ServiceRepository } from './repositories/service.repository';
 import { ServiceCostRepository } from './repositories/service_cost.repository';
 import { ServiceCost } from '../entities/service_cost.entity';
+import { DrugRepository } from '../../inventory/pharmacy/drug/drug.repository';
+import { RoomCategoryRepository } from '../room/room.category.repository';
 
 @Injectable()
 export class ServicesService {
@@ -31,6 +33,10 @@ export class ServicesService {
         private hmoSchemeRepository: HmoSchemeRepository,
         @InjectRepository(ServiceCostRepository)
         private serviceCostRepository: ServiceCostRepository,
+        @InjectRepository(DrugRepository)
+        private drugRepository: DrugRepository,
+        @InjectRepository(RoomCategoryRepository)
+        private roomCategoryRepository: RoomCategoryRepository,
     ) {
     }
 
@@ -158,7 +164,7 @@ export class ServicesService {
     }
 
     async updateService(id: string, serviceDto: ServiceDto): Promise<any> {
-        const { name, category_id, hmo_id } = serviceDto;
+        const { name, category_id, hmo_id, tariff, update_tariff } = serviceDto;
 
         const category = await this.serviceCategoryRepository.findOne(category_id);
 
@@ -167,7 +173,42 @@ export class ServicesService {
         service.category = category;
         await service.save();
 
+        switch (category.slug) {
+            case 'drugs':
+                const drug = await this.drugRepository.findOne({ where: { code: service.code } });
+                drug.name = name;
+                await drug.save();
+                break;
+            case 'labs':
+                const lab = await this.labTestRepository.findOne({ where: { code: service.code } });
+                lab.name = name;
+                await lab.save();
+                break;
+            case 'ward':
+                const room = await this.roomCategoryRepository.findOne({ where: { code: service.code } });
+                room.name = name;
+                await room.save();
+                break;
+        }
+
         const hmo = await this.hmoSchemeRepository.findOne(hmo_id);
+
+        const serviceCost = await this.serviceCostRepository.findOne({
+            where: { code: service.code, hmo },
+        });
+        if (update_tariff && update_tariff !== '' && update_tariff === 1) {
+            if (serviceCost) {
+                serviceCost.tariff = tariff;
+                await serviceCost.save();
+            } else {
+                await this.serviceCostRepository.save({
+                    item: service,
+                    hmo,
+                    code: service.code,
+                    tariff,
+                });
+            }
+        }
 
         const cost = await this.serviceCostRepository.findOne({
             where: { code: service.code, hmo },

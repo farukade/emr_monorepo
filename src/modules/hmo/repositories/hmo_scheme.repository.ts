@@ -15,7 +15,7 @@ export class HmoSchemeRepository extends Repository<HmoScheme> {
         scheme.phoneNumber = phoneNumber;
         scheme.email = email;
         scheme.cacNumber = cacNumber;
-        scheme.coverage = coverage === '' ? null : coverage;
+        scheme.coverage = coverageType === 'full' ? 100 : coverage;
         scheme.coverageType = coverageType;
         scheme.hmoType = type;
         scheme.owner = hmo;

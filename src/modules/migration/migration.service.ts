@@ -22,4 +22,15 @@ export class MigrationService {
             return false;
         }
     }
+
+    async queueJob(type: string, data: any): Promise<boolean> {
+        try {
+            await this.migrationQueue.add(type, data);
+            return true;
+        } catch (error) {
+            console.log(error);
+            this.logger.error(`Error queueing ${type} migration`);
+            return false;
+        }
+    }
 }
