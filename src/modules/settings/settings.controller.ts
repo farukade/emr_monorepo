@@ -36,4 +36,13 @@ export class SettingsController {
     ) {
         return this.settingsService.updateSetting(id, updateDto, req.user.username);
     }
+
+    @Post('/send-mail')
+    @UsePipes(ValidationPipe)
+    sendMail(
+        @Body() params,
+        @Request() req,
+    ) {
+        return this.settingsService.sendMail(params, req.user.username);
+    }
 }

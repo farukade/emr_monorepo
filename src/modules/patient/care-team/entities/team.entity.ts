@@ -16,8 +16,8 @@ export class CareTeam extends CustomBaseEntity {
     @Column()
     type: string;
 
-    @Column({ nullable: true, name: 'item_id' })
-    itemId: string;
+    @Column({ nullable: true })
+    item_id: string;
 
     @ManyToOne(type => Patient)
     @JoinColumn({ name: 'patient_id' })

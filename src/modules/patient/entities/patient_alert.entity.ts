@@ -17,6 +17,6 @@ export class PatientAlert extends CustomBaseEntity {
     @Column({ default: false })
     read: boolean;
 
-    @Column({ type: 'varchar', length: 300, nullable: true, name: 'read_by' })
-    readBy: string;
+    @Column({ type: 'varchar', length: 300, nullable: true })
+    read_by: string;
 }

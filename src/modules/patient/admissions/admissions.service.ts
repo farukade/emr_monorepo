@@ -178,13 +178,13 @@ export class AdmissionsService {
 
     async completeDischarge(id: number, params, username): Promise<any> {
         try {
-            const { discharge_note } = params;
+            const { note } = params;
 
             const admission = await this.admissionRepository.findOne(id, { relations: ['room', 'patient'] });
 
             const staff = await getStaff(username);
 
-            admission.discharge_note = discharge_note;
+            admission.discharge_note = note;
             admission.date_discharged = moment().format('YYYY-MM-DD HH:mm:ss');
             admission.dischargedBy = staff;
             admission.status = 1;

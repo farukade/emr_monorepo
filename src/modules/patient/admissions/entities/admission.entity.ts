@@ -28,7 +28,7 @@ export class Admission extends CustomBaseEntity {
     @Column({ type: 'varchar', nullable: true })
     room_assigned_by: string;
 
-    @Column({ type: 'varchar', nullable: true })
+    @Column({ type: 'text', nullable: true })
     reason: string;
 
     @OneToMany(() => AdmissionClinicalTask, tasks => tasks.admission)
@@ -44,19 +44,19 @@ export class Admission extends CustomBaseEntity {
     @Column({ default: false })
     start_discharge: boolean;
 
-    @Column({ type: 'text', nullable: true })
+    @Column({ nullable: true })
     start_discharge_date: string;
 
-    @Column({ type: 'text', nullable: true })
+    @Column({ type: 'varchar', nullable: true })
     start_discharge_by: string;
 
-    @Column({ type: 'text', nullable: true })
+    @Column({ nullable: true })
     date_discharged: string;
 
     @ManyToOne(() => StaffDetails, { nullable: true })
     @JoinColumn({ name: 'discharged_by' })
     dischargedBy: StaffDetails;
 
-    @Column({ nullable: true })
+    @Column({ type: 'text', nullable: true })
     discharge_note: string;
 }

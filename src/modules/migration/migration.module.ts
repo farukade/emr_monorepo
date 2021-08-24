@@ -27,6 +27,14 @@ import { GroupTestRepository } from '../settings/lab/repositories/group_tests.re
 import { StoreInventoryRepository } from '../inventory/store/store.repository';
 import { CafeteriaInventoryRepository } from '../inventory/cafeteria/cafeteria.repository';
 import { RoomCategoryRepository } from '../settings/room/room.category.repository';
+import { StaffRepository } from '../hr/staff/staff.repository';
+import { AuthRepository } from '../auth/auth.repository';
+import { RoleRepository } from '../settings/roles-permissions/role.repository';
+import { PatientAlertRepository } from '../patient/repositories/patient_alert.repository';
+import { AdmissionsRepository } from '../patient/admissions/repositories/admissions.repository';
+import { PatientNoteRepository } from '../patient/repositories/patient_note.repository';
+import { EncounterRepository } from '../patient/consultation/encounter.repository';
+import { CareTeamRepository } from '../patient/care-team/team.repository';
 
 @Module({
     imports: [
@@ -63,6 +71,14 @@ import { RoomCategoryRepository } from '../settings/room/room.category.repositor
             StoreInventoryRepository,
             CafeteriaInventoryRepository,
             RoomCategoryRepository,
+            StaffRepository,
+            AuthRepository,
+            RoleRepository,
+            PatientAlertRepository,
+            AdmissionsRepository,
+            PatientNoteRepository,
+            EncounterRepository,
+            CareTeamRepository,
         ]),
     ],
     providers: [MigrationService, MigrationProcessor],

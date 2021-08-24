@@ -7,7 +7,7 @@ import { User } from '../../auth/entities/user.entity';
 @EntityRepository(StaffDetails)
 export class StaffRepository extends Repository<StaffDetails> {
 
-    async saveDetails(staffDto: StaffDto, department: Department, user: User, specialization, pic, username) {
+    async saveDetails(staffDto: any, department: Department, user: User, specialization, pic, username) {
         try {
             const staff = new StaffDetails();
             staff.first_name = staffDto?.first_name?.toLocaleLowerCase();

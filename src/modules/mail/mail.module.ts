@@ -15,7 +15,7 @@ import { LoggerRepository } from '../logger/logger.repository';
                 host: process.env.MAILER_SMTP,
                 port: process.env.MAILER_PORT,
                 ignoreTLS: false,
-                secure: true,
+                secure: false,
                 auth: {
                     user: process.env.MAIL_USER_NAME,
                     pass: process.env.MAIL_USER_PASSWORD,

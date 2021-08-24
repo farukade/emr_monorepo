@@ -1,13 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SettingsRepository } from './settings.repository';
 import { Settings } from './entities/settings.entity';
 import { SettingsDto } from './dto/settings.dto';
-import { slugify } from '../../common/utils/utils';
+import { getStaff, slugify } from '../../common/utils/utils';
+import { MailerService } from '@nestjs-modules/mailer';
 
 @Injectable()
 export class SettingsService {
     constructor(
+        private readonly mailerService: MailerService,
         @InjectRepository(SettingsRepository)
         private settingsRepository: SettingsRepository,
     ) {
@@ -41,5 +43,28 @@ export class SettingsService {
         await setting.save();
 
         return setting;
+    }
+
+    async sendMail(params, sender) {
+        const { email, subject, message } = params;
+
+        try {
+            const staff = await getStaff(sender);
+
+            return await this.mailerService.sendMail({
+                to: email,
+                from: `"${staff.first_name} ${staff.last_name}" <${staff?.email || 'info@dedahospital.com'}>`,
+                subject,
+                template: 'mail',
+                context: {
+                    message,
+                    logo: `${process.env.ENDPOINT}/public/images/logo.png`,
+                },
+            });
+
+        } catch (error) {
+            console.log(error);
+            throw new BadRequestException(`Failed to send email to '${email}'`);
+        }
     }
 }

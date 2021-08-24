@@ -61,7 +61,7 @@ export class PatientAllergenService {
             param.patient = await this.patientRepository.findOne(patient_id);
             const allergy = await this.patientNoteRepository.save(param);
             allergy.createdBy = createdBy;
-            allergy.save();
+            await allergy.save();
             return { success: true, allergy };
         } catch (error) {
             return { success: false, message: error.message };

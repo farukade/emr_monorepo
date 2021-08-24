@@ -2,13 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CareTeamRepository } from './team.repository';
 import { PaginationOptionsInterface } from '../../../common/paginate';
-import { Pagination } from '../../../common/paginate/paginate.interface';
 import * as moment from 'moment';
 import { AdmissionsRepository } from '../admissions/repositories/admissions.repository';
 import { StaffRepository } from '../../hr/staff/staff.repository';
-import { StaffDto } from '../../hr/staff/dto/staff.dto';
-import { getRepository } from 'typeorm';
-import { Specialization } from '../../settings/entities/specialization.entity';
 import { CareTeamDto } from './dto/team.dto';
 import { CareTeam } from './entities/team.entity';
 import { PatientRepository } from '../repositories/patient.repository';
@@ -98,7 +94,7 @@ export class CareTeamService {
 
             const patient = await this.patientRepository.findOne(patient_id);
 
-            await this.careTeamRepository.softDelete({ type, itemId: admission_id });
+            await this.careTeamRepository.softDelete({ type, item_id: admission_id });
 
             let results = [];
             for (const item of staffs) {
@@ -108,7 +104,7 @@ export class CareTeamService {
                 member.member = staff;
                 member.isPrimaryCareGiver = staff.id === primary_care_id;
                 member.type = type;
-                member.itemId = admission_id;
+                member.item_id = admission_id;
                 member.patient = patient;
                 member.createdBy = username;
 

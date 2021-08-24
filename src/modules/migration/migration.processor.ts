@@ -18,7 +18,6 @@ import { DrugCategoryRepository } from '../inventory/pharmacy/drug/drug_category
 import { DrugGenericRepository } from '../inventory/pharmacy/generic/generic.repository';
 import { DrugRepository } from '../inventory/pharmacy/drug/drug.repository';
 import { DrugBatchRepository } from '../inventory/pharmacy/batches/batches.repository';
-import { ILike, Like } from 'typeorm';
 import { LabTestCategoryRepository } from '../settings/lab/repositories/lab.category.repository';
 import { SpecimenRepository } from '../settings/lab/repositories/specimen.repository';
 import { LabTestRepository } from '../settings/lab/repositories/lab.test.repository';
@@ -31,6 +30,16 @@ import * as startCase from 'lodash.startcase';
 import { CafeteriaInventoryRepository } from '../inventory/cafeteria/cafeteria.repository';
 import { RoomCategoryRepository } from '../settings/room/room.category.repository';
 import { ServiceCost } from '../settings/entities/service_cost.entity';
+import { StaffRepository } from '../hr/staff/staff.repository';
+import { AuthRepository } from '../auth/auth.repository';
+import * as bcrypt from 'bcrypt';
+import { RoleRepository } from '../settings/roles-permissions/role.repository';
+import { Raw } from 'typeorm';
+import { PatientAlertRepository } from '../patient/repositories/patient_alert.repository';
+import { AdmissionsRepository } from '../patient/admissions/repositories/admissions.repository';
+import { PatientNoteRepository } from '../patient/repositories/patient_note.repository';
+import { EncounterRepository } from '../patient/consultation/encounter.repository';
+import { CareTeamRepository } from '../patient/care-team/team.repository';
 
 @Processor(process.env.MIGRATION_QUEUE_NAME)
 export class MigrationProcessor {
@@ -81,6 +90,22 @@ export class MigrationProcessor {
         private cafeteriaInventoryRepository: CafeteriaInventoryRepository,
         @InjectRepository(RoomCategoryRepository)
         private roomCategoryRepository: RoomCategoryRepository,
+        @InjectRepository(StaffRepository)
+        private staffRepository: StaffRepository,
+        @InjectRepository(AuthRepository)
+        private authRepository: AuthRepository,
+        @InjectRepository(RoleRepository)
+        private roleRepository: RoleRepository,
+        @InjectRepository(PatientAlertRepository)
+        private patientAlertRepository: PatientAlertRepository,
+        @InjectRepository(AdmissionsRepository)
+        private admissionsRepository: AdmissionsRepository,
+        @InjectRepository(PatientNoteRepository)
+        private patientNoteRepository: PatientNoteRepository,
+        @InjectRepository(EncounterRepository)
+        private encounterRepository: EncounterRepository,
+        @InjectRepository(CareTeamRepository)
+        private careTeamRepository: CareTeamRepository,
     ) {
     }
 
@@ -99,6 +124,19 @@ export class MigrationProcessor {
         this.logger.error(`Failed job ${job.id} of type ${job.name}: ${error.message}`, error.stack);
     }
 
+    async getStaffById(id): Promise<any> {
+        let staff = null;
+
+        if (id && id !== '') {
+            staff = await this.staffRepository.findOne({
+                where: { old_id: id },
+                relations: ['user'],
+            });
+        }
+
+        return staff;
+    }
+
     @Process('diagnosis')
     async migrateDiagnosis(job: Job<any>): Promise<any> {
         this.logger.log('migrating diagnosis');
@@ -110,7 +148,7 @@ export class MigrationProcessor {
             for (const item of rows) {
                 const diagnosisFind = await this.diagnosisRepository.findOne({ where: { code: item.code, type: item.type } });
                 if (!diagnosisFind) {
-                    await this.diagnosisRepository.save({ ...item, description: item.case });
+                    await this.diagnosisRepository.save({ ...item, old_id: item.id, description: item.case });
                 }
             }
 
@@ -118,7 +156,7 @@ export class MigrationProcessor {
             for (const item of rows) {
                 const diagnosisFind = await this.diagnosisRepository.findOne({ where: { code: item.code, type: item.type } });
                 if (!diagnosisFind) {
-                    await this.diagnosisRepository.save({ ...item, description: item.case });
+                    await this.diagnosisRepository.save({ ...item, old_id: item.id, description: item.case });
                 }
             }
             await connection.end();
@@ -178,13 +216,53 @@ export class MigrationProcessor {
         try {
             const connection = await mysqlConnect();
 
-            const [rows] = await connection.execute('');
+            const [rows] = await connection.execute('SELECT * FROM `staff_directory` WHERE `username` NOT LIKE \'%admin%\'');
             for (const item of rows) {
                 try {
+                    let name = item.profession;
+                    if (item.profession === 'Pharmacist') {
+                        name = 'Pharmacy';
+                    } else if (item.profession === 'Lab Scientist' || item.profession === 'Lab Technician') {
+                        name = 'Laboratory';
+                    } else if (item.profession === 'Medical Records') {
+                        name = 'Records';
+                    } else if (item.profession === 'Embryologist') {
+                        name = 'IVF';
+                    } else if (item.profession === 'Admin') {
+                        name = 'Accounts';
+                    } else if (item.profession === 'Accounts Officer') {
+                        name = 'Paypoint';
+                    }
 
-                    const staff = await this.patientRepository.save({});
+                    const role = await this.roleRepository.findOne({ where: { slug: slugify(name) } });
 
-                    const login = await this.patientNOKRepository.save({});
+                    const user = await this.authRepository.save({
+                        username: item.username.toLocaleLowerCase(),
+                        password: await this.getHash('password'),
+                        role,
+                    });
+
+                    let checkEmail = await this.staffRepository.findOne({ where: { email: item.email } });
+
+                    let email = item.email;
+                    while (checkEmail) {
+                        const split = checkEmail.email.split('@');
+                        email = `${split[0]}1@${split[1]}`;
+
+                        checkEmail = await this.staffRepository.findOne({ where: { email } });
+                    }
+
+                    await this.staffRepository.save({
+                        old_id: item.staffId,
+                        user,
+                        first_name: item.firstname,
+                        last_name: item.lastname,
+                        phone_number: item.phone,
+                        email,
+                        is_consultant: item.is_consultant === 1,
+                        profession: item.profession,
+                        isActive: item.status === 'active',
+                    });
                 } catch (e) {
                     console.log(e);
                 }
@@ -204,7 +282,7 @@ export class MigrationProcessor {
         try {
             const connection = await mysqlConnect();
 
-            const [rows] = await connection.execute('SELECT patient_demograph.*, insurance_schemes.scheme_name as scheme_name, kin_relation.name as kin_relation_name FROM `patient_demograph` left join insurance_schemes on patient_demograph.scheme_at_registration_id = insurance_schemes.id left join kin_relation on kin_relation.id = patient_demograph.kin_relation_id');
+            const [rows] = await connection.execute('SELECT patient_demograph.*, insurance.insurance_scheme as scheme_id, insurance_schemes.scheme_name as scheme_name, kin_relation.name as kin_relation_name FROM `patient_demograph` left join insurance on insurance.patient_id = patient_demograph.patient_ID left join insurance_schemes on insurance.insurance_scheme = insurance_schemes.id left join kin_relation on kin_relation.id = patient_demograph.kin_relation_id');
             for (const item of rows) {
                 try {
                     const nok = await this.patientNOKRepository.save({
@@ -215,30 +293,51 @@ export class MigrationProcessor {
                         relationship: item.kin_relation_name || '',
                     });
 
-                    let hmo = await this.hmoSchemeRepository.findOne({ where: { name: item.scheme_name } });
+                    let hmo = await this.hmoSchemeRepository.findOne({ where: { old_id: item.scheme_id } });
                     if (!hmo) {
                         hmo = await this.hmoSchemeRepository.findOne({ where: { name: 'Private' } });
                     }
 
-                    const patient = await this.patientRepository.save({
+                    const creator = await this.getStaffById(parseInt(item.registered_By, 10));
+
+                    const patient = {
                         old_id: item.patient_ID,
                         id: +item.patient_ID,
-                        legacyPatientId: item.legacy_patient_id,
+                        legacy_patient_id: item.legacy_patient_id,
                         surname: item.lname,
                         other_names: `${item.fname} ${item.mname}`,
-                        date_of_birth: item.date_of_birth,
+                        date_of_birth: moment(item.date_of_birth, 'YYYY-MM-DD').format('YYYY-MM-DD'),
                         occupation: item.occupation,
                         address: item.address,
-                        email: item.email,
-                        phoneNumber: item.phonenumber,
+                        email: item?.email?.toLocaleLowerCase() || null,
+                        phone_number: item.phonenumber,
                         gender: item.sex,
                         ethnicity: item.ethnic,
                         nextOfKin: nok,
                         hmo,
-                        bloodGroup: item.bloodgroup,
-                        bloodType: item.bloodtype,
+                        blood_group: item.bloodgroup,
+                        blood_type: item.bloodtype,
                         createdAt: item.enrollment_date,
-                    });
+                        createdBy: creator?.user?.username || 'it-admin',
+                        title: item?.title?.replace('|', '') || '',
+                    };
+
+                    let deleted_at = null;
+                    if (item.deactivated_on && item.deactivated_on !== '' && item.active === 0) {
+                        deleted_at = moment(item.deactivated_on).format('YYYY-MM-DD HH:mm:ss');
+                    }
+
+                    let staff = null;
+                    if (hmo && hmo.name === 'STAFF') {
+                        staff = await this.staffRepository.findOne({
+                            where: {
+                                first_name: Raw((alias) => `LOWER(${alias}) = :first`, { first: item.fname?.toLocaleLowerCase() || '' }),
+                                last_name: Raw((alias) => `LOWER(${alias}) = :last`, { last: item.lname?.toLocaleLowerCase() || '' }),
+                            },
+                        });
+                    }
+
+                    await this.patientRepository.save({ ...patient, staff, deleted_at });
                 } catch (e) {
                     console.log(e);
                 }
@@ -278,23 +377,25 @@ export class MigrationProcessor {
                 });
             }
 
-            [rows] = await connection.execute('SELECT insurance_items_cost.id as cost_id, insurance_items_cost.item_code, insurance_items_cost.selling_price, insurance_schemes.scheme_name FROM `insurance_items_cost` left join insurance_schemes on insurance_schemes.id=insurance_items_cost.insurance_scheme_id');
+            [rows] = await connection.execute('SELECT * FROM `insurance_items_cost`');
             for (const item of rows) {
-                const service = await this.serviceRepository.findOne({
-                    where: { code: item.item_code },
-                });
+                if (item.item_code && item.item_code !== '') {
+                    const service = await this.serviceRepository.findOne({
+                        where: { code: item.item_code },
+                    });
 
-                const hmo = await this.hmoSchemeRepository.findOne({
-                    where: { name: item.scheme_name },
-                });
+                    const hmo = await this.hmoSchemeRepository.findOne({
+                        where: { old_id: item.insurance_scheme_id },
+                    });
 
-                await this.serviceCostRepository.save({
-                    item: service,
-                    hmo,
-                    code: item.item_code,
-                    tariff: item.selling_price,
-                    old_id: item.cost_id,
-                });
+                    await this.serviceCostRepository.save({
+                        item: service,
+                        hmo,
+                        code: item.item_code,
+                        tariff: item.selling_price,
+                        old_id: item.id,
+                    });
+                }
             }
 
             await connection.end();
@@ -329,7 +430,6 @@ export class MigrationProcessor {
                 });
 
                 await this.drugGenericRepository.save({
-                    id: item.id,
                     old_id: item.id,
                     name: item.name,
                     category,
@@ -339,10 +439,10 @@ export class MigrationProcessor {
                 });
             }
 
-            [rows] = await connection.execute('SELECT drugs.id as drug_id, drugs.name, drugs.billing_code, drug_generics.name as generic_name, drugs.base_price, drugs.unit_cost, drugs.stock_uom, drug_manufacturers.name as manufacturer_name FROM `drugs` left join drug_generics on drug_generics.id=drugs.drug_generic_id left join drug_manufacturers on drug_manufacturers.id=drugs.manufacturer_id');
+            [rows] = await connection.execute('SELECT drugs.id as drug_id, drugs.name, drugs.billing_code, drugs.drug_generic_id, drugs.base_price, drugs.unit_cost, drugs.stock_uom, drug_manufacturers.name as manufacturer_name FROM `drugs` left join drug_generics on drug_generics.id=drugs.drug_generic_id left join drug_manufacturers on drug_manufacturers.id=drugs.manufacturer_id');
             for (const item of rows) {
                 const generic = await this.drugGenericRepository.findOne({
-                    where: { name: item.generic_name },
+                    where: { old_id: item.drug_generic_id },
                 });
 
                 const manufacturer = await this.manufacturerRepository.findOne({
@@ -541,6 +641,204 @@ export class MigrationProcessor {
                 cost.hmo = scheme;
                 await cost.save();
             }
+        }
+    }
+
+    async getHash(password: string | undefined): Promise<string> {
+        return bcrypt.hash(password, 10);
+    }
+
+    @Process('alert')
+    async migrateAlert(job: Job<any>): Promise<any> {
+        this.logger.log('migrating patient alerts');
+
+        try {
+            const connection = await mysqlConnect();
+
+            const [rows] = await connection.execute('SELECT * FROM `alert`');
+            for (const item of rows) {
+                const patient = await this.patientRepository.findOne({
+                    where: { old_id: item.patient_id },
+                });
+
+                await this.patientAlertRepository.save({
+                    patient,
+                    type: item.type,
+                    message: item.message,
+                    read: item.read === 1,
+                    createdAt: moment(item.time).format('YYYY-MM-DD HH:mm:ss'),
+                });
+            }
+
+            await connection.end();
+            return true;
+        } catch (error) {
+            console.log(error);
+            this.logger.error('migration failed', error.stack);
+        }
+    }
+
+    @Process('in-patients')
+    async migrateInPatients(job: Job<any>): Promise<any> {
+        this.logger.log('migrating in-patients');
+
+        try {
+            const connection = await mysqlConnect();
+
+            const [rows] = await connection.execute('SELECT in_patient.*, health_state.state as health_state FROM `in_patient` left join health_state on health_state.id = in_patient.health_state_id');
+            for (const item of rows) {
+                const patient = await this.patientRepository.findOne({
+                    where: { old_id: item.patient_id },
+                });
+
+                const createdBy = await this.getStaffById(parseInt(item.admitted_by, 10));
+
+                const startDischargedBy = await this.getStaffById(parseInt(item.discharged_by, 10));
+
+                const dischargedBy = await this.getStaffById(parseInt(item.discharged_by_full, 10));
+
+                await this.admissionsRepository.save({
+                    patient,
+                    health_state: item.health_state,
+                    risk_to_fall: item.risk_to_fall === 1,
+                    room_assigned_at: item.bed_assign_date ? moment(item.bed_assign_date).format('YYYY-MM-DD HH:mm:ss') : null,
+                    reason: item.reason,
+                    status: item.status === 'Discharged' ? 1 : 0,
+                    start_discharge: item.status === 'Discharging',
+                    start_discharge_date: item.date_discharged ? moment(item.date_discharged).format('YYYY-MM-DD HH:mm:ss') : null,
+                    start_discharge_by: startDischargedBy?.user?.username || null,
+                    date_discharged: item.date_discharged_full ? moment(item.date_discharged_full).format('YYYY-MM-DD HH:mm:ss') : null,
+                    dischargedBy,
+                    discharge_note: item.discharge_note,
+                    createdAt: moment(item.date_admitted).format('YYYY-MM-DD HH:mm:ss'),
+                    createdBy: createdBy?.user?.username || null,
+                    old_id: item.id,
+                });
+            }
+
+            await connection.end();
+            return true;
+        } catch (error) {
+            console.log(error);
+            this.logger.error('migration failed', error.stack);
+        }
+    }
+
+    @Process('observation')
+    async migrateObservation(job: Job<any>): Promise<any> {
+        this.logger.log('migrating in-patient observation');
+
+        try {
+            const connection = await mysqlConnect();
+
+            const [rows] = await connection.execute('SELECT * FROM `ip_observation`');
+            for (const item of rows) {
+                const admission = await this.admissionsRepository.findOne({
+                    where: { old_id: item.in_patient_id },
+                    relations: ['patient'],
+                });
+
+                const createdBy = await this.getStaffById(item.user_id);
+
+                await this.patientNoteRepository.save({
+                    admission,
+                    patient: admission?.patient ?? null,
+                    description: item.note,
+                    createdAt: moment(item.date).format('YYYY-MM-DD HH:mm:ss'),
+                    createdBy: createdBy?.user?.username || null,
+                    type: 'nurse-observation',
+                    old_id: item.id,
+                });
+            }
+
+            await connection.end();
+            return true;
+        } catch (error) {
+            console.log(error);
+            this.logger.error('migration failed', error.stack);
+        }
+    }
+
+    @Process('allergen')
+    async migrateAllergen(job: Job<any>): Promise<any> {
+        this.logger.log('migrating allergen`');
+
+        try {
+            const connection = await mysqlConnect();
+
+            const [rows] = await connection.execute('SELECT patient_allergen.*, allergen_category.name, drug_generics.id as generic_id FROM `patient_allergen` left join allergen_category on allergen_category.id = patient_allergen.category_id left join drug_super_generic_data on drug_super_generic_data.super_generic_id = patient_allergen.drug_super_gen_id left join drug_generics on drug_generics.id = drug_super_generic_data.drug_generic_id');
+            for (const item of rows) {
+                const patient = await this.patientRepository.findOne({
+                    where: { old_id: item.patient_ID },
+                });
+
+                const createdBy = await this.getStaffById(parseInt(item.noted_by, 10));
+
+                const generic = item.generic_id ? await this.drugGenericRepository.findOne(item.generic_id) : null;
+
+                const encounter = item.encounter_id ? await this.encounterRepository.findOne(item.encounter_id) : null;
+
+                await this.patientNoteRepository.save({
+                    patient,
+                    category: item.category_name,
+                    allergy: item.allergen,
+                    drugGeneric: generic,
+                    severity: item.severity,
+                    reaction: item.reaction,
+                    encounter,
+                    visit: encounter ? 'encounter' : null,
+                    type: 'allergy',
+                    createdAt: moment(item.date_noted).format('YYYY-MM-DD HH:mm:ss'),
+                    createdBy: createdBy?.user?.username || null,
+                    old_id: item.id,
+                });
+            }
+
+            await connection.end();
+            return true;
+        } catch (error) {
+            console.log(error);
+            this.logger.error('migration failed', error.stack);
+        }
+    }
+
+    @Process('care-team')
+    async migrateCareTeam(job: Job<any>): Promise<any> {
+        this.logger.log('migrating care-team`');
+
+        try {
+            const connection = await mysqlConnect();
+
+            const [rows] = await connection.execute('SELECT * FROM `patient_care_member`');
+            for (const item of rows) {
+                const member = await this.getStaffById(parseInt(item.care_member_id, 10));
+
+                const primaryMember = await this.getStaffById(parseInt(item.primary_member_id, 10));
+
+                const createdBy = await this.getStaffById(parseInt(item.created_by, 10));
+
+                const admission = await this.admissionsRepository.findOne({
+                    where: { old_id: item.in_patient_id },
+                    relations: ['patient'],
+                });
+
+                await this.careTeamRepository.save({
+                    member,
+                    isPrimaryCareGiver: member?.id === primaryMember?.id,
+                    patient: admission?.patient,
+                    type: admission ? 'admission' : null,
+                    item_id: admission?.id?.toString(10),
+                    createdAt: moment(item.entry_time).format('YYYY-MM-DD HH:mm:ss'),
+                    createdBy: createdBy?.user?.username || null,
+                    old_id: item.id,
+                });
+            }
+
+            await connection.end();
+            return true;
+        } catch (error) {
+            console.log(error);
+            this.logger.error('migration failed', error.stack);
         }
     }
 }

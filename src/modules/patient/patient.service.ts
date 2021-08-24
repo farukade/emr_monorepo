@@ -679,7 +679,7 @@ export class PatientService {
     async readAlert(id: number, readBy): Promise<PatientAlert> {
         const alertItem = await this.patientAlertRepository.findOne(id);
         alertItem.read = true;
-        alertItem.readBy = readBy;
+        alertItem.read_by = readBy;
         alertItem.lastChangedBy = readBy;
 
         return await alertItem.save();

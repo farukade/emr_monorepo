@@ -14,6 +14,9 @@ export class Patient extends CustomBaseEntity {
     @Column({ type: 'varchar', nullable: true })
     legacy_patient_id: string;
 
+    @Column({ type: 'varchar', nullable: true })
+    title: string;
+
     @Column({ type: 'varchar' })
     surname: string;
 
@@ -67,7 +70,7 @@ export class Patient extends CustomBaseEntity {
     @Column({ default: false })
     is_admitted: boolean;
 
-    @OneToOne(() => StaffDetails, { nullable: true })
+    @ManyToOne(() => StaffDetails, { nullable: true })
     @JoinColumn({ name: 'staff_id' })
     staff: StaffDetails;
 

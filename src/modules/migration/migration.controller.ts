@@ -78,4 +78,76 @@ export class MigrationController {
     ): Promise<any> {
         return this.migrationService.queueMigration('rooms');
     }
+
+    @Get('/alert')
+    migrateAlert(
+        @Query() urlParams,
+        @Request() request,
+    ): Promise<any> {
+        return this.migrationService.queueMigration('alert');
+    }
+
+    @Get('/in-patients')
+    migrateInPatients(
+        @Query() urlParams,
+        @Request() request,
+    ): Promise<any> {
+        return this.migrationService.queueMigration('in-patients');
+    }
+
+    @Get('/observation')
+    migrateObservation(
+        @Query() urlParams,
+        @Request() request,
+    ): Promise<any> {
+        return this.migrationService.queueMigration('observation');
+    }
+
+    @Get('/allergen')
+    migrateAllergen(
+        @Query() urlParams,
+        @Request() request,
+    ): Promise<any> {
+        return this.migrationService.queueMigration('allergen');
+    }
+
+    @Get('/care-team')
+    migrateCareTeam(
+        @Query() urlParams,
+        @Request() request,
+    ): Promise<any> {
+        return this.migrationService.queueMigration('care-team');
+    }
+
+    @Get('/encounter')
+    migrateEncounter(
+        @Query() urlParams,
+        @Request() request,
+    ): Promise<any> {
+        return this.migrationService.queueMigration('encounter');
+    }
+
+    @Get('/visit-notes')
+    migrateVisitNotes(
+        @Query() urlParams,
+        @Request() request,
+    ): Promise<any> {
+        return this.migrationService.queueMigration('visit-notes');
+    }
+
+    @Get('/lab-request')
+    migrateLabRequest(
+        @Query() urlParams,
+        @Request() request,
+    ): Promise<any> {
+        return this.migrationService.queueMigration('lab-request');
+    }
+
+    @Get('/pharmacy')
+    migratePharmacy(
+        @Query() urlParams,
+        @Request() request,
+    ): Promise<any> {
+        return this.migrationService.queueMigration('pharmacy');
+    }
 }
