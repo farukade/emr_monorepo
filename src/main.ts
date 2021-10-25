@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { join } from 'path';
 import * as express from 'express';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { runInCluster } from './common/utils/runInCluster';
 
 async function bootstrap() {
     const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -28,4 +29,4 @@ async function bootstrap() {
 
 }
 
-bootstrap();
+runInCluster(bootstrap);

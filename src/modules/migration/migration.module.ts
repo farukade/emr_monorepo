@@ -35,15 +35,21 @@ import { AdmissionsRepository } from '../patient/admissions/repositories/admissi
 import { PatientNoteRepository } from '../patient/repositories/patient_note.repository';
 import { EncounterRepository } from '../patient/consultation/encounter.repository';
 import { CareTeamRepository } from '../patient/care-team/team.repository';
+import { AppointmentRepository } from '../frontdesk/appointment/appointment.repository';
 
 @Module({
     imports: [
         BullModule.registerQueueAsync({
             name: process.env.MIGRATION_QUEUE_NAME,
-            useFactory: () => ({
+            imports: [],
+            useFactory: async () => ({
+                name: process.env.MIGRATION_QUEUE_NAME,
+                defaultJobOptions: {
+                    removeOnComplete: true,
+                },
                 redis: {
-                    host: 'localhost',
-                    port: 6379,
+                    host: process.env.REDIS_HOST,
+                    port: Number(process.env.REDIS_PORT),
                 },
             }),
         }),
@@ -79,6 +85,7 @@ import { CareTeamRepository } from '../patient/care-team/team.repository';
             PatientNoteRepository,
             EncounterRepository,
             CareTeamRepository,
+            AppointmentRepository,
         ]),
     ],
     providers: [MigrationService, MigrationProcessor],

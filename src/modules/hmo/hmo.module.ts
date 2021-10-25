@@ -13,7 +13,6 @@ import { HmoTypeRepository } from './repositories/hmo_type.repository';
 import { ServiceCostRepository } from '../settings/services/repositories/service_cost.repository';
 import { PatientRequestItemRepository } from '../patient/repositories/patient_request_items.repository';
 import { MigrationModule } from '../migration/migration.module';
-import { MigrationService } from '../migration/migration.service';
 import { AppGateway } from '../../app.gateway';
 
 @Module({

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { CacheModule, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
@@ -24,6 +24,7 @@ import fs = require('fs');
 import { AccountingModule } from './modules/accounting/accounting.module';
 import { ReportModule } from './modules/report/report.module';
 import { MigrationModule } from './modules/migration/migration.module';
+import * as redisStore from 'cache-manager-redis-store';
 
 fs.writeFileSync(
     './ormconfig.json',
@@ -34,6 +35,16 @@ fs.writeFileSync(
     imports: [
         TypeOrmModule.forRoot(appService.getTypeOrmConfig()),
         ScheduleModule.forRoot(),
+        CacheModule.registerAsync({
+            imports: [],
+            inject: [],
+            useFactory: async () => ({
+                store: redisStore,
+                host: process.env.REDIS_HOST,
+                port: process.env.REDIS_PORT,
+                ttl: 120,
+            }),
+        }),
         AuthModule,
         HmoModule,
         HRModule,

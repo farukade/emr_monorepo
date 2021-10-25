@@ -3,7 +3,7 @@ import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handleba
 import { Module } from '@nestjs/common';
 import { MailService } from './mail.service';
 import { join } from 'path';
-import { BullModule } from '@nestjs/bull';
+import { BullModule, BullModuleAsyncOptions } from '@nestjs/bull';
 import { MailProcessor } from './mail.processor';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LoggerRepository } from '../logger/logger.repository';
@@ -34,14 +34,21 @@ import { LoggerRepository } from '../logger/logger.repository';
         }),
         BullModule.registerQueueAsync({
             name: process.env.MAIL_QUEUE_NAME,
-            useFactory: () => ({
+            imports: [],
+            useFactory: async () => ({
+                name: process.env.MAIL_QUEUE_NAME,
+                defaultJobOptions: {
+                    removeOnComplete: true,
+                },
                 redis: {
-                    host: 'localhost',
-                    port: 6379,
+                    host: process.env.REDIS_HOST,
+                    port: Number(process.env.REDIS_PORT),
                 },
             }),
         }),
-        TypeOrmModule.forFeature([LoggerRepository]),
+        TypeOrmModule.forFeature([
+            LoggerRepository,
+        ]),
     ],
     providers: [MailService, MailProcessor],
     exports: [MailService],

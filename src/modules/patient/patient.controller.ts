@@ -15,7 +15,6 @@ import { Pagination } from '../../common/paginate/paginate.interface';
 import { PatientAlert } from './entities/patient_alert.entity';
 import { PatientNote } from './entities/patient_note.entity';
 
-@UseGuards(AuthGuard('jwt'))
 @Controller('patient')
 export class PatientController {
     constructor(private patientService: PatientService) {
@@ -31,6 +30,7 @@ export class PatientController {
         return this.patientService.listAllPatients({ page, limit }, urlParams);
     }
 
+    @UseGuards(AuthGuard('jwt'))
     @Get('find')
     findPatientRecord(
         @Query() param,
@@ -38,6 +38,7 @@ export class PatientController {
         return this.patientService.findPatient(param);
     }
 
+    @UseGuards(AuthGuard('jwt'))
     @Post('save')
     @UsePipes(ValidationPipe)
     @UseInterceptors(FileInterceptor('avatar', {
@@ -57,6 +58,7 @@ export class PatientController {
         return this.patientService.saveNewPatient(patientDto, req.user.username, pic);
     }
 
+    @UseGuards(AuthGuard('jwt'))
     @Post('opd')
     @UsePipes(ValidationPipe)
     @UseInterceptors(FileInterceptor('avatar', {
@@ -76,6 +78,7 @@ export class PatientController {
         return this.patientService.saveNewOpdPatient(opdPatientDto, req.user.username, pic);
     }
 
+    @UseGuards(AuthGuard('jwt'))
     @Post(':id/update')
     @UsePipes(ValidationPipe)
     @UseInterceptors(FileInterceptor('avatar', {
@@ -96,6 +99,7 @@ export class PatientController {
         return this.patientService.updatePatientRecord(id, patientDto, req.user.username, pic);
     }
 
+    @UseGuards(AuthGuard('jwt'))
     @Delete(':id')
     deletePatient(
         @Param('id') id: number,
@@ -104,6 +108,7 @@ export class PatientController {
         return this.patientService.deletePatient(id, req.user.username);
     }
 
+    @UseGuards(AuthGuard('jwt'))
     @Post('check-payment-status')
     checkPaymentStatus(
         @Body() param,
@@ -111,6 +116,7 @@ export class PatientController {
         return this.patientService.checkPaymentStatus(param);
     }
 
+    @UseGuards(AuthGuard('jwt'))
     @Get(':id/vouchers')
     getVouchers(
         @Param('id') id: string,
@@ -119,6 +125,7 @@ export class PatientController {
         return this.patientService.getVouchers(id, urlParams);
     }
 
+    @UseGuards(AuthGuard('jwt'))
     @Get(':id/transactions')
     getTransactions(
         @Param('id') id: number,
@@ -130,6 +137,7 @@ export class PatientController {
         return this.patientService.getTransactions({ page, limit }, id, urlParams);
     }
 
+    @UseGuards(AuthGuard('jwt'))
     @Get(':id/documents')
     getPatientDocument(
         @Param('id') id: string,
@@ -138,6 +146,7 @@ export class PatientController {
         return this.patientService.getDocuments(id, urlParams);
     }
 
+    @UseGuards(AuthGuard('jwt'))
     @Get(':id/vitals')
     getVitals(
         @Param('id') id: string,
@@ -146,6 +155,7 @@ export class PatientController {
         return this.patientService.getVitals(id, urlParams);
     }
 
+    @UseGuards(AuthGuard('jwt'))
     @Post('save-vitals')
     saveVitals(
         @Body() param,
@@ -154,6 +164,7 @@ export class PatientController {
         return this.patientService.doSaveVitals(param, req.user.username);
     }
 
+    @UseGuards(AuthGuard('jwt'))
     @Patch(':vitalId/update-vital')
     updateVital(
         @Param('vitalId') vitalId: string,
@@ -163,6 +174,7 @@ export class PatientController {
         return this.patientService.doUpdateVital(vitalId, param, req.user.username);
     }
 
+    @UseGuards(AuthGuard('jwt'))
     @Delete(':vitalId/delete-vital')
     deletePatientVital(
         @Param('vitalId') vitalId: string,
@@ -170,6 +182,7 @@ export class PatientController {
         return this.patientService.deleteVital(vitalId);
     }
 
+    @UseGuards(AuthGuard('jwt'))
     @Get(':id/diagnoses')
     getDiagnoses(
         @Param('id') id: string,
@@ -178,6 +191,7 @@ export class PatientController {
         return this.patientService.getDiagnoses(id, urlParams);
     }
 
+    @UseGuards(AuthGuard('jwt'))
     @Get(':id/alerts')
     getAlerts(
         @Param('id') id: number,
@@ -185,6 +199,7 @@ export class PatientController {
         return this.patientService.getAlerts(id);
     }
 
+    @UseGuards(AuthGuard('jwt'))
     @Patch(':id/read-alert')
     readAlert(
         @Param('id') id: number,
@@ -193,6 +208,7 @@ export class PatientController {
         return this.patientService.readAlert(id, req.user.username);
     }
 
+    @UseGuards(AuthGuard('jwt'))
     @Post(':id/upload-document')
     @UsePipes(ValidationPipe)
     @UseInterceptors(FileInterceptor('file', {
@@ -213,6 +229,7 @@ export class PatientController {
         return this.patientService.doUploadDocument(id, param, file.filename, req.user.username);
     }
 
+    @UseGuards(AuthGuard('jwt'))
     @Get('download/:filename')
     downloadFile(
         @Param('filename') filename,
@@ -222,6 +239,7 @@ export class PatientController {
         return response.sendFile(join(__dirname, '../../../uploads/') + filename);
     }
 
+    @UseGuards(AuthGuard('jwt'))
     @Post(':id/credit-limit')
     saveCreditLimit(
         @Param('id') id: number,

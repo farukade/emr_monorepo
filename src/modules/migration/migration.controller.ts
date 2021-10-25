@@ -119,28 +119,36 @@ export class MigrationController {
         return this.migrationService.queueMigration('care-team');
     }
 
+    // @Get('/encounter')
+    // migrateEncounter(
+    //     @Query() urlParams,
+    //     @Request() request,
+    // ): Promise<any> {
+    //     return this.migrationService.queueMigration('encounter');
+    // }
+
+    // @Get('/visit-notes')
+    // migrateVisitNotes(
+    //     @Query() urlParams,
+    //     @Request() request,
+    // ): Promise<any> {
+    //     return this.migrationService.queueMigration('visit-notes');
+    // }
+
+    // @Get('/lab-request')
+    // migrateLabRequest(
+    //     @Query() urlParams,
+    //     @Request() request,
+    // ): Promise<any> {
+    //     return this.migrationService.queueMigration('lab-request');
+    // }
+
     @Get('/encounter')
     migrateEncounter(
         @Query() urlParams,
         @Request() request,
     ): Promise<any> {
         return this.migrationService.queueMigration('encounter');
-    }
-
-    @Get('/visit-notes')
-    migrateVisitNotes(
-        @Query() urlParams,
-        @Request() request,
-    ): Promise<any> {
-        return this.migrationService.queueMigration('visit-notes');
-    }
-
-    @Get('/lab-request')
-    migrateLabRequest(
-        @Query() urlParams,
-        @Request() request,
-    ): Promise<any> {
-        return this.migrationService.queueMigration('lab-request');
     }
 
     @Get('/pharmacy')
