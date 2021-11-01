@@ -70,4 +70,6 @@ export class StaffDto {
     is_consultant: boolean;
 
     specialization_id: string;
+
+    profession: string;
 }
