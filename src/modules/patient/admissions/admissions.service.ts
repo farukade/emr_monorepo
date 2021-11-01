@@ -22,6 +22,7 @@ import { getStaff } from '../../../common/utils/utils';
 import { ServiceCostRepository } from '../../settings/services/repositories/service_cost.repository';
 import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
 import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repository';
+import { NicuAccommodationRepository } from '../../settings/nicu-accommodation/accommodation.repository';
 
 @Injectable()
 export class AdmissionsService {
@@ -51,6 +52,8 @@ export class AdmissionsService {
         private transactionsRepository: TransactionsRepository,
         @InjectRepository(HmoSchemeRepository)
         private hmoSchemeRepository: HmoSchemeRepository,
+        @InjectRepository(NicuAccommodationRepository)
+        private nicuAccommodationRepository: NicuAccommodationRepository,
     ) {
     }
 
@@ -191,11 +194,23 @@ export class AdmissionsService {
             admission.lastChangedBy = username;
             await admission.save();
 
-            const room = await this.roomRepository.findOne(admission.room.id);
+            const room = await this.roomRepository.findOne(admission.room?.id);
             if (room) {
                 room.status = 'Not Occupied';
                 room.admission_id = null;
                 await room.save();
+            }
+
+            const nicu = await this.nicuRepository.findOne({ where: { admission }, relations: ['accommodation'] });
+            if (nicu) {
+                nicu.status = 1;
+                await nicu.save();
+            }
+
+            const accommodation = await this.nicuAccommodationRepository.findOne({ id: nicu?.accommodation?.id });
+            if (accommodation) {
+                accommodation.quantity_unused = accommodation.quantity_unused + 1;
+                await accommodation.save();
             }
 
             const patient = await this.patientRepository.findOne(admission.patient.id);
@@ -271,6 +286,7 @@ export class AdmissionsService {
                 hmo,
                 createdBy: username,
                 admission,
+                status: -1,
             };
 
             await this.transactionsRepository.save(data);

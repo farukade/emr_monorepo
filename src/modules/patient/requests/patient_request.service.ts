@@ -63,6 +63,7 @@ export class PatientRequestService {
             const start = moment(startDate).startOf('day').format('YYYY-MM-DD HH:mm:ss');
             query.andWhere(`q.createdAt >= '${start}'`);
         }
+
         if (endDate && endDate !== '') {
             const end = moment(endDate).endOf('day').format('YYYY-MM-DD HH:mm:ss');
             query.andWhere(`q.createdAt <= '${end}'`);
@@ -148,6 +149,7 @@ export class PatientRequestService {
             const start = moment(startDate).startOf('day').format('YYYY-MM-DD HH:mm:ss');
             query.andWhere(`q.createdAt >= '${start}'`);
         }
+
         if (endDate && endDate !== '') {
             const end = moment(endDate).endOf('day').format('YYYY-MM-DD HH:mm:ss');
             query.andWhere(`q.createdAt <= '${end}'`);
@@ -238,11 +240,7 @@ export class PatientRequestService {
                 res = labRequest;
                 break;
             case 'drugs':
-                let pharmacyReq = await PatientRequestHelper.handlePharmacyRequest(param, patient, createdBy);
-                if (pharmacyReq.success) {
-                    pharmacyReq = { ...pharmacyReq };
-                }
-                res = pharmacyReq;
+                res = await PatientRequestHelper.handlePharmacyRequest(param, patient, createdBy);
                 break;
             case 'scans':
                 let request = await PatientRequestHelper.handleServiceRequest(param, patient, createdBy, requestType);
@@ -272,12 +270,7 @@ export class PatientRequestService {
                 break;
 
             case 'vaccines':
-                let immunizationReq = await PatientRequestHelper.handleVaccinationRequest(param, patient, createdBy);
-                if (immunizationReq.success) {
-                    // save transaction
-                    immunizationReq = { ...immunizationReq };
-                }
-                res = immunizationReq;
+                res = await PatientRequestHelper.handleVaccinationRequest(param, patient, createdBy);
                 break;
             default:
                 res = { success: false, message: 'No data' };
@@ -680,6 +673,25 @@ export class PatientRequestService {
             }
 
             return { success: true, file: `${process.env.ENDPOINT}/public/result/${filename}` };
+        } catch (error) {
+            console.log(error);
+            return { success: false, message: error.message };
+        }
+    }
+
+    async requestNursingService(param, createdBy: string) {
+        try {
+            const { requestType, patient_id } = param;
+
+            const patient = await this.patientRepository.findOne(patient_id, { relations: ['hmo'] });
+
+            const nursingRequest = await PatientRequestHelper.handleServiceRequest(param, patient, createdBy, requestType);
+            if (nursingRequest.success) {
+                // save transaction
+                await RequestPaymentHelper.servicePayment(nursingRequest.data, patient, createdBy, requestType, param.bill);
+            }
+
+            return nursingRequest;
         } catch (error) {
             console.log(error);
             return { success: false, message: error.message };

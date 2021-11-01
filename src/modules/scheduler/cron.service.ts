@@ -7,6 +7,7 @@ import { Transactions } from '../finance/transactions/transaction.entity';
 import { Admission } from '../patient/admissions/entities/admission.entity';
 import { HmoScheme } from '../hmo/entities/hmo_scheme.entity';
 import { ServiceCost } from '../settings/entities/service_cost.entity';
+import { Nicu } from '../patient/nicu/entities/nicu.entity';
 
 @Injectable()
 export class TasksService {
@@ -67,36 +68,90 @@ export class TasksService {
             });
 
             for (const item of admissions) {
-                const roomAssignedAt = moment(item.room_assigned_at);
-                if (moment().isAfter(roomAssignedAt, 'day')) {
-                    const transaction = await getConnection().getRepository(Transactions)
-                        .createQueryBuilder('t')
-                        .select('t.*')
-                        .andWhere('t.bill_source = :source', { source: 'ward' })
-                        .andWhere('t.admission_id = :id', { id: item.id })
-                        .getRawOne();
+                if (item.room_assigned_at && item.room_assigned_at !== '') {
+                    const roomAssignedAt = moment(item.room_assigned_at);
+                    if (moment().isAfter(roomAssignedAt, 'day')) {
+                        const transaction = await getConnection().getRepository(Transactions)
+                          .createQueryBuilder('t')
+                          .select('t.*')
+                          .andWhere('t.bill_source = :source', { source: 'ward' })
+                          .andWhere('t.admission_id = :id', { id: item.id })
+                          .getRawOne();
 
-                    if (transaction) {
-                        const count = await getConnection().getRepository(Transactions).count(
-                            { admission: item, bill_source: 'ward' },
-                        );
+                        if (transaction) {
+                            const count = await getConnection().getRepository(Transactions).count(
+                              { admission: item, bill_source: 'ward' },
+                            );
 
-                        // save transaction
-                        const data = {
-                            patient: await getConnection().getRepository(Patient).findOne(transaction.patient_id),
-                            service: await getConnection().getRepository(ServiceCost).findOne(transaction.service_cost_id),
-                            amount: transaction.amount,
-                            balance: transaction.amount * -1,
-                            description: `${transaction.description.split(' - ')[0]} - Day ${count + 1}`,
-                            payment_type: transaction.payment_type,
-                            transaction_type: 'debit',
-                            is_admitted: true,
-                            bill_source: 'ward',
-                            hmo: await getConnection().getRepository(HmoScheme).findOne(transaction.hmo_scheme_id),
-                            admission: item,
-                        };
+                            // save transaction
+                            const data = {
+                                patient: await getConnection().getRepository(Patient).findOne(transaction.patient_id),
+                                service: await getConnection().getRepository(ServiceCost).findOne(transaction.service_cost_id),
+                                amount: transaction.amount,
+                                balance: transaction.amount * -1,
+                                description: `${transaction.description.split(' - ')[0]} - Day ${count + 1}`,
+                                payment_type: transaction.payment_type,
+                                transaction_type: 'debit',
+                                is_admitted: true,
+                                bill_source: 'ward',
+                                hmo: await getConnection().getRepository(HmoScheme).findOne(transaction.hmo_scheme_id),
+                                admission: item,
+                                status: -1,
+                            };
 
-                        await getConnection().createQueryBuilder().insert().into(Transactions).values(data).execute();
+                            await getConnection().createQueryBuilder().insert().into(Transactions).values(data).execute();
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            this.logger.error(e);
+        }
+    }
+
+    @Cron(CronExpression.EVERY_DAY_AT_NOON)
+    async runEveryDayAtNoonNicu() {
+        try {
+            this.logger.debug('ass new payment for accommodation');
+
+            const nicuAdmissions = await getConnection().getRepository(Nicu).find({
+                where: { status: 0 },
+                relations: ['admission'],
+            });
+
+            for (const item of nicuAdmissions) {
+                if (item.accommodation_assigned_at && item.accommodation_assigned_at !== '') {
+                    const accommodationAssignedAt = moment(item.accommodation_assigned_at);
+                    if (moment().isAfter(accommodationAssignedAt, 'day')) {
+                        const transaction = await getConnection().getRepository(Transactions)
+                          .createQueryBuilder('t')
+                          .select('t.*')
+                          .andWhere('t.bill_source = :source', { source: 'nicu-accommodation' })
+                          .andWhere('t.admission_id = :id', { id: item.admission.id })
+                          .getRawOne();
+
+                        if (transaction) {
+                            const count = await getConnection().getRepository(Transactions).count(
+                              { admission: item.admission, bill_source: 'nicu-accommodation' },
+                            );
+
+                            // save transaction
+                            const data = {
+                                patient: await getConnection().getRepository(Patient).findOne(transaction.patient_id),
+                                amount: transaction.amount,
+                                balance: transaction.amount * -1,
+                                description: `${transaction.description.split(' - ')[0]} - Day ${count + 1}`,
+                                payment_type: transaction.payment_type,
+                                transaction_type: 'debit',
+                                is_admitted: true,
+                                bill_source: 'nicu-accommodation',
+                                hmo: await getConnection().getRepository(HmoScheme).findOne(transaction.hmo_scheme_id),
+                                admission: item.admission,
+                                status: -1,
+                            };
+
+                            await getConnection().createQueryBuilder().insert().into(Transactions).values(data).execute();
+                        }
                     }
                 }
             }

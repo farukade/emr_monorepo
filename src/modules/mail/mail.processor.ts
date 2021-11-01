@@ -52,14 +52,13 @@ export class MailProcessor {
         try {
             await this.mailerService.sendMail({
                 to: data.email,
-                from: '"DEDA Hospital" <info@dedahospital.com>', // override default from
+                from: '"DEDA Hospital" <noreply@dedahospital.com>', // override default from
                 subject: 'Welcome to Deda Hospital',
                 template: 'registration',
                 context: {
                     name: data.name,
                     patientId: formatPID(data.id),
                     date: moment(data.createdAt).format('DD-MMM-YYYY'),
-                    logo: `${process.env.ENDPOINT}/public/images/logo.png`,
                 },
             });
 
@@ -89,7 +88,7 @@ export class MailProcessor {
         try {
             return await this.mailerService.sendMail({
                 to: data.email,
-                from: '"DEDA Hospital" <info@dedahospital.com>', // override default from
+                from: '"DEDA Hospital" <noreply@dedahospital.com>', // override default from
                 subject: 'Deda Hospital Invoice',
                 template: 'invoice',
                 context: {
@@ -99,7 +98,6 @@ export class MailProcessor {
                     invoiceNumber: data.invoiceNumber,
                     email: data.email,
                     date: moment(data.createdAt).format('DD-MMM-YYYY h:mm a'),
-                    logo: `${process.env.ENDPOINT}/public/images/logo.png`,
                 },
             });
 
@@ -118,7 +116,7 @@ export class MailProcessor {
         try {
             return await this.mailerService.sendMail({
                 to: data.email,
-                from: '"DEDA Hospital" <info@dedahospital.com>', // override default from
+                from: '"DEDA Hospital" <noreply@dedahospital.com>', // override default from
                 subject: 'Drugs Purchase - Deda Pharmacy',
                 template: 'pharmacy',
                 context: {
@@ -126,7 +124,6 @@ export class MailProcessor {
                     patientId: formatPID(data.id),
                     date: moment(data.createdAt).format('DD-MMM-YYYY'),
                     drugs: data.drugs,
-                    logo: `${process.env.ENDPOINT}/public/images/logo.png`,
                 },
             });
 
@@ -145,7 +142,7 @@ export class MailProcessor {
         try {
             return await this.mailerService.sendMail({
                 to: data.email,
-                from: '"DEDA Hospital" <info@dedahospital.com>', // override default from
+                from: '"DEDA Hospital" <noreply@dedahospital.com>', // override default from
                 subject: 'Pay Later Bill - Deda Hospital',
                 template: 'discharge',
                 context: {
@@ -153,7 +150,6 @@ export class MailProcessor {
                     patientId: formatPID(data.id),
                     date: moment(data.createdAt).format('DD-MMM-YYYY'),
                     services: data.services,
-                    logo: `${process.env.ENDPOINT}/public/images/logo.png`,
                 },
             });
 

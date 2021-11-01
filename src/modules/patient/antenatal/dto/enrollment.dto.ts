@@ -1,22 +1,15 @@
 import { IFathersInfoInterface } from '../interfaces/fathers-info.interface';
 import { IPreviousPregnancyInterface } from '../interfaces/previous-pregnancy.interface';
-import { IsNotEmpty } from 'class-validator';
-import { Patient } from '../../entities/patient.entity';
 
 export class EnrollmentDto {
-
-    @IsNotEmpty()
     patient_id: string;
-    @IsNotEmpty()
     bookingPeriod: string;
-    requiredCare: string[];
-    l_m_p: string;
+    doctors: any;
+    lmp: string;
     lmpSource: string;
-    e_o_d: string;
-    fathersInfo: IFathersInfoInterface;
-    obstericsHistory: string;
+    edd: string;
+    father: IFathersInfoInterface;
+    history: any;
     previousPregnancy: IPreviousPregnancyInterface;
-    abortion: string;
-    patient: Patient;
-    createdBy: string;
+    enrollment_package_id: any;
 }

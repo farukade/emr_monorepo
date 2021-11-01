@@ -7,4 +7,6 @@ export class AccommodationDto {
     description: string;
 
     amount: number;
+
+    quantity: number;
 }

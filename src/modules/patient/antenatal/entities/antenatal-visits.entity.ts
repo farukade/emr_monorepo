@@ -1,44 +1,34 @@
 import { CustomBaseEntity } from '../../../../common/entities/custom-base.entity';
 import { Entity, ManyToOne, Column, OneToOne, JoinColumn } from 'typeorm';
 import { Patient } from '../../entities/patient.entity';
-import { PatientRequest } from '../../entities/patient_requests.entity';
+import { AntenatalEnrollment } from './antenatal-enrollment.entity';
+import { PatientNote } from '../../entities/patient_note.entity';
 
-@Entity({ name: 'antenatal_visits'})
+@Entity({ name: 'antenatal_assessments'})
 export class AntenatalVisits extends CustomBaseEntity {
 
+    @OneToOne(() => AntenatalEnrollment)
+    @JoinColumn({name: 'antenatal_enrollment_id'})
+    antenatalEnrolment: AntenatalEnrollment;
+
     @ManyToOne(() => Patient)
+    @JoinColumn({name: 'patient_id'})
     patient: Patient;
 
-    @Column()
-    heightOfFunds: string;
+    @Column('jsonb')
+    measurement: string;
 
     @Column({nullable: true})
-    fetalHeartRate: string;
+    position_of_foetus: string;
 
     @Column({nullable: true})
-    positionOfFetus: string;
+    fetal_lie: string;
 
     @Column({nullable: true})
-    fetalLie: string;
+    relationship_to_brim: string;
 
-    @Column({nullable: true})
-    relationshipToBrim: string;
-
-    @Column({nullable: true})
-    comment: string;
-
-    @Column({nullable: true})
-    nextAppointment: string;
-
-    @Column({name: 'lab_requests', type: 'jsonb', nullable: true})
-    labRequests: any;
-
-    @OneToOne(() => PatientRequest)
-    @JoinColumn({name: 'radiology_request'})
-    radiologyRequest: PatientRequest;
-
-    @OneToOne(() => PatientRequest)
-    @JoinColumn({name: 'pharmacy_request'})
-    pharmacyRequest: PatientRequest;
+    @ManyToOne(type => PatientNote, { nullable: true })
+    @JoinColumn({ name: 'note_id' })
+    comment: PatientNote;
 
 }

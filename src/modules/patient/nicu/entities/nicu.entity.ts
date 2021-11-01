@@ -14,6 +14,12 @@ export class Nicu extends CustomBaseEntity {
     @JoinColumn({ name: 'accommodation_id' })
     accommodation: NicuAccommodation;
 
+    @Column({ nullable: true })
+    accommodation_assigned_at: string;
+
+    @Column({ type: 'varchar', nullable: true })
+    accommodation_assigned_by: string;
+
     @Column({ type: 'smallint', default: 0 })
     status: number;
 

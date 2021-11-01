@@ -53,7 +53,7 @@ export class SettingsService {
 
             return await this.mailerService.sendMail({
                 to: email,
-                from: `"${staff.first_name} ${staff.last_name}" <${staff?.email || 'info@dedahospital.com'}>`,
+                from: `"${staff.first_name} ${staff.last_name}" <${staff?.email || 'noreply@dedahospital.com'}>`,
                 subject,
                 template: 'mail',
                 context: {

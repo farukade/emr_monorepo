@@ -159,7 +159,7 @@ export class PatientService {
     }
 
     async findPatient(param): Promise<Patient[]> {
-        const { q, isOpd } = param;
+        const { q, gender, isOpd } = param;
 
         const query = this.patientRepository.createQueryBuilder('p')
             .select('p.*')
@@ -175,6 +175,10 @@ export class PatientService {
         if (isOpd && isOpd !== '') {
             const isOutPatient = (isOpd === 1);
             query.andWhere('p.is_out_patient Like :isOutPatient', { isOutPatient });
+        }
+
+        if (gender && gender !== '') {
+            query.andWhere('p.gender = :gender', { gender });
         }
 
         const patients = await query.take(20).getRawMany();

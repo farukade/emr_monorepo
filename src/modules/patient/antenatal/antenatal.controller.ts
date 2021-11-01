@@ -2,7 +2,6 @@ import { Controller, Post, Body, Param, Request, Delete, UseGuards, Get, Query, 
 import { AntenatalService } from './antenatal.service';
 import { EnrollmentDto } from './dto/enrollment.dto';
 import { AuthGuard } from '@nestjs/passport';
-import { AntenatalVisitDto } from './dto/antenatal-visits.dto';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 
 @UseGuards(AuthGuard('jwt'))
@@ -12,7 +11,7 @@ export class AntenatalController {
         private antenatalService: AntenatalService,
     ) {}
 
-    @Get('/list')
+    @Get('')
     getEnrollments(
         @Query() urlParams,
         @Request() request,
@@ -31,27 +30,30 @@ export class AntenatalController {
         return this.antenatalService.saveEnrollment(createDto, req.user.username);
     }
 
-    @Post('visits')
-    @UsePipes(ValidationPipe)
-    saveVisits(
-        @Body() antenatalVisitDto: AntenatalVisitDto,
-        @Request() req,
+    @Delete('/:id')
+    deleteAntenatal(
+        @Param('id') id: string,
     ) {
-        return this.antenatalService.saveAntenatalVisits(antenatalVisitDto, req.user.username);
+        return this.antenatalService.deleteAntenatal(id);
     }
 
-    @Get('visits')
+    @Get('assessments/:id')
     getAntenatalVisits(
-        @Query() urlParams,
+        @Param('id') id: number,
         @Request() request,
     ) {
-        const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 2;
-        const page = request.query.hasOwnProperty('page') ? request.query.page : 0;
-        return this.antenatalService.getPatientAntenatalVisits({page, limit}, urlParams);
+        const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
+        const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
+        return this.antenatalService.getAssessments(id, {page, limit});
     }
 
-    @Delete('/:id')
-    deleteAntenatal(@Param('id') id: string){
-        return this.antenatalService.deleteAntenatal(id);
+    @Post('assessments/:id')
+    @UsePipes(ValidationPipe)
+    saveVisits(
+        @Param('id') id: number,
+        @Body() params,
+        @Request() req,
+    ) {
+        return this.antenatalService.saveAntenatalVisits(id, params, req.user.username);
     }
 }

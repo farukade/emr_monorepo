@@ -10,6 +10,7 @@ import { AdmissionsRepository } from '../admissions/repositories/admissions.repo
 import { getConnection } from 'typeorm';
 import { Transactions } from '../../finance/transactions/transaction.entity';
 import { NicuAccommodationRepository } from '../../settings/nicu-accommodation/accommodation.repository';
+import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
 
 @Injectable()
 export class NicuService {
@@ -24,6 +25,8 @@ export class NicuService {
         private patientRepository: PatientRepository,
         @InjectRepository(NicuAccommodationRepository)
         private nicuAccommodationRepository: NicuAccommodationRepository,
+        @InjectRepository(TransactionsRepository)
+        private transactionsRepository: TransactionsRepository,
     ) {
     }
 
@@ -89,38 +92,55 @@ export class NicuService {
         };
     }
 
-    async saveAccommodation(id, params, createdBy: string) {
+    async saveAccommodation(id, params, username: string) {
         try {
-            const { slug, patient_id } = params;
+            const { accommodation_id, patient_id } = params;
 
-            // find accommodation
-            const accommodation = await this.nicuAccommodationRepository.findOne({ where: { slug } });
+            // find admission
+            const nicu = await this.nicuRepository.findOne(id, { relations: ['patient'] });
+            const admission = await this.admissionsRepository.findOne({ nicu });
 
-            const nicu = await this.nicuRepository.findOne(id);
-            nicu.accommodation = accommodation;
-            const rs = await nicu.save();
-
+            // find patient
             const patient = await this.patientRepository.findOne(patient_id, { relations: ['hmo'] });
 
-            // add transaction
+            // find accommodation
+            const accommodation = await this.nicuAccommodationRepository.findOne(accommodation_id);
+            if (accommodation.quantity_unused <= 0) {
+                return { success: false, message: `all ${accommodation.name}s are occupied` };
+            }
+
+            // save room
+            accommodation.quantity_unused = accommodation.quantity_unused - 1;
+            await accommodation.save();
+
+            // update admission with room
+            nicu.accommodation = accommodation;
+            nicu.accommodation_assigned_at = moment().format('YYYY-MM-DD HH:mm:ss');
+            nicu.accommodation_assigned_by = username;
+            const rs = await nicu.save();
+
+            // find service cost
+            const amount = accommodation.amount;
+
+            // save transaction
             const data = {
                 patient,
-                amount: accommodation.amount,
-                description: `Payment for ${accommodation.name} - Nicu`,
-                payment_type: (patient.hmo.name !== 'Private') ? 'HMO' : 'self',
-                bill_source: 'nicu-accommodation',
-                is_admitted: true,
-                transaction_details: accommodation,
-                createdBy,
-                status: 0,
-                hmo: patient.hmo,
+                amount,
+                balance: amount * -1,
+                description: `Nicu Accommodation: ${accommodation.name} - Day 1`,
+                payment_type: 'self',
                 transaction_type: 'debit',
-                balance: accommodation.amount * -1,
+                is_admitted: true,
+                bill_source: 'nicu-accommodation',
+                hmo: patient.hmo,
+                createdBy: username,
+                admission,
+                status: -1,
             };
 
-            await this.save(data);
+            await this.transactionsRepository.save(data);
 
-            return { success: true, nicu: { ...rs, accommodation } };
+            return { success: true, nicu: rs };
         } catch (e) {
             return { success: false, message: e.message };
         }

@@ -16,4 +16,9 @@ export class NicuAccommodation extends CustomBaseEntity {
     @Column({ type: 'float4', nullable: true })
     amount: number;
 
+    @Column({ type: 'int', default: 0 })
+    quantity: number;
+
+    @Column({ type: 'int', default: 0 })
+    quantity_unused: number;
 }

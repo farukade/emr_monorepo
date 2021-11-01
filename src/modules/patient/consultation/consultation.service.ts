@@ -337,9 +337,10 @@ export class ConsultationService {
                 newAppointment.patient = patient;
                 newAppointment.whomToSee = appointment.whomToSee;
                 newAppointment.appointment_date = nextAppointment.appointment_date;
+                newAppointment.duration = nextAppointment.duration;
+                newAppointment.duration_type = nextAppointment.duration_type;
                 newAppointment.serviceCategory = appointment.serviceCategory;
                 newAppointment.service = appointment.service;
-                newAppointment.amountToPay = 0.00;
                 newAppointment.description = nextAppointment.description;
                 newAppointment.department = appointment.department;
                 newAppointment.createdBy = createdBy;

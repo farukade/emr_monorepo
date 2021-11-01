@@ -52,26 +52,38 @@ export class NicuAccommodationService {
     }
 
     async saveAccommodation(createDto: AccommodationDto, createdBy): Promise<NicuAccommodation> {
-        const { name, description, amount } = createDto;
+        const { name, description, amount, quantity } = createDto;
 
         const accommodation = new NicuAccommodation();
         accommodation.name = name;
         accommodation.slug = slugify(name);
         accommodation.description = description;
         accommodation.amount = amount;
+        accommodation.quantity = quantity;
+        accommodation.quantity_unused = quantity;
         accommodation.createdBy = createdBy;
 
         return await this.nicuAccommodationRepository.save(accommodation);
     }
 
     async updateAccommodation(id, updateDto: AccommodationDto, updatedBy) {
-        const { name, description, amount } = updateDto;
+        const { name, description, amount, quantity } = updateDto;
 
         const accommodation = await this.nicuAccommodationRepository.findOne(id);
+
+        let quantity_unused = accommodation.quantity_unused;
+        if (accommodation.quantity > quantity) {
+            quantity_unused = accommodation.quantity_unused - (accommodation.quantity - quantity);
+        } else if (quantity > accommodation.quantity) {
+            quantity_unused = accommodation.quantity_unused + (quantity - accommodation.quantity);
+        }
+
         accommodation.name = name;
         accommodation.slug = slugify(name);
         accommodation.description = description;
         accommodation.amount = amount;
+        accommodation.quantity = quantity;
+        accommodation.quantity_unused = quantity_unused;
         accommodation.lastChangedBy = updatedBy;
         await accommodation.save();
 

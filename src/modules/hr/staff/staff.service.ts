@@ -17,7 +17,6 @@ import * as moment from 'moment';
 
 @Injectable()
 export class StaffService {
-
     constructor(
         @InjectRepository(StaffRepository)
         private staffRepository: StaffRepository,
@@ -51,9 +50,9 @@ export class StaffService {
     }
 
     async findStaffs(param): Promise<StaffDetails[]> {
-        const { q } = param;
+        const { q, profession } = param;
 
-        return await this.staffRepository.createQueryBuilder('s')
+        const query = await this.staffRepository.createQueryBuilder('s')
             .select('s.*')
             .andWhere(new Brackets(qb => {
                 qb.where('LOWER(s.first_name) Like :first_name', { first_name: `%${q.toLowerCase()}%` })
@@ -61,9 +60,13 @@ export class StaffService {
                     .orWhere('LOWER(s.employee_number) Like :employee_number', { employee_number: `%${q.toLowerCase()}%` })
                     .orWhere('s.phone_number Like :phone_number', { phone_number: `%${q}%` })
                     .orWhere('CAST(s.id AS text) LIKE :id', { id: `%${q}%` });
-            }))
-            .take(20)
-            .getRawMany();
+            }));
+
+        if (profession !== '') {
+            query.andWhere('s.profession = :profession', { profession });
+        }
+
+        return await query.take(20).getRawMany();
     }
 
     async addNewStaff(staffDto: StaffDto, pic, username): Promise<any> {

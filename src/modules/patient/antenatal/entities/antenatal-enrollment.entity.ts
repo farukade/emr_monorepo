@@ -1,40 +1,45 @@
 import { CustomBaseEntity } from '../../../../common/entities/custom-base.entity';
-import { Entity, ManyToOne, Column, JoinColumn } from 'typeorm';
+import { Entity, ManyToOne, Column, JoinColumn, OneToOne } from 'typeorm';
 import { Patient } from '../../entities/patient.entity';
+import { AntenatalPackage } from '../../../settings/entities/antenatal-package.entity';
 
 @Entity({name: 'antenatal_enrollments'})
 export class AntenatalEnrollment extends CustomBaseEntity {
+
+    @Column()
+    serial_code: string;
 
     @ManyToOne(() => Patient)
     @JoinColumn({ name: 'patient_id' })
     patient: Patient;
 
     @Column()
-    bookingPeriod: string;
-
-    @Column('simple-array')
-    requiredCare: string[];
-
-    @Column()
-    l_m_p: string;
-
-    @Column()
-    lmpSource: string;
-
-    @Column()
-    e_o_d: string;
-
-    @Column('simple-json')
-    fathersInfo: {name: string, phone_number: string, blood_group: string };
+    booking_period: string;
 
     @Column('jsonb')
-    obstericsHistory: string;
-
-    @Column('simple-json')
-    previousPregnancy: {gravida: string, para: string, alive: string, miscarriage: string, abortion: string };
+    doctors: string;
 
     @Column()
-    enrollmentPackage: string;
+    lmp: string;
+
+    @Column()
+    lmp_source: string;
+
+    @Column()
+    edd: string;
+
+    @Column('simple-json')
+    father: {name: string, phone: string, blood_group: string };
+
+    @Column('jsonb')
+    history: string;
+
+    @Column('simple-json')
+    pregnancy_history: {gravida: string, para: string, alive: string, miscarriage: string, abortion: string };
+
+    @OneToOne(() => AntenatalPackage, item => item.enrolment)
+    @JoinColumn({ name: 'package_id' })
+    package: AntenatalPackage;
 
     @Column({ type: 'smallint', default: 0 })
     status: number;

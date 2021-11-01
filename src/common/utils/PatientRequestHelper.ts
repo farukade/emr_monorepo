@@ -11,13 +11,15 @@ import { HmoScheme } from '../../modules/hmo/entities/hmo_scheme.entity';
 import { DrugGeneric } from '../../modules/inventory/entities/drug_generic.entity';
 import { PatientNote } from '../../modules/patient/entities/patient_note.entity';
 import { Admission } from '../../modules/patient/admissions/entities/admission.entity';
+import { AntenatalEnrollment } from '../../modules/patient/antenatal/entities/antenatal-enrollment.entity';
+import { IvfEnrollment } from '../../modules/patient/ivf/entities/ivf_enrollment.entity';
 
 export class PatientRequestHelper {
     constructor(private patientRequestRepo: PatientRequestRepository) {
     }
 
     static async handleLabRequest(param, patient, createdBy) {
-        const { requestType, request_note, tests, urgent } = param;
+        const { requestType, request_note, tests, urgent, antenatal_id, admission_id, ivf_id } = param;
 
         try {
             const requestCount = await getConnection()
@@ -30,9 +32,10 @@ export class PatientRequestHelper {
             const nextId = `00000${requestCount + 1}`;
             const code = `LR/${moment().format('MM')}/${nextId.slice(-5)}`;
 
-            const admission = await getConnection().getRepository(Admission).findOne({
-                where: { patient, status: 0 },
-            });
+            // modules
+            const antenatal = await getConnection().getRepository(AntenatalEnrollment).findOne(antenatal_id);
+            const admission = await getConnection().getRepository(Admission).findOne(admission_id);
+            const ivf = await getConnection().getRepository(IvfEnrollment).findOne(ivf_id);
 
             let result = [];
             for (const item of tests) {
@@ -43,7 +46,9 @@ export class PatientRequestHelper {
                     requestNote: request_note,
                     urgent,
                     admission,
+                    antenatal,
                     createdBy,
+                    ivf,
                 };
                 const res = await this.save(data);
                 const lab = res.generatedMaps[0];
@@ -53,6 +58,7 @@ export class PatientRequestHelper {
                 const requestItem = {
                     request: lab,
                     labTest,
+                    createdBy,
                 };
                 const rs = await this.saveItem(requestItem);
 
@@ -69,7 +75,7 @@ export class PatientRequestHelper {
     }
 
     static async handlePharmacyRequest(param, patient, createdBy, visit = '') {
-        const { requestType, request_note, items, procedure_id } = param;
+        const { requestType, request_note, items, procedure_id, antenatal_id, admission_id } = param;
         try {
             const requestCount = await getConnection()
                 .createQueryBuilder()
@@ -82,9 +88,9 @@ export class PatientRequestHelper {
             const nextId = `00000${requestCount + 1}`;
             const code = `DR/${moment().format('MM')}/${nextId.slice(-5)}`;
 
-            const admission = await getConnection().getRepository(Admission).findOne({
-                where: { patient, status: 0 },
-            });
+            // modules
+            const antenatal = await getConnection().getRepository(AntenatalEnrollment).findOne(antenatal_id);
+            const admission = await getConnection().getRepository(Admission).findOne(admission_id);
 
             let result = [];
             for (const item of items) {
@@ -95,8 +101,9 @@ export class PatientRequestHelper {
                     requestNote: request_note,
                     createdBy,
                     lastChangedBy: null,
-                    procedure: procedure_id,
+                    antenatal,
                     admission,
+                    procedure_id,
                 };
                 const res = await this.save(data);
                 const regimen = res.generatedMaps[0];
@@ -123,6 +130,7 @@ export class PatientRequestHelper {
                     duration: item.duration,
                     externalPrescription: item.prescription,
                     note: item.regimenInstruction,
+                    createdBy,
                 };
 
                 const rs = await this.saveItem(requestItem);
@@ -234,6 +242,7 @@ export class PatientRequestHelper {
                     duration: item.duration,
                     externalPrescription: 'No',
                     vaccine: item.vaccine,
+                    createdBy,
                 };
 
                 const rs = await this.saveItem(requestItem);
@@ -251,7 +260,7 @@ export class PatientRequestHelper {
     }
 
     static async handleServiceRequest(param, patient, createdBy, type, visit = '') {
-        const { requestType, request_note, tests, diagnosis, urgent } = param;
+        const { requestType, request_note, tests, diagnosis, urgent, antenatal_id, admission_id, procedure_id } = param;
 
         try {
             const requestCount = await getConnection()
@@ -266,9 +275,9 @@ export class PatientRequestHelper {
 
             let hmo = patient.hmo;
 
-            const admission = await getConnection().getRepository(Admission).findOne({
-                where: { patient, status: 0 },
-            });
+            // modules
+            const antenatal = await getConnection().getRepository(AntenatalEnrollment).findOne(antenatal_id);
+            const admission = await getConnection().getRepository(Admission).findOne(admission_id);
 
             let result = [];
             for (const item of tests) {
@@ -280,6 +289,8 @@ export class PatientRequestHelper {
                     urgent,
                     createdBy,
                     admission,
+                    antenatal,
+                    procedure_id,
                 };
                 const res = await this.save(data);
                 const request = res.generatedMaps[0];
@@ -299,6 +310,7 @@ export class PatientRequestHelper {
                 const requestItem = {
                     request,
                     service,
+                    createdBy,
                 };
                 const rs = await this.saveItem(requestItem);
 

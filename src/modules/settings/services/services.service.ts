@@ -93,10 +93,13 @@ export class ServicesService {
     }
 
     async getServicesByCategory(slug: string, params): Promise<Service[]> {
-        const { q } = params;
+        const { q, hmo_id } = params;
 
         const category = await this.serviceCategoryRepository.findOne({ where: { slug } });
-        const hmo = await this.hmoSchemeRepository.findOne({ where: { name: 'Private' } });
+        let hmo = await this.hmoSchemeRepository.findOne(hmo_id);
+        if (!hmo) {
+            hmo = await this.hmoSchemeRepository.findOne({ where: { name: 'Private' } });
+        }
 
         let query = [];
         if (q && q !== '') {

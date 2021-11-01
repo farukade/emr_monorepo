@@ -125,4 +125,12 @@ export class PatientRequestController {
     ) {
         return this.patientRequestService.endProcedure(procedureId, param, req.user.username);
     }
+
+    @Post('nursing-service')
+    requestNursingService(
+        @Request() req,
+        @Body() param,
+    ) {
+        return this.patientRequestService.requestNursingService(param, req.user.username);
+    }
 }

@@ -616,7 +616,7 @@
     <header>
         <div class="row align-items-center">
             <div class="col-sm-7 text-center text-sm-left mb-3 mb-sm-0">
-                <img id="logo" width="220px" src="{{ logo }}" title="Deda" alt="Deda"/>
+                <img id="logo" width="220px" src="https://dedabucket.s3.us-west-002.backblazeb2.com/logo.png" title="Deda" alt="Deda"/>
             </div>
             <div class="col-sm-5 text-center text-sm-right">
                 <h4 class="text-7 mb-0">Welcome</h4>
@@ -629,17 +629,14 @@
     <main>
         <div class="row">
             <div class="col-sm-6"><strong>Date:</strong> {{date}}</div>
-            <div class="col-sm-6 text-sm-right"><strong>Folder Number:</strong> #{{folderNumber}}</div>
-
+            <div class="col-sm-6 text-sm-right"><strong>Folder Number:</strong> #{{patientId}}</div>
         </div>
         <hr>
-
-
         <div class="card">
             <div class="card-body p-0">
                 <p class="text-center mt-4" style="padding-right: 20px; padding-left: 20px;">Hi
                     <strong>{{name}}</strong>, Welcome to <strong>DEDA Family</strong>. New Patients file has been
-                    created for you with <br/><strong>Folder No: #{{folderNumber}}</strong> your are to present this
+                    created for you with <br/><strong>Folder No: #{{patientId}}</strong> your are to present this
                     number in all of your appointments.</p>
             </div>
         </div>
@@ -649,8 +646,6 @@
                 <p>For any complaint or enquiry contact us from the details below.</p>
             </div>
         </div>
-
-
         <div class="row">
             <div class="col-sm-12 text-sm-left order-sm-1"><strong>Deda Hospital:</strong>
                 <address style="font-size: 11px;">
@@ -667,9 +662,7 @@
     <footer class="text-center mt-4">
         <p class="text-1"><strong>NOTE :</strong> This email was generated from Deda Hospital Electronic System. please
             ignore it if you did not enroll for any of this services.</p>
-        <div class="btn-group btn-group-sm d-print-none"><a href="javascript:window.print()"
-                                                            class="btn btn-light border text-black-50 shadow-none"><i
-                class="fa fa-print"></i> Print</a></div>
+        <div class="btn-group btn-group-sm d-print-none"><a href="javascript:window.print()" class="btn btn-light border text-black-50 shadow-none"><i class="fa fa-print"></i> Print</a></div>
     </footer>
 </div>
 </body>
