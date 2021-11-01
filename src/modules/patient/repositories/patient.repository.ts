@@ -19,7 +19,7 @@ export class PatientRepository extends Repository<Patient> {
         patient.occupation = patientDto.occupation;
         patient.gender = patientDto.gender;
         patient.email = patientDto.email;
-        patient.phone_number = patientDto.phoneNumber;
+        patient.phone_number = patientDto.phone_number;
         patient.maritalStatus = patientDto.maritalStatus;
         patient.ethnicity = patientDto.ethnicity || '';
         patient.referredBy = patientDto.referredBy;

@@ -118,6 +118,8 @@ export class StaffService {
             user.role = role;
             user.save();
 
+            console.log(staffDto);
+
             staff.first_name = staffDto.first_name.toLocaleLowerCase();
             staff.last_name = staffDto.last_name.toLocaleLowerCase();
             staff.other_names = staffDto.other_names.toLocaleLowerCase();

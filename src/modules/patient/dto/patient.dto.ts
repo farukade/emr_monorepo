@@ -18,7 +18,7 @@ export class PatientDto {
     @IsEmail()
     email: string;
 
-    phoneNumber: string;
+    phone_number: string;
 
     gender: string;
 

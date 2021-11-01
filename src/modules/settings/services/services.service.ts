@@ -105,12 +105,12 @@ export class ServicesService {
         if (q && q !== '') {
             query = await this.serviceRepository.find({
                 where: { name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`), category },
-                take: 20,
+                take: 50,
             });
         } else {
             query = await this.serviceRepository.find({
                 where: { category },
-                take: 20,
+                take: 50,
             });
         }
 

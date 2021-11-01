@@ -114,7 +114,7 @@ export class PatientService {
         }
 
         if (status && status !== '') {
-            query.andWhere('p.isActive = :status', { status: status === '1' });
+            query.andWhere('p.is_active = :status', { status: status === '1' });
         }
 
         const patients = await query.offset(page * options.limit)
@@ -211,14 +211,14 @@ export class PatientService {
 
     async saveNewPatient(patientDto: PatientDto, createdBy: string, pic): Promise<any> {
         try {
-            const { hmoId, email, phoneNumber, staff_id } = patientDto;
+            const { hmoId, email, phone_number, staff_id } = patientDto;
 
             const emailFound = await this.patientRepository.findOne({ where: { email } });
             if (emailFound) {
                 return { success: false, message: 'email already exists, please use another email address' };
             }
 
-            const phoneFound = await this.patientRepository.findOne({ where: { phoneNumber } });
+            const phoneFound = await this.patientRepository.findOne({ where: { phone_number } });
             if (phoneFound) {
                 return { success: false, message: 'phone number already exists, please use another phone number.' };
             }
@@ -343,7 +343,7 @@ export class PatientService {
             patient.occupation = patientDto.occupation;
             patient.gender = patientDto.gender;
             patient.email = patientDto.email;
-            patient.phone_number = patientDto.phoneNumber;
+            patient.phone_number = patientDto.phone_number;
             patient.maritalStatus = patientDto.maritalStatus;
             patient.ethnicity = patientDto.ethnicity;
             patient.referredBy = patientDto.referredBy;

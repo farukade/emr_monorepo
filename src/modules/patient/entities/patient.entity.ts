@@ -56,7 +56,7 @@ export class Patient extends CustomBaseEntity {
     @Column({ type: 'varchar', nullable: true })
     referredBy: string;
 
-    @OneToOne(type => PatientNOK, { nullable: true })
+    @ManyToOne(type => PatientNOK, { nullable: true })
     @JoinColumn({ name: 'next_of_kin_id' })
     nextOfKin: PatientNOK;
 
@@ -100,4 +100,7 @@ export class Patient extends CustomBaseEntity {
 
     @OneToMany(type => Nicu, nicu => nicu.patient)
     nicu: Nicu[];
+
+    @Column({ type: 'boolean', default: true })
+    is_active: boolean;
 }

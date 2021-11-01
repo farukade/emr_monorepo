@@ -50,7 +50,6 @@ export class StaffRepository extends Repository<StaffDetails> {
 
             return { success: true, staff: rs };
         } catch (e) {
-            await user.remove();
             console.log(e);
             return { success: false, message: 'error, could not create staff' };
         }
