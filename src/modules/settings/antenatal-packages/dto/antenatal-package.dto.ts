@@ -7,4 +7,6 @@ export class AntenatalPackageDto {
   description: string;
 
   amount: number;
+
+  coverage: any;
 }

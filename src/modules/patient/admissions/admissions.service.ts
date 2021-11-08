@@ -276,7 +276,7 @@ export class AdmissionsService {
             const data = {
                 patient,
                 service: serviceCost,
-                amount,
+                amount: amount * -1,
                 balance: amount * -1,
                 description: `${room.category.name}, ${room.name} - Day 1`,
                 payment_type: (hmo.name !== 'Private') ? 'HMO' : 'self',

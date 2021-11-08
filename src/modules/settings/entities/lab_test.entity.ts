@@ -16,7 +16,7 @@ export class LabTest extends CustomBaseEntity {
     category: LabTestCategory;
 
     @Column({ type: 'jsonb', nullable: true })
-    specimens: string;
+    specimens: any;
 
     @Column({ type: 'jsonb', nullable: true })
     parameters: any[];
@@ -25,6 +25,6 @@ export class LabTest extends CustomBaseEntity {
     hasParameters: boolean;
 
     @Column({ type: 'jsonb', nullable: true })
-    subTests: string;
+    subTests: any;
 
 }

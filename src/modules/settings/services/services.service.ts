@@ -82,48 +82,58 @@ export class ServicesService {
         };
     }
 
-    async getServiceById(id: string): Promise<Service> {
-        const found = this.serviceRepository.findOne(id);
+    async getServicesByCategory(slug: string, options: PaginationOptionsInterface, params) {
+        const { q, hmo_id, nsc } = params;
 
-        if (!found) {
-            throw new NotFoundException(`Service with ID '${id}' not found`);
-        }
-
-        return found;
-    }
-
-    async getServicesByCategory(slug: string, params): Promise<Service[]> {
-        const { q, hmo_id } = params;
+        const page = options.page - 1;
 
         const category = await this.serviceCategoryRepository.findOne({ where: { slug } });
+
         let hmo = await this.hmoSchemeRepository.findOne(hmo_id);
         if (!hmo) {
             hmo = await this.hmoSchemeRepository.findOne({ where: { name: 'Private' } });
         }
 
-        let query = [];
+        let where = {};
+
         if (q && q !== '') {
-            query = await this.serviceRepository.find({
-                where: { name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`), category },
-                take: 50,
-            });
-        } else {
-            query = await this.serviceRepository.find({
-                where: { category },
-                take: 50,
-            });
+            where = { ...where, name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`) };
         }
 
-        let result = [];
-        for (const item of query) {
-            const serviceCost = await this.serviceCostRepository.findOne({
-                where: { code: item.code, hmo },
-            });
+        const [query, total] = await this.serviceRepository.findAndCount({
+            where: { ...where, category },
+            relations: ['category'],
+            order: { name: 'ASC' },
+            take: options.limit,
+            skip: (page * options.limit),
+        });
 
-            result = [...result, { ...item, serviceCost }];
+        if (!nsc || (nsc && nsc === '')) {
+            let result = [];
+            for (const item of query) {
+                const serviceCost = await this.serviceCostRepository.findOne({ where: { code: item.code, hmo } });
+
+                result = [...result, { ...item, serviceCost }];
+            }
+
+            return result;
         }
 
-        return result;
+        return {
+            result: query,
+            lastPage: Math.ceil(total / options.limit),
+            itemsPerPage: options.limit,
+            totalPages: total,
+            currentPage: options.page,
+        };
+    }
+
+    async getPrivateServiceByCode(code: string): Promise<ServiceCost> {
+        const hmo = await this.hmoSchemeRepository.findOne({ where: { name: 'Private' } });
+
+        return await this.serviceCostRepository.findOne({
+            where: { code, hmo },
+        });
     }
 
     async createService(serviceDto: ServiceDto): Promise<Service> {
@@ -164,6 +174,16 @@ export class ServicesService {
         }
 
         return service;
+    }
+
+    async getServiceById(id: string): Promise<Service> {
+        const found = this.serviceRepository.findOne(id);
+
+        if (!found) {
+            throw new NotFoundException(`Service with ID '${id}' not found`);
+        }
+
+        return found;
     }
 
     async updateService(id: string, serviceDto: ServiceDto): Promise<any> {

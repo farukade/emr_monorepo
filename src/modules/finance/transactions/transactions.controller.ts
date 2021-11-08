@@ -88,6 +88,15 @@ export class TransactionsController {
         return this.transactionsService.processBulkTransaction(transactionDto, req.user.username);
     }
 
+    @Post('/credit-account')
+    @UsePipes(ValidationPipe)
+    creditAccount(
+        @Body() params,
+        @Request() req,
+    ): Promise<any> {
+        return this.transactionsService.creditAccount(params, req.user.username);
+    }
+
     @Delete('/:id')
     deleteTransaction(
         @Param('id') id: number,

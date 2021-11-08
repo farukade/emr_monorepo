@@ -6,6 +6,7 @@ import { ServiceDto } from './dto/service.dto';
 import { ServiceCategoryDto } from './dto/service.category.dto';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import { AuthGuard } from '@nestjs/passport';
+import { ServiceCost } from '../entities/service_cost.entity';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('services')
@@ -24,12 +25,24 @@ export class ServicesController {
         return this.servicesService.getAllServices({ page, limit }, urlParams);
     }
 
-    @Get('/category/:slug')
+    @Get('/:slug')
     getServicesByCategory(
         @Param('slug') slug: string,
+        @Request() request,
         @Query() urlParams,
-    ): Promise<Service[]> {
-        return this.servicesService.getServicesByCategory(slug, urlParams);
+    ) {
+        const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 50;
+        const page = request.query.hasOwnProperty('page') ? request.query.page : 1;
+
+        return this.servicesService.getServicesByCategory(slug, { page, limit }, urlParams);
+    }
+
+    @Get('/private/:code')
+    getPrivateServiceByCode(
+        @Param('code') code: string,
+        @Query() urlParams,
+    ): Promise<ServiceCost> {
+        return this.servicesService.getPrivateServiceByCode(code);
     }
 
     @Post('')

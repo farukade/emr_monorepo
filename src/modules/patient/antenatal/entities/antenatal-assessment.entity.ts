@@ -1,13 +1,14 @@
 import { CustomBaseEntity } from '../../../../common/entities/custom-base.entity';
-import { Entity, ManyToOne, Column, OneToOne, JoinColumn } from 'typeorm';
+import { Entity, ManyToOne, Column, JoinColumn, OneToOne } from 'typeorm';
 import { Patient } from '../../entities/patient.entity';
 import { AntenatalEnrollment } from './antenatal-enrollment.entity';
 import { PatientNote } from '../../entities/patient_note.entity';
+import { Appointment } from '../../../frontdesk/appointment/appointment.entity';
 
 @Entity({ name: 'antenatal_assessments'})
-export class AntenatalVisits extends CustomBaseEntity {
+export class AntenatalAssessment extends CustomBaseEntity {
 
-    @OneToOne(() => AntenatalEnrollment)
+    @ManyToOne(() => AntenatalEnrollment)
     @JoinColumn({name: 'antenatal_enrollment_id'})
     antenatalEnrolment: AntenatalEnrollment;
 
@@ -16,7 +17,7 @@ export class AntenatalVisits extends CustomBaseEntity {
     patient: Patient;
 
     @Column('jsonb')
-    measurement: string;
+    measurement: any;
 
     @Column({nullable: true})
     position_of_foetus: string;
@@ -27,8 +28,15 @@ export class AntenatalVisits extends CustomBaseEntity {
     @Column({nullable: true})
     relationship_to_brim: string;
 
+    @Column({nullable: true})
+    next_appointment_date: string;
+
     @ManyToOne(type => PatientNote, { nullable: true })
     @JoinColumn({ name: 'note_id' })
     comment: PatientNote;
+
+    @OneToOne(type => Appointment, item => item.assessment, { nullable: true })
+    @JoinColumn({ name: 'appointment_id' })
+    appointment: Appointment;
 
 }

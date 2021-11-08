@@ -15,6 +15,8 @@ import { AppGateway } from '../../../app.gateway';
 import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repository';
 import { ServiceCostRepository } from '../../settings/services/repositories/service_cost.repository';
 import { StaffRepository } from '../../hr/staff/staff.repository';
+import { AntenatalEnrollmentRepository } from '../../patient/antenatal/enrollment.repository';
+import { AntenatalAssessmentRepository } from '../../patient/antenatal/antenatal-assessment.repository';
 
 @Module({
     imports: [TypeOrmModule.forFeature([
@@ -30,6 +32,8 @@ import { StaffRepository } from '../../hr/staff/staff.repository';
         HmoSchemeRepository,
         ServiceCostRepository,
         StaffRepository,
+        AntenatalEnrollmentRepository,
+        AntenatalAssessmentRepository,
     ])],
     controllers: [AppointmentController],
     providers: [AppGateway, AppointmentService],

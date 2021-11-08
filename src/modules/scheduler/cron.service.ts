@@ -87,7 +87,7 @@ export class TasksService {
                             const data = {
                                 patient: await getConnection().getRepository(Patient).findOne(transaction.patient_id),
                                 service: await getConnection().getRepository(ServiceCost).findOne(transaction.service_cost_id),
-                                amount: transaction.amount,
+                                amount: transaction.amount * -1,
                                 balance: transaction.amount * -1,
                                 description: `${transaction.description.split(' - ')[0]} - Day ${count + 1}`,
                                 payment_type: transaction.payment_type,
@@ -138,7 +138,7 @@ export class TasksService {
                             // save transaction
                             const data = {
                                 patient: await getConnection().getRepository(Patient).findOne(transaction.patient_id),
-                                amount: transaction.amount,
+                                amount: transaction.amount * -1,
                                 balance: transaction.amount * -1,
                                 description: `${transaction.description.split(' - ')[0]} - Day ${count + 1}`,
                                 payment_type: transaction.payment_type,

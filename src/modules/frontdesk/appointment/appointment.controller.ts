@@ -44,12 +44,11 @@ export class AppointmentController {
         return this.appointmentService.getAppointment(id);
     }
 
-    @Get(':id/check-date')
+    @Get('check-date/available')
     getCheckDate(
-        @Param('id') id: number,
         @Query() urlParams,
     ) {
-        return this.appointmentService.checkDate(id, urlParams);
+        return this.appointmentService.checkDate(urlParams);
     }
 
     @Get('/:patient_id/active')

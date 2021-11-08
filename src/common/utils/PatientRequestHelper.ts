@@ -33,9 +33,20 @@ export class PatientRequestHelper {
             const code = `LR/${moment().format('MM')}/${nextId.slice(-5)}`;
 
             // modules
-            const antenatal = await getConnection().getRepository(AntenatalEnrollment).findOne(antenatal_id);
-            const admission = await getConnection().getRepository(Admission).findOne(admission_id);
-            const ivf = await getConnection().getRepository(IvfEnrollment).findOne(ivf_id);
+            let antenatal = null;
+            if(antenatal_id && antenatal_id !== ''){
+                antenatal = await getConnection().getRepository(AntenatalEnrollment).findOne(antenatal_id);
+            }
+
+            let admission = null;
+            if(admission_id && admission_id !== ''){
+                admission = await getConnection().getRepository(Admission).findOne(admission_id);
+            }
+
+            let ivf = null;
+            if(ivf_id && ivf_id !== ''){
+                ivf = await getConnection().getRepository(IvfEnrollment).findOne(ivf_id);
+            }
 
             let result = [];
             for (const item of tests) {
@@ -89,8 +100,15 @@ export class PatientRequestHelper {
             const code = `DR/${moment().format('MM')}/${nextId.slice(-5)}`;
 
             // modules
-            const antenatal = await getConnection().getRepository(AntenatalEnrollment).findOne(antenatal_id);
-            const admission = await getConnection().getRepository(Admission).findOne(admission_id);
+            let antenatal = null;
+            if(antenatal_id && antenatal_id !== ''){
+                antenatal = await getConnection().getRepository(AntenatalEnrollment).findOne(antenatal_id);
+            }
+
+            let admission = null;
+            if(admission_id && admission_id !== ''){
+                admission = await getConnection().getRepository(Admission).findOne(admission_id);
+            }
 
             let result = [];
             for (const item of items) {
@@ -276,8 +294,15 @@ export class PatientRequestHelper {
             let hmo = patient.hmo;
 
             // modules
-            const antenatal = await getConnection().getRepository(AntenatalEnrollment).findOne(antenatal_id);
-            const admission = await getConnection().getRepository(Admission).findOne(admission_id);
+            let antenatal = null;
+            if(antenatal_id && antenatal_id !== ''){
+                antenatal = await getConnection().getRepository(AntenatalEnrollment).findOne(antenatal_id);
+            }
+
+            let admission = null;
+            if(admission_id && admission_id !== ''){
+                admission = await getConnection().getRepository(Admission).findOne(admission_id);
+            }
 
             let result = [];
             for (const item of tests) {

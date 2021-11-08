@@ -8,6 +8,7 @@ import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 import { Transactions } from '../../finance/transactions/transaction.entity';
 import { Department } from '../../settings/entities/department.entity';
 import { ServiceCost } from '../../settings/entities/service_cost.entity';
+import { AntenatalAssessment } from '../../patient/antenatal/entities/antenatal-assessment.entity';
 
 @Entity({ name: 'appointments' })
 export class Appointment extends CustomBaseEntity {
@@ -69,10 +70,16 @@ export class Appointment extends CustomBaseEntity {
     @OneToOne(type => Encounter, item => item.appointment, { eager: true })
     encounter: Encounter;
 
+    @OneToOne(type => AntenatalAssessment, item => item.appointment, { eager: true })
+    assessment: AntenatalAssessment;
+
     @OneToOne(type => Transactions, { nullable: true })
     @JoinColumn({ name: 'transaction_id' })
     transaction: Transactions;
 
     @Column({ type: 'boolean', default: true })
     isActive: boolean;
+
+    @Column({ type: 'boolean', default: false })
+    is_covered: boolean;
 }

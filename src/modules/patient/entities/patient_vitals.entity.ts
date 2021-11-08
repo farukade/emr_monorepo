@@ -10,7 +10,7 @@ export class PatientVital extends CustomBaseEntity {
     readingType: string;
 
     @Column({ type: 'jsonb' })
-    reading: string;
+    reading: any;
 
     @ManyToOne(type => Patient)
     patient: Patient;

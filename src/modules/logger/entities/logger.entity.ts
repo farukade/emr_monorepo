@@ -26,5 +26,5 @@ export class LogEntity extends CustomBaseEntity {
     category: string;
 
     @Column({ nullable: true, type: 'jsonb' })
-    data: string;
+    data: any;
 }

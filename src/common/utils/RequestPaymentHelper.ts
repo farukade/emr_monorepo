@@ -43,7 +43,7 @@ export class RequestPaymentHelper {
 
             const data = {
                 patient,
-                amount: serviceCost.tariff,
+                amount: serviceCost.tariff * -1,
                 description: 'Payment for clinical lab',
                 payment_type: (hmo.name !== 'Private') ? 'HMO' : 'self',
                 bill_source: category.slug,
@@ -103,7 +103,7 @@ export class RequestPaymentHelper {
 
             const data = {
                 patient,
-                amount: serviceCost.tariff,
+                amount: serviceCost.tariff * -1,
                 description: `Payment for ${requestType}`,
                 payment_type: (hmo.name !== 'Private') ? 'HMO' : 'self',
                 bill_source: requestType,

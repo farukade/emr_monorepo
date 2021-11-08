@@ -17,7 +17,7 @@ export class SmsHistory extends BaseEntity {
     status: string;
 
     @Column('jsonb')
-    response: string;
+    response: any;
 
     @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     createdAt: Date;

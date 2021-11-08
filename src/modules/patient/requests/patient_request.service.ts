@@ -328,7 +328,7 @@ export class PatientRequestService {
                 // save transaction
                 const data = {
                     patient,
-                    amount,
+                    amount: amount * -1,
                     description: 'Payment for pharmacy request',
                     payment_type: patient.hmo.id === 1 ? 'self' : 'HMO',
                     bill_source: 'drugs',

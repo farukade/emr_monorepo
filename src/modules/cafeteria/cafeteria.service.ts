@@ -104,7 +104,7 @@ export class CafeteriaService {
             transaction.bill_source = 'cafeteria';
             transaction.sub_total = sub_total;
             transaction.vat = vat;
-            transaction.amount = total_amount;
+            transaction.amount = total_amount * -1;
             transaction.amount_paid = amount_paid;
             transaction.change = change * -1;
             transaction.payment_method = payment_method;

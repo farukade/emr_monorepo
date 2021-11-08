@@ -15,10 +15,10 @@ export class PatientNote extends CustomBaseEntity {
     description: string;
 
     @Column({ type: 'jsonb', nullable: true })
-    diagnosis: string;
+    diagnosis: any;
 
     @Column({ type: 'jsonb', nullable: true })
-    history: string;
+    history: any;
 
     @Column({ type: 'text', nullable: true })
     category: string;

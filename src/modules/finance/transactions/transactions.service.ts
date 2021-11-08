@@ -17,7 +17,6 @@ import { Pagination } from '../../../common/paginate/paginate.interface';
 import { Brackets, getConnection } from 'typeorm';
 import { getStaff } from '../../../common/utils/utils';
 import { Settings } from '../../settings/entities/settings.entity';
-import { ServiceCost } from '../../settings/entities/service_cost.entity';
 import { ServiceCostRepository } from '../../settings/services/repositories/service_cost.repository';
 import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repository';
 import { PatientRequestItemRepository } from '../../patient/repositories/patient_request_items.repository';
@@ -185,6 +184,7 @@ export class TransactionsService {
 
     async save(transactionDto: TransactionDto, createdBy): Promise<any> {
         const { patient_id, hmo_id, service_id, amount, description } = transactionDto;
+
         // find patient record
         const patient = await this.patientRepository.findOne(patient_id);
 
@@ -203,7 +203,7 @@ export class TransactionsService {
         try {
             const transaction = await this.transactionsRepository.save({
                 patient,
-                amount,
+                amount: amount * -1,
                 description,
                 payment_type: hmo.name === 'Private' ? 'self' : 'HMO',
                 bill_source: service.category.name,
@@ -215,7 +215,7 @@ export class TransactionsService {
                 hmo,
                 service: serviceCost,
                 transaction_type: 'debit',
-                balance: amount * -1,
+                balance: 0,
             });
             return { success: true, transaction };
         } catch (error) {
@@ -225,6 +225,20 @@ export class TransactionsService {
 
     async pay(id: string, { hmo_approval_code }, createdBy): Promise<any> {
         const transaction = await this.transactionsRepository.findOne(id);
+
+        const appointment = await this.appointmentRepository.findOne({
+            where: { transaction },
+            relations: ['patient'],
+        });
+        if(appointment){
+            appointment.status = 'Approved';
+            appointment.lastChangedBy = createdBy;
+            await appointment.save();
+
+            const queue = await this.queueSystemRepository.saveQueue(appointment, transaction.next_location, appointment.patient);
+            this.appGateway.server.emit('nursing-queue', { queue });
+        }
+        
         transaction.hmo_approval_code = hmo_approval_code;
         transaction.status = 1;
         transaction.balance = 0;
@@ -237,6 +251,20 @@ export class TransactionsService {
 
     async approve(id: number, createdBy): Promise<any> {
         const transaction = await this.transactionsRepository.findOne(id);
+
+        const appointment = await this.appointmentRepository.findOne({
+            where: { transaction },
+            relations: ['patient'],
+        });
+        if(appointment){
+            appointment.status = 'Approved';
+            appointment.lastChangedBy = createdBy;
+            await appointment.save();
+
+            const queue = await this.queueSystemRepository.saveQueue(appointment, transaction.next_location, appointment.patient);
+            this.appGateway.server.emit('nursing-queue', { queue });
+        }
+
         transaction.status = 1;
         transaction.balance = 0;
         transaction.payment_method = 'HMO';
@@ -254,7 +282,7 @@ export class TransactionsService {
         const serviceCost = await this.serviceCostRepository.findOne({ where: { code: transaction.service.code, hmo } });
 
         transaction.payment_type = 'self';
-        transaction.amount = serviceCost.tariff;
+        transaction.amount = serviceCost.tariff * -1;
         transaction.balance = serviceCost.tariff * -1;
         transaction.transaction_details = { ...transaction.transaction_details, amount: serviceCost.tariff };
         transaction.hmo = hmo;
@@ -275,7 +303,7 @@ export class TransactionsService {
 
                 const balance = new Transactions();
                 balance.createdBy = transaction.createdBy;
-                balance.amount = transaction.amount - amount_paid;
+                balance.amount = ((transaction.amount * -1) - amount_paid) * -1;
                 balance.description = transaction.description;
                 balance.bill_source = transaction.bill_source;
                 balance.next_location = transaction.next_location;
@@ -287,7 +315,7 @@ export class TransactionsService {
                 balance.patientRequestItem = transaction.patientRequestItem;
                 balance.appointment = transaction.appointment;
                 balance.transaction_type = transaction.transaction_type;
-                balance.balance = (transaction.amount - amount_paid) * -1;
+                balance.balance = ((transaction.amount * -1) - amount_paid) * -1;
                 balance.status = -1;
                 balance.part_payment_expiry_date = date;
                 balance.hmo = transaction.hmo;
@@ -323,13 +351,16 @@ export class TransactionsService {
                     where: { transaction: transaction.id },
                     relations: ['patient', 'whomToSee', 'consultingRoom', 'serviceCategory'],
                 });
-                appointment.status = 'Approved';
-                appointment.save();
-                console.log(appointment);
-                // create new queue
+
                 if (!appointment) {
                     return { success: false, message: 'Cannot find appointment' };
                 }
+
+                appointment.status = 'Approved';
+                appointment.save();
+                console.log(appointment);
+
+                // create new queue
                 queue = await this.queueSystemRepository.saveQueue(appointment, transaction.next_location, appointment.patient);
                 this.appGateway.server.emit('nursing-queue', { queue });
             }
@@ -388,6 +419,44 @@ export class TransactionsService {
             }
 
             return { success: true, transactions };
+        } catch (error) {
+            console.log(error);
+            return { success: false, message: error.message };
+        }
+    }
+
+    async creditAccount(params, createdBy): Promise<any> {
+        try {
+            const { patient_id, amount, payment_method } = params;
+
+            const patient = await this.patientRepository.findOne(patient_id, { relations: ['hmo'] });
+
+            const transaction = new Transactions();
+            transaction.amount = amount;
+            transaction.patient = patient;
+            transaction.description = 'credit account';
+            transaction.bill_source = 'credit';
+            transaction.payment_type = 'self';
+            transaction.payment_method = payment_method || 'Cash';
+            transaction.transaction_type = 'credit';
+            transaction.status = 1;
+            transaction.hmo = patient.hmo;
+            transaction.createdBy = createdBy;
+            transaction.lastChangedBy = createdBy;
+            const rs = await this.transactionsRepository.save(transaction);
+
+            rs.staff = await getStaff(transaction.lastChangedBy);
+
+            const allTransactions = await this.transactionsRepository.createQueryBuilder('t').select('t.*')
+              .where('t.patient_id = :id', { id: patient.id })
+              .getRawMany();
+
+            const outstanding = allTransactions.filter(t => t.status !== 1 && t.payment_type === 'self')
+              .reduce((sumTotal, item) => sumTotal + item.balance, 0);
+
+            const totalAmount = allTransactions.reduce((sumTotal, item) => sumTotal + item.amount, 0);
+
+            return { success: true, transaction: rs, outstanding, total_amount: totalAmount };
         } catch (error) {
             console.log(error);
             return { success: false, message: error.message };

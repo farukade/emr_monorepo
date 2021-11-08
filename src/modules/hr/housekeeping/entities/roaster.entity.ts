@@ -17,5 +17,5 @@ export class Roaster extends CustomBaseEntity {
     staff: StaffDetails;
 
     @Column({ type: 'jsonb'})
-    schedule: string;
+    schedule: any;
 }

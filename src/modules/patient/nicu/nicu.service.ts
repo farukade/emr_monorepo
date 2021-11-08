@@ -125,7 +125,7 @@ export class NicuService {
             // save transaction
             const data = {
                 patient,
-                amount,
+                amount: amount * -1,
                 balance: amount * -1,
                 description: `Nicu Accommodation: ${accommodation.name} - Day 1`,
                 payment_type: 'self',

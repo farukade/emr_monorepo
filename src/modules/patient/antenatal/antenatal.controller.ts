@@ -38,7 +38,7 @@ export class AntenatalController {
     }
 
     @Get('assessments/:id')
-    getAntenatalVisits(
+    getAntenatalAssessments(
         @Param('id') id: number,
         @Request() request,
     ) {
@@ -54,6 +54,6 @@ export class AntenatalController {
         @Body() params,
         @Request() req,
     ) {
-        return this.antenatalService.saveAntenatalVisits(id, params, req.user.username);
+        return this.antenatalService.saveAntenatalAssessment(id, params, req.user.username);
     }
 }

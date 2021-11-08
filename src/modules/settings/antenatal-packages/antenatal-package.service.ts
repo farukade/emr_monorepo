@@ -49,26 +49,29 @@ export class AntenatalPackageService {
     async savePackage(createDto: AntenatalPackageDto, createdBy): Promise<AntenatalPackage> {
         const { name, amount, description } = createDto;
 
+        const coverage = {labs: [], drugs: [], consultancy: []};
+
         const antePackage = new AntenatalPackage();
         antePackage.name = name;
         antePackage.description = description;
         antePackage.amount = amount;
         antePackage.createdBy = createdBy;
+        antePackage.coverage = coverage;
 
         return await this.antenatalPackageRepository.save(antePackage);
     }
 
     async updatePackage(id, updateDto: AntenatalPackageDto, updatedBy) {
-        const { name, amount, description } = updateDto;
+        const { name, amount, description, coverage } = updateDto;
 
         const antenatalPackage = await this.antenatalPackageRepository.findOne(id);
         antenatalPackage.name = name;
         antenatalPackage.description = description;
         antenatalPackage.amount = amount;
+        antenatalPackage.coverage = coverage;
         antenatalPackage.lastChangedBy = updatedBy;
-        await antenatalPackage.save();
 
-        return antenatalPackage;
+        return await antenatalPackage.save();
     }
 
     async deletePackage(id: number, username) {

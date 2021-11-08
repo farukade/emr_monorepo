@@ -6,7 +6,7 @@ import { PatientRepository } from '../repositories/patient.repository';
 import { PatientAntenatal } from '../entities/patient_antenatal.entity';
 import * as moment from 'moment';
 import { PaginationOptionsInterface } from '../../../common/paginate';
-import { AntenatalVisitRepository } from './antenatal-visits.repository';
+import { AntenatalAssessmentRepository } from './antenatal-assessment.repository';
 import { PatientRequestRepository } from '../repositories/patient_request.repository';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import { getStaff } from '../../../common/utils/utils';
@@ -16,12 +16,13 @@ import { AdmissionsRepository } from '../admissions/repositories/admissions.repo
 import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
 import { getConnection } from 'typeorm';
 import { PatientNoteRepository } from '../repositories/patient_note.repository';
-import { AntenatalVisits } from './entities/antenatal-visits.entity';
+import { AntenatalAssessment } from './entities/antenatal-assessment.entity';
 import { PatientNote } from '../entities/patient_note.entity';
 import { PatientRequestHelper } from '../../../common/utils/PatientRequestHelper';
 import { RequestPaymentHelper } from '../../../common/utils/RequestPaymentHelper';
 import { Appointment } from '../../frontdesk/appointment/appointment.entity';
 import { AppointmentRepository } from '../../frontdesk/appointment/appointment.repository';
+import { PatientVitalRepository } from '../repositories/patient_vitals.repository';
 
 @Injectable()
 export class AntenatalService {
@@ -30,8 +31,8 @@ export class AntenatalService {
         private enrollmentRepository: AntenatalEnrollmentRepository,
         @InjectRepository(PatientRepository)
         private patientRepository: PatientRepository,
-        @InjectRepository(AntenatalVisitRepository)
-        private antenatalVisitRepository: AntenatalVisitRepository,
+        @InjectRepository(AntenatalAssessmentRepository)
+        private antenatalAssessmentRepository: AntenatalAssessmentRepository,
         @InjectRepository(PatientRequestRepository)
         private patientRequestRepository: PatientRequestRepository,
         @InjectRepository(AntenatalPackageRepository)
@@ -44,6 +45,8 @@ export class AntenatalService {
         private patientNoteRepository: PatientNoteRepository,
         @InjectRepository(AppointmentRepository)
         private appointmentRepository: AppointmentRepository,
+        @InjectRepository(PatientVitalRepository)
+        private patientVitalRepository: PatientVitalRepository,
     ) {
     }
 
@@ -80,7 +83,7 @@ export class AntenatalService {
             antenatal.patient = await this.patientRepository.findOne(antenatal.patient_id, { relations: ['hmo'] });
 
             antenatal.staff = await getStaff(antenatal.createdBy);
-            antenatal.package = await this.antenatalPackageRepository.findOne(antenatal.package_id);
+            antenatal.ancpackage = await this.antenatalPackageRepository.findOne(antenatal.package_id);
 
             result = [...result, antenatal];
         }
@@ -125,14 +128,14 @@ export class AntenatalService {
             enrollment.father = father;
             enrollment.history = history;
             enrollment.pregnancy_history = previousPregnancy;
-            enrollment.package = ancpackage;
+            enrollment.ancpackage = ancpackage;
             enrollment.createdBy = createdBy;
             const rs = await this.enrollmentRepository.save(enrollment);
 
             if (ancpackage) {
                 const data = {
                     patient,
-                    amount: ancpackage.amount,
+                    amount: ancpackage.amount * -1,
                     description: 'Payment for ANC',
                     payment_type: 'self',
                     bill_source: 'anc',
@@ -175,7 +178,7 @@ export class AntenatalService {
     async getAssessments(id: number, options: PaginationOptionsInterface): Promise<Pagination> {
         const page = options.page - 1;
 
-        const query = this.antenatalVisitRepository.createQueryBuilder('q')
+        const query = this.antenatalAssessmentRepository.createQueryBuilder('q')
           .select('q.*')
           .where('q.antenatal_enrollment_id = :antenatal_id', { antenatal_id: id });
 
@@ -189,7 +192,9 @@ export class AntenatalService {
         let results = [];
         for (const item of visits) {
             item.staff = await getStaff(item.createdBy);
-            item.comment = await this.patientNoteRepository.findOne(item.note_id);
+            if (item.note_id) {
+                item.comment = await this.patientNoteRepository.findOne(item.note_id);
+            }
 
             results = [...results, item];
         }
@@ -203,82 +208,107 @@ export class AntenatalService {
         };
     }
 
-    async saveAntenatalVisits(id, params, createdBy: string) {
+    async saveAntenatalAssessment(id, params, createdBy: string) {
         try {
-						const { patient_id, measurement, position_of_foetus, fetal_lie, brim, comment, investigation, nextAppointment, appointment_id } = params;
-						const { labRequest, radiologyRequest, pharmacyRequest } = investigation;
+            const { measurement, position_of_foetus, fetal_lie, brim, comment, investigation, nextAppointment, appointment_id } = params;
+            const { labRequest, radiologyRequest, pharmacyRequest } = investigation;
 
-						const patient = await this.patientRepository.findOne(patient_id);
-						const antenatalEnrolment = await this.enrollmentRepository.findOne(id);
+            const antenatalEnrolment = await this.enrollmentRepository.findOne(id, {
+                relations: ['ancpackage', 'patient'],
+            });
+            const patient_id = antenatalEnrolment.patient.id;
+            const patient = await this.patientRepository.findOne(patient_id, { relations: ['hmo'] });
 
-						const note = new PatientNote();
-						note.patient = patient;
-						note.description = comment;
-						note.type = 'anc-comment';
-						note.antenatal = antenatalEnrolment;
-						note.createdBy = createdBy;
-						const savedNote = await note.save();
+            const appointment = await this.appointmentRepository.findOne({
+                where: { id: appointment_id },
+                relations: ['patient', 'whomToSee', 'consultingRoom', 'transaction', 'department'],
+            });
 
-						const assessment = new AntenatalVisits();
-						assessment.antenatalEnrolment = antenatalEnrolment;
-						assessment.patient = patient;
-						assessment.measurement = measurement;
-						assessment.position_of_foetus = position_of_foetus;
-						assessment.fetal_lie = fetal_lie;
-						assessment.relationship_to_brim = brim;
-						assessment.comment = savedNote;
-						assessment.createdBy = createdBy;
-						await assessment.save();
+            let savedNote = null;
+            if (comment) {
+                const note = new PatientNote();
+                note.patient = patient;
+                note.description = comment;
+                note.type = 'anc-comment';
+                note.antenatal = antenatalEnrolment;
+                note.createdBy = createdBy;
+                savedNote = await note.save();
+            }
 
-						if (labRequest) {
-                const lab = await PatientRequestHelper.handleLabRequest(labRequest, patient, createdBy);
+            const assessment = new AntenatalAssessment();
+            assessment.antenatalEnrolment = antenatalEnrolment;
+            assessment.patient = patient;
+            assessment.measurement = measurement;
+            assessment.position_of_foetus = position_of_foetus;
+            assessment.fetal_lie = fetal_lie;
+            assessment.relationship_to_brim = brim;
+            assessment.comment = savedNote;
+            assessment.createdBy = createdBy;
+            assessment.next_appointment_date = nextAppointment.date || null;
+            const rs = await assessment.save();
+
+            if (measurement) {
+                if (measurement.fetal_heart_rate && measurement.fetal_heart_rate !== '') {
+                    const reading = { fetal_heart_rate: measurement.fetal_heart_rate };
+                    const data = { readingType: 'Fetal Heart Rate', reading, patient, createdBy};
+                    await this.patientVitalRepository.save(data);
+                }
+
+                if (measurement.height_of_fundus && measurement.height_of_fundus !== '') {
+                    const reading = { fundus_height: measurement.height_of_fundus };
+                    const data = { readingType: 'Fundus Height', reading, patient, createdBy};
+                    await this.patientVitalRepository.save(data);
+                }
+            }
+
+            if (labRequest) {
+                // tslint:disable-next-line:max-line-length
+                const request = { requestType: 'labs', request_note: labRequest.lab_note || null, tests: labRequest.lab_tests, urgent: labRequest.lab_urgent || false, antenatal_id: id };
+                console.log(request);
+                const lab = await PatientRequestHelper.handleLabRequest(request, patient, createdBy);
                 if (lab.success) {
-                    // save transaction
-                    // tslint:disable-next-line:max-line-length
-                    const payment = await RequestPaymentHelper.clinicalLabPayment(labRequest.data, patient, createdBy, labRequest.pay_later);
+                    await RequestPaymentHelper.clinicalLabPayment(lab.data, patient, createdBy, 0);
                 }
             }
 
-						if (radiologyRequest) {
-                const request = await PatientRequestHelper.handleServiceRequest(radiologyRequest, patient, createdBy, 'scans');
-                if (request.success) {
-                    // save transaction
-                    const payment = await RequestPaymentHelper.servicePayment(
-                      request.data,
-                      patient,
-                      createdBy,
-                      'scans',
-                      radiologyRequest.pay_later,
-                    );
+            if (radiologyRequest) {
+                // tslint:disable-next-line:max-line-length
+                const request = { requestType: 'scans', request_note: radiologyRequest.scan_note || null, tests: radiologyRequest.scans, urgent: radiologyRequest.scan_urgent || false, antenatal_id: id };
+                const scan = await PatientRequestHelper.handleServiceRequest(request, patient, createdBy, 'scans');
+                if (scan.success) {
+                    await RequestPaymentHelper.servicePayment(scan.data, patient, createdBy, 'scans', 0);
                 }
             }
 
-						if (pharmacyRequest) {
-                await PatientRequestHelper.handlePharmacyRequest(pharmacyRequest, patient, createdBy);
+            if (pharmacyRequest) {
+                // tslint:disable-next-line:max-line-length
+                const request = { requestType: 'drugs', request_note: pharmacyRequest.regimen_note || null, items: pharmacyRequest.prescriptions, antenatal_id: id };
+                await PatientRequestHelper.handlePharmacyRequest(request, patient, createdBy);
             }
 
-						if (nextAppointment && nextAppointment.appointment_date && nextAppointment.appointment_date !== '') {
-                const appointment = await this.appointmentRepository.findOne({
-                    where: { id: appointment_id },
-                    relations: ['patient', 'whomToSee', 'consultingRoom', 'transaction', 'department'],
-                });
-
+            if (nextAppointment && nextAppointment.date && nextAppointment.date !== '') {
                 const newAppointment = new Appointment();
                 newAppointment.patient = patient;
-                newAppointment.whomToSee = appointment.whomToSee;
-                newAppointment.appointment_date = nextAppointment.appointment_date;
+                newAppointment.whomToSee = nextAppointment.whomToSee;
+                newAppointment.appointment_date = nextAppointment.date;
                 newAppointment.duration = nextAppointment.duration;
-                newAppointment.duration_type = nextAppointment.duration_type;
-                newAppointment.serviceCategory = appointment.serviceCategory;
-                newAppointment.service = appointment.service;
-                newAppointment.description = nextAppointment.description;
-                newAppointment.department = appointment.department;
+                newAppointment.duration_type = nextAppointment.time;
+                newAppointment.serviceCategory = nextAppointment.serviceCategory;
+                newAppointment.service = nextAppointment.service;
+                newAppointment.department = nextAppointment.department;
                 newAppointment.createdBy = createdBy;
                 await newAppointment.save();
             }
 
-						return {success: true, assessment};
+            if (appointment) {
+                appointment.status = 'Completed';
+                appointment.assessment = rs;
+                await appointment.save();
+            }
+
+            return {success: true, assessment};
         } catch (err) {
+            console.log(err);
             return {success: false, message: err.message};
         }
     }

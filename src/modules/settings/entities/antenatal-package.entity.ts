@@ -13,6 +13,9 @@ export class AntenatalPackage extends CustomBaseEntity {
   @Column({ type: 'float4' })
   amount: number;
 
-  @OneToOne(() => AntenatalEnrollment, item => item.package)
+  @Column({ type: 'jsonb', nullable: true })
+  coverage: any;
+
+  @OneToOne(() => AntenatalEnrollment, item => item.ancpackage)
   enrolment: AntenatalEnrollment;
 }

@@ -181,7 +181,7 @@ export class PatientService {
             query.andWhere('p.gender = :gender', { gender });
         }
 
-        const patients = await query.take(20).getRawMany();
+        const patients = await query.take(50).getRawMany();
 
         for (const patient of patients) {
             patient.immunization = await this.immunizationRepository.find({
@@ -261,7 +261,7 @@ export class PatientService {
 
             const data = {
                 patient,
-                amount: serviceCost.tariff,
+                amount: serviceCost.tariff * -1,
                 description: 'Payment for Patient Registration',
                 payment_type: (hmo.name !== 'Private') ? 'HMO' : 'self',
                 bill_source: category.name,
@@ -582,10 +582,14 @@ export class PatientService {
             result = [...result, transaction];
         }
 
-        const outstanding = transactions.filter(t => t.status !== 1 && t.payment_type === 'self')
+        const allTransactions = await this.transactionsRepository.createQueryBuilder('t').select('t.*')
+          .where('t.patient_id = :id', { id })
+          .getRawMany();
+
+        const outstanding = allTransactions.filter(t => t.status !== 1 && t.payment_type === 'self')
             .reduce((sumTotal, item) => sumTotal + item.balance, 0);
 
-        const totalAmount = transactions.reduce((sumTotal, item) => sumTotal + item.amount, 0);
+        const totalAmount = allTransactions.reduce((sumTotal, item) => sumTotal + item.amount, 0);
 
         return {
             result,

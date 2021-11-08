@@ -1,5 +1,5 @@
 import { CustomBaseEntity } from '../../../../common/entities/custom-base.entity';
-import { Entity, ManyToOne, Column, JoinColumn, OneToOne } from 'typeorm';
+import { Entity, ManyToOne, Column, JoinColumn } from 'typeorm';
 import { Patient } from '../../entities/patient.entity';
 import { AntenatalPackage } from '../../../settings/entities/antenatal-package.entity';
 
@@ -17,7 +17,7 @@ export class AntenatalEnrollment extends CustomBaseEntity {
     booking_period: string;
 
     @Column('jsonb')
-    doctors: string;
+    doctors: any;
 
     @Column()
     lmp: string;
@@ -32,14 +32,14 @@ export class AntenatalEnrollment extends CustomBaseEntity {
     father: {name: string, phone: string, blood_group: string };
 
     @Column('jsonb')
-    history: string;
+    history: any;
 
     @Column('simple-json')
     pregnancy_history: {gravida: string, para: string, alive: string, miscarriage: string, abortion: string };
 
-    @OneToOne(() => AntenatalPackage, item => item.enrolment)
+    @ManyToOne(() => AntenatalPackage, item => item.enrolment, { nullable: true })
     @JoinColumn({ name: 'package_id' })
-    package: AntenatalPackage;
+    ancpackage: AntenatalPackage;
 
     @Column({ type: 'smallint', default: 0 })
     status: number;
