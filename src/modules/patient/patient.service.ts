@@ -100,7 +100,7 @@ export class PatientService {
 					.orWhere('LOWER(p.email) Like :email', { email: `%${q.toLowerCase()}%` })
 					.orWhere('p.phone_number Like :phone', { phone: `%${q}%` })
 					.orWhere('p.legacy_patient_id Like :legacy_patient_id', { legacy_patient_id: `%${q}%` })
-					.orWhere('CAST(p.id AS text) = :id', { id: `%${q}%` });
+					.orWhere('CAST(p.id AS text) Like :id', { id: `%${q}%` });
 			}));
 		}
 
