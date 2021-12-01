@@ -1,7 +1,7 @@
 import { Repository, EntityRepository } from 'typeorm';
-import { Transactions } from './transaction.entity';
+import { Transaction } from './transaction.entity';
 
-@EntityRepository(Transactions)
-export class TransactionsRepository extends Repository<Transactions> {
+@EntityRepository(Transaction)
+export class TransactionsRepository extends Repository<Transaction> {
 
 }

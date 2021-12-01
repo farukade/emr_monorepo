@@ -9,6 +9,11 @@ import { DrugGenericRepository } from '../generic/generic.repository';
 import { DrugDto } from '../../dto/drug.dto';
 import { ManufacturerRepository } from '../../manufacturer/manufacturer.repository';
 import { ServiceRepository } from '../../../settings/services/repositories/service.repository';
+import { Drug } from '../../entities/drug.entity';
+import { ServiceCategoryRepository } from '../../../settings/services/repositories/service_category.repository';
+import { formatPID } from '../../../../common/utils/utils';
+import { ServiceCost } from '../../../settings/entities/service_cost.entity';
+import { HmoSchemeRepository } from '../../../hmo/repositories/hmo_scheme.repository';
 
 @Injectable()
 export class DrugService {
@@ -23,6 +28,10 @@ export class DrugService {
         private manufacturerRepository: ManufacturerRepository,
         @InjectRepository(ServiceRepository)
         private serviceRepository: ServiceRepository,
+        @InjectRepository(ServiceCategoryRepository)
+        private serviceCategoryRepository: ServiceCategoryRepository,
+        @InjectRepository(HmoSchemeRepository)
+        private hmoSchemeRepository: HmoSchemeRepository,
     ) {
     }
 
@@ -79,7 +88,66 @@ export class DrugService {
         };
     }
 
-    async update(id, drugDto: DrugDto): Promise<any> {
+    async create(drugDto: DrugDto, username: string): Promise<any> {
+        try {
+            const { name, generic_id, unitOfMeasure, manufacturer_id } = drugDto;
+
+            const generic = await this.drugGenericRepository.findOne(generic_id);
+            const manufacturer = await this.manufacturerRepository.findOne(manufacturer_id);
+
+            const category = await this.serviceCategoryRepository.findOne({ where: { slug: 'drugs' } });
+
+            const lastService = await this.serviceRepository.findOne({
+                where: { category },
+                order: { code: 'DESC' },
+            });
+
+            let alphaCode;
+            let code;
+            if (lastService) {
+                alphaCode = lastService.code.substring(0, 2);
+                const num = lastService.code.slice(2);
+                const index = parseInt(num, 10) + 1;
+                code = `${alphaCode.toLocaleUpperCase()}${formatPID(index, lastService.code.length - 2)}`;
+            } else {
+                const names = category.name.split(' ');
+                alphaCode = names.length > 1 ? names.map(n => n.substring(0, 1)).join('') : category.name.substring(0, 2);
+                code = `${alphaCode.toLocaleUpperCase()}${formatPID(1)}`;
+            }
+
+            const drug = new Drug();
+            drug.name = name;
+            drug.code = code;
+            drug.generic = generic;
+            drug.unitOfMeasure = unitOfMeasure;
+            drug.manufacturer = manufacturer;
+            drug.createdBy = username;
+            const rs = await drug.save();
+
+            const service = await this.serviceRepository.createService({ name }, category, code);
+
+            const schemes = await this.hmoSchemeRepository.find();
+
+            for (const scheme of schemes) {
+                const serviceCost = new ServiceCost();
+                serviceCost.code = service.code;
+                serviceCost.item = service;
+                serviceCost.hmo = scheme;
+                serviceCost.tariff = 0;
+
+                await serviceCost.save();
+            }
+
+            rs.batches = [];
+            rs.manufacturer = manufacturer;
+
+            return { success: true, drug: rs };
+        } catch (e) {
+            return { success: false, message: 'error could not add new drug' };
+        }
+    }
+
+    async update(id, drugDto: DrugDto, username: string): Promise<any> {
         try {
             const { name, generic_id, unitOfMeasure, manufacturer_id } = drugDto;
 
@@ -91,6 +159,7 @@ export class DrugService {
             drug.generic = generic;
             drug.unitOfMeasure = unitOfMeasure;
             drug.manufacturer = manufacturer;
+            drug.lastChangedBy = username;
             const rs = await drug.save();
 
             const service = await this.serviceRepository.findOne({

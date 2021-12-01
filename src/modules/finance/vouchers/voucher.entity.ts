@@ -11,14 +11,14 @@ export class Voucher extends CustomBaseEntity {
     @Column({ type: 'float4' })
     amount: number;
 
-    @Column({ type: 'float4', nullable: true })
+    @Column({ type: 'float4', default: 0 })
     amount_used: number;
 
     @Column()
     duration: string;
 
     @Column()
-    start_date: string;
+    expiration_date: string;
 
     @ManyToOne(() => Patient, { nullable: true })
     @JoinColumn({ name: 'patient_id' })

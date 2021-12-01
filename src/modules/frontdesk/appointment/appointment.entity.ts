@@ -5,7 +5,7 @@ import { ConsultingRoom } from '../../settings/entities/consulting-room.entity';
 import { ServiceCategory } from '../../settings/entities/service_category.entity';
 import { Encounter } from '../../patient/consultation/encouter.entity';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
-import { Transactions } from '../../finance/transactions/transaction.entity';
+import { Transaction } from '../../finance/transactions/transaction.entity';
 import { Department } from '../../settings/entities/department.entity';
 import { ServiceCost } from '../../settings/entities/service_cost.entity';
 import { AntenatalAssessment } from '../../patient/antenatal/entities/antenatal-assessment.entity';
@@ -73,9 +73,9 @@ export class Appointment extends CustomBaseEntity {
     @OneToOne(type => AntenatalAssessment, item => item.appointment, { eager: true })
     assessment: AntenatalAssessment;
 
-    @OneToOne(type => Transactions, { nullable: true })
+    @OneToOne(type => Transaction, { nullable: true })
     @JoinColumn({ name: 'transaction_id' })
-    transaction: Transactions;
+    transaction: Transaction;
 
     @Column({ type: 'boolean', default: true })
     isActive: boolean;

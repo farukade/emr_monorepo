@@ -4,7 +4,7 @@ import { LabTest } from '../../settings/entities/lab_test.entity';
 import { PatientRequest } from './patient_requests.entity';
 import { PatientDocument } from './patient_documents.entity';
 import { Immunization } from '../immunization/entities/immunization.entity';
-import { Transactions } from '../../finance/transactions/transaction.entity';
+import { Transaction } from '../../finance/transactions/transaction.entity';
 import { Drug } from '../../inventory/entities/drug.entity';
 import { DrugBatch } from '../../inventory/entities/batches.entity';
 import { DrugGeneric } from '../../inventory/entities/drug_generic.entity';
@@ -150,7 +150,7 @@ export class PatientRequestItem extends CustomBaseEntity {
     @Column({ nullable: true })
     resources: string;
 
-    @OneToOne(type => Transactions, data => data.patientRequestItem)
+    @OneToOne(type => Transaction, data => data.patientRequestItem)
     @JoinColumn({ name: 'transaction_id' })
-    transaction: Transactions;
+    transaction: Transaction;
 }

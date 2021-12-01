@@ -24,8 +24,9 @@ export class DrugController {
     @UsePipes(ValidationPipe)
     create(
         @Body() drugDto: DrugDto,
+        @Request() req,
     ): Promise<any> {
-        return;
+        return this.drugService.create(drugDto, req.user.username);
     }
 
     @Put('/:id')
@@ -33,8 +34,9 @@ export class DrugController {
     update(
         @Param('id') id: string,
         @Body() drugDto: DrugDto,
+        @Request() req,
     ): Promise<any> {
-        return this.drugService.update(id, drugDto);
+        return this.drugService.update(id, drugDto, req.user.username);
     }
 
     @Delete('/:id')

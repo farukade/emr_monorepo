@@ -32,6 +32,35 @@ export class TransactionsController {
         return this.transactionsService.fetchPending({ page, limit }, urlParams);
     }
 
+    @Post('/:id/process')
+    @UsePipes(ValidationPipe)
+    processTransaction(
+        @Param('id') id: number,
+        @Body() transactionDto: ProcessTransactionDto,
+        @Request() req,
+    ): Promise<any> {
+        return this.transactionsService.processTransaction(id, transactionDto, req.user.username);
+    }
+
+    @Post('/process-bulk')
+    @UsePipes(ValidationPipe)
+    processBulkTransaction(
+        @Body() transactionDto: ProcessTransactionDto,
+        @Request() req,
+    ): Promise<any> {
+        return this.transactionsService.processBulkTransaction(transactionDto, req.user.username);
+    }
+
+    @Post('/credit-account')
+    @UsePipes(ValidationPipe)
+    creditAccount(
+        @Body() params,
+        @Request() req,
+    ): Promise<any> {
+        return this.transactionsService.creditAccount(params, req.user.username);
+    }
+
+    // others
     @Post('')
     @UsePipes(ValidationPipe)
     saveTransaction(
@@ -67,34 +96,6 @@ export class TransactionsController {
         @Request() req,
     ): Promise<any> {
         return this.transactionsService.transfer(id, req.user.username);
-    }
-
-    @Post('/:id/process')
-    @UsePipes(ValidationPipe)
-    processTransaction(
-        @Param('id') id: number,
-        @Body() transactionDto: ProcessTransactionDto,
-        @Request() req,
-    ): Promise<any> {
-        return this.transactionsService.processTransaction(id, transactionDto, req.user.username);
-    }
-
-    @Post('/process-bulk')
-    @UsePipes(ValidationPipe)
-    processBulkTransaction(
-        @Body() transactionDto: ProcessTransactionDto,
-        @Request() req,
-    ): Promise<any> {
-        return this.transactionsService.processBulkTransaction(transactionDto, req.user.username);
-    }
-
-    @Post('/credit-account')
-    @UsePipes(ValidationPipe)
-    creditAccount(
-        @Body() params,
-        @Request() req,
-    ): Promise<any> {
-        return this.transactionsService.creditAccount(params, req.user.username);
     }
 
     @Delete('/:id')

@@ -1,5 +1,5 @@
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
-import { Entity, ManyToOne, JoinColumn, Column, OneToOne } from 'typeorm';
+import { Entity, ManyToOne, JoinColumn, Column } from 'typeorm';
 import { Patient } from '../../patient/entities/patient.entity';
 import { Voucher } from '../vouchers/voucher.entity';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
@@ -10,7 +10,7 @@ import { ServiceCost } from '../../settings/entities/service_cost.entity';
 import { Admission } from '../../patient/admissions/entities/admission.entity';
 
 @Entity({ name: 'transactions' })
-export class Transactions extends CustomBaseEntity {
+export class Transaction extends CustomBaseEntity {
 
     @ManyToOne(() => Patient, patient => patient.transactions, { nullable: true })
     @JoinColumn({ name: 'patient_id' })
@@ -28,26 +28,23 @@ export class Transactions extends CustomBaseEntity {
     @JoinColumn({ name: 'voucher_id' })
     voucher: Voucher;
 
-    @Column({ type: 'float4', nullable: true })
+    @Column({ type: 'float4', default: 0.0 })
     sub_total: number;
 
-    @Column({ type: 'float4', nullable: true })
+    @Column({ type: 'float4', default: 0.0 })
     vat: number;
 
-    @Column({ type: 'float4', nullable: true })
+    @Column({ type: 'float4', default: 0.0 })
     amount: number;
 
-    @Column({ type: 'float4', nullable: true })
+    @Column({ type: 'float4', default: 0.0 })
     voucher_amount: number;
 
-    @Column({ type: 'float4', nullable: true })
+    @Column({ type: 'float4', default: 0.0 })
     amount_paid: number;
 
     @Column({ type: 'float4', default: 0.0 })
     change: number;
-
-    @Column({ type: 'float4', default: 0.0 })
-    balance: number;
 
     @Column({ nullable: true })
     description: string;

@@ -288,9 +288,9 @@ export class ConsultationService {
                 }
             }
 
-            if (investigations.labRequest) {
+            if (investigations.labRequest && investigations.labRequest.tests.length > 0) {
                 const labRequest = await PatientRequestHelper.handleLabRequest(investigations.labRequest, patient, createdBy);
-                if (labRequest.success) {
+                if (labRequest.success && labRequest.data.length > 0) {
                     // save transaction
                     // tslint:disable-next-line:max-line-length
                     const payment = await RequestPaymentHelper.clinicalLabPayment(labRequest.data, patient, createdBy, investigations.labRequest.pay_later);
@@ -298,9 +298,9 @@ export class ConsultationService {
                 }
             }
 
-            if (investigations.radiologyRequest) {
+            if (investigations.radiologyRequest && investigations.radiologyRequest.tests.length > 0) {
                 const request = await PatientRequestHelper.handleServiceRequest(investigations.radiologyRequest, patient, createdBy, 'scans', 'encounter');
-                if (request.success) {
+                if (request.success && request.data.length > 0) {
                     // save transaction
                     const payment = await RequestPaymentHelper.servicePayment(
                         request.data,
@@ -313,9 +313,9 @@ export class ConsultationService {
                 }
             }
 
-            if (investigations.procedureRequest) {
+            if (investigations.procedureRequest && investigations.procedureRequest.tests.length > 0) {
                 const procedure = await PatientRequestHelper.handleServiceRequest(investigations.procedureRequest, patient, createdBy, 'procedure', 'encounter');
-                if (procedure.success) {
+                if (procedure.success && procedure.data.length > 0) {
                     // save transaction
                     const payment = await RequestPaymentHelper.servicePayment(
                         procedure.data,

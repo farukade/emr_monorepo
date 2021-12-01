@@ -15,6 +15,8 @@ export default class CreateRole implements Seeder {
             { name: 'HR Manager', slug: 'hr-manager' },
             { name: 'HMO Officer', slug: 'hmo-officer' },
             { name: 'Cafeteria', slug: 'cafeteria' },
+            { name: 'Cafeteria Manager', slug: 'cafeteria-manager' },
+            { name: 'Cafeteria Sales', slug: 'cafeteria-sales' },
             { name: 'Store', slug: 'store' },
             { name: 'Records', slug: 'records' },
             { name: 'IT Admin', slug: 'it-admin' },

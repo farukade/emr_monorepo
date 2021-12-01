@@ -11,6 +11,7 @@ import { LabTestRepository } from '../lab/repositories/lab.test.repository';
 import { ServiceCostRepository } from './repositories/service_cost.repository';
 import { DrugRepository } from '../../inventory/pharmacy/drug/drug.repository';
 import { RoomCategoryRepository } from '../room/room.category.repository';
+import { ServicesCategoryController } from './service-categories.controller';
 
 @Module({
     imports: [
@@ -27,7 +28,7 @@ import { RoomCategoryRepository } from '../room/room.category.repository';
         ]),
     ],
     providers: [ServicesService],
-    controllers: [ServicesController],
+    controllers: [ServicesController, ServicesCategoryController],
 })
 export class ServicesModule {
 }

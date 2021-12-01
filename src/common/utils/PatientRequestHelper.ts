@@ -34,17 +34,17 @@ export class PatientRequestHelper {
 
             // modules
             let antenatal = null;
-            if(antenatal_id && antenatal_id !== ''){
+            if (antenatal_id && antenatal_id !== '') {
                 antenatal = await getConnection().getRepository(AntenatalEnrollment).findOne(antenatal_id);
             }
 
             let admission = null;
-            if(admission_id && admission_id !== ''){
+            if (admission_id && admission_id !== '') {
                 admission = await getConnection().getRepository(Admission).findOne(admission_id);
             }
 
             let ivf = null;
-            if(ivf_id && ivf_id !== ''){
+            if (ivf_id && ivf_id !== '') {
                 ivf = await getConnection().getRepository(IvfEnrollment).findOne(ivf_id);
             }
 
@@ -101,12 +101,12 @@ export class PatientRequestHelper {
 
             // modules
             let antenatal = null;
-            if(antenatal_id && antenatal_id !== ''){
+            if (antenatal_id && antenatal_id !== '') {
                 antenatal = await getConnection().getRepository(AntenatalEnrollment).findOne(antenatal_id);
             }
 
             let admission = null;
-            if(admission_id && admission_id !== ''){
+            if (admission_id && admission_id !== '') {
                 admission = await getConnection().getRepository(Admission).findOne(admission_id);
             }
 
@@ -295,81 +295,83 @@ export class PatientRequestHelper {
 
             // modules
             let antenatal = null;
-            if(antenatal_id && antenatal_id !== ''){
+            if (antenatal_id && antenatal_id !== '') {
                 antenatal = await getConnection().getRepository(AntenatalEnrollment).findOne(antenatal_id);
             }
 
             let admission = null;
-            if(admission_id && admission_id !== ''){
+            if (admission_id && admission_id !== '') {
                 admission = await getConnection().getRepository(Admission).findOne(admission_id);
             }
 
             let result = [];
             for (const item of tests) {
-                const data = {
-                    code,
-                    patient,
-                    requestType,
-                    requestNote: request_note,
-                    urgent,
-                    createdBy,
-                    admission,
-                    antenatal,
-                    procedure_id,
-                };
-                const res = await this.save(data);
-                const request = res.generatedMaps[0];
+                if (item && item.code) {
+                    const data = {
+                        code,
+                        patient,
+                        requestType,
+                        requestNote: request_note,
+                        urgent,
+                        createdBy,
+                        admission,
+                        antenatal,
+                        procedure_id,
+                    };
+                    const res = await this.save(data);
+                    const request = res.generatedMaps[0];
 
-                let service = await getConnection().getRepository(ServiceCost).findOne({
-                    where: { code: item.code, hmo },
-                });
-
-                if (!service || (service && service.tariff === 0)) {
-                    hmo = await getConnection().getRepository(HmoScheme).findOne({ where: { name: 'Private' } });
-
-                    service = await getConnection().getRepository(ServiceCost).findOne({
+                    let service = await getConnection().getRepository(ServiceCost).findOne({
                         where: { code: item.code, hmo },
                     });
-                }
 
-                const requestItem = {
-                    request,
-                    service,
-                    createdBy,
-                };
-                const rs = await this.saveItem(requestItem);
+                    if (!service || (service && service.tariff === 0)) {
+                        hmo = await getConnection().getRepository(HmoScheme).findOne({ where: { name: 'Private' } });
 
-                const requestItems = [rs.generatedMaps[0]];
-
-                let items = [];
-                if (diagnosis) {
-                    for (const reqItem of requestItems) {
-                        let diags = [];
-                        for (const diag of diagnosis) {
-                            if (diag.diagnosis) {
-                                const i = new PatientNote();
-                                i.diagnosis = diag.diagnosis;
-                                i.status = 'Active';
-                                i.patient = patient;
-                                i.request = reqItem;
-                                i.diagnosisType = diag.type.value;
-                                i.comment = diag.comment;
-                                i.visit = visit;
-                                i.type = 'diagnosis';
-                                i.createdBy = createdBy;
-                                await i.save();
-
-                                diags = [...diags, i];
-                            }
-                        }
-
-                        items = [...items, { ...reqItem, diagnosis: diags }];
+                        service = await getConnection().getRepository(ServiceCost).findOne({
+                            where: { code: item.code, hmo },
+                        });
                     }
+
+                    const requestItem = {
+                        request,
+                        service,
+                        createdBy,
+                    };
+                    const rs = await this.saveItem(requestItem);
+
+                    const requestItems = [rs.generatedMaps[0]];
+
+                    let items = [];
+                    if (diagnosis) {
+                        for (const reqItem of requestItems) {
+                            let diags = [];
+                            for (const diag of diagnosis) {
+                                if (diag.diagnosis) {
+                                    const i = new PatientNote();
+                                    i.diagnosis = diag.diagnosis;
+                                    i.status = 'Active';
+                                    i.patient = patient;
+                                    i.request = reqItem;
+                                    i.diagnosisType = diag.type.value;
+                                    i.comment = diag.comment;
+                                    i.visit = visit;
+                                    i.type = 'diagnosis';
+                                    i.createdBy = createdBy;
+                                    await i.save();
+
+                                    diags = [...diags, i];
+                                }
+                            }
+
+                            items = [...items, { ...reqItem, diagnosis: diags }];
+                        }
+                    }
+
+                    request.items = items;
+
+                    result = [...result, request];
                 }
-
-                request.items = items;
-
-                result = [...result, request];
             }
 
             return { success: true, data: result };

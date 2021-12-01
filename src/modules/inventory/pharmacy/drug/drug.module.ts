@@ -7,6 +7,8 @@ import { DrugBatchRepository } from '../batches/batches.repository';
 import { DrugGenericRepository } from '../generic/generic.repository';
 import { ManufacturerRepository } from '../../manufacturer/manufacturer.repository';
 import { ServiceRepository } from '../../../settings/services/repositories/service.repository';
+import { ServiceCategoryRepository } from '../../../settings/services/repositories/service_category.repository';
+import { HmoSchemeRepository } from '../../../hmo/repositories/hmo_scheme.repository';
 
 @Module({
     imports: [
@@ -16,6 +18,8 @@ import { ServiceRepository } from '../../../settings/services/repositories/servi
             DrugGenericRepository,
             ManufacturerRepository,
             ServiceRepository,
+            ServiceCategoryRepository,
+            HmoSchemeRepository,
         ]),
     ],
     providers: [DrugService],

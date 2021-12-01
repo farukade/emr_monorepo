@@ -2,7 +2,7 @@ import { Column, Entity, OneToMany, ManyToOne, JoinColumn, OneToOne } from 'type
 import { CustomBaseEntity } from '../../../../common/entities/custom-base.entity';
 import { Department } from '../../../settings/entities/department.entity';
 import { User } from '../../../auth/entities/user.entity';
-import { Transactions } from '../../../finance/transactions/transaction.entity';
+import { Transaction } from '../../../finance/transactions/transaction.entity';
 import { Specialization } from '../../../settings/entities/specialization.entity';
 import { ConsultingRoom } from '../../../settings/entities/consulting-room.entity';
 import { Immunization } from '../../../patient/immunization/entities/immunization.entity';
@@ -122,8 +122,8 @@ export class StaffDetails extends CustomBaseEntity {
     @OneToMany(type => Immunization, i => i.administeredBy)
     immunizations: Immunization;
 
-    @OneToMany(type => Transactions, transaction => transaction.staff)
-    transactions: Transactions;
+    @OneToMany(type => Transaction, transaction => transaction.staff)
+    transactions: Transaction;
 
     @Column({ type: 'boolean', default: true })
     isActive: boolean;

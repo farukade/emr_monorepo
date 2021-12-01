@@ -14,6 +14,7 @@ export class ProcessTransactionDto {
     payment_method: string;
 
     is_part_payment: number;
+    pay_with_credit: number;
 
     items: any;
 }

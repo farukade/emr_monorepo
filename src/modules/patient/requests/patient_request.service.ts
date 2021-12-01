@@ -11,8 +11,8 @@ import { PatientRepository } from '../repositories/patient.repository';
 import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
 import { AppGateway } from '../../../app.gateway';
 import { getConnection } from 'typeorm';
-import { Transactions } from '../../finance/transactions/transaction.entity';
-import { formatPID, generatePDF, getStaff } from '../../../common/utils/utils';
+import { Transaction } from '../../finance/transactions/transaction.entity';
+import { formatPID, generatePDF, getStaff, postDebit } from '../../../common/utils/utils';
 import { AdmissionsRepository } from '../admissions/repositories/admissions.repository';
 import * as path from 'path';
 import { Drug } from '../../inventory/entities/drug.entity';
@@ -21,6 +21,7 @@ import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repositor
 import { DrugRepository } from '../../inventory/pharmacy/drug/drug.repository';
 import { Admission } from '../admissions/entities/admission.entity';
 import { AdmissionClinicalTask } from '../admissions/entities/admission-clinical-task.entity';
+import { TransactionCreditDto } from '../../finance/transactions/dto/transaction-credit.dto';
 
 @Injectable()
 export class PatientRequestService {
@@ -326,28 +327,29 @@ export class PatientRequestService {
                 const admission = await getConnection().getRepository(Admission).findOne({ where: { patient } });
 
                 // save transaction
-                const data = {
-                    patient,
+                const data: TransactionCreditDto = {
+                    patient_id: patient.id,
+                    username: updatedBy,
+                    sub_total: 0,
+                    vat: 0,
                     amount: amount * -1,
+                    voucher_amount: 0,
+                    amount_paid: 0,
+                    change: 0,
                     description: 'Payment for pharmacy request',
-                    payment_type: patient.hmo.id === 1 ? 'self' : 'HMO',
+                    payment_method: null,
+                    part_payment_expiry_date: null,
                     bill_source: 'drugs',
-                    createdBy: updatedBy,
-                    patientRequestItem: requestItem,
-                    hmo: patient.hmo,
-                    is_admitted: (admission !== null),
-                    transaction_type: 'debit',
-                    balance: amount * -1,
+                    next_location: null,
+                    status: 0,
+                    hmo_approval_code: null,
+                    transaction_details: null,
+                    admission_id: admission?.id || null,
+                    staff_id: null,
+                    lastChangedBy: null,
                 };
 
-                const payment = await getConnection()
-                    .createQueryBuilder()
-                    .insert()
-                    .into(Transactions)
-                    .values(data)
-                    .execute();
-
-                const transaction = payment.generatedMaps[0];
+                const transaction = await postDebit(data, null, null, requestItem, null, patient.hmo);
 
                 this.appGateway.server.emit('paypoint-queue', transaction);
 

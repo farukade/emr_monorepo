@@ -8,9 +8,10 @@ import { Pagination } from '../../../common/paginate/paginate.interface';
 import * as moment from 'moment';
 import { AdmissionsRepository } from '../admissions/repositories/admissions.repository';
 import { getConnection } from 'typeorm';
-import { Transactions } from '../../finance/transactions/transaction.entity';
 import { NicuAccommodationRepository } from '../../settings/nicu-accommodation/accommodation.repository';
 import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
+import { TransactionCreditDto } from '../../finance/transactions/dto/transaction-credit.dto';
+import { postDebit } from '../../../common/utils/utils';
 
 @Injectable()
 export class NicuService {
@@ -123,35 +124,33 @@ export class NicuService {
             const amount = accommodation.amount;
 
             // save transaction
-            const data = {
-                patient,
+            const data: TransactionCreditDto = {
+                patient_id: patient.id,
+                username,
+                sub_total: 0,
+                vat: 0,
                 amount: amount * -1,
-                balance: amount * -1,
+                voucher_amount: 0,
+                amount_paid: 0,
+                change: 0,
                 description: `Nicu Accommodation: ${accommodation.name} - Day 1`,
-                payment_type: 'self',
-                transaction_type: 'debit',
-                is_admitted: true,
+                payment_method: null,
+                part_payment_expiry_date: null,
                 bill_source: 'nicu-accommodation',
-                hmo: patient.hmo,
-                createdBy: username,
-                admission,
+                next_location: null,
                 status: -1,
+                hmo_approval_code: null,
+                transaction_details: null,
+                admission_id: admission.id,
+                staff_id: null,
+                lastChangedBy: null,
             };
 
-            await this.transactionsRepository.save(data);
+            await postDebit(data, null, null, null, null, patient.hmo);
 
             return { success: true, nicu: rs };
         } catch (e) {
             return { success: false, message: e.message };
         }
-    }
-
-    async save(data) {
-        return await getConnection()
-            .createQueryBuilder()
-            .insert()
-            .into(Transactions)
-            .values(data)
-            .execute();
     }
 }

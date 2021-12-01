@@ -9,7 +9,7 @@ import { PaginationOptionsInterface } from '../../../common/paginate';
 import { AntenatalAssessmentRepository } from './antenatal-assessment.repository';
 import { PatientRequestRepository } from '../repositories/patient_request.repository';
 import { Pagination } from '../../../common/paginate/paginate.interface';
-import { getStaff } from '../../../common/utils/utils';
+import { getStaff, postDebit } from '../../../common/utils/utils';
 import { AntenatalEnrollment } from './entities/antenatal-enrollment.entity';
 import { AntenatalPackageRepository } from '../../settings/antenatal-packages/antenatal-package.repository';
 import { AdmissionsRepository } from '../admissions/repositories/admissions.repository';
@@ -23,6 +23,7 @@ import { RequestPaymentHelper } from '../../../common/utils/RequestPaymentHelper
 import { Appointment } from '../../frontdesk/appointment/appointment.entity';
 import { AppointmentRepository } from '../../frontdesk/appointment/appointment.repository';
 import { PatientVitalRepository } from '../repositories/patient_vitals.repository';
+import { TransactionCreditDto } from '../../finance/transactions/dto/transaction-credit.dto';
 
 @Injectable()
 export class AntenatalService {
@@ -133,21 +134,29 @@ export class AntenatalService {
             const rs = await this.enrollmentRepository.save(enrollment);
 
             if (ancpackage) {
-                const data = {
-                    patient,
+                const data: TransactionCreditDto = {
+                    patient_id: patient.id,
+                    username: createdBy,
+                    sub_total: 0,
+                    vat: 0,
                     amount: ancpackage.amount * -1,
+                    voucher_amount: 0,
+                    amount_paid: 0,
+                    change: 0,
                     description: 'Payment for ANC',
-                    payment_type: 'self',
+                    payment_method: null,
+                    part_payment_expiry_date: null,
                     bill_source: 'anc',
-                    createdBy,
+                    next_location: null,
                     status: -1,
-                    hmo: patient.hmo,
-                    is_admitted: (admission !== null),
-                    transaction_type: 'debit',
-                    balance: ancpackage.amount * -1,
+                    hmo_approval_code: null,
+                    transaction_details: null,
+                    admission_id: null,
+                    staff_id: null,
+                    lastChangedBy: null,
                 };
 
-                await this.transactionsRepository.save(data);
+                await postDebit(data, null, null, null, null, patient.hmo);
             }
 
             return { success: true, enrollment: rs };

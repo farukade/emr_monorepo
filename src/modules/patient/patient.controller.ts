@@ -138,12 +138,23 @@ export class PatientController {
     }
 
     @UseGuards(AuthGuard('jwt'))
+    @Get('/:id/outstandings')
+    getAmounts(
+        @Param('id') id: number,
+    ): Promise<any> {
+        return this.patientService.getAmounts(id);
+    }
+
+    @UseGuards(AuthGuard('jwt'))
     @Get(':id/documents')
     getPatientDocument(
-        @Param('id') id: string,
+        @Param('id') id: number,
         @Query() urlParams,
+        @Request() request,
     ): Promise<PatientDocument[]> {
-        return this.patientService.getDocuments(id, urlParams);
+        const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
+        const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
+        return this.patientService.getDocuments({ page, limit }, id, urlParams);
     }
 
     @UseGuards(AuthGuard('jwt'))
@@ -227,16 +238,6 @@ export class PatientController {
         @Request() req,
     ): Promise<any> {
         return this.patientService.doUploadDocument(id, param, file.filename, req.user.username);
-    }
-
-    @UseGuards(AuthGuard('jwt'))
-    @Get('download/:filename')
-    downloadFile(
-        @Param('filename') filename,
-        @Res() response,
-    ) {
-        // const file = fs.readFile(`uploads/${filename}`)
-        return response.sendFile(join(__dirname, '../../../uploads/') + filename);
     }
 
     @UseGuards(AuthGuard('jwt'))

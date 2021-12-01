@@ -18,11 +18,12 @@ import { AuthRepository } from '../../auth/auth.repository';
 import { SoapDto } from './dto/soap.dto';
 import { PatientNoteRepository } from '../repositories/patient_note.repository';
 import { PatientNote } from '../entities/patient_note.entity';
-import { getStaff } from '../../../common/utils/utils';
+import { getStaff, postDebit } from '../../../common/utils/utils';
 import { ServiceCostRepository } from '../../settings/services/repositories/service_cost.repository';
 import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
 import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repository';
 import { NicuAccommodationRepository } from '../../settings/nicu-accommodation/accommodation.repository';
+import { TransactionCreditDto } from '../../finance/transactions/dto/transaction-credit.dto';
 
 @Injectable()
 export class AdmissionsService {
@@ -273,23 +274,29 @@ export class AdmissionsService {
             const amount = serviceCost.tariff;
 
             // save transaction
-            const data = {
-                patient,
-                service: serviceCost,
+            const data: TransactionCreditDto = {
+                patient_id: patient.id,
+                username,
+                sub_total: 0,
+                vat: 0,
                 amount: amount * -1,
-                balance: amount * -1,
+                voucher_amount: 0,
+                amount_paid: 0,
+                change: 0,
                 description: `${room.category.name}, ${room.name} - Day 1`,
-                payment_type: (hmo.name !== 'Private') ? 'HMO' : 'self',
-                transaction_type: 'debit',
-                is_admitted: true,
+                payment_method: null,
+                part_payment_expiry_date: null,
                 bill_source: 'ward',
-                hmo,
-                createdBy: username,
-                admission,
-                status: -1,
+                next_location: null,
+                status: 0,
+                hmo_approval_code: null,
+                transaction_details: null,
+                admission_id: admission?.id || null,
+                staff_id: null,
+                lastChangedBy: null,
             };
 
-            await this.transactionsRepository.save(data);
+            await postDebit(data, serviceCost, null, null, null, hmo);
 
             return { success: true, admission: rs };
         } catch (e) {

@@ -1,15 +1,19 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CafeteriaItemRepository } from './repositories/cafeteria.item.repository';
-import { Connection } from 'typeorm';
+import { Connection, Raw } from 'typeorm';
 import { PaginationOptionsInterface } from '../../common/paginate';
 import { CafeteriaItemDto } from './dto/cafeteria.item.dto';
 import { CafeteriaItem } from './entities/cafeteria_item.entity';
 import { CafeteriaSalesDto } from './dto/cafeteria-sales.dto';
 import { Patient } from '../patient/entities/patient.entity';
 import { StaffDetails } from '../hr/staff/entities/staff_details.entity';
-import { Transactions } from '../finance/transactions/transaction.entity';
+import { Transaction } from '../finance/transactions/transaction.entity';
 import { Pagination } from '../../common/paginate/paginate.interface';
+import * as moment from 'moment';
+import { TransactionCreditDto } from '../finance/transactions/dto/transaction-credit.dto';
+import { postCredit, postDebit } from '../../common/utils/utils';
+import { Admission } from '../patient/admissions/entities/admission.entity';
 
 @Injectable()
 export class CafeteriaService {
@@ -20,29 +24,37 @@ export class CafeteriaService {
     ) {
     }
 
-    /*
-        INVENTORY
-    */
-    async getAllItems(options: PaginationOptionsInterface, q: string): Promise<Pagination> {
+    async getAllItems(options: PaginationOptionsInterface, params): Promise<Pagination> {
+        const { q, approved } = params;
+
         const page = options.page - 1;
 
-        const result = await this.cafeteriaItemRepository.find({
+        let where = {};
+
+        if (approved && approved !== '') {
+            where = {...where, approved};
+        }
+
+        if (q && q !== '') {
+            where = { ...where, name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`) };
+        }
+
+        const [result, total] = await this.cafeteriaItemRepository.findAndCount({
+            where,
             take: options.limit,
             skip: (page * options.limit),
         });
 
-        const count = await this.cafeteriaItemRepository.count();
-
         return {
             result,
-            lastPage: Math.ceil(count / options.limit),
+            lastPage: Math.ceil(total / options.limit),
             itemsPerPage: options.limit,
-            totalPages: count,
+            totalPages: total,
             currentPage: options.page,
         };
     }
 
-    async createItem(itemDto: CafeteriaItemDto): Promise<CafeteriaItem> {
+    async createItem(itemDto: CafeteriaItemDto, username): Promise<CafeteriaItem> {
         const { name, price, description, quantity } = itemDto;
 
         return await this.cafeteriaItemRepository.save({
@@ -50,27 +62,32 @@ export class CafeteriaService {
             price,
             quantity,
             description,
+            createdBy: username,
         });
     }
 
-    async updateItem(id: string, itemDto: CafeteriaItemDto): Promise<CafeteriaItem> {
+    async updateItem(id: number, itemDto: CafeteriaItemDto, username): Promise<CafeteriaItem> {
         const { name, price, description, quantity } = itemDto;
 
-        const stock = await this.cafeteriaItemRepository.findOne(id);
-        stock.name = name;
-        stock.description = description;
-        stock.price = price;
-        stock.quantity = quantity;
-        await stock.save();
-        return stock;
+        const item = await this.cafeteriaItemRepository.findOne(id);
+        item.name = name;
+        item.description = description;
+        item.price = price;
+        item.quantity = quantity;
+        item.lastChangedBy = username;
+
+        return await item.save();
     }
 
-    async updateInventoryQty(param): Promise<CafeteriaItem> {
-        const { id, quantity } = param;
+    async approveItem(id: number, params, username): Promise<CafeteriaItem> {
+        const { approved } = params;
+
         const inventory = await this.cafeteriaItemRepository.findOne(id);
-        inventory.quantity = quantity;
-        await inventory.save();
-        return inventory;
+        inventory.approved = approved;
+        inventory.approved_by = username;
+        inventory.approved_at = moment().format('YYYY-MM-DD HH:mm:ss');
+
+        return await inventory.save();
     }
 
     async deleteItem(id: number, username): Promise<any> {
@@ -100,28 +117,20 @@ export class CafeteriaService {
                 return { success: false, message: `${emptyStock.map(s => `${s.name} has finished`).join(', ')}` };
             }
 
-            const transaction = new Transactions();
-            transaction.bill_source = 'cafeteria';
-            transaction.sub_total = sub_total;
-            transaction.vat = vat;
-            transaction.amount = total_amount * -1;
-            transaction.amount_paid = amount_paid;
-            transaction.change = change * -1;
-            transaction.payment_method = payment_method;
-            transaction.transaction_type = 'debit';
-            transaction.balance = 0;
-            transaction.status = 1;
-            transaction.createdBy = username;
-            transaction.lastChangedBy = username;
-
+            let patient;
+            let staff_id = null;
+            let hmo = null;
             if (user_type === 'staff') {
-                const staff = await this.connection.getRepository(StaffDetails)
-                    .createQueryBuilder('s').where('s.id = :id', { id: user_id }).getOne();
-                transaction.staff = staff;
+                staff_id = user_id;
             } else if (user_type === 'patient') {
-                const patient = await this.connection.getRepository(Patient).findOne(user_id, { relations: ['hmo'] });
-                transaction.patient = patient;
-                transaction.hmo = patient.hmo;
+                patient = await this.connection.getRepository(Patient).findOne(user_id, { relations: ['hmo'] });
+
+                hmo = patient.hmo;
+            }
+
+            let admission;
+            if (patient !== null) {
+               admission = await this.connection.getRepository(Admission).findOne({ where: { patient } });
             }
 
             let data = [];
@@ -139,9 +148,32 @@ export class CafeteriaService {
                 await parentItem.save();
             }
 
-            transaction.transaction_details = data;
-            transaction.payment_type = ''; // HMO/self
-            await transaction.save();
+            const item: TransactionCreditDto = {
+                patient_id: patient.id || null,
+                username,
+                sub_total,
+                vat,
+                amount: total_amount * -1,
+                voucher_amount: 0,
+                amount_paid: 0,
+                change: 0,
+                description: null,
+                payment_method: null,
+                part_payment_expiry_date: null,
+                bill_source: 'cafeteria',
+                next_location: null,
+                status: 1,
+                hmo_approval_code: null,
+                transaction_details: data,
+                admission_id: admission?.id || null,
+                staff_id,
+                lastChangedBy: username,
+            };
+
+            await postDebit(item, null, null, null, null, hmo);
+
+            const credit = {...item, amount_paid, change, payment_method };
+            const transaction = await postCredit(credit, null, null, null, null, hmo);
 
             return { success: true, transaction };
         } catch (error) {

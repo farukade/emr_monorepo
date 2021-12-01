@@ -158,4 +158,12 @@ export class MigrationController {
     ): Promise<any> {
         return this.migrationService.queueMigration('pharmacy');
     }
+
+    @Get('/call')
+    callPatient(
+        @Query() urlParams,
+        @Request() request,
+    ): Promise<any> {
+        return this.migrationService.queueMigration('call');
+    }
 }

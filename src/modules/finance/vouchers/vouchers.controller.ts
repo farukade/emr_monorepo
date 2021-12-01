@@ -28,7 +28,7 @@ export class VouchersController {
         return this.voucherService.fetchByCode(code);
     }
 
-    @Post()
+    @Post('')
     @UsePipes(ValidationPipe)
     saveVoucher(
         @Body() voucherDto: VoucherDto,

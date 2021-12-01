@@ -10,9 +10,9 @@ export class VoucherDto {
     @IsNotEmpty()
     amount: number;
 
-    transaction_id: string;
-
     duration: string;
 
-    start_date: string;
+    expiration_date: string;
+
+    transaction_id: number;
 }

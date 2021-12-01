@@ -24,8 +24,9 @@ export class DrugGenericController {
     @UsePipes(ValidationPipe)
     create(
         @Body() genericDto: DrugGenericDto,
+        @Request() req,
     ): Promise<any> {
-        return;
+        return this.drugGenericService.create(genericDto, req.user.username);
     }
 
     @Put('/:id')

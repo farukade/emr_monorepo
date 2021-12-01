@@ -7,6 +7,8 @@ import { Raw } from 'typeorm';
 import { DrugCategoryRepository } from '../drug/drug_category.repository';
 import { DrugRepository } from '../drug/drug.repository';
 import { DrugBatchRepository } from '../batches/batches.repository';
+import { DrugGenericDto } from '../../dto/generic.dto';
+import { DrugGeneric } from '../../entities/drug_generic.entity';
 
 @Injectable()
 export class DrugGenericService {
@@ -68,5 +70,20 @@ export class DrugGenericService {
             totalPages: total,
             currentPage: options.page,
         };
+    }
+
+    async create(genericDto: DrugGenericDto, username: string): Promise<any> {
+        try {
+            const { name } = genericDto;
+
+            const drug = new DrugGeneric();
+            drug.name = name;
+            drug.lastChangedBy = username;
+            const rs = await drug.save();
+
+            return { success: true, generic: rs };
+        } catch (e) {
+            return { success: false, message: 'error could not add new generic name' };
+        }
     }
 }

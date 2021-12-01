@@ -17,13 +17,14 @@ import { Brackets, getConnection, getRepository, Not, Raw } from 'typeorm';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import { PaginationOptionsInterface } from '../../../common/paginate';
-import { callPatient, getStaff } from '../../../common/utils/utils';
+import { callPatient, getStaff, postDebit } from '../../../common/utils/utils';
 import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repository';
 import { ServiceCostRepository } from '../../settings/services/repositories/service_cost.repository';
 import { ServiceCost } from '../../settings/entities/service_cost.entity';
 import { StaffRepository } from '../../hr/staff/staff.repository';
 import { AntenatalEnrollmentRepository } from '../../patient/antenatal/enrollment.repository';
 import { AntenatalAssessmentRepository } from '../../patient/antenatal/antenatal-assessment.repository';
+import { TransactionCreditDto } from '../../finance/transactions/dto/transaction-credit.dto';
 
 @Injectable()
 export class AppointmentService {
@@ -132,11 +133,10 @@ export class AppointmentService {
                 relations: ['ancpackage'],
             });
             let antenatal = null;
-            if(ancEnrolment){
+            if (ancEnrolment) {
                 const staff = await getStaff(ancEnrolment.createdBy);
                 antenatal = { ...ancEnrolment, patient: patientProfile, staff };
             }
-            
 
             const assessment = await this.antenatalAssessmentRepository.findOne({
                 where: { appointment },
@@ -419,24 +419,30 @@ export class AppointmentService {
 
     private async saveTransaction(patient: Patient, hmo, service: Service, serviceCost: ServiceCost, createdBy, appointment) {
         const amount = serviceCost.tariff;
-        console.log(hmo)
 
-        const data = {
-            patient,
+        const data: TransactionCreditDto = {
+            patient_id: patient.id,
+            username: createdBy,
+            sub_total: 0,
+            vat: 0,
             amount: amount * -1,
+            voucher_amount: 0,
+            amount_paid: 0,
+            change: 0,
             description: service.name,
-            payment_type: (hmo.name !== 'Private') ? 'HMO' : 'self',
+            payment_method: null,
+            part_payment_expiry_date: null,
             bill_source: service.category.name,
-            service: serviceCost,
-            createdBy,
-            hmo,
             next_location: 'vitals',
-            appointment,
-            transaction_type: 'debit',
-            balance: amount * -1,
+            status: 0,
+            hmo_approval_code: null,
+            transaction_details: null,
+            admission_id: null,
+            staff_id: null,
+            lastChangedBy: null,
         };
 
-        return await this.transactionsRepository.save(data);
+        return await postDebit(data, serviceCost, null, null, appointment, hmo);
     }
 
     private isWithinGracePeriod(lastVisit, gracePeriod) {

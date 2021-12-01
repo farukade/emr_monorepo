@@ -1,7 +1,6 @@
 import { Column, Entity, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 import { DrugCategory } from './drug_category.entity';
-import { Transactions } from '../../finance/transactions/transaction.entity';
 import { Drug } from './drug.entity';
 
 @Entity({ name: 'drug_generics' })
