@@ -276,7 +276,7 @@ export class HmoService {
 
         let result = [];
         for (const item of items) {
-            item.scheme = await this.hmoSchemeRepository.findOne(item.hmo_id);
+            item.scheme = await this.hmoSchemeRepository.findOne(item.hmo_scheme_id);
 
             const patient = await this.patientRepository.findOne(item.patient_id, {
                 relations: ['nextOfKin', 'immunization', 'hmo'],

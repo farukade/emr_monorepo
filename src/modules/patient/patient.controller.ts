@@ -34,8 +34,11 @@ export class PatientController {
     @Get('find')
     findPatientRecord(
         @Query() param,
+        @Request() request,
     ): Promise<Patient[]> {
-        return this.patientService.findPatient(param);
+        const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 50;
+
+        return this.patientService.findPatient({ limit }, param);
     }
 
     @UseGuards(AuthGuard('jwt'))

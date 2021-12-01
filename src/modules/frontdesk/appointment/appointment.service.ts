@@ -274,6 +274,7 @@ export class AppointmentService {
                 appointment.is_covered = false;
             }
 
+            appointment.consultation_type = consultation_id;
             await appointment.save();
 
             if (consultation_id !== 'follow-up') {

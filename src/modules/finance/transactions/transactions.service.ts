@@ -3,8 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { TransactionsRepository } from './transactions.repository';
 import * as moment from 'moment';
 import { PatientRepository } from '../../patient/repositories/patient.repository';
-import { Transaction } from './transaction.entity';
-import { TransactionDto } from './dto/transaction.dto';
 import { ServiceRepository } from '../../settings/services/repositories/service.repository';
 import { ProcessTransactionDto } from './dto/process-transaction.dto';
 import { VoucherRepository } from '../vouchers/voucher.repository';
@@ -250,7 +248,7 @@ export class TransactionsService {
 				transaction_details: null,
 				admission_id: transaction.admission?.id || null,
 				staff_id: transaction.staff?.id || null,
-				lastChangedBy: null,
+				lastChangedBy: updatedBy,
 			};
 
 			let voucher = null;
@@ -321,7 +319,7 @@ export class TransactionsService {
 					username: updatedBy,
 					sub_total: 0,
 					vat: 0,
-					amount: item.amount,
+					amount: Math.abs(item.amount),
 					voucher_amount: 0,
 					amount_paid: 0,
 					change: 0,
@@ -335,7 +333,7 @@ export class TransactionsService {
 					transaction_details: null,
 					admission_id: transaction.admission?.id || null,
 					staff_id: transaction.staff?.id || null,
-					lastChangedBy: null,
+					lastChangedBy: updatedBy,
 				};
 
 				let queue;
@@ -466,7 +464,7 @@ export class TransactionsService {
 			username: createdBy,
 			sub_total: 0,
 			vat: 0,
-			amount: transaction.amount,
+			amount: Math.abs(transaction.amount),
 			voucher_amount: 0,
 			amount_paid: 0,
 			change: 0,
@@ -480,7 +478,7 @@ export class TransactionsService {
 			transaction_details: null,
 			admission_id: transaction.admission?.id || null,
 			staff_id: transaction.staff?.id || null,
-			lastChangedBy: null,
+			lastChangedBy: createdBy,
 		};
 
 		await postCredit(data, transaction.service, null, transaction.patientRequestItem, appointment, transaction.hmo);
@@ -514,7 +512,7 @@ export class TransactionsService {
 			username: createdBy,
 			sub_total: 0,
 			vat: 0,
-			amount: transaction.amount,
+			amount: Math.abs(transaction.amount),
 			voucher_amount: 0,
 			amount_paid: 0,
 			change: 0,
@@ -528,7 +526,7 @@ export class TransactionsService {
 			transaction_details: null,
 			admission_id: transaction.admission?.id || null,
 			staff_id: transaction.staff?.id || null,
-			lastChangedBy: null,
+			lastChangedBy: createdBy,
 		};
 
 		await postCredit(data, transaction.service, null, transaction.patientRequestItem, appointment, transaction.hmo);

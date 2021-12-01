@@ -152,7 +152,7 @@ export class PatientService {
 		};
 	}
 
-	async findPatient(param): Promise<Patient[]> {
+	async findPatient(options, param): Promise<Patient[]> {
 		const { q, gender, isOpd } = param;
 
 		const query = this.patientRepository.createQueryBuilder('p')
@@ -175,7 +175,7 @@ export class PatientService {
 			query.andWhere('p.gender = :gender', { gender });
 		}
 
-		const patients = await query.take(50).getRawMany();
+		const patients = await query.take(options.limit).getRawMany();
 
 		for (const patient of patients) {
 			patient.immunization = await this.immunizationRepository.find({

@@ -61,6 +61,9 @@ export class Appointment extends CustomBaseEntity {
     @Column({ type: 'varchar', default: 'patient' })
     appointmentType: string;
 
+    @Column({ type: 'varchar', nullable: true })
+    consultation_type: string;
+
     @Column({ type: 'smallint', default: 0 })
     doctorStatus: number;
 
