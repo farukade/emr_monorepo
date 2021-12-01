@@ -1,13 +1,11 @@
 import { IsNotEmpty } from 'class-validator';
 
 export class CafeteriaItemDto {
-    @IsNotEmpty()
-    name: string;
+	@IsNotEmpty()
+	item_id: number;
 
-    description: string;
+	price: number;
 
-    price: number;
-
-    quantity: number;
+	quantity: number;
 
 }

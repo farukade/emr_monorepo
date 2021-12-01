@@ -627,46 +627,6 @@ export class MigrationProcessor {
 		}
 	}
 
-	@Process('tariffs')
-	async updateCoverage(job: Job<any>): Promise<any> {
-		const { scheme, coverage } = job.data;
-
-		const privateHmo = await this.hmoSchemeRepository.findOne({ where: { name: 'Private' } });
-		if (privateHmo.name === scheme.name) {
-			this.logger.log('cannot change private services');
-			return;
-		}
-
-		const serviceCosts = await this.serviceCostRepository.find({ hmo: scheme });
-
-		if (serviceCosts.length > 0) {
-			for (const cost of serviceCosts) {
-				const privateCost = await this.serviceCostRepository.findOne({
-					where: { hmo: privateHmo, code: cost.code },
-				});
-
-				if (privateCost.tariff > 0) {
-					cost.tariff = privateCost.tariff - ((parseFloat(coverage) * privateCost.tariff) / 100);
-					await cost.save();
-				}
-			}
-		} else {
-			const services = await this.serviceRepository.find();
-			for (const service of services) {
-				const privateCost = await this.serviceCostRepository.findOne({
-					where: { hmo: privateHmo, code: service.code },
-				});
-
-				const cost = new ServiceCost();
-				cost.code = service.code;
-				cost.item = service;
-				cost.tariff = privateCost.tariff - ((parseFloat(coverage) * privateCost.tariff) / 100);
-				cost.hmo = scheme;
-				await cost.save();
-			}
-		}
-	}
-
 	async getHash(password: string | undefined): Promise<string> {
 		return bcrypt.hash(password, 10);
 	}
@@ -782,6 +742,49 @@ export class MigrationProcessor {
 		}
 	}
 
+	@Process('allergen')
+	async migrateAllergen(job: Job<any>): Promise<any> {
+		this.logger.log('migrating allergen');
+
+		try {
+			const connection = await mysqlConnect();
+
+			const [rows] = await connection.execute('SELECT patient_allergen.*, allergen_category.name, drug_generics.id as generic_id FROM `patient_allergen` left join allergen_category on allergen_category.id = patient_allergen.category_id left join drug_super_generic_data on drug_super_generic_data.super_generic_id = patient_allergen.drug_super_gen_id left join drug_generics on drug_generics.id = drug_super_generic_data.drug_generic_id');
+			for (const item of rows) {
+				const patient = await this.patientRepository.findOne({
+					where: { old_id: item.patient_ID },
+				});
+
+				const createdBy = await this.getStaffById(parseInt(item.noted_by, 10));
+
+				const generic = item.generic_id ? await this.drugGenericRepository.findOne(item.generic_id) : null;
+
+				const encounter = item.encounter_id ? await this.encounterRepository.findOne({ where: { old_id: item.encounter_id } }) : null;
+
+				await this.patientNoteRepository.save({
+					patient,
+					category: item.category_name,
+					allergy: item.allergen,
+					drugGeneric: generic,
+					severity: item.severity,
+					reaction: item.reaction,
+					encounter,
+					visit: encounter ? 'encounter' : null,
+					type: 'allergy',
+					createdAt: moment(item.date_noted).format('YYYY-MM-DD HH:mm:ss'),
+					createdBy: createdBy?.user?.username || null,
+					old_id: item.id,
+				});
+			}
+
+			await connection.end();
+			return true;
+		} catch (error) {
+			console.log(error);
+			this.logger.error('migration failed', error.stack);
+		}
+	}
+
 	@Process('care-team')
 	async migrateCareTeam(job: Job<any>): Promise<any> {
 		this.logger.log('migrating care-team');
@@ -868,89 +871,6 @@ export class MigrationProcessor {
 		}
 	}
 
-	@Process('allergen')
-	async migrateAllergen(job: Job<any>): Promise<any> {
-		this.logger.log('migrating allergen');
-
-		try {
-			const connection = await mysqlConnect();
-
-			const [rows] = await connection.execute('SELECT patient_allergen.*, allergen_category.name, drug_generics.id as generic_id FROM `patient_allergen` left join allergen_category on allergen_category.id = patient_allergen.category_id left join drug_super_generic_data on drug_super_generic_data.super_generic_id = patient_allergen.drug_super_gen_id left join drug_generics on drug_generics.id = drug_super_generic_data.drug_generic_id');
-			for (const item of rows) {
-				const patient = await this.patientRepository.findOne({
-					where: { old_id: item.patient_ID },
-				});
-
-				const createdBy = await this.getStaffById(parseInt(item.noted_by, 10));
-
-				const generic = item.generic_id ? await this.drugGenericRepository.findOne(item.generic_id) : null;
-
-				const encounter = item.encounter_id ? await this.encounterRepository.findOne({ where: { old_id: item.encounter_id } }) : null;
-
-				await this.patientNoteRepository.save({
-					patient,
-					category: item.category_name,
-					allergy: item.allergen,
-					drugGeneric: generic,
-					severity: item.severity,
-					reaction: item.reaction,
-					encounter,
-					visit: encounter ? 'encounter' : null,
-					type: 'allergy',
-					createdAt: moment(item.date_noted).format('YYYY-MM-DD HH:mm:ss'),
-					createdBy: createdBy?.user?.username || null,
-					old_id: item.id,
-				});
-			}
-
-			await connection.end();
-			return true;
-		} catch (error) {
-			console.log(error);
-			this.logger.error('migration failed', error.stack);
-		}
-	}
-
-	@Process('pharmacy')
-	async migratePharmacy(job: Job<any>): Promise<any> {
-		this.logger.log('migrating pharmacy');
-
-		try {
-			const connection = await mysqlConnect();
-
-			const [rows] = await connection.execute('SELECT * FROM `patient_care_member`');
-			for (const item of rows) {
-				const member = await this.getStaffById(parseInt(item.care_member_id, 10));
-
-				const primaryMember = await this.getStaffById(parseInt(item.primary_member_id, 10));
-
-				const createdBy = await this.getStaffById(parseInt(item.created_by, 10));
-
-				const admission = await this.admissionsRepository.findOne({
-					where: { old_id: item.in_patient_id },
-					relations: ['patient'],
-				});
-
-				await this.careTeamRepository.save({
-					member,
-					isPrimaryCareGiver: member?.id === primaryMember?.id,
-					patient: admission?.patient,
-					type: admission ? 'admission' : null,
-					item_id: admission?.id?.toString(10),
-					createdAt: moment(item.entry_time).format('YYYY-MM-DD HH:mm:ss'),
-					createdBy: createdBy?.user?.username || null,
-					old_id: item.id,
-				});
-			}
-
-			await connection.end();
-			return true;
-		} catch (error) {
-			console.log(error);
-			this.logger.error('migration failed', error.stack);
-		}
-	}
-
 	@Process('call')
 	async callPatient(job: Job<any>): Promise<any> {
 		this.logger.log('calling patient');
@@ -960,6 +880,46 @@ export class MigrationProcessor {
 		} catch (error) {
 			console.log(error);
 			this.logger.error('migration failed', error.stack);
+		}
+	}
+
+	@Process('tariffs')
+	async updateCoverage(job: Job<any>): Promise<any> {
+		const { scheme, coverage } = job.data;
+
+		const privateHmo = await this.hmoSchemeRepository.findOne({ where: { name: 'Private' } });
+		if (privateHmo.name === scheme.name) {
+			this.logger.log('cannot change private services');
+			return;
+		}
+
+		const serviceCosts = await this.serviceCostRepository.find({ hmo: scheme });
+
+		if (serviceCosts.length > 0) {
+			for (const cost of serviceCosts) {
+				const privateCost = await this.serviceCostRepository.findOne({
+					where: { hmo: privateHmo, code: cost.code },
+				});
+
+				if (privateCost.tariff > 0) {
+					cost.tariff = privateCost.tariff - ((parseFloat(coverage) * privateCost.tariff) / 100);
+					await cost.save();
+				}
+			}
+		} else {
+			const services = await this.serviceRepository.find();
+			for (const service of services) {
+				const privateCost = await this.serviceCostRepository.findOne({
+					where: { hmo: privateHmo, code: service.code },
+				});
+
+				const cost = new ServiceCost();
+				cost.code = service.code;
+				cost.item = service;
+				cost.tariff = privateCost.tariff - ((parseFloat(coverage) * privateCost.tariff) / 100);
+				cost.hmo = scheme;
+				await cost.save();
+			}
 		}
 	}
 }

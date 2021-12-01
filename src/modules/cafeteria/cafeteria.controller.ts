@@ -5,6 +5,8 @@ import { CafeteriaItemDto } from './dto/cafeteria.item.dto';
 import { CafeteriaSalesDto } from './dto/cafeteria-sales.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { Pagination } from '../../common/paginate/paginate.interface';
+import { CafeteriaFoodItem } from './entities/food_item.entity';
+import { CafeteriaFoodItemDto } from './dto/cafeteria-food-item.dto';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('cafeteria')
@@ -66,5 +68,24 @@ export class CafeteriaController {
 		@Body() param: CafeteriaSalesDto,
 	): Promise<any> {
 		return this.inventoryService.saveSales(param, req.user.username);
+	}
+
+	@Get('/food-items')
+	getAllFoodItems(
+		@Query() urlParams,
+		@Request() request,
+	): Promise<Pagination> {
+		const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 10;
+		const page = request.query.hasOwnProperty('page') ? request.query.page : 1;
+		return this.inventoryService.getFoodItems({ page, limit }, urlParams);
+	}
+
+	@Post('/food-items')
+	@UsePipes(ValidationPipe)
+	createFoodItem(
+		@Body() itemDto: CafeteriaFoodItemDto,
+		@Request() req,
+	): Promise<CafeteriaFoodItem> {
+		return this.inventoryService.createFoodItem(itemDto, req.user.username);
 	}
 }

@@ -7,19 +7,22 @@ import { CafeteriaItemDto } from './dto/cafeteria.item.dto';
 import { CafeteriaItem } from './entities/cafeteria_item.entity';
 import { CafeteriaSalesDto } from './dto/cafeteria-sales.dto';
 import { Patient } from '../patient/entities/patient.entity';
-import { StaffDetails } from '../hr/staff/entities/staff_details.entity';
-import { Transaction } from '../finance/transactions/transaction.entity';
 import { Pagination } from '../../common/paginate/paginate.interface';
 import * as moment from 'moment';
 import { TransactionCreditDto } from '../finance/transactions/dto/transaction-credit.dto';
 import { postCredit, postDebit } from '../../common/utils/utils';
 import { Admission } from '../patient/admissions/entities/admission.entity';
+import { CafeteriaFoodItemRepository } from './repositories/cafeteria.food-item.repository';
+import { CafeteriaFoodItem } from './entities/food_item.entity';
+import { CafeteriaFoodItemDto } from './dto/cafeteria-food-item.dto';
 
 @Injectable()
 export class CafeteriaService {
     constructor(
         @InjectRepository(CafeteriaItemRepository)
         private cafeteriaItemRepository: CafeteriaItemRepository,
+        @InjectRepository(CafeteriaFoodItemRepository)
+        private cafeteriaFoodItemRepository: CafeteriaFoodItemRepository,
         private connection: Connection,
     ) {
     }
@@ -55,23 +58,25 @@ export class CafeteriaService {
     }
 
     async createItem(itemDto: CafeteriaItemDto, username): Promise<CafeteriaItem> {
-        const { name, price, description, quantity } = itemDto;
+        const { item_id, price, quantity } = itemDto;
+
+        const foodItem = await this.cafeteriaFoodItemRepository.findOne(item_id);
 
         return await this.cafeteriaItemRepository.save({
-            name,
+            foodItem,
             price,
             quantity,
-            description,
             createdBy: username,
         });
     }
 
     async updateItem(id: number, itemDto: CafeteriaItemDto, username): Promise<CafeteriaItem> {
-        const { name, price, description, quantity } = itemDto;
+        const { item_id, price, quantity } = itemDto;
+
+        const foodItem = await this.cafeteriaFoodItemRepository.findOne(item_id);
 
         const item = await this.cafeteriaItemRepository.findOne(id);
-        item.name = name;
-        item.description = description;
+        item.foodItem = foodItem;
         item.price = price;
         item.quantity = quantity;
         item.lastChangedBy = username;
@@ -103,7 +108,7 @@ export class CafeteriaService {
     }
 
     async saveSales(param: CafeteriaSalesDto, username: string): Promise<any> {
-        const { user_type, user_id, sub_total, vat, total_amount, amount_paid, change, payment_method, items } = param;
+        const { user_type, user_id, sub_total, vat, total_amount, amount_paid, change, payment_method, items, bill_later } = param;
         try {
             let emptyStock = [];
             for (const sale of items) {
@@ -138,7 +143,7 @@ export class CafeteriaService {
                 const parentItem = await this.cafeteriaItemRepository.findOne(sale.id);
                 data = [...data, {
                     id: parentItem.id,
-                    name: parentItem.name,
+                    name: parentItem.foodItem.name,
                     price: parentItem.price,
                     qty: sale.qty,
                     amount: sale.amount,
@@ -149,7 +154,7 @@ export class CafeteriaService {
             }
 
             const item: TransactionCreditDto = {
-                patient_id: patient.id || null,
+                patient_id: patient?.id || null,
                 username,
                 sub_total,
                 vat,
@@ -158,7 +163,7 @@ export class CafeteriaService {
                 amount_paid: 0,
                 change: 0,
                 description: null,
-                payment_method: null,
+                payment_method,
                 part_payment_expiry_date: null,
                 bill_source: 'cafeteria',
                 next_location: null,
@@ -170,14 +175,52 @@ export class CafeteriaService {
                 lastChangedBy: username,
             };
 
-            await postDebit(item, null, null, null, null, hmo);
+            const transaction = await postDebit(item, null, null, null, null, hmo);
 
-            const credit = {...item, amount_paid, change, payment_method };
-            const transaction = await postCredit(credit, null, null, null, null, hmo);
+            if (bill_later !== 1) {
+                const credit = { ...item, amount_paid, change, payment_method };
+                await postCredit(credit, null, null, null, null, hmo);
+            }
 
             return { success: true, transaction };
         } catch (error) {
             return { success: false, message: error.message };
         }
+    }
+
+    async getFoodItems(options: PaginationOptionsInterface, params): Promise<Pagination> {
+        const { q } = params;
+
+        const page = options.page - 1;
+
+        let where = {};
+
+        if (q && q !== '') {
+            where = { ...where, name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`) };
+        }
+
+        const [result, total] = await this.cafeteriaFoodItemRepository.findAndCount({
+            where,
+            take: options.limit,
+            skip: (page * options.limit),
+        });
+
+        return {
+            result,
+            lastPage: Math.ceil(total / options.limit),
+            itemsPerPage: options.limit,
+            totalPages: total,
+            currentPage: options.page,
+        };
+    }
+
+    async createFoodItem(itemDto: CafeteriaFoodItemDto, username): Promise<CafeteriaFoodItem> {
+        const { name, description } = itemDto;
+
+        return await this.cafeteriaFoodItemRepository.save({
+            name,
+            description,
+            createdBy: username,
+        });
     }
 }

@@ -60,24 +60,13 @@ export class TransactionsController {
         return this.transactionsService.creditAccount(params, req.user.username);
     }
 
-    // others
-    @Post('')
+    @Patch('/:id/transfer')
     @UsePipes(ValidationPipe)
-    saveTransaction(
-        @Body() transactionDto: TransactionDto,
+    transferTransaction(
+        @Param('id') id: number,
         @Request() req,
     ): Promise<any> {
-        return this.transactionsService.save(transactionDto, req.user.username);
-    }
-
-    @Patch('/:id/pay')
-    @UsePipes(ValidationPipe)
-    hmoCode(
-        @Param('id') id: string,
-        @Body() transactionDto: TransactionDto,
-        @Request() req,
-    ): Promise<any> {
-        return this.transactionsService.pay(id, transactionDto, req.user.username);
+        return this.transactionsService.transfer(id, req.user.username);
     }
 
     @Patch('/:id/approve')
@@ -89,13 +78,14 @@ export class TransactionsController {
         return this.transactionsService.approve(id, req.user.username);
     }
 
-    @Patch('/:id/transfer')
+    @Patch('/:id/pay')
     @UsePipes(ValidationPipe)
-    transferTransaction(
-        @Param('id') id: number,
+    hmoCode(
+        @Param('id') id: string,
+        @Body() transactionDto: TransactionDto,
         @Request() req,
     ): Promise<any> {
-        return this.transactionsService.transfer(id, req.user.username);
+        return this.transactionsService.payWithHmoCode(id, transactionDto, req.user.username);
     }
 
     @Delete('/:id')
@@ -104,5 +94,14 @@ export class TransactionsController {
         @Request() req,
     ): Promise<any> {
         return this.transactionsService.deleteTransaction(id, req.user.username);
+    }
+
+    @Post('')
+    @UsePipes(ValidationPipe)
+    saveTransaction(
+        @Body() transactionDto: TransactionDto,
+        @Request() req,
+    ): Promise<any> {
+        return; // this.transactionsService.save(transactionDto, req.user.username);
     }
 }

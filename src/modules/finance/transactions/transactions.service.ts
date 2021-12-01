@@ -194,7 +194,7 @@ export class TransactionsService {
 			pay_with_credit,
 		} = transactionDto;
 		try {
-			const transaction = await this.transactionsRepository.findOne(id, { relations: ['patient', 'staff', 'appointment', 'hmo', 'admission', 'patientRequestItem'] });
+			const transaction = await this.transactionsRepository.findOne(id, { relations: ['patient', 'staff', 'appointment', 'hmo', 'admission'] });
 
 			if (is_part_payment && amount_paid < transaction.amount) {
 				const duration = await getConnection().getRepository(Settings).findOne({ where: { slug: 'part-payment-duration' } });
@@ -316,12 +316,33 @@ export class TransactionsService {
 			for (const item of items) {
 				const transaction = await this.transactionsRepository.findOne(item.id, { relations: ['patient', 'staff', 'appointment', 'hmo'] });
 
-				transaction.amount_paid = item.amount;
+				const data: TransactionCreditDto = {
+					patient_id: transaction.patient.id,
+					username: updatedBy,
+					sub_total: 0,
+					vat: 0,
+					amount: item.amount,
+					voucher_amount: 0,
+					amount_paid: 0,
+					change: 0,
+					description: transaction.description,
+					payment_method,
+					part_payment_expiry_date: null,
+					bill_source: transaction.bill_source,
+					next_location: null,
+					status: 1,
+					hmo_approval_code: null,
+					transaction_details: null,
+					admission_id: transaction.admission?.id || null,
+					staff_id: transaction.staff?.id || null,
+					lastChangedBy: null,
+				};
 
 				let queue;
+				let appointment = null;
 				if (transaction.next_location && transaction.next_location === 'vitals') {
 					// find appointment
-					const appointment = await this.appointmentRepository.findOne({
+					appointment = await this.appointmentRepository.findOne({
 						where: { transaction: transaction.id },
 						relations: ['patient', 'whomToSee', 'consultingRoom', 'serviceCategory'],
 					});
@@ -336,9 +357,10 @@ export class TransactionsService {
 					}
 				}
 
+				await postCredit(data, transaction.service, null, transaction.patientRequestItem, appointment, transaction.hmo);
+
 				transaction.next_location = null;
 				transaction.status = 1;
-				transaction.payment_method = payment_method;
 				transaction.lastChangedBy = updatedBy;
 				const rs = await transaction.save();
 
@@ -401,118 +423,6 @@ export class TransactionsService {
 		}
 	}
 
-	async save(transactionDto: TransactionDto, createdBy): Promise<any> {
-		const { patient_id, hmo_id, service_id, amount, description } = transactionDto;
-
-		// find patient record
-		const patient = await this.patientRepository.findOne(patient_id);
-
-		let hmo = await this.hmoSchemeRepository.findOne(hmo_id);
-
-		const service = await this.serviceRepository.findOne(service_id);
-
-		let serviceCost = await this.serviceCostRepository.findOne({ where: { item: service, hmo } });
-		if (!serviceCost || (serviceCost && serviceCost.tariff === 0)) {
-			hmo = await this.hmoSchemeRepository.findOne({ where: { name: 'Private' } });
-			serviceCost = await this.serviceCostRepository.findOne({ where: { item: service, hmo } });
-		}
-
-		const item = { name: service.name, amount: serviceCost.tariff };
-
-		try {
-			const transaction = await this.transactionsRepository.save({
-				patient,
-				amount: amount * -1,
-				description,
-				payment_type: hmo.name === 'Private' ? 'self' : 'HMO',
-				bill_source: service.category.name,
-				transaction_details: [item],
-				amount_paid: amount,
-				createdBy,
-				lastChangedBy: createdBy,
-				status: 1,
-				hmo,
-				service: serviceCost,
-				transaction_type: 'debit',
-			});
-			// const data: TransactionCreditDto = {
-			//     patient_id: patient.id,
-			//     username: createdBy,
-			//     sub_total: 0,
-			//     vat: 0,
-			//     amount,
-			//     voucher_amount: 0,
-			//     amount_paid: amount,
-			//     change: 0,
-			//     description,
-			//     payment_method: null,
-			//     part_payment_expiry_date: null,
-			//     bill_source: service.category.name,
-			//     next_location: null,
-			//     status: 1,
-			//     hmo_approval_code: null,
-			//     transaction_details: [item],
-			//     admission_id: admission.id || null,
-			//     staff_id: null,
-			//     lastChangedBy: null,
-			// };
-			//
-			// const transaction = await postCredit(data, serviceCost, null, null, null, hmo);
-			return { success: true, transaction };
-		} catch (error) {
-			return { success: false, message: error.message };
-		}
-	}
-
-	async pay(id: string, { hmo_approval_code }, createdBy): Promise<any> {
-		const transaction = await this.transactionsRepository.findOne(id);
-
-		const appointment = await this.appointmentRepository.findOne({
-			where: { transaction },
-			relations: ['patient'],
-		});
-		if (appointment) {
-			appointment.status = 'Approved';
-			appointment.lastChangedBy = createdBy;
-			await appointment.save();
-
-			const queue = await this.queueSystemRepository.saveQueue(appointment, transaction.next_location, appointment.patient);
-			this.appGateway.server.emit('nursing-queue', { queue });
-		}
-
-		transaction.hmo_approval_code = hmo_approval_code;
-		transaction.status = 1;
-		transaction.payment_method = 'HMO';
-		transaction.lastChangedBy = createdBy;
-		await transaction.save();
-
-		return { success: true, transaction };
-	}
-
-	async approve(id: number, createdBy): Promise<any> {
-		const transaction = await this.transactionsRepository.findOne(id);
-
-		const appointment = await this.appointmentRepository.findOne({
-			where: { transaction },
-			relations: ['patient'],
-		});
-		if (appointment) {
-			appointment.status = 'Approved';
-			appointment.lastChangedBy = createdBy;
-			await appointment.save();
-
-			const queue = await this.queueSystemRepository.saveQueue(appointment, transaction.next_location, appointment.patient);
-			this.appGateway.server.emit('nursing-queue', { queue });
-		}
-
-		transaction.status = 1;
-		transaction.payment_method = 'HMO';
-		transaction.lastChangedBy = createdBy;
-		const rs = await transaction.save();
-
-		return { success: true, transaction: rs };
-	}
-
 	async transfer(id: number, createdBy): Promise<any> {
 		const transaction = await this.transactionsRepository.findOne(id);
 
@@ -533,6 +443,103 @@ export class TransactionsService {
 		const rs = await transaction.save();
 
 		return { success: true, transaction: rs };
+	}
+
+	async approve(id: number, createdBy): Promise<any> {
+		const transaction = await this.transactionsRepository.findOne(id, { relations: ['patient', 'staff', 'appointment', 'hmo', 'admission'] });
+
+		const appointment = await this.appointmentRepository.findOne({
+			where: { transaction },
+			relations: ['patient'],
+		});
+		if (appointment) {
+			appointment.status = 'Approved';
+			appointment.lastChangedBy = createdBy;
+			await appointment.save();
+
+			const queue = await this.queueSystemRepository.saveQueue(appointment, transaction.next_location, appointment.patient);
+			this.appGateway.server.emit('nursing-queue', { queue });
+		}
+
+		const data: TransactionCreditDto = {
+			patient_id: transaction.patient.id,
+			username: createdBy,
+			sub_total: 0,
+			vat: 0,
+			amount: transaction.amount,
+			voucher_amount: 0,
+			amount_paid: 0,
+			change: 0,
+			description: transaction.description,
+			payment_method: 'HMO',
+			part_payment_expiry_date: null,
+			bill_source: transaction.bill_source,
+			next_location: null,
+			status: 1,
+			hmo_approval_code: null,
+			transaction_details: null,
+			admission_id: transaction.admission?.id || null,
+			staff_id: transaction.staff?.id || null,
+			lastChangedBy: null,
+		};
+
+		await postCredit(data, transaction.service, null, transaction.patientRequestItem, appointment, transaction.hmo);
+
+		transaction.status = 1;
+		transaction.payment_method = 'HMO';
+		transaction.lastChangedBy = createdBy;
+		const rs = await transaction.save();
+
+		return { success: true, transaction: rs };
+	}
+
+	async payWithHmoCode(id: string, { hmo_approval_code }, createdBy): Promise<any> {
+		const transaction = await this.transactionsRepository.findOne(id, { relations: ['patient', 'staff', 'appointment', 'hmo', 'admission'] });
+
+		const appointment = await this.appointmentRepository.findOne({
+			where: { transaction },
+			relations: ['patient'],
+		});
+		if (appointment) {
+			appointment.status = 'Approved';
+			appointment.lastChangedBy = createdBy;
+			await appointment.save();
+
+			const queue = await this.queueSystemRepository.saveQueue(appointment, transaction.next_location, appointment.patient);
+			this.appGateway.server.emit('nursing-queue', { queue });
+		}
+
+		const data: TransactionCreditDto = {
+			patient_id: transaction.patient.id,
+			username: createdBy,
+			sub_total: 0,
+			vat: 0,
+			amount: transaction.amount,
+			voucher_amount: 0,
+			amount_paid: 0,
+			change: 0,
+			description: transaction.description,
+			payment_method: 'HMO',
+			part_payment_expiry_date: null,
+			bill_source: transaction.bill_source,
+			next_location: null,
+			status: 1,
+			hmo_approval_code,
+			transaction_details: null,
+			admission_id: transaction.admission?.id || null,
+			staff_id: transaction.staff?.id || null,
+			lastChangedBy: null,
+		};
+
+		await postCredit(data, transaction.service, null, transaction.patientRequestItem, appointment, transaction.hmo);
+
+		transaction.hmo_approval_code = hmo_approval_code;
+		transaction.status = 1;
+		transaction.payment_method = 'HMO';
+		transaction.lastChangedBy = createdBy;
+		await transaction.save();
+
+		return { success: true, transaction };
 	}
 
 	async deleteTransaction(id: number, username: string): Promise<any> {

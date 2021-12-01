@@ -1,23 +1,25 @@
 import { IsNotEmpty } from 'class-validator';
 
 export class CafeteriaSalesDto {
-    @IsNotEmpty()
-    user_type: string;
+	@IsNotEmpty()
+	user_type: string;
 
-    user_id: string;
+	user_id: string;
 
-    sub_total: number;
+	sub_total: number;
 
-    vat: number;
+	vat: number;
 
-    total_amount: number;
+	total_amount: number;
 
-    @IsNotEmpty()
-    amount_paid: number;
+	@IsNotEmpty()
+	amount_paid: number;
 
-    change: number;
+	change: number;
 
-    payment_method: string;
+	payment_method: string;
 
-    items: any[];
+	items: any[];
+
+	bill_later: number;
 }

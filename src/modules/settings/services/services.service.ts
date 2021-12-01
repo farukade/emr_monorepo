@@ -262,7 +262,6 @@ export class ServicesService {
 		Service CATEGORY SERVICES
 	*/
 	async getServicesCategory(): Promise<ServiceCategory[]> {
-		console.log('ok');
 		return this.serviceCategoryRepository.find();
 	}
 

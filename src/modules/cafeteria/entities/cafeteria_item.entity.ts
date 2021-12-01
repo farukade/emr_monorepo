@@ -1,14 +1,13 @@
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
+import { CafeteriaFoodItem } from './food_item.entity';
 
 @Entity({name: 'cafeteria_items'})
 export class CafeteriaItem extends CustomBaseEntity {
 
-    @Column({type: 'varchar'})
-    name: string;
-
-    @Column({ type: 'varchar', nullable: true})
-    description: string;
+    @ManyToOne(type => CafeteriaFoodItem, { eager: true })
+    @JoinColumn({ name: 'food_item_id' })
+    foodItem: CafeteriaFoodItem;
 
     @Column({ type: 'float4', nullable: true})
     price: number;
