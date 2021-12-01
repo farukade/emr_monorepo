@@ -922,4 +922,23 @@ export class MigrationProcessor {
 			}
 		}
 	}
+
+	@Process('fix-inpatients')
+	async fixInPatients(job: Job<any>): Promise<any> {
+		const admissions = await this.admissionsRepository.find({
+			where: { status: 0 },
+			relations: ['patient'],
+		});
+
+		for (const admission of admissions) {
+			const patient = await this.patientRepository.findOne({
+				where: { id: admission.patient.id, is_admitted: false },
+			});
+
+			if (patient) {
+				patient.is_admitted = true;
+				await patient.save();
+			}
+		}
+	}
 }

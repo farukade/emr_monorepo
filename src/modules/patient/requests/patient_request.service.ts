@@ -46,7 +46,7 @@ export class PatientRequestService {
     }
 
     async listRequests(requestType, urlParams): Promise<any> {
-        const { startDate, endDate, status, page, limit, today, item_id, type } = urlParams;
+        const { startDate, endDate, status, page, limit, today, item_id, type, patient_id } = urlParams;
 
         const queryLimit = limit ? parseInt(limit, 10) : 30;
         const offset = (page ? parseInt(page, 10) : 1) - 1;
@@ -92,6 +92,10 @@ export class PatientRequestService {
 
         if (type && type === 'ivf') {
             query.andWhere('q.ivf_id = :item_id', { item_id });
+        }
+
+        if (patient_id && patient_id !== '') {
+            query.andWhere('q.patient_id = :patient_id', { patient_id });
         }
 
         const count = await query.getCount();

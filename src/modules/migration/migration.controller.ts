@@ -134,4 +134,12 @@ export class MigrationController {
     ): Promise<any> {
         return this.migrationService.queueMigration('call');
     }
+
+    @Get('/fix-inpatients')
+    fixInPatients(
+        @Query() urlParams,
+        @Request() request,
+    ): Promise<any> {
+        return this.migrationService.queueMigration('fix-inpatients');
+    }
 }
