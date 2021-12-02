@@ -256,22 +256,12 @@ export class AdmissionsService {
             const rs = await admission.save();
 
             // find service cost
-            let hmo = patient.hmo;
-            let serviceCost = await this.serviceCostRepository.findOne({
+            const hmo = patient.hmo;
+            const serviceCost = await this.serviceCostRepository.findOne({
                 where: { code: room.category.code, hmo },
             });
 
-            if (!serviceCost || (serviceCost && serviceCost.tariff === 0)) {
-                hmo = await this.hmoSchemeRepository.findOne({
-                    where: { name: 'Private' },
-                });
-
-                serviceCost = await this.serviceCostRepository.findOne({
-                    where: { code: room.category.code, hmo },
-                });
-            }
-
-            const amount = serviceCost.tariff;
+            const amount = serviceCost?.tariff || 0;
 
             // save transaction
             const data: TransactionCreditDto = {

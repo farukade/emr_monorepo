@@ -291,7 +291,7 @@ export class PatientRequestHelper {
             const nextId = `00000${requestCount + 1}`;
             const code = `${requestType.toUpperCase().substring(0, 1)}R/${moment().format('MM')}/${nextId.slice(-5)}`;
 
-            let hmo = patient.hmo;
+            const hmo = patient.hmo;
 
             // modules
             let antenatal = null;
@@ -321,17 +321,9 @@ export class PatientRequestHelper {
                     const res = await this.save(data);
                     const request = res.generatedMaps[0];
 
-                    let service = await getConnection().getRepository(ServiceCost).findOne({
+                    const service = await getConnection().getRepository(ServiceCost).findOne({
                         where: { code: item.code, hmo },
                     });
-
-                    if (!service || (service && service.tariff === 0)) {
-                        hmo = await getConnection().getRepository(HmoScheme).findOne({ where: { name: 'Private' } });
-
-                        service = await getConnection().getRepository(ServiceCost).findOne({
-                            where: { code: item.code, hmo },
-                        });
-                    }
 
                     const requestItem = {
                         request,

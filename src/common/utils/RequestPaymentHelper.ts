@@ -20,20 +20,13 @@ export class RequestPaymentHelper {
 
 			const labRequestItem = await getConnection().getRepository(PatientRequestItem).findOne(labRequest.item.id);
 
-			let hmo = patient.hmo;
+			const hmo = patient.hmo;
 
 			const labTest = labRequestItem.labTest;
 			if (labTest) {
-				let serviceCost = await getConnection().getRepository(ServiceCost).findOne({
+				const serviceCost = await getConnection().getRepository(ServiceCost).findOne({
 					where: { code: labTest.code, hmo },
 				});
-
-				if (!serviceCost || (serviceCost && serviceCost.tariff === 0)) {
-					hmo = await getConnection().getRepository(HmoScheme).findOne({ where: { name: 'Private' } });
-					serviceCost = await getConnection().getRepository(ServiceCost).findOne({
-						where: { code: labTest.code, hmo },
-					});
-				}
 
 				const category = await getConnection().getRepository(ServiceCategory).findOne({
 					where: { slug: 'labs' },
@@ -48,7 +41,7 @@ export class RequestPaymentHelper {
 					username: createdBy,
 					sub_total: 0,
 					vat: 0,
-					amount: serviceCost.tariff * -1,
+					amount: (serviceCost?.tariff || 0) * -1,
 					voucher_amount: 0,
 					amount_paid: 0,
 					change: 0,
@@ -90,20 +83,13 @@ export class RequestPaymentHelper {
 
 			const patientRequestItem = await getConnection().getRepository(PatientRequestItem).findOne(labRequest.item.id);
 
-			let hmo = patient.hmo;
+			const hmo = patient.hmo;
 
 			const service = patientRequestItem.service;
 			if (service) {
-				let serviceCost = await getConnection().getRepository(ServiceCost).findOne({
+				const serviceCost = await getConnection().getRepository(ServiceCost).findOne({
 					where: { code: service?.code, hmo },
 				});
-
-				if (!serviceCost || (serviceCost && serviceCost.tariff === 0)) {
-					hmo = await getConnection().getRepository(HmoScheme).findOne({ where: { name: 'Private' } });
-					serviceCost = await getConnection().getRepository(ServiceCost).findOne({
-						where: { code: service.code, hmo },
-					});
-				}
 
 				const admission = await getConnection().getRepository(Admission).findOne({
 					where: { patient, status: 0 },
@@ -114,7 +100,7 @@ export class RequestPaymentHelper {
 					username: createdBy,
 					sub_total: 0,
 					vat: 0,
-					amount: serviceCost.tariff * -1,
+					amount: (serviceCost?.tariff || 0) * -1,
 					voucher_amount: 0,
 					amount_paid: 0,
 					change: 0,

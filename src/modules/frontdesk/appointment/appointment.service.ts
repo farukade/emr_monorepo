@@ -212,7 +212,7 @@ export class AppointmentService {
                 return { success: false, message: 'please select a patient' };
             }
 
-            let hmo = patient.hmo;
+            const hmo = patient.hmo;
 
             // find doctor
             let doctor = null;
@@ -227,19 +227,9 @@ export class AppointmentService {
             }
 
             // find service
-            let serviceCost = await this.serviceCostRepository.findOne({
+            const serviceCost = await this.serviceCostRepository.findOne({
                 where: { code: service.code, hmo },
             });
-
-            if (!serviceCost || (serviceCost && serviceCost.tariff === 0)) {
-                hmo = await this.hmoSchemeRepository.findOne({
-                    where: { name: 'Private' },
-                });
-
-                serviceCost = await this.serviceCostRepository.findOne({
-                    where: { code: service.code, hmo },
-                });
-            }
 
             // find department
             const department = await this.departmentRepository.findOne(department_id);
@@ -419,7 +409,7 @@ export class AppointmentService {
     }
 
     private async saveTransaction(patient: Patient, hmo, service: Service, serviceCost: ServiceCost, createdBy, appointment) {
-        const amount = serviceCost.tariff;
+        const amount = serviceCost?.tariff || 0;
 
         const data: TransactionCreditDto = {
             patient_id: patient.id,

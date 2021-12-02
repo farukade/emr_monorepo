@@ -211,7 +211,7 @@ export class PatientService {
 				return { success: false, message: 'phone number already exists, please use another phone number.' };
 			}
 
-			let hmo = await this.hmoSchemeRepository.findOne(hmoId);
+			const hmo = await this.hmoSchemeRepository.findOne(hmoId);
 
 			let nok = await this.patientNOKRepository.findOne({
 				where: [{ phoneNumber: patientDto.nok_phoneNumber }, { email: patientDto.nok_email }],
@@ -236,15 +236,6 @@ export class PatientService {
 			const service = await this.serviceRepository.findOne({ where: { category } });
 			if (service) {
 				serviceCost = await this.serviceCostRepository.findOne({ where: { code: service.code, hmo } });
-			}
-			if (!serviceCost || (serviceCost && serviceCost.tariff === 0)) {
-				hmo = await this.hmoSchemeRepository.findOne({
-					where: { name: 'Private' },
-				});
-
-				serviceCost = await this.serviceCostRepository.findOne({
-					where: { code: service.code, hmo },
-				});
 			}
 
 			const data: TransactionCreditDto = {
