@@ -18,6 +18,7 @@ import { ServiceCost } from '../entities/service_cost.entity';
 import { DrugRepository } from '../../inventory/pharmacy/drug/drug.repository';
 import { RoomCategoryRepository } from '../room/room.category.repository';
 import * as path from 'path';
+import * as moment from 'moment';
 
 // tslint:disable-next-line:no-var-requires
 const Excel = require('exceljs');
@@ -139,7 +140,7 @@ export class ServicesService {
 			const category = await this.serviceCategoryRepository.findOne(categoryId);
 			const hmo = await this.hmoSchemeRepository.findOne(hmo_id);
 
-			const filename = `${category.slug}-${slugify(hmo.name)}.xlsx`;
+			const filename = `${category.slug}-${slugify(hmo.name)}${moment().unix()}.xlsx`;
 			const filepath = path.resolve(__dirname, `../../../../public/downloads/${filename}`);
 
 			let result = [];
