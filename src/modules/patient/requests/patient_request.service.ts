@@ -187,7 +187,6 @@ export class PatientRequestService {
             'q.createdAt': 'DESC',
         }).limit(queryLimit).offset(offset * queryLimit).getRawMany();
 
-        console.log(items);
 
         let result = [];
         for (const req of items) {

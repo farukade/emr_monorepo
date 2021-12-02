@@ -61,11 +61,7 @@ export class PatientNoteService {
         }
 
         if (type && type !== '') {
-            if (type === 'consultation') {
-                query.orWhere('q.type = :type', { type });
-            } else {
-                query.andWhere('q.type = :type', { type });
-            }
+            query.andWhere('q.type = :type', { type });
         }
 
         const page = options.page - 1;
@@ -102,6 +98,10 @@ export class PatientNoteService {
         note.patient = patient;
         note.description = description;
         note.type = type;
+
+        if (type === 'consultation') {
+            note.visit = 'encounter';
+        }
 
         if (admission_id && admission_id !== '') {
             note.admission = await this.admissionsRepository.findOne(admission_id);

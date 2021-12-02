@@ -20,6 +20,14 @@ export class DrugGenericController {
         return this.drugGenericService.fetchAll({ page, limit }, urlParams);
     }
 
+    @Get('/:id')
+    @UsePipes(ValidationPipe)
+    find(
+        @Param('id') id: number,
+    ): Promise<any> {
+        return this.drugGenericService.find(id);
+    }
+
     @Post('/')
     @UsePipes(ValidationPipe)
     create(
