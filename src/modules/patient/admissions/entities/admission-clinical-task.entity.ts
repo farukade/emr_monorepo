@@ -25,8 +25,8 @@ export class AdmissionClinicalTask extends CustomBaseEntity {
     @Column({ type: 'jsonb', nullable: true})
     drug: any;
 
-    @Column({ type: 'int', default: 0 })
-    dose: number;
+    @Column({ nullable: true })
+    dose: string;
 
     @Column({ nullable: true })
     frequency: string;

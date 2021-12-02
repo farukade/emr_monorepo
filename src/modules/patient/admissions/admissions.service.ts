@@ -399,7 +399,7 @@ export class AdmissionsService {
                     newTask.task = task.title;
                     newTask.title = `Give ${task.dose}dose(s) of ${task.drug.name} every ${task.interval}${task.intervalType}`;
                     newTask.taskType = 'regimen';
-                    newTask.dose = task.dose;
+                    newTask.dose = task?.dose?.toString() || '';
                     newTask.drug = task.drug;
                     newTask.request = request?.data && request?.data.length > 0 ? request.data[0] : null;
                     newTask.frequency = task.frequency;

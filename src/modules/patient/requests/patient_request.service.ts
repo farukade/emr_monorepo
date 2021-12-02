@@ -425,7 +425,7 @@ export class PatientRequestService {
                             newTask.title = `Give ${reqItem.item.drug.name} Immediately`;
                             newTask.taskType = 'regimen';
                             newTask.drug = { ...reqItem.item.drug, vaccine };
-                            newTask.dose = 1;
+                            newTask.dose = '1';
                             newTask.interval = 1;
                             newTask.intervalType = 'immediately';
                             newTask.frequency = 'Immediately';
