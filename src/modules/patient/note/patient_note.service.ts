@@ -44,10 +44,6 @@ export class PatientNoteService {
             query.andWhere('q.visit = :visit', { visit });
         }
 
-        if (type && type !== '') {
-            query.andWhere('q.type = :type', { type });
-        }
-
         if (admission_id && admission_id !== '') {
             query.andWhere('q.admission_id = :admission_id', { admission_id });
         }
@@ -62,6 +58,14 @@ export class PatientNoteService {
 
         if (procedure_id && procedure_id !== '') {
             query.andWhere('q.request_item_id = :procedure_id', { procedure_id });
+        }
+
+        if (type && type !== '') {
+            if (type === 'consultation') {
+                query.orWhere('q.type = :type', { type });
+            } else {
+                query.andWhere('q.type = :type', { type });
+            }
         }
 
         const page = options.page - 1;
