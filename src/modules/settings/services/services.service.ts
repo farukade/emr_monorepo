@@ -163,8 +163,8 @@ export class ServicesService {
 
 			worksheet.columns = [
 				{ header: 'SN', key: 'id', width: 10 },
-				{ header: 'Code 2', key: 'code', width: 10 },
-				{ header: 'Name', key: 'name', width: 80 },
+				{ header: 'Code', key: 'code', width: 20 },
+				{ header: 'Name', key: 'name', width: 70 },
 				{ header: 'Tariff', key: 'tariff', width: 20 },
 			];
 
