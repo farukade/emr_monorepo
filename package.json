@@ -49,6 +49,7 @@
     "csv-parser": "^2.3.2",
     "csv-writer": "^1.6.0",
     "dotenv": "^8.2.0",
+    "exceljs": "^4.3.0",
     "handlebars": "^4.7.6",
     "hbs": "^4.1.1",
     "lodash.startcase": "^4.4.0",
@@ -69,8 +70,7 @@
     "say": "^0.16.0",
     "smsglobal": "^1.2.2",
     "typeorm": "^0.2.30",
-    "typeorm-seeding": "^1.6.1",
-    "xlsx": "^0.16.0"
+    "typeorm-seeding": "^1.6.1"
   },
   "devDependencies": {
     "@nestjs/cli": "^6.9.0",

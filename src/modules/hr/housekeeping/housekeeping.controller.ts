@@ -1,18 +1,4 @@
-import {
-    Controller,
-    Post,
-    Body,
-    Res,
-    Header,
-    UseInterceptors,
-    UploadedFile,
-    Get,
-    Query,
-    UsePipes,
-    ValidationPipe,
-    Request,
-    UseGuards,
-} from '@nestjs/common';
+import { Controller, Post, Body, Res, Header, UseInterceptors, UploadedFile, Get, Query, UsePipes, ValidationPipe, Request, UseGuards } from '@nestjs/common';
 import { HousekeepingService } from './housekeeping.service';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';

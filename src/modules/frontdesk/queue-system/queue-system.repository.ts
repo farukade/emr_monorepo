@@ -24,7 +24,7 @@ export class QueueSystemRepository extends Repository<Queue> {
             }
             const queue = new Queue();
             queue.queueNumber   = queueNumber;
-            queue.patientName   = appointment.patient.surname + ', ' + appointment.patient.other_names;
+            queue.patientName   = appointment.patient.other_names + ' ' + appointment.patient.surname;
             queue.appointment   = appointment;
             queue.status        = 1;
             queue.queueDate     = today;

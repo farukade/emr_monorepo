@@ -5,7 +5,7 @@ import { ServiceCategoryDto } from './dto/service.category.dto';
 import { ServiceCategory } from '../entities/service_category.entity';
 import { Service } from '../entities/service.entity';
 import { ServiceCategoryRepository } from './repositories/service_category.repository';
-import { formatPID } from '../../../common/utils/utils';
+import { formatPID, slugify } from '../../../common/utils/utils';
 import { PaginationOptionsInterface } from '../../../common/paginate';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import { Raw } from 'typeorm';
@@ -17,6 +17,10 @@ import { ServiceCostRepository } from './repositories/service_cost.repository';
 import { ServiceCost } from '../entities/service_cost.entity';
 import { DrugRepository } from '../../inventory/pharmacy/drug/drug.repository';
 import { RoomCategoryRepository } from '../room/room.category.repository';
+import * as path from 'path';
+
+// tslint:disable-next-line:no-var-requires
+const Excel = require('exceljs');
 
 @Injectable()
 export class ServicesService {
@@ -126,6 +130,57 @@ export class ServicesService {
 			totalPages: total,
 			currentPage: options.page,
 		};
+	}
+
+	async download(categoryId: string, params) {
+		try {
+			const { hmo_id } = params;
+
+			const category = await this.serviceCategoryRepository.findOne(categoryId);
+			const hmo = await this.hmoSchemeRepository.findOne(hmo_id);
+
+			const filename = `${category.slug}-${slugify(hmo.name)}.xlsx`;
+			const filepath = path.resolve(__dirname, `../../../../public/downloads/${filename}`);
+
+			let result = [];
+			const query = await this.serviceRepository.find({ where: { category } });
+			for (const item of query) {
+				const serviceCost = await this.serviceCostRepository.findOne({ where: { code: item.code, hmo } });
+
+				result = [...result, { ...item, serviceCost }];
+			}
+
+			const services: ServicesInterface[] = result.map(s => ({
+				id: s.id,
+				code: s.code,
+				name: s.name,
+				tariff: s.serviceCost?.tariff || 0,
+			}));
+
+			const workbook = new Excel.Workbook();
+			const worksheet = workbook.addWorksheet(`${category.name} HMO Tariffs`);
+
+			worksheet.columns = [
+				{ header: 'SN', key: 'id', width: 10 },
+				{ header: 'Code 2', key: 'code', width: 10 },
+				{ header: 'Name', key: 'name', width: 80 },
+				{ header: 'Tariff', key: 'tariff', width: 20 },
+			];
+
+			services.forEach((data, index) => {
+				worksheet.addRow({ ...data });
+			});
+
+			worksheet.getRow(1).eachCell((cell) => {
+				cell.font = { bold: true };
+			});
+
+			await workbook.xlsx.writeFile(filepath);
+
+			return { url: `${process.env.ENDPOINT}/public/downloads/${filename}` };
+		} catch (e) {
+			throw e;
+		}
 	}
 
 	async getPrivateServiceByCode(code: string): Promise<ServiceCost> {

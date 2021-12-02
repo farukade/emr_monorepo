@@ -296,7 +296,7 @@ export const postDebit = async (data: TransactionCreditDto, service, voucher, re
 	transaction.is_admitted = (admission !== null);
 	transaction.bill_source = bill_source;
 	transaction.next_location = next_location;
-	transaction.status = status;
+	transaction.status = admission ? -1 : status;
 	transaction.hmo_approval_code = hmo_approval_code;
 	transaction.transaction_details = transaction_details;
 	transaction.patientRequestItem = requestItem;

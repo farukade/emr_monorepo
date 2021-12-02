@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, UsePipes, ValidationPipe, Body, Param, Delete, Request, Query, UseGuards} from '@nestjs/common';
+import { Controller, Get, Post, Patch, UsePipes, ValidationPipe, Body, Param, Delete, Request, Query, UseGuards } from '@nestjs/common';
 import { ServicesService } from './services.service';
 import { Service } from '../entities/service.entity';
 import { ServiceDto } from './dto/service.dto';
@@ -33,6 +33,14 @@ export class ServicesController {
         const page = request.query.hasOwnProperty('page') ? request.query.page : 1;
 
         return this.servicesService.getServicesByCategory(slug, { page, limit }, urlParams);
+    }
+
+    @Get('/download/:category')
+    downloadServices(
+        @Query() urlParams,
+        @Param('category') category: string,
+    ): Promise<any> {
+        return this.servicesService.download(category, urlParams);
     }
 
     @Get('/private/:code')
