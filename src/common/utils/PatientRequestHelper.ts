@@ -321,9 +321,17 @@ export class PatientRequestHelper {
                     const res = await this.save(data);
                     const request = res.generatedMaps[0];
 
-                    const service = await getConnection().getRepository(ServiceCost).findOne({
+                    let service = await getConnection().getRepository(ServiceCost).findOne({
                         where: { code: item.code, hmo },
                     });
+                    if (!service) {
+                        const cost = new ServiceCost();
+                        cost.code = item.code;
+                        cost.item = item;
+                        cost.hmo = hmo;
+                        cost.tariff = 0;
+                        service = await cost.save();
+                    }
 
                     const requestItem = {
                         request,
