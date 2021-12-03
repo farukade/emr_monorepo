@@ -203,16 +203,6 @@ export class PatientService {
 		try {
 			const { hmoId, email, phone_number, staff_id } = patientDto;
 
-			const emailFound = await this.patientRepository.findOne({ where: { email } });
-			if (emailFound) {
-				return { success: false, message: 'email already exists, please use another email address' };
-			}
-
-			const phoneFound = await this.patientRepository.findOne({ where: { phone_number } });
-			if (phoneFound) {
-				return { success: false, message: 'phone number already exists, please use another phone number.' };
-			}
-
 			const hmo = await this.hmoSchemeRepository.findOne(hmoId);
 
 			let nok = await this.patientNOKRepository.findOne({

@@ -182,7 +182,7 @@ export class TasksService {
 		}
 	}
 
-	@Cron(CronExpression.EVERY_DAY_AT_1AM)
+	@Cron(CronExpression.EVERY_30_SECONDS)
 	async removeMissedAppointment() {
 		this.logger.debug('remove missed appointment');
 		try {
