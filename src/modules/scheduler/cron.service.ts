@@ -205,6 +205,10 @@ export class TasksService {
 						await appTransact.save();
 						await appTransact.softRemove();
 					}
+
+					const single = await getConnection().getRepository(Appointment).findOne(item.id);
+					single.status = 'missed';
+					await single.save();
 				}
 			}
 		} catch (e) {

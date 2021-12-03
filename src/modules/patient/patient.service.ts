@@ -18,7 +18,7 @@ import { AppGateway } from '../../app.gateway';
 import { AppointmentRepository } from '../frontdesk/appointment/appointment.repository';
 import { AuthRepository } from '../auth/auth.repository';
 import { TransactionsRepository } from '../finance/transactions/transactions.repository';
-import { formatPID, getBalance, getOutstanding, getStaff, postDebit } from '../../common/utils/utils';
+import { formatPID, getBalance, getOutstanding, getStaff, postDebit, getLastAppointment } from '../../common/utils/utils';
 import { AdmissionClinicalTaskRepository } from './admissions/repositories/admission-clinical-tasks.repository';
 import { AdmissionsRepository } from './admissions/repositories/admissions.repository';
 import { Immunization } from './immunization/entities/immunization.entity';
@@ -141,6 +141,7 @@ export class PatientService {
 
 			patient.balance = await getBalance(patient.id);
 			patient.outstanding = await getOutstanding(patient.id);
+			patient.lastAppointment = await getLastAppointment(patient.id);
 		}
 
 		return {
@@ -192,6 +193,7 @@ export class PatientService {
 
 			patient.balance = await getBalance(patient.id);
 			patient.outstanding = await getOutstanding(patient.id);
+			patient.lastAppointment = await getLastAppointment(patient.id);
 		}
 
 		return patients;

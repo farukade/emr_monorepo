@@ -217,6 +217,16 @@ export const getBalance = async (patient_id) => {
 	}, 0);
 };
 
+export const getLastAppointment = async (patient_id) => {
+	const connection = getConnection();
+	const patient = await connection.getRepository(Patient).findOne(patient_id);
+
+	return await connection.getRepository(Appointment).findOne({
+		where: { patient },
+		order: { appointment_date: 'DESC' },
+	});
+};
+
 export const fixAmount = (amount) => {
 	const price = amount.split(',').join('');
 	return amount === '' ? 0 : price;
@@ -269,7 +279,27 @@ export const hasNumber = (myString) => {
 
 export const postDebit = async (data: TransactionCreditDto, service, voucher, requestItem, appointment, hmo) => {
 	// tslint:disable-next-line:max-line-length
-	const { patient_id, username, sub_total, vat, amount, voucher_amount, amount_paid, change, description, payment_method, part_payment_expiry_date, bill_source, next_location, status, hmo_approval_code, transaction_details, admission_id, staff_id, lastChangedBy } = data;
+	const {
+		patient_id,
+		username,
+		sub_total,
+		vat,
+		amount,
+		voucher_amount,
+		amount_paid,
+		change,
+		description,
+		payment_method,
+		part_payment_expiry_date,
+		bill_source,
+		next_location,
+		status,
+		hmo_approval_code,
+		transaction_details,
+		admission_id,
+		staff_id,
+		lastChangedBy,
+	} = data;
 
 	const connection = getConnection();
 
@@ -311,7 +341,27 @@ export const postDebit = async (data: TransactionCreditDto, service, voucher, re
 
 export const postCredit = async (data: TransactionCreditDto, service, voucher, requestItem, appointment, hmo) => {
 	// tslint:disable-next-line:max-line-length
-	const { patient_id, username, sub_total, vat, amount, voucher_amount, amount_paid, change, description, payment_method, part_payment_expiry_date, bill_source, next_location, status, hmo_approval_code, transaction_details, admission_id, staff_id, lastChangedBy } = data;
+	const {
+		patient_id,
+		username,
+		sub_total,
+		vat,
+		amount,
+		voucher_amount,
+		amount_paid,
+		change,
+		description,
+		payment_method,
+		part_payment_expiry_date,
+		bill_source,
+		next_location,
+		status,
+		hmo_approval_code,
+		transaction_details,
+		admission_id,
+		staff_id,
+		lastChangedBy,
+	} = data;
 
 	const connection = getConnection();
 
