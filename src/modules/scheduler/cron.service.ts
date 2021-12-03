@@ -182,7 +182,7 @@ export class TasksService {
 		}
 	}
 
-	@Cron(CronExpression.EVERY_30_SECONDS)
+	@Cron(CronExpression.EVERY_DAY_AT_1AM)
 	async removeMissedAppointment() {
 		this.logger.debug('remove missed appointment');
 		try {
@@ -200,14 +200,14 @@ export class TasksService {
 						.getRawOne();
 
 					if (transaction) {
-						const appTransact = await getConnection().getRepository(Transaction).findOne(transaction.id)
+						const appTransact = await getConnection().getRepository(Transaction).findOne(transaction.id);
 						appTransact.deletedBy = 'it-admin';
 						await appTransact.save();
 						await appTransact.softRemove();
 					}
 
 					const single = await getConnection().getRepository(Appointment).findOne(item.id);
-					single.status = 'missed';
+					single.status = 'Missed';
 					await single.save();
 				}
 			}

@@ -26,6 +26,8 @@ export class AppointmentDto {
     @IsNotEmpty()
     service: any;
 
+    service_id: any;
+
     @IsNotEmpty()
     consulting_room_id: string;
 
