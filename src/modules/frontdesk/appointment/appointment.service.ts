@@ -58,7 +58,7 @@ export class AppointmentService {
 	}
 
 	async listAppointments(options: PaginationOptionsInterface, params): Promise<Pagination> {
-		const { startDate, endDate, patient_id, today, doctor_id, department_id, canSeeDoctor } = params;
+		const { startDate, endDate, patient_id, today, doctor_id, department_id, canSeeDoctor, status } = params;
 
 		const query = this.appointmentRepository.createQueryBuilder('q')
 			.select('q.id');
@@ -102,6 +102,14 @@ export class AppointmentService {
 
 			if (department_id && department_id !== '') {
 				query.andWhere('q.department_id = :department_id', { department_id });
+			}
+		}
+
+		if (status && status !== '') {
+			if (status === 'Pending') {
+				query.andWhere('q.status Like :status', { status: '%Pending%' });
+			} else {
+				query.andWhere('q.status = :status', { status });
 			}
 		}
 
@@ -221,7 +229,6 @@ export class AppointmentService {
 			}
 
 			const hmo = patient.hmo;
-			console.log(hmo);
 
 			// find doctor
 			let doctor = null;
