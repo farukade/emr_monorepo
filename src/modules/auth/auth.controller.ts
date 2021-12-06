@@ -42,6 +42,15 @@ export class AuthController {
         return this.authService.resetPassword(id);
     }
 
+    @Post(':id/save')
+    @UsePipes(ValidationPipe)
+    saveUser(
+        @Param('id') id: number,
+        @Body() body,
+    ) {
+        return this.authService.saveUser(id, body);
+    }
+
     @Post('logout')
     @UsePipes(ValidationPipe)
     logoutUser(
