@@ -6,7 +6,7 @@ import { HmoDto } from './dto/hmo.dto';
 import { ServiceRepository } from '../settings/services/repositories/service.repository';
 import { TransactionsRepository } from '../finance/transactions/transactions.repository';
 import * as moment from 'moment';
-import { Like, Raw } from 'typeorm';
+import { getConnection, Like, Raw } from 'typeorm';
 import { QueueSystemRepository } from '../frontdesk/queue-system/queue-system.repository';
 import { PaginationOptionsInterface } from '../../common/paginate';
 import { Pagination } from '../../common/paginate/paginate.interface';
@@ -20,6 +20,8 @@ import { HmoType } from './entities/hmo_type.entity';
 import { ServiceCostRepository } from '../settings/services/repositories/service_cost.repository';
 import { PatientRequestItemRepository } from '../patient/repositories/patient_request_items.repository';
 import { MigrationService } from '../migration/migration.service';
+import { Transaction } from '../finance/transactions/transaction.entity';
+import { Patient } from '../patient/entities/patient.entity';
 
 @Injectable()
 export class HmoService {
@@ -93,11 +95,17 @@ export class HmoService {
 
         const page = options.page - 1;
 
-        const [result, total] = await this.hmoSchemeRepository.findAndCount({
+        const [query, total] = await this.hmoSchemeRepository.findAndCount({
             ...searchParam,
             take: options.limit,
             skip: (page * options.limit),
         });
+
+        let result = [];
+        for (const item of query) {
+            const patients = await getConnection().getRepository(Patient).count({ hmo: item });
+            result = [...result, { ...item, patients }];
+        }
 
         return {
             result,
