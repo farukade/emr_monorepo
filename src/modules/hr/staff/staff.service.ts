@@ -63,9 +63,13 @@ export class StaffService {
 
 		let result = [];
 		for (const staff of staffs) {
-			staff.department = await this.departmentRepository.findOne(staff.department_id);
+			if (staff.department_id) {
+				staff.department = await this.departmentRepository.findOne(staff.department_id);
+			}
 			staff.user = await this.authRepository.findOne(staff.user_id, { relations: ['role'] });
-			staff.specialization = await this.specializationRepository.findOne(staff.specialization_id);
+			if (staff.specialization_id) {
+				staff.specialization = await this.specializationRepository.findOne(staff.specialization_id);
+			}
 
 			result = [...result, staff];
 		}

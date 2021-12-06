@@ -9,6 +9,8 @@ import { StaffRepository } from '../hr/staff/staff.repository';
 import * as moment from 'moment';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { RoleRepository } from '../settings/roles-permissions/role.repository';
+import { DepartmentRepository } from '../settings/departments/department.repository';
+import { SpecializationRepository } from '../settings/specialization/specialization.repository';
 
 @Injectable()
 export class AuthService {
@@ -21,6 +23,10 @@ export class AuthService {
 		private readonly staffRepository: StaffRepository,
 		@InjectRepository(RoleRepository)
 		private roleRepository: RoleRepository,
+		@InjectRepository(DepartmentRepository)
+		private departmentRepository: DepartmentRepository,
+		@InjectRepository(SpecializationRepository)
+		private specializationRepository: SpecializationRepository,
 	) {
 	}
 
@@ -160,7 +166,15 @@ export class AuthService {
 			user.role = role;
 			await user.save();
 
-			return await this.staffRepository.findOne({ where: { user }, relations: ['user', 'user.role', 'department', 'specialization'] });
+			console.log(await this.staffRepository.findOne({
+				where: { user },
+				relations: ['user', 'user.role', 'department', 'specialization'],
+			}));
+
+			return await this.staffRepository.findOne({
+				where: { user },
+				relations: ['user', 'user.role', 'department', 'specialization'],
+			});
 		} catch (e) {
 			console.log(e);
 			throw e;

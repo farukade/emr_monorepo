@@ -194,7 +194,7 @@ export const getOutstanding = async (patient_id) => {
 	const patient = await connection.getRepository(Patient).findOne(patient_id);
 
 	const transactions = await connection.getRepository(Transaction).find({
-		where: { patient, payment_type: 'self' },
+		where: { patient },
 	});
 
 	return patient.credit_limit > 0 ? 0 : transactions
@@ -209,7 +209,7 @@ export const getBalance = async (patient_id) => {
 	const patient = await connection.getRepository(Patient).findOne(patient_id);
 
 	const transactions = await connection.getRepository(Transaction).find({
-		where: { patient, payment_type: 'self' },
+		where: { patient },
 	});
 
 	return patient.credit_limit > 0 ? 0 : transactions.reduce((totalAmount, item) => {

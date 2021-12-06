@@ -200,6 +200,9 @@ export class PatientService {
 	}
 
 	async saveNewPatient(patientDto: PatientDto, createdBy: string, pic): Promise<any> {
+		const queryRunner = getConnection().createQueryRunner();
+		await queryRunner.startTransaction();
+
 		try {
 			const { hmoId, email, phone_number, staff_id } = patientDto;
 
@@ -254,6 +257,9 @@ export class PatientService {
 
 			await postDebit(data, serviceCost, null, null, null, patient.hmo);
 
+			await queryRunner.commitTransaction();
+			await queryRunner.release();
+
 			try {
 				const mail = {
 					id: patient.id,
@@ -274,7 +280,10 @@ export class PatientService {
 			const pat = { ...patient, outstanding, balance };
 
 			return { success: true, patient: pat };
+
 		} catch (err) {
+			await queryRunner.rollbackTransaction();
+			await queryRunner.release();
 			console.log(err);
 			return { success: false, message: err.message };
 		}
