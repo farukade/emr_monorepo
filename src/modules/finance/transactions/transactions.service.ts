@@ -110,6 +110,8 @@ export class TransactionsService {
 			if (transaction.patient_request_item_id) {
 				transaction.patientRequestItem = await this.patientRequestItemRepository.findOne(transaction.patient_request_item_id, { relations: ['request'] });
 			}
+
+			transaction.cashier = await getStaff(transaction.createdBy);
 		}
 
 		return {
@@ -170,6 +172,8 @@ export class TransactionsService {
 			if (transaction.patient_request_item_id) {
 				transaction.patientRequestItem = await this.patientRequestItemRepository.findOne(transaction.patient_request_item_id, { relations: ['request'] });
 			}
+
+			transaction.cashier = await getStaff(transaction.createdBy);
 		}
 
 		return {
@@ -182,15 +186,10 @@ export class TransactionsService {
 	}
 
 	async processTransaction(id: number, transactionDto: ProcessTransactionDto, updatedBy): Promise<any> {
-		const {
-			voucher_id,
-			amount_paid,
-			voucher_amount,
-			payment_method,
-			patient_id,
-			is_part_payment,
-			pay_with_credit,
-		} = transactionDto;
+		const queryRunner = getConnection().createQueryRunner();
+		await queryRunner.startTransaction();
+
+		const { voucher_id, amount_paid, voucher_amount, payment_method, patient_id, is_part_payment, pay_with_credit } = transactionDto;
 		try {
 			const transaction = await this.transactionsRepository.findOne(id, { relations: ['patient', 'staff', 'appointment', 'hmo', 'admission'] });
 
@@ -223,7 +222,7 @@ export class TransactionsService {
 				await postDebit(value, transaction.service, null, transaction.patientRequestItem, transaction.appointment, transaction.hmo);
 			}
 
-			let amount_to_pay = 0;
+			let amount_to_pay = amount_paid;
 			if (pay_with_credit === 1) {
 				const balance = await getBalance(patient_id);
 				amount_to_pay = balance < 0 ? Math.abs(balance) : 0;
@@ -296,12 +295,25 @@ export class TransactionsService {
 			transaction.lastChangedBy = updatedBy;
 			const rs = await transaction.save();
 
-			await postCredit(data, transaction.service, voucher, transaction.patientRequestItem, appointment, transaction.hmo);
+			const credit = await postCredit(data, transaction.service, voucher, transaction.patientRequestItem, appointment, transaction.hmo);
+
+			await queryRunner.commitTransaction();
+			await queryRunner.release();
+
+			const creditTransaction = await this.transactionsRepository.findOne(credit.id, {
+				relations: ['patient', 'staff', 'appointment', 'hmo', 'admission', 'patientRequestItem'],
+			});
+			const cashier = await getStaff(credit.createdBy);
+			if (creditTransaction.patientRequestItem) {
+				transaction.patientRequestItem = await this.patientRequestItemRepository.findOne(transaction.patientRequestItem.id, { relations: ['request'] });
+			}
 
 			rs.staff = await getStaff(transaction.lastChangedBy);
 
-			return { success: true, transaction: rs, queue };
+			return { success: true, transaction: rs, credit: { ...creditTransaction, cashier }, queue };
 		} catch (error) {
+			await queryRunner.rollbackTransaction();
+			await queryRunner.release();
 			console.log(error);
 			return { success: false, message: error.message };
 		}

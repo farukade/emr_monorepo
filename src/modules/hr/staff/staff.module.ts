@@ -8,6 +8,7 @@ import { DepartmentRepository } from '../../settings/departments/department.repo
 import { AuthRepository } from '../../auth/auth.repository';
 import { AppointmentRepository } from '../../frontdesk/appointment/appointment.repository';
 import { SpecializationRepository } from '../../settings/specialization/specialization.repository';
+import { PatientRepository } from '../../patient/repositories/patient.repository';
 
 @Module({
     imports: [TypeOrmModule.forFeature([
@@ -17,6 +18,7 @@ import { SpecializationRepository } from '../../settings/specialization/speciali
         DepartmentRepository,
         AppointmentRepository,
         SpecializationRepository,
+        PatientRepository,
     ])],
     controllers: [StaffController],
     providers: [StaffService],

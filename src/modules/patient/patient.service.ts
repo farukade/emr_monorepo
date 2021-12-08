@@ -37,6 +37,8 @@ import { PatientNoteRepository } from './repositories/patient_note.repository';
 import { PatientNote } from './entities/patient_note.entity';
 import { StaffRepository } from '../hr/staff/staff.repository';
 import { TransactionCreditDto } from '../finance/transactions/dto/transaction-credit.dto';
+// @ts-ignore
+import * as startCase from 'lodash.startcase';
 
 @Injectable()
 export class PatientService {
@@ -131,8 +133,8 @@ export class PatientService {
 				patient.hmo = await this.hmoSchemeRepository.findOne(patient.hmo_scheme_id);
 			}
 
-			if (patient.nextOfKin_id) {
-				patient.nextOfKin = await this.nextOfKinRepository.findOne(patient.nextOfKin_id);
+			if (patient.next_of_kin_id) {
+				patient.nextOfKin = await this.nextOfKinRepository.findOne(patient.next_of_kin_id);
 			}
 
 			patient.admission = await this.admissionRepository.findOne({
@@ -142,6 +144,10 @@ export class PatientService {
 			patient.balance = await getBalance(patient.id);
 			patient.outstanding = await getOutstanding(patient.id);
 			patient.lastAppointment = await getLastAppointment(patient.id);
+
+			if (patient.staff_id) {
+				patient.staff = await this.staffRepository.findOne(patient.staff_id);
+			}
 		}
 
 		return {
@@ -187,26 +193,30 @@ export class PatientService {
 				patient.hmo = await this.hmoSchemeRepository.findOne(patient.hmo_scheme_id);
 			}
 
-			if (patient.nextOfKin_id) {
-				patient.nextOfKin = await this.nextOfKinRepository.findOne(patient.nextOfKin_id);
+			if (patient.next_of_kin_id) {
+				patient.nextOfKin = await this.nextOfKinRepository.findOne(patient.next_of_kin_id);
 			}
 
 			patient.balance = await getBalance(patient.id);
 			patient.outstanding = await getOutstanding(patient.id);
 			patient.lastAppointment = await getLastAppointment(patient.id);
+
+			if (patient.staff_id) {
+				patient.staff = await this.staffRepository.findOne(patient.staff_id);
+			}
 		}
 
 		return patients;
 	}
 
-	async saveNewPatient(patientDto: PatientDto, createdBy: string, pic): Promise<any> {
+	async saveNewPatient(patientDto: PatientDto, createdBy: string): Promise<any> {
 		const queryRunner = getConnection().createQueryRunner();
 		await queryRunner.startTransaction();
 
 		try {
-			const { hmoId, email, phone_number, staff_id } = patientDto;
+			const { hmo_id, staff_id } = patientDto;
 
-			const hmo = await this.hmoSchemeRepository.findOne(hmoId);
+			const hmo = await this.hmoSchemeRepository.findOne(hmo_id);
 
 			let nok = await this.patientNOKRepository.findOne({
 				where: [{ phoneNumber: patientDto.nok_phoneNumber }, { email: patientDto.nok_email }],
@@ -221,7 +231,7 @@ export class PatientService {
 				staff = await this.staffRepository.findOne(staff_id);
 			}
 
-			const patient = await this.patientRepository.savePatient(patientDto, nok, hmo, createdBy, pic, staff);
+			const patient = await this.patientRepository.savePatient(patientDto, nok, hmo, createdBy, staff);
 
 			const splits = patient.other_names.split(' ');
 			const message = `Dear ${patient.surname} ${splits.length > 0 ? splits[0] : patient.other_names}, welcome to the DEDA Family. Your ID/Folder number is ${formatPID(patient.id)}. Kindly save the number and provide it at all your appointment visits. Thank you.`;
@@ -277,7 +287,7 @@ export class PatientService {
 			const balance = await getBalance(patient.id);
 			const outstanding = await getOutstanding(patient.id);
 
-			const pat = { ...patient, outstanding, balance };
+			const pat = { ...patient, outstanding, balance, staff };
 
 			return { success: true, patient: pat };
 
@@ -289,7 +299,7 @@ export class PatientService {
 		}
 	}
 
-	async saveNewOpdPatient(patientDto: OpdPatientDto, createdBy: string, pic): Promise<any> {
+	async saveNewOpdPatient(patientDto: OpdPatientDto, createdBy: string): Promise<any> {
 		try {
 			console.log(patientDto);
 
@@ -302,9 +312,6 @@ export class PatientService {
 			patient.email = patientDto.email;
 			patient.phone_number = patientDto.phoneNumber;
 			patient.createdBy = createdBy;
-			if (pic) {
-				patient.profile_pic = pic.filename;
-			}
 			console.log(patient);
 
 			return { success: false, message: 'could not save patient' };
@@ -315,46 +322,78 @@ export class PatientService {
 			// send new opd socket message
 			this.appGateway.server.emit('new-opd-queue', appointment);
 
-			// return { success: true, patient };
+			return { success: true, patient };
 		} catch (err) {
 			return { success: false, message: err.message };
 		}
 	}
 
-	async updatePatientRecord(id: string, patientDto: PatientDto, updatedBy: string, pic): Promise<any> {
+	async updatePatientRecord(id: string, patientDto: PatientDto, updatedBy: string): Promise<any> {
+		const queryRunner = getConnection().createQueryRunner();
+		await queryRunner.startTransaction();
 		try {
 			const patient = await this.patientRepository.findOne(id, { relations: ['nextOfKin'] });
-			patient.surname = patientDto.surname.toLocaleLowerCase();
-			patient.other_names = patientDto.other_names.toLocaleLowerCase();
-			patient.address = patientDto.address.toLocaleLowerCase();
+
+			const hmo = await this.hmoSchemeRepository.findOne(patientDto.hmo_id);
+
+			patient.surname = startCase(patientDto.surname.toLocaleLowerCase());
+			patient.other_names = startCase(patientDto.other_names.toLocaleLowerCase());
+			patient.address = startCase(patientDto.address.toLocaleLowerCase());
 			patient.date_of_birth = patientDto.date_of_birth;
-			patient.occupation = patientDto.occupation;
+			patient.occupation = patientDto.occupation || '';
 			patient.gender = patientDto.gender;
-			patient.email = patientDto.email;
+			patient.email = patientDto.email.toLocaleLowerCase();
 			patient.phone_number = patientDto.phone_number;
 			patient.maritalStatus = patientDto.maritalStatus;
 			patient.ethnicity = patientDto.ethnicity;
 			patient.referredBy = patientDto.referredBy;
+			patient.profile_pic = patientDto.avatar || '';
 			patient.lastChangedBy = updatedBy;
-			patient.nextOfKin.surname = patientDto.nok_surname;
-			patient.nextOfKin.other_names = patientDto.nok_other_names;
-			patient.nextOfKin.address = patientDto.nok_address;
-			patient.nextOfKin.date_of_birth = patientDto.nok_date_of_birth;
-			patient.nextOfKin.relationship = patientDto.relationship;
-			patient.nextOfKin.occupation = patientDto.nok_occupation;
-			patient.nextOfKin.gender = patientDto.nok_gender;
-			patient.nextOfKin.email = patientDto.nok_email;
-			patient.nextOfKin.phoneNumber = patientDto.nok_phoneNumber;
-			patient.nextOfKin.maritalStatus = patientDto.nok_maritalStatus;
-			patient.nextOfKin.ethnicity = patientDto.nok_ethnicity;
-			patient.hmo = await this.hmoSchemeRepository.findOne(patientDto.hmoId);
-			if (pic) {
-				patient.profile_pic = pic.filename;
-			}
-			const rs = patient.save();
+			patient.hmo = hmo;
 
-			return { success: true, patient: rs };
+			patient.save();
+
+			let nok;
+			if (patient.nextOfKin) {
+				const nextOfKin = await this.patientNOKRepository.findOne(patient.nextOfKin.id);
+				nextOfKin.surname = patientDto.nok_surname;
+				nextOfKin.other_names = patientDto.nok_other_names;
+				nextOfKin.address = patientDto.nok_address || '';
+				nextOfKin.date_of_birth = patientDto.nok_date_of_birth || '';
+				nextOfKin.relationship = patientDto.nok_relationship || '';
+				nextOfKin.occupation = patientDto.nok_occupation || '';
+				nextOfKin.gender = patientDto.nok_gender || '';
+				nextOfKin.email = patientDto.nok_email || '';
+				nextOfKin.phoneNumber = patientDto.nok_phoneNumber || '';
+				nextOfKin.maritalStatus = patientDto.nok_maritalStatus || '';
+				nextOfKin.ethnicity = patientDto.nok_ethnicity || '';
+				nok = await nextOfKin.save();
+			}
+
+			await queryRunner.commitTransaction();
+			await queryRunner.release();
+
+			const result = await this.patientRepository.findOne(id, { relations: ['nextOfKin'] });
+
+			result.immunization = await this.immunizationRepository.find({
+				where: { patient },
+			});
+
+			result.hmo = hmo;
+			result.nextOfKin = nok;
+
+			const balance = await getBalance(patient.id);
+			const outstanding = await getOutstanding(patient.id);
+			const lastAppointment = await getLastAppointment(patient.id);
+
+			if (patientDto.staff_id) {
+				result.staff = await this.staffRepository.findOne(patientDto.staff_id);
+			}
+
+			return { success: true, patient: { ...result, balance, outstanding, lastAppointment } };
 		} catch (err) {
+			await queryRunner.rollbackTransaction();
+			await queryRunner.release();
 			return { success: false, message: err.message };
 		}
 	}

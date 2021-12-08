@@ -15,6 +15,7 @@ import { AuthRepository } from '../../auth/auth.repository';
 import { AppointmentRepository } from '../../frontdesk/appointment/appointment.repository';
 import * as moment from 'moment';
 import { SpecializationRepository } from '../../settings/specialization/specialization.repository';
+import { PatientRepository } from '../../patient/repositories/patient.repository';
 
 @Injectable()
 export class StaffService {
@@ -31,6 +32,8 @@ export class StaffService {
 		private appointmentRepository: AppointmentRepository,
 		@InjectRepository(SpecializationRepository)
 		private specializationRepository: SpecializationRepository,
+		@InjectRepository(PatientRepository)
+		private patientRepository: PatientRepository,
 	) {
 	}
 
@@ -83,24 +86,24 @@ export class StaffService {
 		};
 	}
 
-	async findStaffs(param): Promise<StaffDetails[]> {
+	async findStaffs(options, param): Promise<StaffDetails[]> {
 		const { q, profession } = param;
 
-		const query = await this.staffRepository.createQueryBuilder('s')
+		const query = this.staffRepository.createQueryBuilder('s')
 			.select('s.*')
 			.andWhere(new Brackets(qb => {
 				qb.where('LOWER(s.first_name) Like :first_name', { first_name: `%${q.toLowerCase()}%` })
 					.orWhere('LOWER(s.last_name) Like :last_name', { last_name: `%${q.toLowerCase()}%` })
-					.orWhere('LOWER(s.employee_number) Like :employee_number', { employee_number: `%${q.toLowerCase()}%` })
-					.orWhere('s.phone_number Like :phone_number', { phone_number: `%${q}%` })
+					.orWhere('LOWER(s.employee_number) Like :employee_no', { employee_no: `%${q.toLowerCase()}%` })
+					.orWhere('s.phone_number Like :phone', { phone: `%${q}%` })
 					.orWhere('CAST(s.id AS text) LIKE :id', { id: `%${q}%` });
 			}));
 
-		if (profession !== '') {
+		if (profession && profession !== '') {
 			query.andWhere('s.profession = :profession', { profession });
 		}
 
-		return await query.take(20).getRawMany();
+		return await query.take(options.limit).getRawMany();
 	}
 
 	async addNewStaff(staffDto: StaffDto, pic, username): Promise<any> {

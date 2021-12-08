@@ -28,8 +28,10 @@ export class StaffController {
     @Get('find')
     findStaffDetails(
         @Query() param,
+        @Request() request,
     ): Promise<StaffDetails[]> {
-        return this.staffService.findStaffs(param);
+        const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 50;
+        return this.staffService.findStaffs({ limit }, param);
     }
 
     @Patch('enable')

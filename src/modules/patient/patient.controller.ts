@@ -1,5 +1,22 @@
 // tslint:disable-next-line:max-line-length
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UsePipes, ValidationPipe, UseInterceptors, UploadedFile, Res, UseGuards, Request} from '@nestjs/common';
+import {
+    Controller,
+    Get,
+    Post,
+    Body,
+    Patch,
+    Param,
+    Delete,
+    Query,
+    UsePipes,
+    ValidationPipe,
+    UseInterceptors,
+    UploadedFile,
+    Res,
+    UseGuards,
+    Request,
+    Put,
+} from '@nestjs/common';
 import { PatientService } from './patient.service';
 import { Patient } from './entities/patient.entity';
 import { PatientDto } from './dto/patient.dto';
@@ -37,69 +54,41 @@ export class PatientController {
         @Request() request,
     ): Promise<Patient[]> {
         const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 50;
-
         return this.patientService.findPatient({ limit }, param);
     }
 
     @UseGuards(AuthGuard('jwt'))
-    @Post('save')
+    @Post('')
     @UsePipes(ValidationPipe)
-    @UseInterceptors(FileInterceptor('avatar', {
-        storage: diskStorage({
-            destination: './uploads/avatars',
-            filename: (req, file, cb) => {
-                const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('');
-                return cb(null, `${randomName}${extname(file.originalname)}`);
-            },
-        }),
-    }))
     saveNewPatient(
         @Body() patientDto: PatientDto,
         @UploadedFile() pic,
         @Request() req,
     ): Promise<any> {
-        return this.patientService.saveNewPatient(patientDto, req.user.username, pic);
+        return this.patientService.saveNewPatient(patientDto, req.user.username);
     }
 
     @UseGuards(AuthGuard('jwt'))
     @Post('opd')
     @UsePipes(ValidationPipe)
-    @UseInterceptors(FileInterceptor('avatar', {
-        storage: diskStorage({
-            destination: './uploads/avatars',
-            filename: (req, file, cb) => {
-                const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('');
-                return cb(null, `${randomName}${extname(file.originalname)}`);
-            },
-        }),
-    }))
     saveNewOpdPatient(
         @Body() opdPatientDto: OpdPatientDto,
         @UploadedFile() pic,
         @Request() req,
     ): Promise<any> {
-        return this.patientService.saveNewOpdPatient(opdPatientDto, req.user.username, pic);
+        return this.patientService.saveNewOpdPatient(opdPatientDto, req.user.username);
     }
 
     @UseGuards(AuthGuard('jwt'))
-    @Post(':id/update')
+    @Put('/:id')
     @UsePipes(ValidationPipe)
-    @UseInterceptors(FileInterceptor('avatar', {
-        storage: diskStorage({
-            destination: './uploads/avatars',
-            filename: (req, file, cb) => {
-                const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('');
-                return cb(null, `${randomName}${extname(file.originalname)}`);
-            },
-        }),
-    }))
     updatePatientCall(
         @Param('id') id: string,
         @Body() patientDto: PatientDto,
         @UploadedFile() pic,
         @Request() req,
     ): Promise<any> {
-        return this.patientService.updatePatientRecord(id, patientDto, req.user.username, pic);
+        return this.patientService.updatePatientRecord(id, patientDto, req.user.username);
     }
 
     @UseGuards(AuthGuard('jwt'))

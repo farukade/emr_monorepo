@@ -25,8 +25,8 @@ export class StaffDetails extends CustomBaseEntity {
     @Column({ type: 'varchar', length: 300, nullable: true })
     address: string;
 
-    @Column({ type: 'varchar', length: 300, nullable: true, name: 'employee_number' })
-    employeeNumber: string;
+    @Column({ type: 'varchar', length: 300, nullable: true })
+    employee_number: string;
 
     @Column({ type: 'varchar', length: 300, nullable: true })
     phone_number: string;

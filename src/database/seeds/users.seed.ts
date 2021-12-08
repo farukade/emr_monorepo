@@ -26,7 +26,7 @@ export default class CreateUser implements Seeder {
         staff.last_name = 'Deda'.toLocaleLowerCase();
         staff.email = 'admin@deda.com';
         staff.user = user;
-        staff.employeeNumber = 'DH140';
+        staff.employee_number = 'DH140';
         staff.department = await getConnection().getRepository(Department).findOne({ where: { name: 'ICT' } });
 
         await staff.save();

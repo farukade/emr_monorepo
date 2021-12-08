@@ -50,7 +50,7 @@ export class HousekeepingService {
                 const data = [
                     {
                         sn,
-                        employee_number: staff.employeeNumber,
+                        employee_number: staff.employee_number,
                         name: `${staff.last_name}, ${staff.first_name}`,
                     },
                 ];

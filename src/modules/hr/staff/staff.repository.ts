@@ -2,6 +2,8 @@ import { EntityRepository, Repository } from 'typeorm';
 import { StaffDetails } from './entities/staff_details.entity';
 import { Department } from '../../settings/entities/department.entity';
 import { User } from '../../auth/entities/user.entity';
+// @ts-ignore
+import * as startCase from 'lodash.startcase';
 
 @EntityRepository(StaffDetails)
 export class StaffRepository extends Repository<StaffDetails> {
@@ -17,9 +19,9 @@ export class StaffRepository extends Repository<StaffDetails> {
     async saveDetails(staffDto: any, department: Department, user: User, specialization, pic, username) {
         try {
             const staff = new StaffDetails();
-            staff.first_name = staffDto?.first_name?.toLocaleLowerCase();
-            staff.last_name = staffDto?.last_name?.toLocaleLowerCase();
-            staff.other_names = staffDto?.other_names?.toLocaleLowerCase();
+            staff.first_name = startCase(staffDto?.first_name?.toLocaleLowerCase());
+            staff.last_name = startCase(staffDto?.last_name?.toLocaleLowerCase());
+            staff.other_names = startCase(staffDto?.other_names?.toLocaleLowerCase());
             staff.address = staffDto.address;
             staff.phone_number = staffDto.phone_number;
             staff.email = staffDto.email;
@@ -49,7 +51,7 @@ export class StaffRepository extends Repository<StaffDetails> {
             staff.profile_pic = (pic) ? pic.filename : '';
             staff.specialization = specialization;
             staff.user = user;
-            staff.employeeNumber = staffDto.employee_number;
+            staff.employee_number = staffDto.employee_number;
             staff.createdBy = username;
             staff.profession = staffDto.profession;
 
