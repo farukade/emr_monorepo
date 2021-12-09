@@ -89,21 +89,21 @@ export class AppointmentService {
 			query.andWhere('q.patient_id = :patient_id', { patient_id });
 		}
 
-		if (doctor_id && doctor_id !== '' && department_id && department_id !== '') {
-			console.log('refresh--------------->');
-			query.andWhere(new Brackets(qb => {
-				qb.where('q.doctor_id = :doctor_id', { doctor_id })
-					.orWhere('q.department_id = :department_id', { department_id });
-			}));
-		} else {
-			if (doctor_id && doctor_id !== '') {
-				query.andWhere('q.doctor_id = :doctor_id', { doctor_id });
-			}
-
-			if (department_id && department_id !== '') {
-				query.andWhere('q.department_id = :department_id', { department_id });
-			}
-		}
+		// if (doctor_id && doctor_id !== '' && department_id && department_id !== '') {
+		// 	console.log('refresh--------------->');
+		// 	query.andWhere(new Brackets(qb => {
+		// 		qb.where('q.doctor_id = :doctor_id', { doctor_id })
+		// 			.orWhere('q.department_id = :department_id', { department_id });
+		// 	}));
+		// } else {
+		// 	if (doctor_id && doctor_id !== '') {
+		// 		query.andWhere('q.doctor_id = :doctor_id', { doctor_id });
+		// 	}
+		//
+		// 	if (department_id && department_id !== '') {
+		// 		query.andWhere('q.department_id = :department_id', { department_id });
+		// 	}
+		// }
 
 		if (status && status !== '') {
 			if (status === 'Pending') {
