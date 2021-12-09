@@ -212,15 +212,7 @@ export class AppointmentService {
 
 	async saveNewAppointment(appointmentDto: AppointmentDto, username: string): Promise<any> {
 		try {
-			const {
-				patient_id,
-				doctor_id,
-				consulting_room_id,
-				sendToQueue,
-				department_id,
-				consultation_id,
-				service_id,
-			} = appointmentDto;
+			const { patient_id, doctor_id, consulting_room_id, sendToQueue, department_id, consultation_id, service_id } = appointmentDto;
 
 			// find patient details
 			const patient = await this.patientRepository.findOne(patient_id, { relations: ['hmo'] });
@@ -271,7 +263,7 @@ export class AppointmentService {
 			const isCovered = covered && department.name === 'Antenatal';
 
 			// tslint:disable-next-line:max-line-length
-			const appointment = await this.appointmentRepository.saveAppointment(appointmentDto, patient, consultingRoom, doctor, service, serviceCost, department);
+			const appointment = await this.appointmentRepository.saveAppointment(appointmentDto, patient, consultingRoom, doctor, service, serviceCost, department, username);
 
 			// update patient appointment date
 			patient.last_appointment_date = moment().format('YYYY-MM-DD');
@@ -280,7 +272,7 @@ export class AppointmentService {
 			let queue;
 
 			// update appointment status
-			appointment.status = hmo.name === 'Private' ? 'Pending Paypoint Approval' : 'Pending HMO Approval';
+			appointment.status = consultation_id === 'initial' ? (hmo.name === 'Private' ? 'Pending Paypoint Approval' : 'Pending HMO Approval') : 'Approved';
 
 			if (isCovered) {
 				appointment.status = 'Approved';
@@ -292,7 +284,7 @@ export class AppointmentService {
 			appointment.consultation_type = consultation_id;
 			await appointment.save();
 
-			if (consultation_id !== 'follow-up') {
+			if (consultation_id === 'initial') {
 				let payment;
 
 				if (!isCovered) {

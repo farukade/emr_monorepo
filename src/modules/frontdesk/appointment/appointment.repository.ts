@@ -20,6 +20,7 @@ export class AppointmentRepository extends Repository<Appointment> {
         service,
         serviceCost: ServiceCost,
         department: Department,
+        username: string,
     ) {
         const appointmentDate = `${moment(appointmentDto.appointment_date).format('YYYY-MM-DD')} ${moment().format('HH:mm:ss')}`;
 
@@ -34,6 +35,7 @@ export class AppointmentRepository extends Repository<Appointment> {
         appointment.referredBy = appointmentDto.referredBy;
         appointment.referralCompany = appointmentDto.referralCompany;
         appointment.department = department;
+        appointment.createdBy = username;
         await appointment.save();
 
         return appointment;
