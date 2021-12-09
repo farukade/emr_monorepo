@@ -193,35 +193,6 @@ export class TransactionsService {
 		try {
 			const transaction = await this.transactionsRepository.findOne(id, { relations: ['patient', 'staff', 'appointment', 'hmo', 'admission'] });
 
-			if (is_part_payment && amount_paid < transaction.amount) {
-				const duration = await getConnection().getRepository(Settings).findOne({ where: { slug: 'part-payment-duration' } });
-				const date = moment().add(duration.value, 'd').format('YYYY-MM-DD');
-
-				const value: TransactionCreditDto = {
-					patient_id: transaction.patient?.id || null,
-					username: transaction.createdBy,
-					sub_total: 0,
-					vat: 0,
-					amount: ((transaction.amount * -1) - amount_paid) * -1,
-					voucher_amount: 0,
-					amount_paid: 0,
-					change: 0,
-					description: transaction.description,
-					payment_method,
-					part_payment_expiry_date: date,
-					bill_source: transaction.bill_source,
-					next_location: transaction.next_location,
-					status: -1,
-					hmo_approval_code: transaction.hmo_approval_code,
-					transaction_details: transaction.transaction_details,
-					admission_id: transaction.admission?.id || null,
-					staff_id: transaction.staff?.id || null,
-					lastChangedBy: updatedBy,
-				};
-
-				await postDebit(value, transaction.service, null, transaction.patientRequestItem, transaction.appointment, transaction.hmo);
-			}
-
 			let amount_to_pay = amount_paid;
 			if (pay_with_credit === 1) {
 				const balance = await getBalance(patient_id);
@@ -233,7 +204,7 @@ export class TransactionsService {
 				username: updatedBy,
 				sub_total: 0,
 				vat: 0,
-				amount: amount_to_pay,
+				amount: Math.abs(amount_to_pay),
 				voucher_amount: 0,
 				amount_paid: 0,
 				change: 0,
@@ -288,6 +259,35 @@ export class TransactionsService {
 				// create new queue
 				queue = await this.queueSystemRepository.saveQueue(appointment, transaction.next_location, appointment.patient);
 				this.appGateway.server.emit('nursing-queue', { queue });
+			}
+
+			if (is_part_payment) {
+				const duration = await getConnection().getRepository(Settings).findOne({ where: { slug: 'part-payment-duration' } });
+				const date = moment().add(duration.value, 'd').format('YYYY-MM-DD');
+
+				const value: TransactionCreditDto = {
+					patient_id: transaction.patient?.id || null,
+					username: transaction.createdBy,
+					sub_total: 0,
+					vat: 0,
+					amount: (Math.abs(transaction.amount) - amount_paid) * -1,
+					voucher_amount: 0,
+					amount_paid,
+					change: 0,
+					description: transaction.description,
+					payment_method,
+					part_payment_expiry_date: date,
+					bill_source: transaction.bill_source,
+					next_location: transaction.next_location,
+					status: -1,
+					hmo_approval_code: transaction.hmo_approval_code,
+					transaction_details: transaction.transaction_details,
+					admission_id: transaction.admission?.id || null,
+					staff_id: transaction.staff?.id || null,
+					lastChangedBy: updatedBy,
+				};
+
+				await postDebit(value, transaction.service, null, transaction.patientRequestItem, transaction.appointment, transaction.hmo);
 			}
 
 			transaction.next_location = null;

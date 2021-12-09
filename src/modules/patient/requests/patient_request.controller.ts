@@ -1,6 +1,7 @@
 import { Controller, Post, Body, Param, Request, Delete, UseGuards, Get, Query, UsePipes, ValidationPipe, Patch, Put } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { PatientRequestService } from './patient_request.service';
+import { Pagination } from '../../../common/paginate/paginate.interface';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('requests')
@@ -18,6 +19,16 @@ export class PatientRequestController {
         return this.patientRequestService.listRequests(requestType, urlParams);
     }
 
+    @Get('prescriptions')
+    getPrescriptionRequests(
+        @Query() urlParams,
+        @Request() request,
+    ): Promise<Pagination> {
+        const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
+        const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
+        return this.patientRequestService.fetchRequests({ page, limit }, urlParams);
+    }
+
     @Get(':patientId/request/:requestType')
     getPatientRequests(
         @Param('patientId') id: number,
@@ -33,6 +44,15 @@ export class PatientRequestController {
         @Request() req,
     ) {
         return this.patientRequestService.doSaveRequest(param, req.user.username);
+    }
+
+    @Post('switch-request/:id')
+    switchRequest(
+        @Param('id') id: number,
+        @Body() param,
+        @Request() req,
+    ) {
+        return this.patientRequestService.switchRequest(id, param, req.user.username);
     }
 
     @Patch(':requestId/receive-specimen')

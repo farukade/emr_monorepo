@@ -1,22 +1,5 @@
 // tslint:disable-next-line:max-line-length
-import {
-    Controller,
-    Get,
-    Post,
-    Body,
-    Patch,
-    Param,
-    Delete,
-    Query,
-    UsePipes,
-    ValidationPipe,
-    UseInterceptors,
-    UploadedFile,
-    Res,
-    UseGuards,
-    Request,
-    Put,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UsePipes, ValidationPipe, UseInterceptors, UploadedFile, Res, UseGuards, Request, Put } from '@nestjs/common';
 import { PatientService } from './patient.service';
 import { Patient } from './entities/patient.entity';
 import { PatientDto } from './dto/patient.dto';
@@ -24,7 +7,7 @@ import { PatientVital } from './entities/patient_vitals.entity';
 import { Voucher } from '../finance/vouchers/voucher.entity';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { extname, join } from 'path';
+import { extname } from 'path';
 import { PatientDocument } from './entities/patient_documents.entity';
 import { AuthGuard } from '@nestjs/passport';
 import { OpdPatientDto } from './dto/opd-patient.dto';

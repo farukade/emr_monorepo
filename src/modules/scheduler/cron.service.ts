@@ -9,7 +9,7 @@ import { HmoScheme } from '../hmo/entities/hmo_scheme.entity';
 import { ServiceCost } from '../settings/entities/service_cost.entity';
 import { Nicu } from '../patient/nicu/entities/nicu.entity';
 import { TransactionCreditDto } from '../finance/transactions/dto/transaction-credit.dto';
-import { postCredit, postDebit } from '../../common/utils/utils';
+import { postDebit } from '../../common/utils/utils';
 import { Appointment } from '../frontdesk/appointment/appointment.entity';
 
 @Injectable()
@@ -91,7 +91,7 @@ export class TasksService {
 
 							const data: TransactionCreditDto = {
 								patient_id: transaction.patient_id,
-								username: null,
+								username: transaction.createdBy,
 								sub_total: 0,
 								vat: 0,
 								amount: transaction.amount * -1,
@@ -152,7 +152,7 @@ export class TasksService {
 
 							const data: TransactionCreditDto = {
 								patient_id: transaction.patient_id,
-								username: null,
+								username: transaction.createdBy,
 								sub_total: 0,
 								vat: 0,
 								amount: transaction.amount * -1,
