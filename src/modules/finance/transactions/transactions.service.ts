@@ -189,24 +189,20 @@ export class TransactionsService {
 		const queryRunner = getConnection().createQueryRunner();
 		await queryRunner.startTransaction();
 
-		const { voucher_id, amount_paid, voucher_amount, payment_method, patient_id, is_part_payment, pay_with_credit } = transactionDto;
+		const { voucher_id, amount_paid, voucher_amount, payment_method, patient_id, is_part_payment } = transactionDto;
 		try {
 			const transaction = await this.transactionsRepository.findOne(id, { relations: ['patient', 'staff', 'appointment', 'hmo', 'admission'] });
 
-			let amount_to_pay = amount_paid;
-			if (pay_with_credit === 1) {
-				const balance = await getBalance(patient_id);
-				amount_to_pay = balance < 0 ? Math.abs(balance) : 0;
-			}
+			const amount = Math.abs(transaction.amount);
 
 			let data: TransactionCreditDto = {
 				patient_id,
 				username: updatedBy,
 				sub_total: 0,
 				vat: 0,
-				amount: Math.abs(amount_to_pay),
+				amount: Math.abs(amount_paid),
 				voucher_amount: 0,
-				amount_paid: 0,
+				amount_paid,
 				change: 0,
 				description: transaction.description,
 				payment_method,
@@ -261,7 +257,18 @@ export class TransactionsService {
 				this.appGateway.server.emit('nursing-queue', { queue });
 			}
 
-			if (is_part_payment) {
+			if (is_part_payment && is_part_payment === 1) {
+				transaction.amount = Math.abs(amount_paid) * -1;
+			}
+
+			transaction.next_location = null;
+			transaction.status = 1;
+			transaction.lastChangedBy = updatedBy;
+			const rs = await transaction.save();
+
+			const credit = await postCredit(data, transaction.service, voucher, transaction.patientRequestItem, appointment, transaction.hmo);
+
+			if (is_part_payment && is_part_payment === 1) {
 				const duration = await getConnection().getRepository(Settings).findOne({ where: { slug: 'part-payment-duration' } });
 				const date = moment().add(duration.value, 'd').format('YYYY-MM-DD');
 
@@ -270,7 +277,7 @@ export class TransactionsService {
 					username: transaction.createdBy,
 					sub_total: 0,
 					vat: 0,
-					amount: (Math.abs(transaction.amount) - amount_paid) * -1,
+					amount: (amount - amount_paid) * -1,
 					voucher_amount: 0,
 					amount_paid,
 					change: 0,
@@ -289,13 +296,6 @@ export class TransactionsService {
 
 				await postDebit(value, transaction.service, null, transaction.patientRequestItem, transaction.appointment, transaction.hmo);
 			}
-
-			transaction.next_location = null;
-			transaction.status = 1;
-			transaction.lastChangedBy = updatedBy;
-			const rs = await transaction.save();
-
-			const credit = await postCredit(data, transaction.service, voucher, transaction.patientRequestItem, appointment, transaction.hmo);
 
 			await queryRunner.commitTransaction();
 			await queryRunner.release();
