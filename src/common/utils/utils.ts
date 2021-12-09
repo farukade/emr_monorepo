@@ -308,7 +308,8 @@ export const postDebit = async (data: TransactionCreditDto, service, voucher, re
 	const admission = admission_id ? await connection.getRepository(Admission).findOne(admission_id) : null;
 	const staff = staff_id ? await connection.getRepository(StaffDetails).findOne(staff_id) : null;
 
-	const isStaffHmo = await connection.getRepository(HmoScheme).findOne(hmo.id);
+	const staffHmo = await connection.getRepository(HmoScheme).findOne(5);
+	const isStaffHmo = staffHmo && hmo && staffHmo.id === hmo.id;
 
 	const transaction = new Transaction();
 	transaction.patient = patient;
