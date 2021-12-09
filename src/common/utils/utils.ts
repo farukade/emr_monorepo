@@ -13,6 +13,7 @@ import { Patient } from '../../modules/patient/entities/patient.entity';
 import { Transaction } from '../../modules/finance/transactions/transaction.entity';
 import { Admission } from '../../modules/patient/admissions/entities/admission.entity';
 import { TransactionCreditDto } from '../../modules/finance/transactions/dto/transaction-credit.dto';
+import { HmoScheme } from '../../modules/hmo/entities/hmo_scheme.entity';
 
 // tslint:disable-next-line:no-var-requires
 const mysql = require('mysql2/promise');
@@ -307,6 +308,8 @@ export const postDebit = async (data: TransactionCreditDto, service, voucher, re
 	const admission = admission_id ? await connection.getRepository(Admission).findOne(admission_id) : null;
 	const staff = staff_id ? await connection.getRepository(StaffDetails).findOne(staff_id) : null;
 
+	const isStaffHmo = await connection.getRepository(HmoScheme).findOne(hmo.id);
+
 	const transaction = new Transaction();
 	transaction.patient = patient;
 	transaction.staff = staff;
@@ -319,14 +322,14 @@ export const postDebit = async (data: TransactionCreditDto, service, voucher, re
 	transaction.amount_paid = amount_paid;
 	transaction.change = change;
 	transaction.description = description;
-	transaction.payment_type = (hmo.name !== 'Private') ? 'HMO' : 'self';
+	transaction.payment_type = isStaffHmo ? 'self' : ((hmo.name !== 'Private') ? 'HMO' : 'self');
 	transaction.payment_method = payment_method;
 	transaction.transaction_type = 'debit';
 	transaction.part_payment_expiry_date = part_payment_expiry_date;
 	transaction.is_admitted = (admission !== null);
 	transaction.bill_source = bill_source;
 	transaction.next_location = next_location;
-	transaction.status = admission ? -1 : status;
+	transaction.status = isStaffHmo ? -1 : (admission ? -1 : status);
 	transaction.hmo_approval_code = hmo_approval_code;
 	transaction.transaction_details = transaction_details;
 	transaction.patientRequestItem = requestItem;
@@ -369,6 +372,8 @@ export const postCredit = async (data: TransactionCreditDto, service, voucher, r
 	const admission = admission_id ? await connection.getRepository(Admission).findOne(admission_id) : null;
 	const staff = staff_id ? await connection.getRepository(StaffDetails).findOne(staff_id) : null;
 
+	const isStaffHmo = await connection.getRepository(HmoScheme).findOne(hmo.id);
+
 	const transaction = new Transaction();
 	transaction.patient = patient;
 	transaction.staff = staff;
@@ -381,7 +386,7 @@ export const postCredit = async (data: TransactionCreditDto, service, voucher, r
 	transaction.amount_paid = amount_paid;
 	transaction.change = change;
 	transaction.description = description;
-	transaction.payment_type = (hmo.name !== 'Private') ? 'HMO' : 'self';
+	transaction.payment_type = isStaffHmo ? 'self' : ((hmo.name !== 'Private') ? 'HMO' : 'self');
 	transaction.payment_method = payment_method;
 	transaction.transaction_type = 'credit';
 	transaction.part_payment_expiry_date = part_payment_expiry_date;
