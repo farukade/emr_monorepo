@@ -71,7 +71,7 @@ export class DrugBatchService {
 
     async create(drugBatchDto: DrugBatchDto, username: string): Promise<any> {
         try {
-            const { quantity, expirationDate, unitPrice, vendor_id } = drugBatchDto;
+            const { quantity, expirationDate, unitPrice, vendor_id, drug_id } = drugBatchDto;
 
             let vendor;
             if (vendor_id === '') {
@@ -87,12 +87,15 @@ export class DrugBatchService {
             const month = moment().format('MM');
             const year = moment().format('YYYY');
 
+            const drug = drug_id && drug_id !== '' ? await this.drugRepository.findOne(drug_id) : null;
+
             const batch = new DrugBatch();
             batch.name = `BA/${month}/${year}`;
             batch.quantity = quantity;
             batch.expirationDate = expirationDate;
             batch.unitPrice = unitPrice;
             batch.vendor = vendor;
+            batch.drug = drug;
             const rs = await batch.save();
 
             await this.inventoryActivityRepository.saveActivity(

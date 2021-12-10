@@ -13,7 +13,7 @@ export class AntenatalEnrollment extends CustomBaseEntity {
     @JoinColumn({ name: 'patient_id' })
     patient: Patient;
 
-    @Column()
+    @Column({ nullable: true })
     booking_period: string;
 
     @Column('jsonb')
@@ -22,7 +22,7 @@ export class AntenatalEnrollment extends CustomBaseEntity {
     @Column()
     lmp: string;
 
-    @Column()
+    @Column({ nullable: true })
     lmp_source: string;
 
     @Column()

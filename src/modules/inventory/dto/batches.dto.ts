@@ -8,5 +8,7 @@ export class DrugBatchDto {
 
     vendor_id: any;
 
+    drug_id: any;
+
     vendor: any;
 }

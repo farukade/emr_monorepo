@@ -15,6 +15,7 @@ import { Admission } from '../../modules/patient/admissions/entities/admission.e
 import { TransactionCreditDto } from '../../modules/finance/transactions/dto/transaction-credit.dto';
 import { HmoScheme } from '../../modules/hmo/entities/hmo_scheme.entity';
 import { AccountDeposit } from '../../modules/finance/transactions/entities/deposit.entity';
+import { PatientRequest } from '../../modules/patient/entities/patient_requests.entity';
 
 // tslint:disable-next-line:no-var-requires
 const mysql = require('mysql2/promise');
@@ -429,4 +430,18 @@ export const postCredit = async (data: TransactionCreditDto, service, voucher, r
 	transaction.lastChangedBy = lastChangedBy;
 
 	return await transaction.save();
+};
+
+export const getGroupCode = async (type) => {
+	const request = await getConnection().createQueryBuilder().select('*')
+		.from(PatientRequest, 'q')
+		.where('q.requestType = :type', { type })
+		.orderBy('id', 'DESC')
+		.withDeleted()
+		.getRawOne();
+
+	const groupCode = request?.group_code || '';
+	const number = groupCode.split('/');
+	const id = number.length > 1 ? parseInt(number[2], 10) : 0;
+	return `00000${id + 1}`;
 };
