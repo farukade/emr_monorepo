@@ -23,7 +23,12 @@ export class PatientConsumable extends CustomBaseEntity {
     encounter: Encounter;
 
     @Column({ nullable: true })
-    @JoinColumn({ name: 'request_note' })
-    requestNote: string;
+    request_note: string;
+
+    @Column({ nullable: true })
+    module: string;
+
+    @Column({ nullable: true })
+    item_id: number;
 
 }

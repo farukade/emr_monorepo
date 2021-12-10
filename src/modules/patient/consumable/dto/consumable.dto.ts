@@ -1,17 +1,20 @@
 import { IsNotEmpty } from 'class-validator';
-import { Patient } from '../../entities/patient.entity';
 
 export class PatientConsumableDto {
 
     @IsNotEmpty()
-    cons: string;
+    consumable_id: string;
+
+    quantity: any;
 
     @IsNotEmpty()
     patient_id: string;
 
-    severity: string;
+    encounter_id: string;
 
-    reaction: string;
+    request_note: string;
 
-    patient: Patient;
+    module: string;
+
+    item_id: any;
 }

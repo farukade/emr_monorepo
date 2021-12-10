@@ -4,7 +4,7 @@ import * as puppeteer from 'puppeteer';
 import * as hbs from 'handlebars';
 import * as utils from 'util';
 import { SmsHistory } from '../entities/sms.entity';
-import { getConnection } from 'typeorm';
+import { getConnection, Not } from 'typeorm';
 import { User } from '../../modules/auth/entities/user.entity';
 import { StaffDetails } from '../../modules/hr/staff/entities/staff_details.entity';
 import { LogEntity } from '../../modules/logger/entities/logger.entity';
@@ -14,6 +14,7 @@ import { Transaction } from '../../modules/finance/transactions/transaction.enti
 import { Admission } from '../../modules/patient/admissions/entities/admission.entity';
 import { TransactionCreditDto } from '../../modules/finance/transactions/dto/transaction-credit.dto';
 import { HmoScheme } from '../../modules/hmo/entities/hmo_scheme.entity';
+import { AccountDeposit } from '../../modules/finance/transactions/entities/deposit.entity';
 
 // tslint:disable-next-line:no-var-requires
 const mysql = require('mysql2/promise');
@@ -195,7 +196,7 @@ export const getOutstanding = async (patient_id) => {
 	const patient = await connection.getRepository(Patient).findOne(patient_id);
 
 	const transactions = await connection.getRepository(Transaction).find({
-		where: { patient },
+		where: { patient, bill_source: Not('credit-deposit') },
 	});
 
 	return patient.credit_limit > 0 ? 0 : transactions
@@ -210,10 +211,33 @@ export const getBalance = async (patient_id) => {
 	const patient = await connection.getRepository(Patient).findOne(patient_id);
 
 	const transactions = await connection.getRepository(Transaction).find({
-		where: { patient },
+		where: { patient, bill_source: Not('credit-deposit') },
 	});
 
 	return patient.credit_limit > 0 ? 0 : transactions.reduce((totalAmount, item) => {
+		return totalAmount + item.amount;
+	}, 0);
+};
+
+export const getDepositBalance = async (user_id: number, isPatient: boolean) => {
+	const connection = getConnection();
+
+	let deposits = [];
+	if (isPatient) {
+		const patient = await connection.getRepository(Patient).findOne(user_id);
+
+		deposits = await connection.getRepository(AccountDeposit).find({
+			where: { patient },
+		});
+	} else {
+		const staff = await connection.getRepository(StaffDetails).findOne(user_id);
+
+		deposits = await connection.getRepository(AccountDeposit).find({
+			where: { staff },
+		});
+	}
+
+	return deposits.reduce((totalAmount, item) => {
 		return totalAmount + item.amount;
 	}, 0);
 };

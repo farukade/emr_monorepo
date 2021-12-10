@@ -74,7 +74,9 @@ export class DrugService {
                 order: { expirationDate: 'ASC' },
             });
 
-            item.manufacturer = await this.manufacturerRepository.findOne(item.manufacturer_id);
+            if (item.manufacturer_id) {
+                item.manufacturer = await this.manufacturerRepository.findOne(item.manufacturer_id);
+            }
 
             rs = [...rs, item];
         }
@@ -93,7 +95,7 @@ export class DrugService {
             const { name, generic_id, unitOfMeasure, manufacturer_id } = drugDto;
 
             const generic = await this.drugGenericRepository.findOne(generic_id);
-            const manufacturer = await this.manufacturerRepository.findOne(manufacturer_id);
+            const manufacturer = manufacturer_id && manufacturer_id !== '' ? await this.manufacturerRepository.findOne(manufacturer_id) : null;
 
             const category = await this.serviceCategoryRepository.findOne({ where: { slug: 'drugs' } });
 
@@ -143,6 +145,7 @@ export class DrugService {
 
             return { success: true, drug: rs };
         } catch (e) {
+            console.log(e);
             return { success: false, message: 'error could not add new drug' };
         }
     }
@@ -152,7 +155,7 @@ export class DrugService {
             const { name, generic_id, unitOfMeasure, manufacturer_id } = drugDto;
 
             const generic = await this.drugGenericRepository.findOne(generic_id);
-            const manufacturer = await this.manufacturerRepository.findOne(manufacturer_id);
+            const manufacturer = manufacturer_id && manufacturer_id !== '' ? await this.manufacturerRepository.findOne(manufacturer_id) : null;
 
             const drug = await this.drugRepository.findOne(id);
             drug.name = name;

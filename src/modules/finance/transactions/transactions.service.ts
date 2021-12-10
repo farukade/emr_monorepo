@@ -13,12 +13,20 @@ import { AppointmentRepository } from '../../frontdesk/appointment/appointment.r
 import { AppGateway } from '../../../app.gateway';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import { Brackets, getConnection } from 'typeorm';
-import { getBalance, getOutstanding, getStaff, postCredit, postDebit } from '../../../common/utils/utils';
+import {
+	getBalance,
+	getDepositBalance,
+	getOutstanding,
+	getStaff,
+	postCredit,
+	postDebit,
+} from '../../../common/utils/utils';
 import { Settings } from '../../settings/entities/settings.entity';
 import { ServiceCostRepository } from '../../settings/services/repositories/service_cost.repository';
 import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repository';
 import { PatientRequestItemRepository } from '../../patient/repositories/patient_request_items.repository';
 import { TransactionCreditDto } from './dto/transaction-credit.dto';
+import { AccountDeposit } from './entities/deposit.entity';
 
 @Injectable()
 export class TransactionsService {
@@ -404,7 +412,7 @@ export class TransactionsService {
 				description: 'credit account',
 				payment_method: payment_method || 'Cash',
 				part_payment_expiry_date: null,
-				bill_source: 'credit',
+				bill_source: 'credit-deposit',
 				next_location: null,
 				status: 1,
 				hmo_approval_code: null,
@@ -416,17 +424,11 @@ export class TransactionsService {
 
 			const rs = await postCredit(data, null, null, null, null, patient.hmo);
 
-			rs.staff = await getStaff(rs.lastChangedBy);
+			await getConnection().getRepository(AccountDeposit).save({ patient, amount: Math.abs(amount), transaction: rs });
 
-			const allTransactions = await this.transactionsRepository.createQueryBuilder('t').select('t.*')
-				.where('t.patient_id = :id', { id: patient.id })
-				.getRawMany();
+			const balance = await getDepositBalance(patient_id, true);
 
-			const outstanding = getOutstanding(patient_id);
-
-			const totalAmount = allTransactions.reduce((sumTotal, item) => sumTotal + item.amount, 0);
-
-			return { success: true, transaction: rs, outstanding, total_amount: totalAmount };
+			return { success: true, balance };
 		} catch (error) {
 			console.log(error);
 			return { success: false, message: error.message };

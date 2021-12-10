@@ -18,7 +18,15 @@ import { AppGateway } from '../../app.gateway';
 import { AppointmentRepository } from '../frontdesk/appointment/appointment.repository';
 import { AuthRepository } from '../auth/auth.repository';
 import { TransactionsRepository } from '../finance/transactions/transactions.repository';
-import { formatPID, getBalance, getOutstanding, getStaff, postDebit, getLastAppointment } from '../../common/utils/utils';
+import {
+	formatPID,
+	getBalance,
+	getOutstanding,
+	getStaff,
+	postDebit,
+	getLastAppointment,
+	getDepositBalance,
+} from '../../common/utils/utils';
 import { AdmissionClinicalTaskRepository } from './admissions/repositories/admission-clinical-tasks.repository';
 import { AdmissionsRepository } from './admissions/repositories/admissions.repository';
 import { Immunization } from './immunization/entities/immunization.entity';
@@ -560,7 +568,8 @@ export class PatientService {
 		const { startDate, endDate, q, status } = params;
 
 		const query = this.transactionsRepository.createQueryBuilder('t').select('t.*')
-			.where('t.patient_id = :id', { id });
+			.where('t.patient_id = :id', { id })
+			.where('t.bill_source != :source', { source: 'credit-deposit' });
 
 		const page = options.page - 1;
 
@@ -628,6 +637,12 @@ export class PatientService {
 		const outstanding = await getOutstanding(id);
 
 		return { balance, outstanding };
+	}
+
+	async getDeposit(id): Promise<any> {
+		const balance = await getDepositBalance(id, true);
+
+		return { balance };
 	}
 
 	async getDocuments(options: PaginationOptionsInterface, id, params): Promise<any> {

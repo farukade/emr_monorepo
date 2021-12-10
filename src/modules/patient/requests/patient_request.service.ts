@@ -143,68 +143,72 @@ export class PatientRequestService {
 		};
 	}
 
+	drugsQuery(patient_id, startDate, endDate, today, type, item_id, status) {
+		const query = this.patientRequestRepository.createQueryBuilder('q')
+			.select(['q.group_code as group_code', 'max(q.createdAt) AS created_at', 'max(q.patient_id) as patient_id', 'max(q.status) as status'])
+			.groupBy('q.group_code')
+			.where('q.requestType = :requestType', { requestType: 'drugs' });
+
+		if (patient_id && patient_id !== '') {
+			query.andWhere('q.patient_id = :patient_id', { patient_id });
+		}
+
+		if (startDate && startDate !== '') {
+			const start = moment(startDate).startOf('day').format('YYYY-MM-DD HH:mm:ss');
+			query.andWhere(`q.createdAt >= '${start}'`);
+		}
+
+		if (endDate && endDate !== '') {
+			const end = moment(endDate).endOf('day').format('YYYY-MM-DD HH:mm:ss');
+			query.andWhere(`q.createdAt <= '${end}'`);
+		}
+
+		if (today && today !== '') {
+			query.andWhere(`CAST(q.createdAt as text) LIKE '%${today}%'`);
+		}
+
+		if (status && status !== '') {
+			if (status === 'Open') {
+				query.andWhere('q.status = :status', { status: 0 });
+			} else if (status === 'Filled') {
+				query.andWhere('q.status = :status', { status: 0 });
+			} else if (status === 'Completed') {
+				query.andWhere('q.status = :status', { status: 1 });
+			}
+		}
+
+		if (type && type === 'admission') {
+			query.andWhere('q.admission_id = :item_id', { item_id });
+		}
+
+		if (type && type === 'procedure') {
+			query.andWhere('q.procedure_id = :item_id', { item_id });
+		}
+
+		if (type && type === 'antenatal') {
+			query.andWhere('q.antenatal_id = :item_id', { item_id });
+		}
+
+		if (type && type === 'ivf') {
+			query.andWhere('q.ivf_id = :item_id', { item_id });
+		}
+
+		return query;
+	}
+
 	async fetchRequests(options: PaginationOptionsInterface, urlParams): Promise<Pagination> {
 		try {
 			const { startDate, endDate, status, today, item_id, type, patient_id } = urlParams;
 
 			const page = options.page - 1;
 
-			const query = this.patientRequestRepository.createQueryBuilder('q')
-				.select(['q.group_code as group_code', 'max(q.createdAt) AS created_at', 'max(q.patient_id) as patient_id', 'max(q.status) as status'])
-				.groupBy('q.group_code')
-				.where('q.requestType = :requestType', { requestType: 'drugs' });
-
-			if (patient_id && patient_id !== '') {
-				query.andWhere('q.patient_id = :patient_id', { patient_id });
-			}
-
-			if (startDate && startDate !== '') {
-				const start = moment(startDate).startOf('day').format('YYYY-MM-DD HH:mm:ss');
-				query.andWhere(`q.createdAt >= '${start}'`);
-			}
-
-			if (endDate && endDate !== '') {
-				const end = moment(endDate).endOf('day').format('YYYY-MM-DD HH:mm:ss');
-				query.andWhere(`q.createdAt <= '${end}'`);
-			}
-
-			if (today && today !== '') {
-				query.andWhere(`CAST(q.createdAt as text) LIKE '%${today}%'`);
-			}
-
-			if (status && status !== '') {
-				if (status === 'Open') {
-					query.andWhere('q.status = :status', { status: 0 });
-				} else if (status === 'Filled') {
-					query.andWhere('q.status = :status', { status: 0 });
-				} else if (status === 'Completed') {
-					query.andWhere('q.status = :status', { status: 1 });
-				}
-			}
-
-			if (type && type === 'admission') {
-				query.andWhere('q.admission_id = :item_id', { item_id });
-			}
-
-			if (type && type === 'procedure') {
-				query.andWhere('q.procedure_id = :item_id', { item_id });
-			}
-
-			if (type && type === 'antenatal') {
-				query.andWhere('q.antenatal_id = :item_id', { item_id });
-			}
-
-			if (type && type === 'ivf') {
-				query.andWhere('q.ivf_id = :item_id', { item_id });
-			}
-
-			const items = await query
+			const items = await this.drugsQuery(patient_id, startDate, endDate, today, type, item_id, status)
 				.offset(page * options.limit)
 				.limit(options.limit)
 				.orderBy('created_at', 'DESC')
 				.getRawMany();
 
-			const results = await query.getRawMany();
+			const results = await this.drugsQuery(patient_id, startDate, endDate, today, type, item_id, status).getRawMany();
 			const total = results.length;
 
 			let result = [];
@@ -244,7 +248,7 @@ export class PatientRequestService {
 					created_by: patientReq.createdBy,
 					requestNote: patientReq.requestNote,
 					filled: patientReq.item.filled,
-					filled_by: patientReq.item.filled_by,
+					filled_by: patientReq.item.filledBy,
 					transaction_status: hasPaid ? 1 : 0,
 					patient,
 					requests: allRequests,

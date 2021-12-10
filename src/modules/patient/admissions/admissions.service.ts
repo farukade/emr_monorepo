@@ -312,8 +312,6 @@ export class AdmissionsService {
 
         const page = options.page - 1;
 
-        // const getSql = query.take(options.limit).skip(options.page * options.limit).getSql();
-        // console.log(getSql);
         const result = await query.take(options.limit).skip(page * options.limit).getRawMany();
 
         let results = [];

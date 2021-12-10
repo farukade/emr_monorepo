@@ -109,10 +109,11 @@ export class AppointmentService {
 		}
 
 		const page = options.page - 1;
+		const order = is_queue && is_queue === 1 ? 'ASC' : 'DESC';
 
 		const appointments = await query.offset(page * options.limit)
 			.limit(options.limit)
-			.orderBy('q.createdAt', 'DESC')
+			.orderBy('q.createdAt', order)
 			.withDeleted()
 			.getMany();
 
