@@ -173,9 +173,9 @@ export class HmoService {
 
             const scheme = await this.hmoSchemeRepository.saveScheme(hmoSchemeDto, hmoCompany, type);
 
-            if (hmoSchemeDto.coverageType === 'partial') {
-                await this.migrationService.queueJob('tariffs', { scheme, coverage: hmoSchemeDto.coverage });
-            }
+            const _coverage = hmoSchemeDto.coverage && hmoSchemeDto.coverage !== '' ? hmoSchemeDto.coverage : 100;
+            const coverage = hmoSchemeDto.coverageType === 'full' ? 100 : _coverage;
+            await this.migrationService.queueJob('tariffs', { scheme, coverage });
 
             return scheme;
         } catch (error) {
@@ -185,7 +185,7 @@ export class HmoService {
     }
 
     async updateScheme(id: string, hmoSchemeDto: HmoSchemeDto): Promise<any> {
-        const { name, address, phoneNumber, email, cacNumber, coverage, coverageType, logo, hmo_id, hmo_type_id } = hmoSchemeDto;
+        const { name, address, phoneNumber, email, cacNumber, coverageType, logo, hmo_id, hmo_type_id } = hmoSchemeDto;
         const scheme = await this.hmoSchemeRepository.findOne(id);
 
         if (!scheme) {
@@ -207,6 +207,9 @@ export class HmoService {
 
             const type = await this.hmoTypeRepository.findOne(hmo_type_id);
 
+            const _coverage = hmoSchemeDto.coverage && hmoSchemeDto.coverage !== '' ? hmoSchemeDto.coverage : 100;
+            const coverage = hmoSchemeDto.coverageType === 'full' ? 100 : _coverage;
+
             scheme.name = name;
             scheme.logo = logo;
             scheme.address = address;
@@ -219,9 +222,7 @@ export class HmoService {
             scheme.hmoType = type;
             const rs = await scheme.save();
 
-            if (hmoSchemeDto.coverageType === 'partial') {
-                await this.migrationService.queueJob('tariffs', { scheme, coverage: hmoSchemeDto.coverage });
-            }
+            await this.migrationService.queueJob('tariffs', { scheme, coverage });
 
             return { success: true, scheme: rs };
         } catch (e) {

@@ -893,32 +893,25 @@ export class MigrationProcessor {
 			return;
 		}
 
-		const serviceCosts = await this.serviceCostRepository.find({ hmo: scheme });
+		// get all private hmos
+		const privateServiceCosts = await this.serviceCostRepository.find({
+			where: { hmo: privateHmo },
+		});
 
-		if (serviceCosts.length > 0) {
-			for (const cost of serviceCosts) {
-				const privateCost = await this.serviceCostRepository.findOne({
-					where: { hmo: privateHmo, code: cost.code },
+		for (const cost of privateServiceCosts) {
+			const service = await this.serviceRepository.findOne(cost.item.id);
+			if (service) {
+				const serviceCost = await this.serviceCostRepository.findOne({
+					where: { hmo: scheme, code: service.code },
 				});
-
-				if (privateCost.tariff > 0) {
-					cost.tariff = privateCost.tariff - ((parseFloat(coverage) * privateCost.tariff) / 100);
-					await cost.save();
+				if (!serviceCost) {
+					const costItem = new ServiceCost();
+					costItem.code = service.code;
+					costItem.item = service;
+					costItem.tariff = 0;
+					costItem.hmo = scheme;
+					await costItem.save();
 				}
-			}
-		} else {
-			const services = await this.serviceRepository.find();
-			for (const service of services) {
-				const privateCost = await this.serviceCostRepository.findOne({
-					where: { hmo: privateHmo, code: service.code },
-				});
-
-				const cost = new ServiceCost();
-				cost.code = service.code;
-				cost.item = service;
-				cost.tariff = privateCost.tariff - ((parseFloat(coverage) * privateCost.tariff) / 100);
-				cost.hmo = scheme;
-				await cost.save();
 			}
 		}
 	}
