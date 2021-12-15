@@ -738,46 +738,52 @@ export class PatientRequestService {
 	}
 
 	async deleteRequest(id: string, params, username: string) {
-		const { type } = params;
-		const request = await this.patientRequestRepository.findOne(id, { relations: ['item'] });
-
-		const item = await this.patientRequestItemRepository.findOne(request.item.id);
-
-		item.cancelled = 1;
-		item.cancelledBy = username;
-		item.cancelledAt = moment().format('YYYY-MM-DD HH:mm:ss');
-		item.lastChangedBy = username;
-		item.deletedBy = username;
-		const rs = await item.save();
-
-		request.deletedBy = username;
-		await request.save();
-
 		try {
-			const transaction = await this.transactionsRepository.findOne({ where: { patientRequestItem: item } });
+			const { type } = params;
+			const request = await this.patientRequestRepository.findOne(id, { relations: ['item'] });
 
-			if (transaction.status === 1) {
-				await this.transactionsRepository.save({
-					...transaction,
-					transaction_type: 'credit',
-					balance: transaction.amount_paid,
-					amount_paid: 0,
-					status: 1,
-				});
+			const item = await this.patientRequestItemRepository.findOne(request.item.id);
+
+			item.cancelled = 1;
+			item.cancelledBy = username;
+			item.cancelledAt = moment().format('YYYY-MM-DD HH:mm:ss');
+			item.lastChangedBy = username;
+			item.deletedBy = username;
+			const rs = await item.save();
+
+			request.deletedBy = username;
+			await request.save();
+
+			try {
+				const transaction = await this.transactionsRepository.findOne({ where: { patientRequestItem: item } });
+
+				if (transaction && transaction.status === 1) {
+					await this.transactionsRepository.save({
+						...transaction,
+						transaction_type: 'credit',
+						balance: transaction.amount_paid,
+						amount_paid: 0,
+						status: 1,
+					});
+				}
+
+				if (transaction) {
+					transaction.deletedBy = username;
+					await transaction.save();
+					await transaction.softRemove();
+				}
+			} catch (e) {
+				console.log(e);
 			}
 
-			transaction.deletedBy = username;
-			await transaction.save();
-			await transaction.softRemove();
+			await item.softRemove();
+
+			await request.softRemove();
+
+			return { success: true, data: rs };
 		} catch (e) {
-			console.log(e);
+			return { success: false, message: 'could not remove request' };
 		}
-
-		await item.softRemove();
-
-		await request.softRemove();
-
-		return { success: true, data: rs };
 	}
 
 	async printResult(id: number, params) {
