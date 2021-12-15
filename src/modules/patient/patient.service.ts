@@ -355,40 +355,35 @@ export class PatientService {
 			patient.maritalStatus = patientDto.maritalStatus;
 			patient.ethnicity = patientDto.ethnicity;
 			patient.referredBy = patientDto.referredBy;
-			patient.profile_pic = patientDto.avatar || '';
+			patient.profile_pic = patientDto?.avatar || null;
 			patient.lastChangedBy = updatedBy;
 			patient.hmo = hmo;
 
-			patient.save();
+			await patient.save();
 
 			let nok;
 			if (patient.nextOfKin) {
 				const nextOfKin = await this.patientNOKRepository.findOne(patient.nextOfKin.id);
 				nextOfKin.surname = patientDto.nok_surname;
 				nextOfKin.other_names = patientDto.nok_other_names;
-				nextOfKin.address = patientDto.nok_address || '';
-				nextOfKin.date_of_birth = patientDto.nok_date_of_birth || '';
-				nextOfKin.relationship = patientDto.nok_relationship || '';
-				nextOfKin.occupation = patientDto.nok_occupation || '';
-				nextOfKin.gender = patientDto.nok_gender || '';
-				nextOfKin.email = patientDto.nok_email || '';
-				nextOfKin.phoneNumber = patientDto.nok_phoneNumber || '';
-				nextOfKin.maritalStatus = patientDto.nok_maritalStatus || '';
-				nextOfKin.ethnicity = patientDto.nok_ethnicity || '';
+				nextOfKin.address = patientDto?.nok_address || null;
+				nextOfKin.date_of_birth = patientDto?.nok_date_of_birth || null;
+				nextOfKin.relationship = patientDto?.nok_relationship || null;
+				nextOfKin.occupation = patientDto?.nok_occupation || null;
+				nextOfKin.gender = patientDto?.nok_gender || null;
+				nextOfKin.email = patientDto?.nok_email || null;
+				nextOfKin.phoneNumber = patientDto?.nok_phoneNumber || null;
+				nextOfKin.maritalStatus = patientDto?.nok_maritalStatus || null;
+				nextOfKin.ethnicity = patientDto?.nok_ethnicity || null;
 				nok = await nextOfKin.save();
 			}
 
 			await queryRunner.commitTransaction();
 			await queryRunner.release();
 
-			const result = await this.patientRepository.findOne(id, { relations: ['nextOfKin'] });
-
-			result.immunization = await this.immunizationRepository.find({
-				where: { patient },
+			const result = await this.patientRepository.findOne(id, {
+				relations: ['nextOfKin', 'hmo', 'immunization'],
 			});
-
-			result.hmo = hmo;
-			result.nextOfKin = nok;
 
 			const balance = await getBalance(patient.id);
 			const outstanding = await getOutstanding(patient.id);
@@ -569,7 +564,7 @@ export class PatientService {
 
 		const query = this.transactionsRepository.createQueryBuilder('t').select('t.*')
 			.where('t.patient_id = :id', { id })
-			.where('t.bill_source != :source', { source: 'credit-deposit' });
+			.andWhere('t.bill_source != :source', { source: 'credit-deposit' });
 
 		const page = options.page - 1;
 
