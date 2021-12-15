@@ -239,17 +239,21 @@ export class PatientService {
 				staff = await this.staffRepository.findOne(staff_id);
 			}
 
-			const patient = await this.patientRepository.savePatient(patientDto, nok, hmo, createdBy, staff);
-
-			const splits = patient.other_names.split(' ');
-			const message = `Dear ${patient.surname} ${splits.length > 0 ? splits[0] : patient.other_names}, welcome to the DEDA Family. Your ID/Folder number is ${formatPID(patient.id)}. Kindly save the number and provide it at all your appointment visits. Thank you.`;
-
 			let serviceCost;
 			const category = await this.serviceCategoryRepository.findOne({ where: { name: 'registration' } });
 			const service = await this.serviceRepository.findOne({ where: { category } });
 			if (service) {
 				serviceCost = await this.serviceCostRepository.findOne({ where: { code: service.code, hmo } });
 			}
+
+			if (!serviceCost) {
+				return { success: false, message: 'HMO does not have registration cost' };
+			}
+
+			const patient = await this.patientRepository.savePatient(patientDto, nok, hmo, createdBy, staff);
+
+			const splits = patient.other_names.split(' ');
+			const message = `Dear ${patient.surname} ${splits.length > 0 ? splits[0] : patient.other_names}, welcome to the DEDA Family. Your ID/Folder number is ${formatPID(patient.id)}. Kindly save the number and provide it at all your appointment visits. Thank you.`;
 
 			const data: TransactionCreditDto = {
 				patient_id: patient.id,
@@ -383,6 +387,45 @@ export class PatientService {
 			const result = await this.patientRepository.findOne(id, {
 				relations: ['nextOfKin', 'hmo', 'immunization'],
 			});
+
+			let serviceCost;
+			const category = await this.serviceCategoryRepository.findOne({ where: { name: 'registration' } });
+			const service = await this.serviceRepository.findOne({ where: { category } });
+			if (service) {
+				serviceCost = await this.serviceCostRepository.findOne({ where: { code: service.code, hmo } });
+			}
+
+			const registration = await this.transactionsRepository.findOne({
+				where: { patient, bill_source: 'registration' },
+			});
+
+			if (serviceCost && !patient.legacy_patient_id && !registration) {
+				const data: TransactionCreditDto = {
+					patient_id: patient.id,
+					username: updatedBy,
+					sub_total: 0,
+					vat: 0,
+					amount: serviceCost.tariff * -1,
+					voucher_amount: 0,
+					amount_paid: 0,
+					change: 0,
+					description: 'Payment for Patient Registration',
+					payment_method: null,
+					part_payment_expiry_date: null,
+					bill_source: category.name,
+					next_location: null,
+					status: 0,
+					hmo_approval_code: null,
+					transaction_details: null,
+					admission_id: null,
+					staff_id: null,
+					lastChangedBy: null,
+				};
+
+				await postDebit(data, serviceCost, null, null, null, hmo);
+			} else {
+				console.log('good to go');
+			}
 
 			const balance = await getBalance(patient.id);
 			const outstanding = await getOutstanding(patient.id);
