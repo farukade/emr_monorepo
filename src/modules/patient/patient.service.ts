@@ -375,7 +375,7 @@ export class PatientService {
 				nextOfKin.phoneNumber = patientDto?.nok_phoneNumber || null;
 				nextOfKin.maritalStatus = patientDto?.nok_maritalStatus || null;
 				nextOfKin.ethnicity = patientDto?.nok_ethnicity || null;
-				nok = await nextOfKin.save();
+				await nextOfKin.save();
 			}
 
 			await queryRunner.commitTransaction();
@@ -395,6 +395,7 @@ export class PatientService {
 
 			return { success: true, patient: { ...result, balance, outstanding, lastAppointment } };
 		} catch (err) {
+			console.log(err);
 			await queryRunner.rollbackTransaction();
 			await queryRunner.release();
 			return { success: false, message: err.message };
