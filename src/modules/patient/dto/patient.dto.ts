@@ -7,7 +7,6 @@ export class PatientDto {
     @IsNotEmpty()
     date_of_birth: string;
 
-    @IsEmail()
     email: string;
 
     ethnicity: string;
@@ -29,7 +28,6 @@ export class PatientDto {
 
     nok_date_of_birth: string;
 
-    @IsEmail()
     nok_email: string;
 
     nok_ethnicity: string;

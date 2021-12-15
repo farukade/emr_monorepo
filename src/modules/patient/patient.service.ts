@@ -361,7 +361,6 @@ export class PatientService {
 
 			await patient.save();
 
-			let nok;
 			if (patient.nextOfKin) {
 				const nextOfKin = await this.patientNOKRepository.findOne(patient.nextOfKin.id);
 				nextOfKin.surname = patientDto.nok_surname;
