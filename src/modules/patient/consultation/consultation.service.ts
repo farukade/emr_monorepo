@@ -219,12 +219,19 @@ export class ConsultationService {
 			}
 
 			if (param.medicalHistory) {
-				const his = param.medicalHistory.replace(/(<([^>]+)>)/gi, '')
-					.replace(/&nbsp;/g, '')
-					.replace('Past Medical History', '')
-					.replace(/\s/g, '')
-					.replace(/\/r/g, '')
-					.split(':').join('');
+				let his = '';
+				try {
+					his = param.medicalHistory.replace(/(<([^>]+)>)/gi, '')
+						.replace(/&nbsp;/g, '')
+						.replace('Past Medical History', '')
+						.replace(/\s/g, '')
+						.replace(/\/r/g, '')
+						.split(':').join('');
+				} catch (e) {
+					console.log('------------------encounter error');
+					console.log(param.medicalHistory);
+					console.log(e);
+				}
 
 				if (encodeURIComponent(his) !== '%E2%80%8B') {
 					const patHistory = new PatientNote();
@@ -298,6 +305,7 @@ export class ConsultationService {
 
 			if (investigations.labRequest && investigations.labRequest.tests.length > 0) {
 				const labRequest = await PatientRequestHelper.handleLabRequest(investigations.labRequest, patient, createdBy);
+				console.log(labRequest);
 				if (labRequest.success && labRequest.data.length > 0) {
 					// save transaction
 					// tslint:disable-next-line:max-line-length
@@ -308,6 +316,7 @@ export class ConsultationService {
 
 			if (investigations.radiologyRequest && investigations.radiologyRequest.tests.length > 0) {
 				const request = await PatientRequestHelper.handleServiceRequest(investigations.radiologyRequest, patient, createdBy, 'scans', 'encounter');
+				console.log(request);
 				if (request.success && request.data.length > 0) {
 					// save transaction
 					const payment = await RequestPaymentHelper.servicePayment(
@@ -323,6 +332,7 @@ export class ConsultationService {
 
 			if (investigations.procedureRequest && investigations.procedureRequest.tests.length > 0) {
 				const procedure = await PatientRequestHelper.handleServiceRequest(investigations.procedureRequest, patient, createdBy, 'procedure', 'encounter');
+				console.log(procedure);
 				if (procedure.success && procedure.data.length > 0) {
 					// save transaction
 					const payment = await RequestPaymentHelper.servicePayment(
@@ -337,7 +347,8 @@ export class ConsultationService {
 			}
 
 			if (investigations.pharmacyRequest) {
-				await PatientRequestHelper.handlePharmacyRequest(investigations.pharmacyRequest, patient, createdBy, 'encounter');
+				const regimen = await PatientRequestHelper.handlePharmacyRequest(investigations.pharmacyRequest, patient, createdBy, 'encounter');
+				console.log(regimen);
 			}
 
 			if (nextAppointment && nextAppointment.appointment_date && nextAppointment.appointment_date !== '') {

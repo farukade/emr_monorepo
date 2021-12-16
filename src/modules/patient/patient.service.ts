@@ -25,7 +25,7 @@ import {
 	getStaff,
 	postDebit,
 	getLastAppointment,
-	getDepositBalance,
+	getDepositBalance, createServiceCost,
 } from '../../common/utils/utils';
 import { AdmissionClinicalTaskRepository } from './admissions/repositories/admission-clinical-tasks.repository';
 import { AdmissionsRepository } from './admissions/repositories/admissions.repository';
@@ -247,7 +247,7 @@ export class PatientService {
 			}
 
 			if (!serviceCost) {
-				return { success: false, message: 'HMO does not have registration cost' };
+				serviceCost = await createServiceCost(service.code, hmo);
 			}
 
 			const patient = await this.patientRepository.savePatient(patientDto, nok, hmo, createdBy, staff);

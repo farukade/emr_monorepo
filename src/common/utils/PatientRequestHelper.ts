@@ -13,7 +13,7 @@ import { PatientNote } from '../../modules/patient/entities/patient_note.entity'
 import { Admission } from '../../modules/patient/admissions/entities/admission.entity';
 import { AntenatalEnrollment } from '../../modules/patient/antenatal/entities/antenatal-enrollment.entity';
 import { IvfEnrollment } from '../../modules/patient/ivf/entities/ivf_enrollment.entity';
-import { getGroupCode } from './utils';
+import { createServiceCost, getGroupCode } from './utils';
 
 export class PatientRequestHelper {
     constructor(private patientRequestRepo: PatientRequestRepository) {
@@ -296,12 +296,7 @@ export class PatientRequestHelper {
                         where: { code: item.code, hmo },
                     });
                     if (!service) {
-                        const cost = new ServiceCost();
-                        cost.code = item.code;
-                        cost.item = item;
-                        cost.hmo = hmo;
-                        cost.tariff = 0;
-                        service = await cost.save();
+                        service = await createServiceCost(item.code, hmo);
                     }
 
                     const requestItem = {

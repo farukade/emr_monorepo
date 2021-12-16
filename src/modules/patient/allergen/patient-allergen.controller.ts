@@ -21,7 +21,7 @@ export class PatientAllergenController {
         return this.allergenService.getAllergies({page, limit}, urlParams);
     }
 
-    @Post('save')
+    @Post('')
     @UsePipes(ValidationPipe)
     saveAllergies(
         @Body() param: PatientAllergyDto,

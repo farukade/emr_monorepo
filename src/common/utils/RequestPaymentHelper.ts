@@ -4,10 +4,9 @@ import { Patient } from '../../modules/patient/entities/patient.entity';
 import { PatientRequestItem } from '../../modules/patient/entities/patient_request_items.entity';
 import { PatientRequest } from '../../modules/patient/entities/patient_requests.entity';
 import { ServiceCost } from '../../modules/settings/entities/service_cost.entity';
-import { HmoScheme } from '../../modules/hmo/entities/hmo_scheme.entity';
 import { ServiceCategory } from '../../modules/settings/entities/service_category.entity';
 import { Admission } from '../../modules/patient/admissions/entities/admission.entity';
-import { postDebit } from './utils';
+import { createServiceCost, postDebit } from './utils';
 import { TransactionCreditDto } from '../../modules/finance/transactions/dto/transaction-credit.dto';
 
 export class RequestPaymentHelper {
@@ -24,9 +23,12 @@ export class RequestPaymentHelper {
 
 			const labTest = labRequestItem.labTest;
 			if (labTest) {
-				const serviceCost = await getConnection().getRepository(ServiceCost).findOne({
+				let serviceCost = await getConnection().getRepository(ServiceCost).findOne({
 					where: { code: labTest.code, hmo },
 				});
+				if (!serviceCost) {
+					serviceCost = await createServiceCost(labTest.code, hmo);
+				}
 
 				const category = await getConnection().getRepository(ServiceCategory).findOne({
 					where: { slug: 'labs' },
@@ -86,10 +88,13 @@ export class RequestPaymentHelper {
 			const hmo = patient.hmo;
 
 			const service = patientRequestItem.service;
-			if (service) {
-				const serviceCost = await getConnection().getRepository(ServiceCost).findOne({
-					where: { code: service?.code, hmo },
+			if (service && service.code) {
+				let serviceCost = await getConnection().getRepository(ServiceCost).findOne({
+					where: { code: service.code, hmo },
 				});
+				if (!serviceCost) {
+					serviceCost = await createServiceCost(service.code, hmo);
+				}
 
 				const admission = await getConnection().getRepository(Admission).findOne({
 					where: { patient, status: 0 },

@@ -4,97 +4,118 @@ import { PatientAllergyDto } from '../dto/patient.allergy.dto';
 import { PatientRepository } from '../repositories/patient.repository';
 import { Raw } from 'typeorm';
 import { PatientNoteRepository } from '../repositories/patient_note.repository';
+import { PatientNote } from '../entities/patient_note.entity';
+import { DrugGenericRepository } from '../../inventory/pharmacy/generic/generic.repository';
 
 @Injectable()
 export class PatientAllergenService {
-    constructor(
-        @InjectRepository(PatientNoteRepository)
-        private patientNoteRepository: PatientNoteRepository,
-        @InjectRepository(PatientRepository)
-        private patientRepository: PatientRepository,
-    ) {
+	constructor(
+		@InjectRepository(PatientNoteRepository)
+		private patientNoteRepository: PatientNoteRepository,
+		@InjectRepository(PatientRepository)
+		private patientRepository: PatientRepository,
+		@InjectRepository(DrugGenericRepository)
+		private drugGenericRepository: DrugGenericRepository,
+	) {
 
-    }
+	}
 
-    async getAllergies(options, urlParams): Promise<any> {
-        const { q, patient_id } = urlParams;
+	async getAllergies(options, urlParams): Promise<any> {
+		const { q, patient_id } = urlParams;
 
-        const page = options.page - 1;
+		const page = options.page - 1;
 
-        let result;
-        let total = 0;
+		let result;
+		let total = 0;
 
-        const patient = await this.patientRepository.findOne(patient_id);
+		const patient = await this.patientRepository.findOne(patient_id);
 
-        if (q && q.length > 0) {
-            [result, total] = await this.patientNoteRepository.findAndCount({
-                where: {
-                    name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`),
-                    patient,
-                    type: 'allergy',
-                },
-                relations: ['patient'],
-                take: options.limit,
-                skip: (page * options.limit),
-            });
-        } else {
-            [result, total] = await this.patientNoteRepository.findAndCount({
-                where: { patient, type: 'allergy' },
-                relations: ['patient'],
-                take: options.limit,
-                skip: (page * options.limit),
-            });
-        }
+		if (q && q.length > 0) {
+			[result, total] = await this.patientNoteRepository.findAndCount({
+				where: {
+					name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`),
+					patient,
+					type: 'allergy',
+				},
+				relations: ['patient', 'drugGeneric'],
+				take: options.limit,
+				skip: (page * options.limit),
+			});
+		} else {
+			[result, total] = await this.patientNoteRepository.findAndCount({
+				where: { patient, type: 'allergy' },
+				relations: ['patient', 'drugGeneric'],
+				take: options.limit,
+				skip: (page * options.limit),
+			});
+		}
 
-        return {
-            result,
-            lastPage: Math.ceil(total / options.limit),
-            itemsPerPage: options.limit,
-            totalPages: total,
-            currentPage: options.page,
-        };
-    }
+		return {
+			result,
+			lastPage: Math.ceil(total / options.limit),
+			itemsPerPage: options.limit,
+			totalPages: total,
+			currentPage: options.page,
+		};
+	}
 
-    async doSaveAllergies(param: PatientAllergyDto, createdBy): Promise<any> {
-        const { patient_id } = param;
-        try {
-            param.patient = await this.patientRepository.findOne(patient_id);
-            const allergy = await this.patientNoteRepository.save(param);
-            allergy.createdBy = createdBy;
-            await allergy.save();
-            return { success: true, allergy };
-        } catch (error) {
-            return { success: false, message: error.message };
-        }
-    }
+	async doSaveAllergies(param: PatientAllergyDto, createdBy): Promise<any> {
+		try {
+			const { category, allergy, severity, reaction, patient_id, generic_id } = param;
 
-    async doUpdateAllergy(allergyId, param: PatientAllergyDto, updatedBy): Promise<any> {
-        try {
-            const allergy = await this.patientNoteRepository.findOne(allergyId);
-            allergy.category = param.category;
-            allergy.allergy = param.allergy;
-            allergy.severity = param.severity;
-            allergy.reaction = param.reaction;
-            allergy.lastChangedBy = updatedBy;
-            await allergy.save();
+			const patient = await this.patientRepository.findOne(patient_id);
 
-            return { success: true, allergy };
+			const generic = generic_id ? await this.drugGenericRepository.findOne(generic_id) : null;
 
-        } catch (error) {
-            return { success: false, message: error.message };
-        }
-    }
+			const patientAllergen = new PatientNote();
+			patientAllergen.category = category;
+			patientAllergen.allergy = allergy;
+			patientAllergen.drugGeneric = generic;
+			patientAllergen.severity = severity;
+			patientAllergen.reaction = reaction;
+			patientAllergen.patient = patient;
+			patientAllergen.type = 'allergy';
+			patientAllergen.createdBy = createdBy;
+			await patientAllergen.save();
 
-    async deleteAllergen(id: number, username) {
-        const allergen = await this.patientNoteRepository.findOne(id);
+			return { success: true, allergy };
+		} catch (error) {
+			return { success: false, message: error.message };
+		}
+	}
 
-        if (!allergen) {
-            throw new NotFoundException(`Patient allergen with ID '${id}' not found`);
-        }
+	async doUpdateAllergy(id, param: PatientAllergyDto, updatedBy): Promise<any> {
+		try {
+			const { category, allergy, severity, reaction, generic_id } = param;
 
-        allergen.deletedBy = username;
-        await allergen.save();
+			const generic = generic_id ? await this.drugGenericRepository.findOne(generic_id) : null;
 
-        return allergen.softRemove();
-    }
+			const patientAllergen = await this.patientNoteRepository.findOne(id);
+			patientAllergen.category = category;
+			patientAllergen.allergy = allergy;
+			patientAllergen.drugGeneric = generic;
+			patientAllergen.severity = severity;
+			patientAllergen.reaction = reaction;
+			patientAllergen.lastChangedBy = updatedBy;
+			const rs = await patientAllergen.save();
+
+			return { success: true, allergy: rs };
+
+		} catch (error) {
+			return { success: false, message: error.message };
+		}
+	}
+
+	async deleteAllergen(id: number, username) {
+		const allergen = await this.patientNoteRepository.findOne(id);
+
+		if (!allergen) {
+			throw new NotFoundException(`Patient allergen with ID '${id}' not found`);
+		}
+
+		allergen.deletedBy = username;
+		await allergen.save();
+
+		return allergen.softRemove();
+	}
 }

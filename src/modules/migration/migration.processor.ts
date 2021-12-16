@@ -899,7 +899,7 @@ export class MigrationProcessor {
 		});
 
 		for (const cost of privateServiceCosts) {
-			const service = await this.serviceRepository.findOne(cost.item.id);
+			const service = await this.serviceRepository.findOne(cost?.item?.id || '');
 			if (service) {
 				const serviceCost = await this.serviceCostRepository.findOne({
 					where: { hmo: scheme, code: service.code },

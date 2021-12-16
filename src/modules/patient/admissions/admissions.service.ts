@@ -24,6 +24,8 @@ import { TransactionsRepository } from '../../finance/transactions/transactions.
 import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repository';
 import { NicuAccommodationRepository } from '../../settings/nicu-accommodation/accommodation.repository';
 import { TransactionCreditDto } from '../../finance/transactions/dto/transaction-credit.dto';
+import { Transaction } from '../../finance/transactions/transaction.entity';
+import { getConnection } from 'typeorm';
 
 @Injectable()
 export class AdmissionsService {
@@ -142,6 +144,15 @@ export class AdmissionsService {
 
             patient.is_admitted = true;
             await patient.save();
+
+            try {
+                await getConnection().createQueryBuilder().update(Transaction)
+                    .set({ status: -1 })
+                    .where('patient_id = :id', { id: patient.id })
+                    .andWhere('status = :status', { status: 0 })
+                    .execute();
+                // tslint:disable-next-line:no-empty
+            } catch (e) {}
 
             if (nicu) {
                 // save to nicu

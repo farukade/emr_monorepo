@@ -16,6 +16,8 @@ import { TransactionCreditDto } from '../../modules/finance/transactions/dto/tra
 import { HmoScheme } from '../../modules/hmo/entities/hmo_scheme.entity';
 import { AccountDeposit } from '../../modules/finance/transactions/entities/deposit.entity';
 import { PatientRequest } from '../../modules/patient/entities/patient_requests.entity';
+import { ServiceCost } from '../../modules/settings/entities/service_cost.entity';
+import { Service } from '../../modules/settings/entities/service.entity';
 
 // tslint:disable-next-line:no-var-requires
 const mysql = require('mysql2/promise');
@@ -444,4 +446,19 @@ export const getGroupCode = async (type) => {
 	const number = groupCode.split('/');
 	const id = number.length > 1 ? parseInt(number[2], 10) : 0;
 	return `00000${id + 1}`;
+};
+
+export const createServiceCost = async (code: string, scheme: HmoScheme) => {
+	const connection = getConnection();
+	const service = await connection.getRepository(Service).findOne({ where: { code } });
+	if (service) {
+		const costItem = new ServiceCost();
+		costItem.code = code;
+		costItem.item = service;
+		costItem.tariff = 0;
+		costItem.hmo = scheme;
+		return await costItem.save();
+	}
+
+	return null;
 };

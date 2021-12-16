@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsEmail } from 'class-validator';
+import { IsNotEmpty } from 'class-validator';
 import { Patient } from '../entities/patient.entity';
 
 export class PatientAllergyDto {
@@ -16,5 +16,5 @@ export class PatientAllergyDto {
 
     reaction: string;
 
-    patient: Patient;
+    generic_id: any;
 }
