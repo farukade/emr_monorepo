@@ -55,22 +55,26 @@ export class QueueSystemService {
         try {
             const appointment = await this.appointmentRepository.findOne(id, { relations: ['patient'] });
             appointment.canSeeDoctor = 1;
-            await appointment.save();
+            // await appointment.save();
 
-            const patient = await this.patientRepository.findOne(patient_id);
+            const patient = await this.patientRepository.findOne(patient_id, { relations: ['hmo'] });
 
             const oldQueue = await this.queueSystemRepository.findOne(queue_id);
             oldQueue.status = 2;
             oldQueue.patient = patient;
-            await oldQueue.save();
+            // await oldQueue.save();
 
             // save queue
-            const queue = await this.queueSystemRepository.saveQueue(appointment, 'doctor', patient);
-            console.log(queue);
+            // const queue = await this.queueSystemRepository.saveQueue(appointment, 'doctor', patient);
+
+            const _appointment = await this.appointmentRepository.findOne(id, {
+                relations: ['patient', 'whomToSee', 'consultingRoom', 'transaction', 'department'],
+            });
 
             // // send new queue message
-            this.appGateway.server.emit('consultation-queue', { success: true, queue });
-            return { success: true, queue };
+            this.appGateway.server.emit('consultation-queue', { success: true, queue: { ...oldQueue, patient, appointment: _appointment } });
+
+            return { success: true, queue: oldQueue };
         } catch (e) {
             return { success: false, message: e.message };
         }

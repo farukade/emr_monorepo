@@ -63,7 +63,7 @@ export class Patient extends CustomBaseEntity {
     @Column({ nullable: true })
     last_appointment_date: string;
 
-    @ManyToOne(type => HmoScheme, { nullable: true })
+    @ManyToOne(type => HmoScheme, { nullable: true, eager: true })
     @JoinColumn({ name: 'hmo_scheme_id' })
     hmo: HmoScheme;
 

@@ -235,12 +235,14 @@ export class StaffService {
 		try {
 			// find room
 			const room = await getRepository(ConsultingRoom).findOne(roomId);
+
 			// update staff detail
 			const staff = await this.staffRepository.createQueryBuilder()
 				.update(StaffDetails)
 				.set({ room })
 				.where('id = :id', { id: userId })
 				.execute();
+
 			return { success: true, room };
 		} catch (e) {
 			return { success: false, message: e.message };
@@ -261,6 +263,7 @@ export class StaffService {
 					status: 'Approved',
 				},
 			});
+
 			if (appointment) {
 				appointment.doctorStatus = 0;
 				appointment.whomToSee = null;
