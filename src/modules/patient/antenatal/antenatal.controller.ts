@@ -21,6 +21,16 @@ export class AntenatalController {
         return this.antenatalService.getAntenatals({page, limit}, urlParams);
     }
 
+    @Get('/search')
+    @UsePipes(ValidationPipe)
+    searchEnrollment(
+        @Query() urlParams,
+        @Request() request,
+    ) {
+        const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 50;
+        return this.antenatalService.searchEnrollment({ limit }, urlParams);
+    }
+
     @Post('/save')
     @UsePipes(ValidationPipe)
     saveNewEnrollment(

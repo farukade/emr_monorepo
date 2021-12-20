@@ -189,7 +189,7 @@ export class ConsultationService {
 			}
 
 			for (const allergen of param.allergies) {
-				const generic = allergen.generic ? await this.drugGenericRepository.findOne(allergen.generic) : null;
+				const generic = allergen.generic_id && allergen.generic_id !== '' ? await this.drugGenericRepository.findOne(allergen.generic_id) : null;
 				const patientAllergen = new PatientNote();
 				patientAllergen.category = allergen.category.value;
 				patientAllergen.allergy = allergen.allergen;
@@ -273,6 +273,17 @@ export class ConsultationService {
 				await exam.save();
 			}
 
+			if (param.physicalExaminationNote !== '') {
+				const exam = new PatientNote();
+				exam.description = param.physicalExaminationNote;
+				exam.patient = patient;
+				exam.encounter = encounter;
+				exam.type = 'physical-exam-note';
+				exam.visit = 'encounter';
+				exam.createdBy = createdBy;
+				await exam.save();
+			}
+
 			let reviewOfSystems = [];
 			for (const exam of param.reviewOfSystem) {
 				reviewOfSystems = [...reviewOfSystems, `${exam.label}: ${exam.value}`];
@@ -346,7 +357,7 @@ export class ConsultationService {
 				}
 			}
 
-			if (investigations.pharmacyRequest) {
+			if (investigations.pharmacyRequest && investigations.pharmacyRequest.items.length > 0) {
 				const regimen = await PatientRequestHelper.handlePharmacyRequest(investigations.pharmacyRequest, patient, createdBy, 'encounter');
 				console.log(regimen);
 			}

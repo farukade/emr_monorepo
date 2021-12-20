@@ -9,12 +9,12 @@ import { PaginationOptionsInterface } from '../../../common/paginate';
 import { AntenatalAssessmentRepository } from './antenatal-assessment.repository';
 import { PatientRequestRepository } from '../repositories/patient_request.repository';
 import { Pagination } from '../../../common/paginate/paginate.interface';
-import { getStaff, postDebit } from '../../../common/utils/utils';
+import { getBalance, getLastAppointment, getOutstanding, getStaff, postDebit } from '../../../common/utils/utils';
 import { AntenatalEnrollment } from './entities/antenatal-enrollment.entity';
 import { AntenatalPackageRepository } from '../../settings/antenatal-packages/antenatal-package.repository';
 import { AdmissionsRepository } from '../admissions/repositories/admissions.repository';
 import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
-import { getConnection } from 'typeorm';
+import { Brackets, getConnection } from 'typeorm';
 import { PatientNoteRepository } from '../repositories/patient_note.repository';
 import { AntenatalAssessment } from './entities/antenatal-assessment.entity';
 import { PatientNote } from '../entities/patient_note.entity';
@@ -29,7 +29,7 @@ import { TransactionCreditDto } from '../../finance/transactions/dto/transaction
 export class AntenatalService {
 	constructor(
 		@InjectRepository(AntenatalEnrollmentRepository)
-		private enrollmentRepository: AntenatalEnrollmentRepository,
+		private ancEnrollmentRepository: AntenatalEnrollmentRepository,
 		@InjectRepository(PatientRepository)
 		private patientRepository: PatientRepository,
 		@InjectRepository(AntenatalAssessmentRepository)
@@ -56,7 +56,7 @@ export class AntenatalService {
 
 		const page = options.page - 1;
 
-		const query = this.enrollmentRepository.createQueryBuilder('q').select('q.*');
+		const query = this.ancEnrollmentRepository.createQueryBuilder('q').select('q.*');
 
 		if (startDate && startDate !== '') {
 			const start = moment(startDate).endOf('day').toISOString();
@@ -81,10 +81,12 @@ export class AntenatalService {
 
 		let result = [];
 		for (const antenatal of antenatals) {
-			antenatal.patient = await this.patientRepository.findOne(antenatal.patient_id, { relations: ['hmo'] });
+			antenatal.patient = await this.patientRepository.findOne(antenatal.patient_id, {
+				relations: ['nextOfKin', 'immunization', 'hmo'],
+			});
 
 			antenatal.staff = await getStaff(antenatal.createdBy);
-			antenatal.ancpackage = await this.antenatalPackageRepository.findOne(antenatal.package_id);
+			antenatal.ancpackage = antenatal.package_id ? await this.antenatalPackageRepository.findOne(antenatal.package_id) : null;
 
 			result = [...result, antenatal];
 		}
@@ -96,6 +98,26 @@ export class AntenatalService {
 			totalPages: total,
 			currentPage: options.page,
 		};
+	}
+
+	async searchEnrollment(options, param): Promise<AntenatalEnrollment[]> {
+		const { q } = param;
+
+		const query = this.ancEnrollmentRepository.createQueryBuilder('p')
+			.select('p.*')
+			.andWhere(new Brackets(qb => {
+				qb.where('LOWER(p.serial_code) Like :code', { code: `%${q.toLowerCase()}%` });
+			}));
+
+		const antenatals = await query.take(options.limit).getRawMany();
+
+		for (const antenatal of antenatals) {
+			antenatal.patient = await this.patientRepository.findOne(antenatal.patient_id, {
+				relations: ['nextOfKin', 'immunization', 'hmo'],
+			});
+		}
+
+		return antenatals;
 	}
 
 	async saveEnrollment(createDto: EnrollmentDto, createdBy) {
@@ -132,7 +154,7 @@ export class AntenatalService {
 			enrollment.pregnancy_history = previousPregnancy;
 			enrollment.ancpackage = ancpackage;
 			enrollment.createdBy = createdBy;
-			const rs = await this.enrollmentRepository.save(enrollment);
+			const rs = await this.ancEnrollmentRepository.save(enrollment);
 
 			if (ancpackage) {
 				const data: TransactionCreditDto = {
@@ -232,7 +254,7 @@ export class AntenatalService {
 			} = params;
 			const { labRequest, radiologyRequest, pharmacyRequest } = investigation;
 
-			const antenatalEnrolment = await this.enrollmentRepository.findOne(id, {
+			const antenatalEnrolment = await this.ancEnrollmentRepository.findOne(id, {
 				relations: ['ancpackage', 'patient'],
 			});
 			const patient_id = antenatalEnrolment.patient.id;

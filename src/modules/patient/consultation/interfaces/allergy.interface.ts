@@ -4,4 +4,5 @@ export class IAllergyInterface {
     category: any;
     severity: any;
     generic: any;
+    generic_id: any;
 }

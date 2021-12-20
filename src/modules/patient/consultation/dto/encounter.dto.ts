@@ -10,6 +10,7 @@ export class EncounterDto {
     allergies: IAllergyInterface[];
     pastAllergies: any[];
     physicalExamination: any[];
+    physicalExaminationNote: string;
     diagnosis: IDiagnosisInterface[];
     pastDiagnosis: IDiagnosisInterface[];
     investigations: IInvestigationInterface;

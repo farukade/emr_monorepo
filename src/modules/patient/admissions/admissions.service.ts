@@ -80,7 +80,7 @@ export class AdmissionsService {
             query.andWhere('q.patient = :patient_id', { patient_id });
         }
 
-        if (status) {
+        if (status && status !== '') {
             query.andWhere('q.status = :status', { status });
         }
 
