@@ -4,12 +4,12 @@ import { PatientRepository } from '../repositories/patient.repository';
 import { PatientNoteRepository } from '../repositories/patient_note.repository';
 import { PaginationOptionsInterface } from '../../../common/paginate';
 import { PatientNote } from '../entities/patient_note.entity';
-import { AuthRepository } from '../../auth/auth.repository';
 import { getStaff } from '../../../common/utils/utils';
 import { AdmissionsRepository } from '../admissions/repositories/admissions.repository';
 import { PatientRequestItemRepository } from '../repositories/patient_request_items.repository';
 import { IvfEnrollmentRepository } from '../ivf/ivf_enrollment.repository';
 import { AntenatalEnrollmentRepository } from '../antenatal/enrollment.repository';
+import { DrugGenericRepository } from '../../inventory/pharmacy/generic/generic.repository';
 
 @Injectable()
 export class PatientNoteService {
@@ -18,8 +18,6 @@ export class PatientNoteService {
         private patientRepository: PatientRepository,
         @InjectRepository(PatientNoteRepository)
         private patientNoteRepository: PatientNoteRepository,
-        @InjectRepository(AuthRepository)
-        private authRepository: AuthRepository,
         @InjectRepository(AdmissionsRepository)
         private admissionsRepository: AdmissionsRepository,
         @InjectRepository(PatientRequestItemRepository)
@@ -28,6 +26,8 @@ export class PatientNoteService {
         private ivfEnrollmentRepository: IvfEnrollmentRepository,
         @InjectRepository(AntenatalEnrollmentRepository)
         private enrollmentRepository: AntenatalEnrollmentRepository,
+        @InjectRepository(DrugGenericRepository)
+        private drugGenericRepository: DrugGenericRepository,
     ) {
     }
 
@@ -76,6 +76,10 @@ export class PatientNoteService {
         let notes = [];
         for (const item of items) {
             const staff = await getStaff(item.createdBy);
+
+            if (item.drug_generic_id && item.drug_generic_id !== '') {
+                item.generic = await this.drugGenericRepository.findOne(item.drug_generic_id);
+            }
 
             notes = [...notes, { ...item, staff }];
         }
