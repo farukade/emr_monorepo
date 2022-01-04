@@ -462,7 +462,7 @@ export class PatientRequestService {
 		}
 	}
 
-	async doFillRequest(param, id, updatedBy) {
+	async doFillRequest(param, id, updatedBy, fill: boolean) {
 		const { patient_id, items, code } = param;
 		try {
 			const patient = await this.patientRepository.findOne(patient_id, {
@@ -470,55 +470,91 @@ export class PatientRequestService {
 			});
 
 			let results = [];
-			for (const reqItem of items) {
-				const batch = await getConnection().getRepository(DrugBatch).findOne(reqItem.item.drugBatch.id);
-				batch.quantity = batch.quantity - parseInt(reqItem.item.fillQuantity, 10);
-				await batch.save();
 
-				const drug = await getConnection().getRepository(Drug).findOne(reqItem.item.drug.id);
-				const requestItem = await this.patientRequestItemRepository.findOne(reqItem.item.id);
+			if (fill) {
+				for (const reqItem of items) {
+					const batch = await getConnection().getRepository(DrugBatch).findOne(reqItem.item.drugBatch.id);
+					batch.quantity = batch.quantity - parseInt(reqItem.item.fillQuantity, 10);
+					await batch.save();
 
-				requestItem.drugBatch = batch;
-				requestItem.drugGeneric = drug.generic;
-				requestItem.filled = 1;
-				requestItem.fillQuantity = reqItem.item.fillQuantity;
-				requestItem.filledAt = moment().format('YYYY-MM-DD HH:mm:ss');
-				requestItem.filledBy = updatedBy;
-				requestItem.drug = drug;
-				const rs = await requestItem.save();
+					const drug = await getConnection().getRepository(Drug).findOne(reqItem.item.drug.id);
+					const requestItem = await this.patientRequestItemRepository.findOne(reqItem.item.id);
 
-				const amount = batch.unitPrice * parseInt(reqItem.item.fillQuantity, 10);
+					requestItem.drugBatch = batch;
+					requestItem.drugGeneric = drug.generic;
+					requestItem.filled = 1;
+					requestItem.fillQuantity = reqItem.item.fillQuantity;
+					requestItem.filledAt = moment().format('YYYY-MM-DD HH:mm:ss');
+					requestItem.filledBy = updatedBy;
+					requestItem.drug = drug;
+					const rs = await requestItem.save();
 
-				const admission = await getConnection().getRepository(Admission).findOne({ where: { patient } });
+					const amount = batch.unitPrice * parseInt(reqItem.item.fillQuantity, 10);
 
-				// save transaction
-				const data: TransactionCreditDto = {
-					patient_id: patient.id,
-					username: updatedBy,
-					sub_total: 0,
-					vat: 0,
-					amount: amount * -1,
-					voucher_amount: 0,
-					amount_paid: 0,
-					change: 0,
-					description: 'Payment for pharmacy request',
-					payment_method: null,
-					part_payment_expiry_date: null,
-					bill_source: 'drugs',
-					next_location: null,
-					status: 0,
-					hmo_approval_code: null,
-					transaction_details: null,
-					admission_id: admission?.id || null,
-					staff_id: null,
-					lastChangedBy: null,
-				};
+					const admission = await getConnection().getRepository(Admission).findOne({ where: { patient } });
 
-				const transaction = await postDebit(data, null, null, requestItem, null, patient.hmo);
+					// save transaction
+					const data: TransactionCreditDto = {
+						patient_id: patient.id,
+						username: updatedBy,
+						sub_total: 0,
+						vat: 0,
+						amount: amount * -1,
+						voucher_amount: 0,
+						amount_paid: 0,
+						change: 0,
+						description: 'Payment for pharmacy request',
+						payment_method: null,
+						part_payment_expiry_date: null,
+						bill_source: 'drugs',
+						next_location: null,
+						status: 0,
+						hmo_approval_code: null,
+						transaction_details: null,
+						admission_id: admission?.id || null,
+						staff_id: null,
+						lastChangedBy: null,
+					};
 
-				this.appGateway.server.emit('paypoint-queue', transaction);
+					const transaction = await postDebit(data, null, null, requestItem, null, patient.hmo);
 
-				results = [...results, { ...rs, transaction }];
+					const _requestItem = await this.patientRequestItemRepository.findOne(reqItem.item.id);
+					_requestItem.transaction = transaction;
+					await _requestItem.save();
+
+					this.appGateway.server.emit('paypoint-queue', transaction);
+
+					results = [...results, { ...rs, transaction }];
+				}
+			} else {
+				for (const reqItem of items) {
+					const batch = await getConnection().getRepository(DrugBatch).findOne(reqItem.item.drugBatch.id);
+					batch.quantity = batch.quantity + reqItem.item.fillQuantity;
+					await batch.save();
+
+					const item = await this.patientRequestItemRepository.findOne(reqItem.item.id);
+
+					item.drugBatch = null;
+					item.filled = 0;
+					item.fillQuantity = 0;
+					item.filledAt = null;
+					item.filledBy = null;
+					const rs = await item.save();
+
+					const transaction = await this.transactionsRepository.findOne({
+						where: { patientRequestItem: item },
+					});
+					if (transaction) {
+						transaction.deletedBy = updatedBy;
+						transaction.save();
+
+						await transaction.softRemove();
+					}
+
+					const drug = await getConnection().getRepository(Drug).findOne(reqItem.item.drug.id, { relations: ['batches'] });
+
+					results = [...results, { ...rs, drug }];
+				}
 			}
 
 			return { success: true, data: results };

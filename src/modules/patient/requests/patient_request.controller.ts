@@ -70,7 +70,16 @@ export class PatientRequestController {
         @Body() param,
         @Request() req,
     ) {
-        return this.patientRequestService.doFillRequest(param, requestId, req.user.username);
+        return this.patientRequestService.doFillRequest(param, requestId, req.user.username, true);
+    }
+
+    @Post('unfill-request/:id')
+    unfillRequest(
+        @Param('id') requestId: string,
+        @Body() param,
+        @Request() req,
+    ) {
+        return this.patientRequestService.doFillRequest(param, requestId, req.user.username, false);
     }
 
     // fill request for others
