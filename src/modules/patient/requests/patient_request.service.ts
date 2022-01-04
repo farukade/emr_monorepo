@@ -319,26 +319,27 @@ export class PatientRequestService {
 		let result = [];
 		for (const req of items) {
 			const request = await this.patientRequestRepository.findOne({ where: { id: req.id }, relations: ['item'] });
-
-			const transaction = await this.transactionsRepository.findOne({
-				where: { patientRequestItem: request.item },
-			});
-
-			let drug;
-			if (request.item.drug) {
-				drug = await this.drugRepository.findOne({
-					where: { id: request.item.drug.id },
-					relations: ['batches'],
+			if (request.item) {
+				const transaction = await this.transactionsRepository.findOne({
+					where: { patientRequestItem: request.item },
 				});
+
+				let drug;
+				if (request.item.drug) {
+					drug = await this.drugRepository.findOne({
+						where: { id: request.item.drug.id },
+						relations: ['batches'],
+					});
+				}
+				const reqItem = { ...request.item, drug, transaction };
+				const theRequest = { ...request, item: reqItem };
+
+				const patient = await this.patientRepository.findOne(req.patient_id, {
+					relations: ['nextOfKin', 'immunization', 'hmo'],
+				});
+
+				result = [...result, { ...req, ...theRequest, patient }];
 			}
-			const reqItem = { ...request.item, drug, transaction };
-			const theRequest = { ...request, item: reqItem };
-
-			const patient = await this.patientRepository.findOne(req.patient_id, {
-				relations: ['nextOfKin', 'immunization', 'hmo'],
-			});
-
-			result = [...result, { ...req, ...theRequest, patient }];
 		}
 
 		return {

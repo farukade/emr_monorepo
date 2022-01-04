@@ -107,7 +107,7 @@ export class PatientRequestHelper {
                     lastChangedBy: null,
                     antenatal,
                     admission,
-                    procedure_id,
+                    procedure_id: procedure_id && procedure_id !== '' ? procedure_id : null,
                 };
                 const res = await this.save(data);
                 const regimen = res.generatedMaps[0];
@@ -277,6 +277,7 @@ export class PatientRequestHelper {
 
             let result = [];
             for (const item of tests) {
+                console.log(item);
                 if (item && item.code) {
                     const data = {
                         code,
@@ -287,8 +288,9 @@ export class PatientRequestHelper {
                         createdBy,
                         admission,
                         antenatal,
-                        procedure_id,
+                        procedure_id: procedure_id && procedure_id !== '' ? procedure_id : null,
                     };
+                    console.log(data);
                     const res = await this.save(data);
                     const request = res.generatedMaps[0];
 

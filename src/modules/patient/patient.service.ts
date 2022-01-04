@@ -212,6 +212,10 @@ export class PatientService {
 			if (patient.staff_id) {
 				patient.staff = await this.staffRepository.findOne(patient.staff_id);
 			}
+
+			patient.admission = await this.admissionRepository.findOne({
+				where: { status: 0, patient },
+			});
 		}
 
 		return patients;
