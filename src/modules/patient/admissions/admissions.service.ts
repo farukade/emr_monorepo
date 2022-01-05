@@ -113,6 +113,7 @@ export class AdmissionsService {
             }
 
             item.admitted_by = await getStaff(item.createdBy);
+            item.dischargedBy = item.discharged_by ? await this.staffRepository.findOne(item.discharged_by) : null;
 
             result = [...result, item];
         }

@@ -9,11 +9,10 @@ import { PaginationOptionsInterface } from '../../../common/paginate';
 import { AntenatalAssessmentRepository } from './antenatal-assessment.repository';
 import { PatientRequestRepository } from '../repositories/patient_request.repository';
 import { Pagination } from '../../../common/paginate/paginate.interface';
-import { getBalance, getLastAppointment, getOutstanding, getStaff, postDebit } from '../../../common/utils/utils';
+import { getStaff, postDebit } from '../../../common/utils/utils';
 import { AntenatalEnrollment } from './entities/antenatal-enrollment.entity';
 import { AntenatalPackageRepository } from '../../settings/antenatal-packages/antenatal-package.repository';
 import { AdmissionsRepository } from '../admissions/repositories/admissions.repository';
-import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
 import { Brackets, getConnection } from 'typeorm';
 import { PatientNoteRepository } from '../repositories/patient_note.repository';
 import { AntenatalAssessment } from './entities/antenatal-assessment.entity';
@@ -40,8 +39,6 @@ export class AntenatalService {
 		private antenatalPackageRepository: AntenatalPackageRepository,
 		@InjectRepository(AdmissionsRepository)
 		private admissionsRepository: AdmissionsRepository,
-		@InjectRepository(TransactionsRepository)
-		private transactionsRepository: TransactionsRepository,
 		@InjectRepository(PatientNoteRepository)
 		private patientNoteRepository: PatientNoteRepository,
 		@InjectRepository(AppointmentRepository)
@@ -189,6 +186,23 @@ export class AntenatalService {
 		}
 	}
 
+	async saveLMP(id: number, createDto: EnrollmentDto, createdBy) {
+		try {
+			const { lmp, edd } = createDto;
+
+			const enrollment = await this.ancEnrollmentRepository.findOne(id);
+			enrollment.lmp = lmp;
+			enrollment.edd = edd;
+			enrollment.lastChangedBy = createdBy;
+			const rs = await enrollment.save();
+
+			return { success: true, data: rs };
+		} catch (error) {
+			console.log(error);
+			return { success: false, message: error.message };
+		}
+	}
+
 	async deleteAntenatal(id: string) {
 		// delete Antenatal rates
 		await this.patientRequestRepository
@@ -260,10 +274,10 @@ export class AntenatalService {
 			const patient_id = antenatalEnrolment.patient.id;
 			const patient = await this.patientRepository.findOne(patient_id, { relations: ['hmo'] });
 
-			const appointment = await this.appointmentRepository.findOne({
+			const appointment = appointment_id && appointment_id !== '' ? await this.appointmentRepository.findOne({
 				where: { id: appointment_id },
 				relations: ['patient', 'whomToSee', 'consultingRoom', 'transaction', 'department'],
-			});
+			}) : null;
 
 			let savedNote = null;
 			if (comment) {

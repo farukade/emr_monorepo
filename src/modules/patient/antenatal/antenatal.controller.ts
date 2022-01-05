@@ -40,6 +40,16 @@ export class AntenatalController {
         return this.antenatalService.saveEnrollment(createDto, req.user.username);
     }
 
+    @Post('/:id/lmp')
+    @UsePipes(ValidationPipe)
+    saveLMP(
+        @Param('id') id: number,
+        @Body() createDto: EnrollmentDto,
+        @Request() req,
+    ) {
+        return this.antenatalService.saveLMP(id, createDto, req.user.username);
+    }
+
     @Delete('/:id')
     deleteAntenatal(
         @Param('id') id: string,
