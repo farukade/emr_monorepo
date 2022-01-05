@@ -14,9 +14,7 @@ import { AppGateway } from '../../../app.gateway';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import { Brackets, getConnection } from 'typeorm';
 import {
-	getBalance,
 	getDepositBalance,
-	getOutstanding,
 	getStaff,
 	postCredit,
 	postDebit,
@@ -429,6 +427,79 @@ export class TransactionsService {
 			const balance = await getDepositBalance(patient_id, true);
 
 			return { success: true, balance };
+		} catch (error) {
+			console.log(error);
+			return { success: false, message: error.message };
+		}
+	}
+
+	async processCreditTransaction(transactionDto: ProcessTransactionDto, updatedBy): Promise<any> {
+		const { payment_method, items } = transactionDto;
+		try {
+			let transactions = [];
+			for (const item of items) {
+				const transaction = await this.transactionsRepository.findOne(item.id, { relations: ['patient', 'staff', 'appointment', 'hmo'] });
+
+				const data: TransactionCreditDto = {
+					patient_id: transaction.patient.id,
+					username: updatedBy,
+					sub_total: 0,
+					vat: 0,
+					amount: Math.abs(item.amount),
+					voucher_amount: 0,
+					amount_paid: 0,
+					change: 0,
+					description: transaction.description,
+					payment_method,
+					part_payment_expiry_date: null,
+					bill_source: transaction.bill_source,
+					next_location: null,
+					status: 1,
+					hmo_approval_code: null,
+					transaction_details: null,
+					admission_id: transaction.admission?.id || null,
+					staff_id: transaction.staff?.id || null,
+					lastChangedBy: updatedBy,
+				};
+
+				let queue;
+				let appointment = null;
+				if (transaction.next_location && transaction.next_location === 'vitals') {
+					// find appointment
+					appointment = await this.appointmentRepository.findOne({
+						where: { transaction: transaction.id },
+						relations: ['patient', 'whomToSee', 'consultingRoom', 'serviceCategory'],
+					});
+
+					// create new queue
+					if (appointment) {
+						appointment.status = 'Approved';
+						appointment.save();
+
+						queue = await this.queueSystemRepository.saveQueue(appointment, transaction.next_location);
+						this.appGateway.server.emit('nursing-queue', { queue });
+					}
+				}
+
+				const credit = await postCredit(data, transaction.service, null, transaction.patientRequestItem, appointment, transaction.hmo);
+
+				await getConnection().getRepository(AccountDeposit).save({
+					patient: transaction.patient,
+					amount: Math.abs(item.amount) * -1,
+					transaction: credit,
+				});
+
+				transaction.next_location = null;
+				transaction.status = 1;
+				transaction.lastChangedBy = updatedBy;
+				const rs = await transaction.save();
+
+				rs.staff = await getStaff(transaction.lastChangedBy);
+
+				transactions = [...transactions, rs];
+			}
+
+			return { success: true, transactions };
 		} catch (error) {
 			console.log(error);
 			return { success: false, message: error.message };

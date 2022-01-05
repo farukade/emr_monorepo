@@ -1,5 +1,5 @@
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
-import { Entity, ManyToOne, JoinColumn, Column, OneToOne } from 'typeorm';
+import { Entity, ManyToOne, JoinColumn, Column, OneToOne, BeforeInsert } from 'typeorm';
 import { Patient } from '../../patient/entities/patient.entity';
 import { ConsultingRoom } from '../../settings/entities/consulting-room.entity';
 import { ServiceCategory } from '../../settings/entities/service_category.entity';
@@ -9,6 +9,7 @@ import { Transaction } from '../../finance/transactions/transaction.entity';
 import { Department } from '../../settings/entities/department.entity';
 import { ServiceCost } from '../../settings/entities/service_cost.entity';
 import { AntenatalAssessment } from '../../patient/antenatal/entities/antenatal-assessment.entity';
+import * as moment from 'moment';
 
 @Entity({ name: 'appointments' })
 export class Appointment extends CustomBaseEntity {
@@ -85,4 +86,13 @@ export class Appointment extends CustomBaseEntity {
 
     @Column({ type: 'boolean', default: false })
     is_covered: boolean;
+
+    @Column({ type: 'boolean', default: false })
+    is_scheduled: boolean;
+
+    @BeforeInsert()
+    updateIsSchedule() {
+        this.is_scheduled = moment(this.appointment_date).format('DDMMYYYY') !== moment().format('DDMMYYYY');
+    }
+
 }

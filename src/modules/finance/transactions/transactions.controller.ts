@@ -60,6 +60,15 @@ export class TransactionsController {
         return this.transactionsService.creditAccount(params, req.user.username);
     }
 
+    @Post('/process-credit')
+    @UsePipes(ValidationPipe)
+    processCredit(
+        @Body() transactionDto: ProcessTransactionDto,
+        @Request() req,
+    ): Promise<any> {
+        return this.transactionsService.processCreditTransaction(transactionDto, req.user.username);
+    }
+
     @Patch('/:id/transfer')
     @UsePipes(ValidationPipe)
     transferTransaction(
