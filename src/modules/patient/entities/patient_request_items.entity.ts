@@ -13,7 +13,7 @@ import { PatientNote } from './patient_note.entity';
 
 @Entity({ name: 'patient_request_items' })
 export class PatientRequestItem extends CustomBaseEntity {
-    @OneToOne(type => PatientRequest, request => request.item)
+    @ManyToOne(type => PatientRequest, request => request.item)
     @JoinColumn({ name: 'request_id' })
     request: PatientRequest;
 
@@ -69,6 +69,9 @@ export class PatientRequestItem extends CustomBaseEntity {
 
     @Column({ type: 'varchar', nullable: true, name: 'substituted_by' })
     substitutedBy: string;
+
+    @Column({ nullable: true })
+    substitute_id: number;
 
     @Column({ type: 'varchar', nullable: true, name: 'substitution_reason' })
     substitutionReason: string;

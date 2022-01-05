@@ -11,7 +11,6 @@ import { PatientRepository } from '../repositories/patient.repository';
 import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
 import { AppGateway } from '../../../app.gateway';
 import { getConnection } from 'typeorm';
-import { Transaction } from '../../finance/transactions/transaction.entity';
 import { formatPID, generatePDF, getStaff, postDebit } from '../../../common/utils/utils';
 import { AdmissionsRepository } from '../admissions/repositories/admissions.repository';
 import * as path from 'path';
@@ -26,6 +25,10 @@ import { PaginationOptionsInterface } from '../../../common/paginate';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import { DrugGeneric } from '../../inventory/entities/drug_generic.entity';
 import { PatientRequestItem } from '../entities/patient_request_items.entity';
+import { PatientRequest } from '../entities/patient_requests.entity';
+import { AntenatalEnrollment } from '../antenatal/entities/antenatal-enrollment.entity';
+import { IvfEnrollment } from '../ivf/entities/ivf_enrollment.entity';
+import { Encounter } from '../consultation/encouter.entity';
 
 @Injectable()
 export class PatientRequestService {
@@ -113,12 +116,12 @@ export class PatientRequestService {
 		for (const req of items) {
 			const request = await this.patientRequestRepository.findOne({ where: { id: req.id }, relations: ['item'] });
 
-			const transaction = await this.transactionsRepository.findOne({
+			const transaction = request.item ? await this.transactionsRepository.findOne({
 				where: { patientRequestItem: request.item },
-			});
+			}) : null;
 
 			let drug;
-			if (request.item.drug) {
+			if (request?.item?.drug) {
 				drug = await this.drugRepository.findOne({
 					where: { id: request.item.drug.id },
 					relations: ['batches'],
@@ -220,12 +223,12 @@ export class PatientRequestService {
 
 				let allRequests = [];
 				for (const request of requests) {
-					const transaction = await this.transactionsRepository.findOne({
+					const transaction = request.item ? await this.transactionsRepository.findOne({
 						where: { patientRequestItem: request.item },
-					});
+					}) : null;
 
 					let drug;
-					if (request.item.drug) {
+					if (request?.item?.drug) {
 						drug = await this.drugRepository.findOne({
 							where: { id: request.item.drug.id },
 							relations: ['batches'],
@@ -240,7 +243,7 @@ export class PatientRequestService {
 					relations: ['nextOfKin', 'immunization', 'hmo'],
 				});
 
-				const patientReq = allRequests[0];
+				const patientReq = allRequests.find(r => r.item?.substituted === 0);
 				const hasPaid = allRequests.find(r => r.item?.transaction?.status === 1);
 				result = [...result, {
 					...req,
@@ -320,12 +323,12 @@ export class PatientRequestService {
 		for (const req of items) {
 			const request = await this.patientRequestRepository.findOne({ where: { id: req.id }, relations: ['item'] });
 			if (request.item) {
-				const transaction = await this.transactionsRepository.findOne({
+				const transaction = request.item ? await this.transactionsRepository.findOne({
 					where: { patientRequestItem: request.item },
-				});
+				}) : null;
 
 				let drug;
-				if (request.item.drug) {
+				if (request?.item?.drug) {
 					drug = await this.drugRepository.findOne({
 						where: { id: request.item.drug.id },
 						relations: ['batches'],
@@ -414,31 +417,103 @@ export class PatientRequestService {
 
 	async switchRequest(id: number, param, username) {
 		try {
-			const { dose_quantity, frequency, frequencyType, duration } = param;
+			const { dose_quantity, frequency, frequencyType, duration, request_id } = param;
+
+			const request = await getConnection().getRepository(PatientRequest).createQueryBuilder('r').select('r.*')
+				.where('r.id = :id', { id: request_id })
+				.getRawOne();
+
+			if (!request) {
+				return { success: false, message: 'no request found!' };
+			}
+
+			const patient = await this.patientRepository.findOne(request.patient_id);
+
+			let antenatal = null;
+			if (request.antenatal_id && request.antenatal_id !== '') {
+				antenatal = await getConnection().getRepository(AntenatalEnrollment).findOne(request.antenatal_id);
+			}
+
+			let admission = null;
+			if (request.admission_id && request.admission_id !== '') {
+				admission = await getConnection().getRepository(Admission).findOne(request.admission_id);
+			}
+
+			let encounter = null;
+			if (request.encounter_id && request.encounter_id !== '') {
+				encounter = await getConnection().getRepository(Encounter).findOne(request.encounter_id);
+			}
+
+			let ivf = null;
+			if (request.ivf_id && request.ivf_id !== '') {
+				ivf = await getConnection().getRepository(IvfEnrollment).findOne(request.ivf_id);
+			}
+
+			const data = {
+				...request,
+				id: null,
+				code: request.group_code,
+				patient,
+				createdBy: username,
+				lastChangedBy: null,
+				antenatal,
+				admission,
+				encounter,
+				ivf,
+			};
+			const res = await PatientRequestHelper.save(data);
+			const regimen = res.generatedMaps[0];
 
 			const item = await this.patientRequestItemRepository.findOne(id);
 
 			const generic = param.generic ? await getConnection().getRepository(DrugGeneric).findOne(param.generic?.id) : null;
-			let drug = param.drug ? await getConnection().getRepository(Drug).findOne(param.drug?.id) : null;
+			const drug = param.drug ? await getConnection().getRepository(Drug).findOne(param.drug?.id) : null;
 
-			item.drug = drug;
-			item.drugGeneric = generic;
-			item.doseQuantity = dose_quantity;
-			item.frequency = frequency;
-			item.frequencyType = frequencyType;
-			item.duration = duration;
+			const requestItem = {
+				request: regimen,
+				drug,
+				drugGeneric: generic,
+				doseQuantity: dose_quantity,
+				frequency,
+				frequencyType,
+				duration,
+				refillable: item.refillable,
+				refills: item.refills,
+				externalPrescription: item.externalPrescription,
+				note: item.note,
+				createdBy: username,
+				substitute_id: item.id,
+			};
+			const query = await PatientRequestHelper.saveItem(requestItem);
+			const rs = query.generatedMaps[0];
+
 			item.lastChangedBy = username;
+			item.substituted = 1;
+			item.substitutedAt = moment().format('YYYY-MM-DD HH:mm:ss');
+			item.substitutedBy = username;
+			item.substitute_id = rs.id;
+			await item.save();
 
-			const rs = await item.save();
+			const requests = await this.patientRequestRepository.find({
+				where: { code: request.group_code },
+				relations: ['item'],
+			});
 
-			if (drug) {
-				drug = await this.drugRepository.findOne({
-					where: { id: drug.id },
-					relations: ['batches'],
-				});
+			let allRequests = [];
+			for (const single of requests) {
+				let _drug: Drug;
+				if (single?.item?.drug) {
+					_drug = await this.drugRepository.findOne({
+						where: { id: single.item.drug.id },
+						relations: ['batches'],
+					});
+				}
+
+				const reqItem = { ...single.item, drug: _drug };
+				allRequests = [...allRequests, { ...single, item: reqItem }];
 			}
 
-			return { success: true, data: { ...rs, drug } };
+			return { success: true, data: allRequests };
 		} catch (error) {
 			console.log(error);
 			return { success: false, message: error.message };
@@ -469,8 +544,6 @@ export class PatientRequestService {
 				relations: ['nextOfKin', 'immunization', 'hmo'],
 			});
 
-			let results = [];
-
 			if (fill) {
 				for (const reqItem of items) {
 					const batch = await getConnection().getRepository(DrugBatch).findOne(reqItem.item.drugBatch.id);
@@ -487,7 +560,7 @@ export class PatientRequestService {
 					requestItem.filledAt = moment().format('YYYY-MM-DD HH:mm:ss');
 					requestItem.filledBy = updatedBy;
 					requestItem.drug = drug;
-					const rs = await requestItem.save();
+					await requestItem.save();
 
 					const amount = batch.unitPrice * parseInt(reqItem.item.fillQuantity, 10);
 
@@ -523,8 +596,6 @@ export class PatientRequestService {
 					await _requestItem.save();
 
 					this.appGateway.server.emit('paypoint-queue', transaction);
-
-					results = [...results, { ...rs, transaction }];
 				}
 			} else {
 				for (const reqItem of items) {
@@ -539,7 +610,7 @@ export class PatientRequestService {
 					item.fillQuantity = 0;
 					item.filledAt = null;
 					item.filledBy = null;
-					const rs = await item.save();
+					await item.save();
 
 					const transaction = await this.transactionsRepository.findOne({
 						where: { patientRequestItem: item },
@@ -550,14 +621,33 @@ export class PatientRequestService {
 
 						await transaction.softRemove();
 					}
-
-					const drug = await getConnection().getRepository(Drug).findOne(reqItem.item.drug.id, { relations: ['batches'] });
-
-					results = [...results, { ...rs, drug }];
 				}
 			}
 
-			return { success: true, data: results };
+			const requests = await this.patientRequestRepository.find({
+				where: { code },
+				relations: ['item'],
+			});
+
+			let allRequests = [];
+			for (const single of requests) {
+				let drug: Drug;
+				if (single?.item?.drug) {
+					drug = await this.drugRepository.findOne({
+						where: { id: single.item.drug.id },
+						relations: ['batches'],
+					});
+				}
+
+				const transaction = single.item ? await this.transactionsRepository.findOne({
+					where: { patientRequestItem: single.item },
+				}) : null;
+
+				const reqItem = { ...single.item, drug, transaction };
+				allRequests = [...allRequests, { ...single, item: reqItem }];
+			}
+
+			return { success: true, data: allRequests };
 		} catch (e) {
 			// console.log(e.message)
 			return { success: false, message: e.message };

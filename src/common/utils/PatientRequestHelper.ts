@@ -7,7 +7,6 @@ import { PatientRequestItem } from '../../modules/patient/entities/patient_reque
 import { LabTest } from '../../modules/settings/entities/lab_test.entity';
 import { Drug } from '../../modules/inventory/entities/drug.entity';
 import { ServiceCost } from '../../modules/settings/entities/service_cost.entity';
-import { HmoScheme } from '../../modules/hmo/entities/hmo_scheme.entity';
 import { DrugGeneric } from '../../modules/inventory/entities/drug_generic.entity';
 import { PatientNote } from '../../modules/patient/entities/patient_note.entity';
 import { Admission } from '../../modules/patient/admissions/entities/admission.entity';
