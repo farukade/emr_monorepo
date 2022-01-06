@@ -604,13 +604,6 @@ export class PatientRequestService {
 
 					const item = await this.patientRequestItemRepository.findOne(reqItem.item.id);
 
-					item.drugBatch = null;
-					item.filled = 0;
-					item.fillQuantity = 0;
-					item.filledAt = null;
-					item.filledBy = null;
-					await item.save();
-
 					const transaction = await this.transactionsRepository.findOne({
 						where: { patientRequestItem: item },
 					});
@@ -620,6 +613,14 @@ export class PatientRequestService {
 
 						await transaction.softRemove();
 					}
+
+					item.drugBatch = null;
+					item.filled = 0;
+					item.fillQuantity = 0;
+					item.filledAt = null;
+					item.filledBy = null;
+					item.transaction = null;
+					await item.save();
 				}
 			}
 
