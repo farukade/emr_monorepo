@@ -480,7 +480,7 @@ export class PatientRequestService {
 				refills: item.refills,
 				externalPrescription: item.externalPrescription,
 				note: item.note,
-				createdBy: username,
+				createdBy: request.createdBy,
 				substitute_id: item.id,
 			};
 			const query = await PatientRequestHelper.saveItem(requestItem);
