@@ -459,7 +459,6 @@ export class PatientRequestService {
 				admission,
 				encounter,
 				ivf,
-				createdAt: moment().format('YYYY-MM-DD HH:mm:ss'),
 			};
 			const res = await PatientRequestHelper.save(data);
 			const regimen = res.generatedMaps[0];

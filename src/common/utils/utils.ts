@@ -434,11 +434,11 @@ export const postCredit = async (data: TransactionCreditDto, service, voucher, r
 	return await transaction.save();
 };
 
-export const getGroupCode = async (type) => {
+export const getGroupCode = async (type: string) => {
 	const request = await getConnection().createQueryBuilder().select('*')
 		.from(PatientRequest, 'q')
 		.where('q.requestType = :type', { type })
-		.orderBy('q.createdAt', 'DESC')
+		.orderBy('q.group_code', 'DESC')
 		.withDeleted()
 		.getRawOne();
 
