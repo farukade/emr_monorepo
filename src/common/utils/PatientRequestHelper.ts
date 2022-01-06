@@ -23,7 +23,7 @@ export class PatientRequestHelper {
 
         try {
             const nextId = await getGroupCode(requestType);
-            const code = `LR/${moment().format('MM')}/${nextId.slice(-5)}`;
+            const code = `LR${moment().format('YY')}/${moment().format('MM')}/${nextId.slice(-5)}`;
 
             // modules
             let antenatal = null;
@@ -82,7 +82,7 @@ export class PatientRequestHelper {
         const { requestType, request_note, items, procedure_id, antenatal_id, admission_id } = param;
         try {
             const nextId = await getGroupCode(requestType);
-            const code = `DR/${moment().format('MM')}/${nextId.slice(-5)}`;
+            const code = `DR${moment().format('YY')}/${moment().format('MM')}/${nextId.slice(-5)}`;
 
             // modules
             let antenatal = null;
@@ -176,7 +176,7 @@ export class PatientRequestHelper {
         const { date_due } = param;
 
         const nextId = await getGroupCode('drugs');
-        const code = `PR/${moment().format('MM')}/${nextId.slice(-5)}`;
+        const code = `PR${moment().format('YY')}/${moment().format('MM')}/${nextId.slice(-5)}`;
 
         const vaccines = await getConnection()
             .getRepository(Immunization)
@@ -259,7 +259,7 @@ export class PatientRequestHelper {
 
         try {
             const nextId = await getGroupCode(type);
-            const code = `${requestType.toUpperCase().substring(0, 1)}R/${moment().format('MM')}/${nextId.slice(-5)}`;
+            const code = `${requestType.toUpperCase().substring(0, 1)}R${moment().format('YY')}/${moment().format('MM')}/${nextId.slice(-5)}`;
 
             const hmo = patient.hmo;
 

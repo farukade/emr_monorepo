@@ -438,7 +438,7 @@ export const getGroupCode = async (type) => {
 	const request = await getConnection().createQueryBuilder().select('*')
 		.from(PatientRequest, 'q')
 		.where('q.requestType = :type', { type })
-		.orderBy('group_code', 'DESC')
+		.orderBy('createdAt', 'DESC')
 		.withDeleted()
 		.getRawOne();
 
