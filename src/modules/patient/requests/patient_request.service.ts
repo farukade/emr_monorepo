@@ -107,10 +107,13 @@ export class PatientRequestService {
 
 		const count = await query.getCount();
 
-		const items = await query.orderBy({
-			'q.urgent': 'DESC',
-			'q.createdAt': 'DESC',
-		}).limit(queryLimit).offset(offset * queryLimit).getRawMany();
+		if (type && type === 'procedure') {
+			query.orderBy({ 'q.scheduled_start_date': 'DESC' });
+		} else {
+			query.orderBy({ 'q.urgent': 'DESC', 'q.createdAt': 'DESC' });
+		}
+
+		const items = await query.limit(queryLimit).offset(offset * queryLimit).getRawMany();
 
 		let result = [];
 		for (const req of items) {
