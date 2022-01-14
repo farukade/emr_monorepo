@@ -12,7 +12,7 @@ import { PatientNote } from '../../modules/patient/entities/patient_note.entity'
 import { Admission } from '../../modules/patient/admissions/entities/admission.entity';
 import { AntenatalEnrollment } from '../../modules/patient/antenatal/entities/antenatal-enrollment.entity';
 import { IvfEnrollment } from '../../modules/patient/ivf/entities/ivf_enrollment.entity';
-import { createServiceCost, getGroupCode } from './utils';
+import { createServiceCost, getSerialCode } from './utils';
 
 export class PatientRequestHelper {
     constructor(private patientRequestRepo: PatientRequestRepository) {
@@ -22,7 +22,8 @@ export class PatientRequestHelper {
         const { requestType, request_note, tests, urgent, antenatal_id, admission_id, ivf_id } = param;
 
         try {
-            const nextId = await getGroupCode(requestType);
+            const serialCode = await getSerialCode(requestType);
+            const nextId = `00000${serialCode}`
             const code = `LR${moment().format('YY')}/${moment().format('MM')}/${nextId.slice(-5)}`;
 
             // modules
@@ -45,6 +46,7 @@ export class PatientRequestHelper {
             for (const item of tests) {
                 const data = {
                     code,
+                    serial_code: serialCode,
                     patient,
                     requestType,
                     requestNote: request_note,
@@ -81,7 +83,8 @@ export class PatientRequestHelper {
     static async handlePharmacyRequest(param, patient, createdBy, visit = '') {
         const { requestType, request_note, items, procedure_id, antenatal_id, admission_id } = param;
         try {
-            const nextId = await getGroupCode(requestType);
+            const serialCode = await getSerialCode(requestType);
+            const nextId = `00000${serialCode}`
             const code = `DR${moment().format('YY')}/${moment().format('MM')}/${nextId.slice(-5)}`;
 
             // modules
@@ -99,6 +102,7 @@ export class PatientRequestHelper {
             for (const item of items) {
                 const data = {
                     code,
+                    serial_code: serialCode,
                     patient,
                     requestType,
                     requestNote: request_note,
@@ -175,7 +179,8 @@ export class PatientRequestHelper {
     static async handleVaccinationRequest(param, patient, createdBy) {
         const { date_due } = param;
 
-        const nextId = await getGroupCode('drugs');
+        const serialCode = await getSerialCode('drugs');
+        const nextId = `00000${serialCode}`
         const code = `PR${moment().format('YY')}/${moment().format('MM')}/${nextId.slice(-5)}`;
 
         const vaccines = await getConnection()
@@ -218,6 +223,7 @@ export class PatientRequestHelper {
             for (const item of body) {
                 const data = {
                     code,
+                    serial_code: serialCode,
                     patient,
                     requestType: 'drugs',
                     requestNote: 'immunization',
@@ -258,7 +264,8 @@ export class PatientRequestHelper {
         const { requestType, request_note, tests, diagnosis, urgent, antenatal_id, admission_id, procedure_id } = param;
 
         try {
-            const nextId = await getGroupCode(type);
+            const serialCode = await getSerialCode(type);
+            const nextId = `00000${serialCode}`
             const code = `${requestType.toUpperCase().substring(0, 1)}R${moment().format('YY')}/${moment().format('MM')}/${nextId.slice(-5)}`;
 
             const hmo = patient.hmo;
@@ -280,6 +287,7 @@ export class PatientRequestHelper {
                 if (item && item.code) {
                     const data = {
                         code,
+                        serial_code: serialCode,
                         patient,
                         requestType,
                         requestNote: request_note,
@@ -289,7 +297,7 @@ export class PatientRequestHelper {
                         antenatal,
                         procedure_id: procedure_id && procedure_id !== '' ? procedure_id : null,
                     };
-                    console.log(data);
+                    
                     const res = await this.save(data);
                     const request = res.generatedMaps[0];
 

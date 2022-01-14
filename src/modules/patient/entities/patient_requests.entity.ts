@@ -14,6 +14,9 @@ export class PatientRequest extends CustomBaseEntity {
     @Column({ nullable: true, name: 'group_code' })
     code: string;
 
+    @Column({ nullable: true })
+    serial_code: number;
+
     @ManyToOne(type => Patient)
     @JoinColumn({ name: 'patient_id' })
     patient: Patient;

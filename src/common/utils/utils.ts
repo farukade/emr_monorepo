@@ -434,18 +434,16 @@ export const postCredit = async (data: TransactionCreditDto, service, voucher, r
 	return await transaction.save();
 };
 
-export const getGroupCode = async (type: string) => {
+export const getSerialCode = async (type: string) => {
 	const request = await getConnection().createQueryBuilder().select('*')
 		.from(PatientRequest, 'q')
 		.where('q.requestType = :type', { type })
-		.orderBy('q.group_code', 'DESC')
+		.orderBy('q.serial_code', 'DESC')
 		.withDeleted()
 		.getRawOne();
 
-	const groupCode = request?.group_code || '';
-	const number = groupCode.split('/');
-	const id = number.length > 1 ? parseInt(number[2], 10) : 0;
-	return `00000${id + 1}`;
+	const serialCode = request?.serial_code || 0;
+	return serialCode + 1;
 };
 
 export const createServiceCost = async (code: string, scheme: HmoScheme) => {
