@@ -438,6 +438,7 @@ export const getSerialCode = async (type: string) => {
 	const request = await getConnection().createQueryBuilder().select('*')
 		.from(PatientRequest, 'q')
 		.where('q.requestType = :type', { type })
+		.andWhere('q.serial_code is not null')
 		.orderBy('q.serial_code', 'DESC')
 		.withDeleted()
 		.getRawOne();
