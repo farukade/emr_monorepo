@@ -124,7 +124,7 @@ export class PatientRequestService {
 			}) : null;
 
 			let drug;
-			if (request?.item?.drug) {
+			if (request?.item?.drug?.id) {
 				drug = await this.drugRepository.findOne({
 					where: { id: request.item.drug.id },
 					relations: ['batches'],
@@ -231,7 +231,7 @@ export class PatientRequestService {
 					}) : null;
 
 					let drug;
-					if (request?.item?.drug) {
+					if (request?.item?.drug?.id) {
 						drug = await this.drugRepository.findOne({
 							where: { id: request.item.drug.id },
 							relations: ['batches'],
@@ -331,7 +331,7 @@ export class PatientRequestService {
 				}) : null;
 
 				let drug;
-				if (request?.item?.drug) {
+				if (request?.item?.drug?.id) {
 					drug = await this.drugRepository.findOne({
 						where: { id: request.item.drug.id },
 						relations: ['batches'],
