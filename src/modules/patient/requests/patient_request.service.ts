@@ -252,11 +252,11 @@ export class PatientRequestService {
 				const hasPaid = allRequests.find(r => r.item?.transaction?.status === 1);
 				result = [...result, {
 					...req,
-					id: patientReq?.id || '',
-					created_by: patientReq?.createdBy || '',
-					requestNote: patientReq?.requestNote || '',
-					filled: patientReq?.item?.filled || false,
-					filled_by: patientReq?.item?.filledBy || '',
+					id: patientReq.id,
+					created_by: patientReq.createdBy,
+					requestNote: patientReq.requestNote,
+					filled: patientReq.item.filled,
+					filled_by: patientReq.item.filledBy,
 					transaction_status: hasPaid ? 1 : 0,
 					patient,
 					requests: allRequests,
