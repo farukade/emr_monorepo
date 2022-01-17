@@ -10,6 +10,7 @@ import { PatientRequestItemRepository } from '../repositories/patient_request_it
 import { IvfEnrollmentRepository } from '../ivf/ivf_enrollment.repository';
 import { AntenatalEnrollmentRepository } from '../antenatal/enrollment.repository';
 import { DrugGenericRepository } from '../../inventory/pharmacy/generic/generic.repository';
+import { LabourEnrollmentRepository } from '../labour-management/repositories/labour-enrollment.repository';
 
 @Injectable()
 export class PatientNoteService {
@@ -28,11 +29,13 @@ export class PatientNoteService {
         private enrollmentRepository: AntenatalEnrollmentRepository,
         @InjectRepository(DrugGenericRepository)
         private drugGenericRepository: DrugGenericRepository,
+        @InjectRepository(LabourEnrollmentRepository)
+        private labourEnrollmentRepository: LabourEnrollmentRepository,
     ) {
     }
 
     async getNotes(options: PaginationOptionsInterface, params): Promise<any> {
-        const { patient_id, type, admission_id, visit, ivf_id, antenatal_id, procedure_id } = params;
+        const { patient_id, type, admission_id, visit, ivf_id, antenatal_id, procedure_id, labour_id } = params;
 
         const query = this.patientNoteRepository.createQueryBuilder('q').select('q.*');
 
@@ -58,6 +61,10 @@ export class PatientNoteService {
 
         if (procedure_id && procedure_id !== '') {
             query.andWhere('q.request_item_id = :procedure_id', { procedure_id });
+        }
+
+        if (labour_id && labour_id !== '') {
+            query.andWhere('q.labour_id = :labour_id', { labour_id });
         }
 
         if (type && type !== '') {
@@ -94,7 +101,7 @@ export class PatientNoteService {
     }
 
     async saveNote(param, createdBy) {
-        const { patient_id, description, type, admission_id, note_type, specialty, procedure_id, ivf_id, antenatal_id } = param;
+        const { patient_id, description, type, admission_id, note_type, specialty, procedure_id, ivf_id, antenatal_id, labour_id } = param;
 
         const patient = await this.patientRepository.findOne(patient_id);
 
@@ -121,6 +128,10 @@ export class PatientNoteService {
 
         if (antenatal_id && antenatal_id !== '') {
             note.antenatal = await this.enrollmentRepository.findOne(antenatal_id);
+        }
+
+        if (labour_id && labour_id !== '') {
+            note.labour = await this.labourEnrollmentRepository.findOne(labour_id);
         }
 
         note.specialty = specialty;

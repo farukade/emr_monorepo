@@ -46,8 +46,8 @@ export class PatientRequestItem extends CustomBaseEntity {
     @Column({ type: 'varchar', nullable: true })
     filled_by: string;
 
-    @Column({ nullable: true, name: 'filled_at' })
-    filledAt: string;
+    @Column({ nullable: true })
+    filled_at: string;
 
     @Column({ type: 'smallint', default: 0 })
     cancelled: number;

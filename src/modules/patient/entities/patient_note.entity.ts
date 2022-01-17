@@ -7,6 +7,7 @@ import { PatientRequestItem } from './patient_request_items.entity';
 import { DrugGeneric } from '../../inventory/entities/drug_generic.entity';
 import { IvfEnrollment } from '../ivf/entities/ivf_enrollment.entity';
 import { AntenatalEnrollment } from '../antenatal/entities/antenatal-enrollment.entity';
+import { LabourEnrollment } from '../labour-management/entities/labour_enrollment.entity';
 
 @Entity({ name: 'patient_notes' })
 export class PatientNote extends CustomBaseEntity {
@@ -80,5 +81,9 @@ export class PatientNote extends CustomBaseEntity {
     @ManyToOne(type => AntenatalEnrollment, { nullable: true })
     @JoinColumn({ name: 'antenatal_id' })
     antenatal: AntenatalEnrollment;
+
+    @ManyToOne(type => LabourEnrollment, { nullable: true })
+    @JoinColumn({ name: 'labour_id' })
+    labour: LabourEnrollment;
 
 }

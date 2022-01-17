@@ -103,7 +103,8 @@ export class AntenatalService {
 		const query = this.ancEnrollmentRepository.createQueryBuilder('p')
 			.select('p.*')
 			.andWhere(new Brackets(qb => {
-				qb.where('LOWER(p.serial_code) Like :code', { code: `%${q.toLowerCase()}%` });
+				qb.where('LOWER(p.serial_code) Like :code', { code: `%${q.toLowerCase()}%` })
+				.orWhere('CAST(p.patient_id AS text) LIKE :id', { id: `%${q}%` });
 			}));
 
 		const antenatals = await query.take(options.limit).getRawMany();
@@ -129,7 +130,7 @@ export class AntenatalService {
 				.getCount();
 
 			const nextId = `00000${requestCount + 1}`;
-			const code = `ANC/${moment().format('MM')}/${nextId.slice(-5)}`;
+			const code = `ANC${moment().format('YY')}/${moment().format('MM')}/${nextId.slice(-5)}`;
 
 			const ancpackage = await this.antenatalPackageRepository.findOne(enrollment_package_id);
 

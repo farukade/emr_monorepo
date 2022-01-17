@@ -31,7 +31,7 @@ export class AntenatalController {
         return this.antenatalService.searchEnrollment({ limit }, urlParams);
     }
 
-    @Post('/save')
+    @Post('/')
     @UsePipes(ValidationPipe)
     saveNewEnrollment(
         @Body() createDto: EnrollmentDto,

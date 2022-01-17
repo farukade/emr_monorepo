@@ -1,28 +1,13 @@
 import { IsNotEmpty } from 'class-validator';
-import { Patient } from '../../entities/patient.entity';
+import { IFathersInfoInterface } from '../../antenatal/interfaces/fathers-info.interface';
+import { IPreviousPregnancyInterface } from '../../antenatal/interfaces/previous-pregnancy.interface';
 
 export class LabourEnrollmentDto {
-    @IsNotEmpty()
-    husbandName: string;
-
-    @IsNotEmpty()
-    husbandPhoneNo: string;
-
-    bloodGroup: string;
-
-    parity: string;
-
-    alive: string;
-
-    miscarriage: string;
-
-    presentPregnancy: string;
-
+    patient_id: string;
+    antenatal_id: string;
     lmp: string;
-
-    createdBy: string;
-
-    lastChangedBy: string;
-
-    patient: Patient;
+    father: IFathersInfoInterface;
+    alive: string;
+    miscarriage: string;
+    present_pregnancies: string;
 }

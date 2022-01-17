@@ -561,7 +561,7 @@ export class PatientRequestService {
 					requestItem.drugGeneric = drug.generic;
 					requestItem.filled = 1;
 					requestItem.fill_quantity = reqItem.item.fill_quantity;
-					requestItem.filledAt = moment().format('YYYY-MM-DD HH:mm:ss');
+					requestItem.filled_at = moment().format('YYYY-MM-DD HH:mm:ss');
 					requestItem.filled_by = updatedBy;
 					requestItem.drug = drug;
 					await requestItem.save();
@@ -622,7 +622,7 @@ export class PatientRequestService {
 					item.drugBatch = null;
 					item.filled = 0;
 					item.fill_quantity = 0;
-					item.filledAt = null;
+					item.filled_at = null;
 					item.filled_by = null;
 					item.transaction = null;
 					await item.save();
@@ -753,7 +753,7 @@ export class PatientRequestService {
 			const item = await this.patientRequestItemRepository.findOne(request.item.id);
 			item.filled = 1;
 			item.filled_by = username;
-			item.filledAt = moment().format('YYYY-MM-DD HH:mm:ss');
+			item.filled_at = moment().format('YYYY-MM-DD HH:mm:ss');
 			item.parameters = parameters;
 			item.note = note;
 			item.result = result;
@@ -773,7 +773,7 @@ export class PatientRequestService {
 			const item = await this.patientRequestItemRepository.findOne(request.item.id);
 			item.filled = 0;
 			item.filled_by = null;
-			item.filledAt = null;
+			item.filled_at = null;
 			item.parameters = item.parameters.map(p => ({
 				...p,
 				inference: '',
@@ -855,7 +855,7 @@ export class PatientRequestService {
 			item.finishedDate = date;
 			item.filled = 1;
 			item.filled_by = username;
-			item.filledAt = moment().format('YYYY-MM-DD HH:mm:ss');
+			item.filled_at = moment().format('YYYY-MM-DD HH:mm:ss');
 			item.lastChangedBy = username;
 			const rs = await item.save();
 
@@ -874,11 +874,11 @@ export class PatientRequestService {
 			const { type } = params;
 			const request = await this.patientRequestRepository.findOne(id, { relations: ['item'] });
 
-			if (request && request.requestType === 'drugs' ) {
-				return { success: false, message: 'could not remove request' };
-			}
-
 			const item = await this.patientRequestItemRepository.findOne(request.item.id);
+
+			if (item && item.substitute_id) {
+				return { success: false, message: 'prescription has been substituted' };
+			}
 
 			item.cancelled = 1;
 			item.cancelledBy = username;

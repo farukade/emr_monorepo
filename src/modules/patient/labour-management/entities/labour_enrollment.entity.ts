@@ -1,36 +1,36 @@
 import { CustomBaseEntity } from '../../../../common/entities/custom-base.entity';
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { Patient } from '../../entities/patient.entity';
+import { AntenatalEnrollment } from '../../antenatal/entities/antenatal-enrollment.entity';
 
-@Entity({name: 'labour_enrollments'})
+@Entity({ name: 'labour_enrollments' })
 export class LabourEnrollment extends CustomBaseEntity {
+	@Column()
+	serial_code: string;
 
-    @Column()
-    husbandName: string;
+	@ManyToOne(() => Patient)
+	@JoinColumn({ name: 'patient_id' })
+	patient: Patient;
 
-    @Column()
-    husbandPhoneNo: string;
+	@ManyToOne(() => AntenatalEnrollment, { nullable: true })
+	@JoinColumn({ name: 'antenatal_id' })
+	antenatal: AntenatalEnrollment;
 
-    @Column({nullable: true})
-    bloodGroup: string;
+	@Column('simple-json')
+	father: { name: string, phone: string, blood_group: string };
 
-    @Column({nullable: true})
-    parity: string;
+	@Column({ nullable: true })
+	alive: string;
 
-    @Column({nullable: true})
-    alive: string;
+	@Column({ nullable: true })
+	miscarriage: string;
 
-    @Column({nullable: true})
-    miscarriage: string;
+	@Column({ nullable: true })
+	present_pregnancies: string;
 
-    @Column({nullable: true})
-    presentPregnancy: string;
+	@Column({ nullable: true })
+	lmp: string;
 
-    @Column({nullable: true})
-    lmp: string;
-
-    @ManyToOne(type => Patient)
-    @JoinColumn({name: 'patient_id'})
-    patient: Patient;
-
+	@Column({ type: 'smallint', default: 0 })
+	status: number;
 }

@@ -9,6 +9,7 @@ import { PatientRequestItemRepository } from '../repositories/patient_request_it
 import { IvfEnrollmentRepository } from '../ivf/ivf_enrollment.repository';
 import { AntenatalEnrollmentRepository } from '../antenatal/enrollment.repository';
 import { DrugGenericRepository } from '../../inventory/pharmacy/generic/generic.repository';
+import { LabourEnrollmentRepository } from '../labour-management/repositories/labour-enrollment.repository';
 
 @Module({
     imports: [
@@ -20,6 +21,7 @@ import { DrugGenericRepository } from '../../inventory/pharmacy/generic/generic.
             IvfEnrollmentRepository,
             AntenatalEnrollmentRepository,
             DrugGenericRepository,
+            LabourEnrollmentRepository,
         ]),
     ],
     controllers: [PatientNoteController],
