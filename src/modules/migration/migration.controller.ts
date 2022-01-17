@@ -142,4 +142,9 @@ export class MigrationController {
     ): Promise<any> {
         return this.migrationService.queueMigration('fix-inpatients');
     }
+
+    @Get('/socket')
+    emitSocket(): Promise<any> {
+        return this.migrationService.queueMigration('emit-socket');
+    }
 }

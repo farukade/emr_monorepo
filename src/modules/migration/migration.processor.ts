@@ -43,6 +43,7 @@ import { CareTeamRepository } from '../patient/care-team/team.repository';
 import { AppointmentRepository } from '../frontdesk/appointment/appointment.repository';
 import { Department } from '../settings/entities/department.entity';
 import { Service } from '../settings/entities/service.entity';
+import { AppGateway } from '../../app.gateway';
 
 @Processor(process.env.MIGRATION_QUEUE_NAME)
 export class MigrationProcessor {
@@ -111,6 +112,7 @@ export class MigrationProcessor {
 		private careTeamRepository: CareTeamRepository,
 		@InjectRepository(AppointmentRepository)
 		private appointmentRepository: AppointmentRepository,
+		private readonly appGateway: AppGateway,
 	) {
 	}
 
@@ -933,5 +935,10 @@ export class MigrationProcessor {
 				await patient.save();
 			}
 		}
+	}
+
+	@Process('emit-socket')
+	async emitSocket(job: Job<any>): Promise<any> {
+		this.appGateway.server.emit('new-appointment', { appointment: 1 });
 	}
 }

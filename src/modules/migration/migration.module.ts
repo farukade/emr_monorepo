@@ -36,6 +36,7 @@ import { PatientNoteRepository } from '../patient/repositories/patient_note.repo
 import { EncounterRepository } from '../patient/consultation/encounter.repository';
 import { CareTeamRepository } from '../patient/care-team/team.repository';
 import { AppointmentRepository } from '../frontdesk/appointment/appointment.repository';
+import { AppGateway } from '../../app.gateway';
 
 @Module({
     imports: [
@@ -88,7 +89,7 @@ import { AppointmentRepository } from '../frontdesk/appointment/appointment.repo
             AppointmentRepository,
         ]),
     ],
-    providers: [MigrationService, MigrationProcessor],
+    providers: [MigrationService, MigrationProcessor, AppGateway],
     controllers: [MigrationController],
     exports: [MigrationService],
 })

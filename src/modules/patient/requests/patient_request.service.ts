@@ -873,6 +873,7 @@ export class PatientRequestService {
 		try {
 			const { type } = params;
 			const request = await this.patientRequestRepository.findOne(id, { relations: ['item'] });
+
 			if (request && request.requestType === 'drugs' ) {
 				return { success: false, message: 'could not remove request' };
 			}

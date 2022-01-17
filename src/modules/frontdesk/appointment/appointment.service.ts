@@ -18,7 +18,6 @@ import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import { PaginationOptionsInterface } from '../../../common/paginate';
 import { callPatient, getStaff, postDebit } from '../../../common/utils/utils';
-import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repository';
 import { ServiceCostRepository } from '../../settings/services/repositories/service_cost.repository';
 import { ServiceCost } from '../../settings/entities/service_cost.entity';
 import { StaffRepository } from '../../hr/staff/staff.repository';
@@ -43,8 +42,6 @@ export class AppointmentService {
 		private serviceRepository: ServiceRepository,
 		@InjectRepository(TransactionsRepository)
 		private transactionsRepository: TransactionsRepository,
-		@InjectRepository(HmoSchemeRepository)
-		private hmoSchemeRepository: HmoSchemeRepository,
 		@InjectRepository(ServiceCostRepository)
 		private serviceCostRepository: ServiceCostRepository,
 		@InjectRepository(StaffRepository)
@@ -308,12 +305,9 @@ export class AppointmentService {
 				}
 			}
 
-			if (queue && sendToQueue) {
-				this.appGateway.server.emit('all-queues', { queue });
-			}
-
 			// go to front desk
-			this.appGateway.server.emit('new-appointment', { success: true, appointment });
+			const emit = this.appGateway.server.emit('new-appointment', { success: true, appointment });
+			console.log(`new-appointment emitted: ${emit}`);
 
 			return { success: true, appointment };
 		} catch (error) {
