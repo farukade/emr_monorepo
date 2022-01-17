@@ -306,8 +306,7 @@ export class AppointmentService {
 			}
 
 			// go to front desk
-			const emit = this.appGateway.server.emit('new-appointment', { success: true, appointment });
-			console.log(`new-appointment emitted: ${emit}`);
+			this.appGateway.server.emit('new-appointment', { success: true, appointment });
 
 			return { success: true, appointment };
 		} catch (error) {
