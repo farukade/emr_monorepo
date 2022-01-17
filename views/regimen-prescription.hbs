@@ -65,7 +65,7 @@
                     <td>{{ item.drug.name }}</td>
                     <td>{{ item.doseQuantity }} {{ item.drug.unitOfMeasure }}, {{ frequency }} {{ frequencyType }} for {{ item.duration }} Days</td>
                     <td>{{ item.note }}</td>
-                    <td>Quantity Dispensed: {{ item.fillQuantity }} {{ item.drug.unitOfMeasure }}</td>
+                    <td>Quantity Dispensed: {{ item.fill_quantity }} {{ item.drug.unitOfMeasure }}</td>
                 </tr>
             {{/each}}
             <tr>

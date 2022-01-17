@@ -813,7 +813,7 @@ export class PatientService {
 
 			if (param.document_type === 'scans') {
 				requestItem.filled = 1;
-				requestItem.filledBy = createdBy;
+				requestItem.filled_by = createdBy;
 				requestItem.filledAt = moment().format('YYYY-MM-DD HH:mm:ss');
 				requestItem.lastChangedBy = createdBy;
 				requestItem.document = rs;

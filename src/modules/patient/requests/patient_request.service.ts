@@ -256,7 +256,7 @@ export class PatientRequestService {
 					created_by: patientReq.createdBy,
 					requestNote: patientReq.requestNote,
 					filled: patientReq.item.filled,
-					filled_by: patientReq.item.filledBy,
+					filled_by: patientReq.item.filled_by,
 					transaction_status: hasPaid ? 1 : 0,
 					patient,
 					requests: allRequests,
@@ -551,7 +551,7 @@ export class PatientRequestService {
 			if (fill) {
 				for (const reqItem of items) {
 					const batch = await getConnection().getRepository(DrugBatch).findOne(reqItem.item.drugBatch.id);
-					batch.quantity = batch.quantity - parseInt(reqItem.item.fillQuantity, 10);
+					batch.quantity = batch.quantity - parseInt(reqItem.item.fill_quantity, 10);
 					await batch.save();
 
 					const drug = await getConnection().getRepository(Drug).findOne(reqItem.item.drug.id);
@@ -560,13 +560,13 @@ export class PatientRequestService {
 					requestItem.drugBatch = batch;
 					requestItem.drugGeneric = drug.generic;
 					requestItem.filled = 1;
-					requestItem.fillQuantity = reqItem.item.fillQuantity;
+					requestItem.fill_quantity = reqItem.item.fill_quantity;
 					requestItem.filledAt = moment().format('YYYY-MM-DD HH:mm:ss');
-					requestItem.filledBy = updatedBy;
+					requestItem.filled_by = updatedBy;
 					requestItem.drug = drug;
 					await requestItem.save();
 
-					const amount = batch.unitPrice * parseInt(reqItem.item.fillQuantity, 10);
+					const amount = batch.unitPrice * parseInt(reqItem.item.fill_quantity, 10);
 
 					const admission = await getConnection().getRepository(Admission).findOne({ where: { patient } });
 
@@ -604,7 +604,7 @@ export class PatientRequestService {
 			} else {
 				for (const reqItem of items) {
 					const batch = await getConnection().getRepository(DrugBatch).findOne(reqItem.item.drugBatch.id);
-					batch.quantity = batch.quantity + reqItem.item.fillQuantity;
+					batch.quantity = batch.quantity + reqItem.item.fill_quantity;
 					await batch.save();
 
 					const item = await this.patientRequestItemRepository.findOne(reqItem.item.id);
@@ -621,9 +621,9 @@ export class PatientRequestService {
 
 					item.drugBatch = null;
 					item.filled = 0;
-					item.fillQuantity = 0;
+					item.fill_quantity = 0;
 					item.filledAt = null;
-					item.filledBy = null;
+					item.filled_by = null;
 					item.transaction = null;
 					await item.save();
 				}
@@ -752,7 +752,7 @@ export class PatientRequestService {
 
 			const item = await this.patientRequestItemRepository.findOne(request.item.id);
 			item.filled = 1;
-			item.filledBy = username;
+			item.filled_by = username;
 			item.filledAt = moment().format('YYYY-MM-DD HH:mm:ss');
 			item.parameters = parameters;
 			item.note = note;
@@ -772,7 +772,7 @@ export class PatientRequestService {
 
 			const item = await this.patientRequestItemRepository.findOne(request.item.id);
 			item.filled = 0;
-			item.filledBy = null;
+			item.filled_by = null;
 			item.filledAt = null;
 			item.parameters = item.parameters.map(p => ({
 				...p,
@@ -854,7 +854,7 @@ export class PatientRequestService {
 			const item = await this.patientRequestItemRepository.findOne(request.item.id);
 			item.finishedDate = date;
 			item.filled = 1;
-			item.filledBy = username;
+			item.filled_by = username;
 			item.filledAt = moment().format('YYYY-MM-DD HH:mm:ss');
 			item.lastChangedBy = username;
 			const rs = await item.save();

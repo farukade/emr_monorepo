@@ -40,11 +40,11 @@ export class PatientRequestItem extends CustomBaseEntity {
     @Column({ type: 'smallint', default: 0 })
     filled: number;
 
-    @Column({ type: 'smallint', default: 0, name: 'fill_quantity' })
-    fillQuantity: number;
+    @Column({ type: 'smallint', default: 0 })
+    fill_quantity: number;
 
-    @Column({ type: 'varchar', nullable: true, name: 'filled_by' })
-    filledBy: string;
+    @Column({ type: 'varchar', nullable: true })
+    filled_by: string;
 
     @Column({ nullable: true, name: 'filled_at' })
     filledAt: string;
