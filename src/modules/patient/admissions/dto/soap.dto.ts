@@ -2,6 +2,8 @@ import { IDiagnosisInterface } from '../../consultation/interfaces/diagnosis.int
 
 export class SoapDto {
     patient_id: any;
+    item_id: any;
+    type: any;
     complaints: string;
     treatmentPlan: string;
     diagnosis: IDiagnosisInterface[];

@@ -15,6 +15,7 @@ import { Admission } from '../patient/admissions/entities/admission.entity';
 import { CafeteriaFoodItemRepository } from './repositories/cafeteria.food-item.repository';
 import { CafeteriaFoodItem } from './entities/food_item.entity';
 import { CafeteriaFoodItemDto } from './dto/cafeteria-food-item.dto';
+import { Nicu } from '../patient/nicu/entities/nicu.entity';
 
 @Injectable()
 export class CafeteriaService {
@@ -134,8 +135,13 @@ export class CafeteriaService {
             }
 
             let admission;
+            let nicu;
             if (patient !== null) {
-               admission = await this.connection.getRepository(Admission).findOne({ where: { patient } });
+               admission = await this.connection.getRepository(Admission).findOne({ where: { patient, status: 0 } });
+
+               nicu = await this.connection.getRepository(Nicu).findOne({
+                   where: { patient, status: 0 },
+               });
             }
 
             let data = [];
@@ -171,6 +177,7 @@ export class CafeteriaService {
                 hmo_approval_code: null,
                 transaction_details: data,
                 admission_id: admission?.id || null,
+                nicu_id: nicu?.id || null,
                 staff_id,
                 lastChangedBy: username,
             };

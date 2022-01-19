@@ -4,7 +4,7 @@ import { PatientRepository } from './repositories/patient.repository';
 import { PatientNOKRepository } from './repositories/patient.nok.repository';
 import { Patient } from './entities/patient.entity';
 import { PatientDto } from './dto/patient.dto';
-import { Brackets, Connection, getConnection } from 'typeorm';
+import { Brackets, getConnection } from 'typeorm';
 import { PatientVitalRepository } from './repositories/patient_vitals.repository';
 import { PatientVital } from './entities/patient_vitals.entity';
 import * as moment from 'moment';
@@ -12,11 +12,8 @@ import { VoucherRepository } from '../finance/vouchers/voucher.repository';
 import { Voucher } from '../finance/vouchers/voucher.entity';
 import { PatientDocument } from './entities/patient_documents.entity';
 import { PatientDocumentRepository } from './repositories/patient_document.repository';
-import { StaffDetails } from '../hr/staff/entities/staff_details.entity';
 import { OpdPatientDto } from './dto/opd-patient.dto';
-import { AppGateway } from '../../app.gateway';
 import { AppointmentRepository } from '../frontdesk/appointment/appointment.repository';
-import { AuthRepository } from '../auth/auth.repository';
 import { TransactionsRepository } from '../finance/transactions/transactions.repository';
 import {
 	formatPID,
@@ -47,6 +44,9 @@ import { StaffRepository } from '../hr/staff/staff.repository';
 import { TransactionCreditDto } from '../finance/transactions/dto/transaction-credit.dto';
 // @ts-ignore
 import * as startCase from 'lodash.startcase';
+import { AdmissionClinicalTask } from './admissions/entities/admission-clinical-task.entity';
+import { NicuRepository } from './nicu/nicu.repository';
+import { LabourEnrollmentRepository } from './labour-management/repositories/labour-enrollment.repository';
 
 @Injectable()
 export class PatientService {
@@ -66,14 +66,12 @@ export class PatientService {
 		private patientDocumentRepository: PatientDocumentRepository,
 		@InjectRepository(AppointmentRepository)
 		private appointmentRepository: AppointmentRepository,
-		@InjectRepository(AuthRepository)
-		private authRepository: AuthRepository,
 		@InjectRepository(TransactionsRepository)
 		private transactionsRepository: TransactionsRepository,
-		private connection: Connection,
-		private readonly appGateway: AppGateway,
 		@InjectRepository(AdmissionsRepository)
 		private admissionRepository: AdmissionsRepository,
+		@InjectRepository(NicuRepository)
+		private nicuRepository: NicuRepository,
 		@InjectRepository(AdmissionClinicalTaskRepository)
 		private clinicalTaskRepository: AdmissionClinicalTaskRepository,
 		@InjectRepository(PatientNOKRepository)
@@ -94,6 +92,8 @@ export class PatientService {
 		private patientNoteRepository: PatientNoteRepository,
 		@InjectRepository(StaffRepository)
 		private staffRepository: StaffRepository,
+		@InjectRepository(LabourEnrollmentRepository)
+		private labourEnrollmentRepository: LabourEnrollmentRepository,
 	) {
 	}
 
@@ -277,6 +277,7 @@ export class PatientService {
 				hmo_approval_code: null,
 				transaction_details: null,
 				admission_id: null,
+				nicu_id: null,
 				staff_id: null,
 				lastChangedBy: null,
 			};
@@ -333,10 +334,9 @@ export class PatientService {
 			return { success: false, message: 'could not save patient' };
 
 			await patient.save();
+
 			// save appointment
 			const appointment = await this.appointmentRepository.saveOPDAppointment(patient, patientDto.opdType);
-			// send new opd socket message
-			this.appGateway.server.emit('new-opd-queue', appointment);
 
 			return { success: true, patient };
 		} catch (err) {
@@ -422,6 +422,7 @@ export class PatientService {
 					hmo_approval_code: null,
 					transaction_details: null,
 					admission_id: null,
+					nicu_id: null,
 					staff_id: null,
 					lastChangedBy: null,
 				};
@@ -461,30 +462,20 @@ export class PatientService {
 		return await patient.softRemove();
 	}
 
-	async checkPaymentStatus(param) {
-		const { service_id, patient_id } = param;
-		// find patient record
-		const patient = this.patientRepository.findOne(patient_id);
-	}
-
-	async doSaveVitals(param, createdBy: string): Promise<any> {
+	async doSaveVitals(param: any, createdBy: string): Promise<any> {
 		try {
 			const { patient_id, readingType, reading, task_id } = param;
-			const user = await this.authRepository.findOne({ where: { username: createdBy } });
 
-			const staff = await this.connection.getRepository(StaffDetails)
-				.createQueryBuilder('s')
-				.where('s.user_id = :id', { id: user.id })
-				.getOne();
+			const staff = await getStaff(createdBy);
 
 			const patient = await this.patientRepository.findOne(patient_id);
 
-			let task;
+			let task: AdmissionClinicalTask;
 			if (task_id !== '') {
 				task = await this.clinicalTaskRepository.findOne(task_id);
 
 				if (task && task.tasksCompleted < task.taskCount) {
-					let nextTime;
+					let nextTime: string;
 					switch (task.intervalType) {
 						case 'minutes':
 							nextTime = moment().add(task.interval, 'm').format('YYYY-MM-DD HH:mm:ss');
@@ -528,22 +519,29 @@ export class PatientService {
 				const values = Object.values(reading);
 				const single = values[0];
 				const message = `${readingType} Value ${single} is not within the NORMAL range`;
-				console.log(message);
 
 				let isAbnormal = false;
 
 				switch (readingType) {
 					case 'Temperature':
 						if (single < 36.1 || single > 37.2) {
+							console.log(message);
 							isAbnormal = true;
 						}
 						break;
 					case 'BMI':
 						if (single < 18.5 || single > 24.9) {
+							console.log(message);
 							isAbnormal = true;
 						}
 						break;
 				}
+
+				const admission = await this.admissionRepository.findOne({ where: { patient, status: 0 } });
+
+				const nicu = await this.nicuRepository.findOne({ where: { patient, status: 0 } });
+
+				const labour = await this.labourEnrollmentRepository.findOne({ where: { patient, status: 0 } });
 
 				const data = {
 					readingType,
@@ -552,6 +550,9 @@ export class PatientService {
 					createdBy,
 					task: task || null,
 					isAbnormal,
+					admission_id: admission?.id || null,
+					nicu_id: nicu?.id || null,
+					labour_id: labour?.id || null,
 				};
 				const readings = await this.patientVitalRepository.save(data);
 
@@ -756,8 +757,8 @@ export class PatientService {
 		return { success: true };
 	}
 
-	async getDiagnoses(id, urlParams): Promise<PatientNote[]> {
-		const { startDate, endDate, status } = urlParams;
+	async getDiagnoses(id, urlParams: any): Promise<PatientNote[]> {
+		const { startDate, endDate, status, admission_id, nicu_id } = urlParams;
 
 		const query = this.patientNoteRepository.createQueryBuilder('q')
 			.where('q.patient_id = :id', { id })
@@ -771,6 +772,14 @@ export class PatientService {
 		if (endDate && endDate !== '') {
 			const end = moment(endDate).endOf('day').toISOString();
 			query.andWhere(`q.createdAt <= '${end}'`);
+		}
+
+		if (admission_id && admission_id !== '') {
+			query.andWhere('q.admission_id = :id', { id: admission_id });
+		}
+
+		if (nicu_id && nicu_id !== '') {
+			query.andWhere('q.nicu_id = :id', { id: nicu_id });
 		}
 
 		if (status && status !== '') {

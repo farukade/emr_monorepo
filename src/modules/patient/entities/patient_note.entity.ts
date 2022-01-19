@@ -8,6 +8,7 @@ import { DrugGeneric } from '../../inventory/entities/drug_generic.entity';
 import { IvfEnrollment } from '../ivf/entities/ivf_enrollment.entity';
 import { AntenatalEnrollment } from '../antenatal/entities/antenatal-enrollment.entity';
 import { LabourEnrollment } from '../labour-management/entities/labour_enrollment.entity';
+import { Nicu } from '../nicu/entities/nicu.entity';
 
 @Entity({ name: 'patient_notes' })
 export class PatientNote extends CustomBaseEntity {
@@ -44,6 +45,10 @@ export class PatientNote extends CustomBaseEntity {
     @JoinColumn({ name: 'admission_id' })
     admission: Admission;
 
+    @ManyToOne(type => Nicu, { nullable: true })
+    @JoinColumn({ name: 'nicu_id' })
+    nicu: Nicu;
+
     @ManyToOne(() => PatientRequestItem, { nullable: true })
     @JoinColumn({ name: 'request_item_id' })
     request: PatientRequestItem;
@@ -71,8 +76,8 @@ export class PatientNote extends CustomBaseEntity {
     @Column({ nullable: true })
     visit: string;
 
-    @Column({ nullable: true, name: 'note_type' })
-    noteType: string;
+    @Column({ nullable: true })
+    note_type: string;
 
     @ManyToOne(type => IvfEnrollment, { nullable: true })
     @JoinColumn({ name: 'ivf_id' })

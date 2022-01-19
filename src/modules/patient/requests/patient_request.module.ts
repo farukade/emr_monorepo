@@ -10,6 +10,7 @@ import { AdmissionsRepository } from '../admissions/repositories/admissions.repo
 import { AppGateway } from '../../../app.gateway';
 import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repository';
 import { DrugRepository } from '../../inventory/pharmacy/drug/drug.repository';
+import { NicuRepository } from '../nicu/nicu.repository';
 
 @Module({
     imports: [
@@ -21,6 +22,7 @@ import { DrugRepository } from '../../inventory/pharmacy/drug/drug.repository';
             TransactionsRepository,
             AdmissionsRepository,
             DrugRepository,
+            NicuRepository,
         ]),
     ],
     controllers: [PatientRequestController],

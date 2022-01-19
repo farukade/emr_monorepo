@@ -13,17 +13,19 @@ import { Admission } from '../../modules/patient/admissions/entities/admission.e
 import { AntenatalEnrollment } from '../../modules/patient/antenatal/entities/antenatal-enrollment.entity';
 import { IvfEnrollment } from '../../modules/patient/ivf/entities/ivf_enrollment.entity';
 import { createServiceCost, getSerialCode } from './utils';
+import { Nicu } from '../../modules/patient/nicu/entities/nicu.entity';
+import { Patient } from '../../modules/patient/entities/patient.entity';
 
 export class PatientRequestHelper {
     constructor(private patientRequestRepo: PatientRequestRepository) {
     }
 
-    static async handleLabRequest(param, patient, createdBy) {
-        const { requestType, request_note, tests, urgent, antenatal_id, admission_id, ivf_id } = param;
+    static async handleLabRequest(param: any, patient: Patient, createdBy: string) {
+        const { requestType, request_note, tests, urgent, antenatal_id, admission_id, nicu_id, ivf_id } = param;
 
         try {
             const serialCode = await getSerialCode(requestType);
-            const nextId = `00000${serialCode}`
+            const nextId = `00000${serialCode}`;
             const code = `LR${moment().format('YY')}/${moment().format('MM')}/${nextId.slice(-5)}`;
 
             // modules
@@ -35,6 +37,11 @@ export class PatientRequestHelper {
             let admission = null;
             if (admission_id && admission_id !== '') {
                 admission = await getConnection().getRepository(Admission).findOne(admission_id);
+            }
+
+            let nicu = null;
+            if (nicu_id && nicu_id !== '') {
+                nicu = await getConnection().getRepository(Nicu).findOne(nicu_id);
             }
 
             let ivf = null;
@@ -55,6 +62,7 @@ export class PatientRequestHelper {
                     antenatal,
                     createdBy,
                     ivf,
+                    nicu,
                 };
                 const res = await this.save(data);
                 const lab = res.generatedMaps[0];
@@ -80,11 +88,11 @@ export class PatientRequestHelper {
         }
     }
 
-    static async handlePharmacyRequest(param, patient, createdBy, visit = '') {
-        const { requestType, request_note, items, procedure_id, antenatal_id, admission_id } = param;
+    static async handlePharmacyRequest(param: any, patient: Patient, createdBy: string, visit = '') {
+        const { requestType, request_note, items, procedure_id, antenatal_id, admission_id, nicu_id } = param;
         try {
             const serialCode = await getSerialCode(requestType);
-            const nextId = `00000${serialCode}`
+            const nextId = `00000${serialCode}`;
             const code = `DR${moment().format('YY')}/${moment().format('MM')}/${nextId.slice(-5)}`;
 
             // modules
@@ -96,6 +104,11 @@ export class PatientRequestHelper {
             let admission = null;
             if (admission_id && admission_id !== '') {
                 admission = await getConnection().getRepository(Admission).findOne(admission_id);
+            }
+
+            let nicu = null;
+            if (nicu_id && nicu_id !== '') {
+                nicu = await getConnection().getRepository(Nicu).findOne(nicu_id);
             }
 
             let result = [];
@@ -110,6 +123,7 @@ export class PatientRequestHelper {
                     lastChangedBy: null,
                     antenatal,
                     admission,
+                    nicu,
                     procedure_id: procedure_id && procedure_id !== '' ? procedure_id : null,
                 };
                 const res = await this.save(data);
@@ -157,6 +171,7 @@ export class PatientRequestHelper {
                             i.visit = visit;
                             i.type = 'diagnosis';
                             i.createdBy = createdBy;
+                            i.admission = admission;
                             await i.save();
 
                             diags = [...diags, i];
@@ -180,7 +195,7 @@ export class PatientRequestHelper {
         const { date_due } = param;
 
         const serialCode = await getSerialCode('drugs');
-        const nextId = `00000${serialCode}`
+        const nextId = `00000${serialCode}`;
         const code = `PR${moment().format('YY')}/${moment().format('MM')}/${nextId.slice(-5)}`;
 
         const vaccines = await getConnection()
@@ -261,11 +276,11 @@ export class PatientRequestHelper {
     }
 
     static async handleServiceRequest(param, patient, createdBy, type, visit = '') {
-        const { requestType, request_note, tests, diagnosis, urgent, antenatal_id, admission_id, procedure_id } = param;
+        const { requestType, request_note, tests, diagnosis, urgent, antenatal_id, admission_id, procedure_id, nicu_id } = param;
 
         try {
             const serialCode = await getSerialCode(type);
-            const nextId = `00000${serialCode}`
+            const nextId = `00000${serialCode}`;
             const code = `${requestType.toUpperCase().substring(0, 1)}R${moment().format('YY')}/${moment().format('MM')}/${nextId.slice(-5)}`;
 
             const hmo = patient.hmo;
@@ -281,6 +296,11 @@ export class PatientRequestHelper {
                 admission = await getConnection().getRepository(Admission).findOne(admission_id);
             }
 
+            let nicu = null;
+            if (nicu_id && nicu_id !== '') {
+                nicu = await getConnection().getRepository(Nicu).findOne(nicu_id);
+            }
+
             let result = [];
             for (const item of tests) {
                 console.log(item);
@@ -294,10 +314,11 @@ export class PatientRequestHelper {
                         urgent,
                         createdBy,
                         admission,
+                        nicu,
                         antenatal,
                         procedure_id: procedure_id && procedure_id !== '' ? procedure_id : null,
                     };
-                    
+
                     const res = await this.save(data);
                     const request = res.generatedMaps[0];
 
@@ -333,6 +354,7 @@ export class PatientRequestHelper {
                                     i.visit = visit;
                                     i.type = 'diagnosis';
                                     i.createdBy = createdBy;
+                                    i.admission = admission;
                                     await i.save();
 
                                     diags = [...diags, i];

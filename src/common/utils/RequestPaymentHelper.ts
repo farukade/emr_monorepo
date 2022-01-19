@@ -8,6 +8,7 @@ import { ServiceCategory } from '../../modules/settings/entities/service_categor
 import { Admission } from '../../modules/patient/admissions/entities/admission.entity';
 import { createServiceCost, postDebit } from './utils';
 import { TransactionCreditDto } from '../../modules/finance/transactions/dto/transaction-credit.dto';
+import { Nicu } from '../../modules/patient/nicu/entities/nicu.entity';
 
 export class RequestPaymentHelper {
 	static async clinicalLabPayment(labRequests, patient: Patient, createdBy, bill) {
@@ -38,6 +39,10 @@ export class RequestPaymentHelper {
 					where: { patient, status: 0 },
 				});
 
+				const nicu = await getConnection().getRepository(Nicu).findOne({
+					where: { patient, status: 0 },
+				});
+
 				const data: TransactionCreditDto = {
 					patient_id: patient.id,
 					username: createdBy,
@@ -56,6 +61,7 @@ export class RequestPaymentHelper {
 					hmo_approval_code: null,
 					transaction_details: null,
 					admission_id: admission?.id || null,
+					nicu_id: nicu?.id || null,
 					staff_id: null,
 					lastChangedBy: null,
 				};
@@ -100,6 +106,10 @@ export class RequestPaymentHelper {
 					where: { patient, status: 0 },
 				});
 
+				const nicu = await getConnection().getRepository(Nicu).findOne({
+					where: { patient, status: 0 },
+				});
+
 				const data: TransactionCreditDto = {
 					patient_id: patient.id,
 					username: createdBy,
@@ -118,6 +128,7 @@ export class RequestPaymentHelper {
 					hmo_approval_code: null,
 					transaction_details: null,
 					admission_id: admission?.id || null,
+					nicu_id: nicu?.id || null,
 					staff_id: null,
 					lastChangedBy: null,
 				};

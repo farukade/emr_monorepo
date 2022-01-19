@@ -7,6 +7,10 @@ import { PatientFluidChartRepository } from '../repositories/patient_fluid_chart
 import * as moment from 'moment';
 import { AdmissionClinicalTaskRepository } from '../admissions/repositories/admission-clinical-tasks.repository';
 import { PatientVitalRepository } from '../repositories/patient_vitals.repository';
+import { AdmissionsRepository } from '../admissions/repositories/admissions.repository';
+import { NicuRepository } from '../nicu/nicu.repository';
+import { LabourEnrollmentRepository } from '../labour-management/repositories/labour-enrollment.repository';
+import { AdmissionClinicalTask } from '../admissions/entities/admission-clinical-task.entity';
 
 @Injectable()
 export class PatientFluidChartService {
@@ -19,6 +23,12 @@ export class PatientFluidChartService {
         private clinicalTaskRepository: AdmissionClinicalTaskRepository,
         @InjectRepository(PatientVitalRepository)
         private patientVitalRepository: PatientVitalRepository,
+        @InjectRepository(AdmissionsRepository)
+		private admissionRepository: AdmissionsRepository,
+        @InjectRepository(NicuRepository)
+		private nicuRepository: NicuRepository,
+        @InjectRepository(LabourEnrollmentRepository)
+		private labourEnrollmentRepository: LabourEnrollmentRepository,
     ) {
     }
 
@@ -60,12 +70,12 @@ export class PatientFluidChartService {
 
         await chart.save();
 
-        let task;
+        let task: AdmissionClinicalTask;
         if (task_id !== '') {
             task = await this.clinicalTaskRepository.findOne(task_id);
 
             if (task && task.tasksCompleted < task.taskCount) {
-                let nextTime;
+                let nextTime: string;
                 switch (task.intervalType) {
                     case 'minutes':
                         nextTime = moment().add(task.interval, 'm').format('YYYY-MM-DD HH:mm:ss');
@@ -96,12 +106,21 @@ export class PatientFluidChartService {
             }
         }
 
+        const admission = await this.admissionRepository.findOne({ where: { patient, status: 0 } });
+
+        const nicu = await this.nicuRepository.findOne({ where: { patient, status: 0 } });
+
+        const labour = await this.labourEnrollmentRepository.findOne({ where: { patient, status: 0 } });
+
         const data = {
             readingType: 'Fluid Chart',
             reading: {type, fluid_route: fluidRoute, volume},
             patient,
             createdBy,
             task: task || null,
+            admission_id: admission?.id || null,
+            nicu_id: nicu?.id || null,
+            labour_id: labour?.id || null,
         };
 
         // @ts-ignore

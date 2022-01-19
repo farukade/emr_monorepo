@@ -8,15 +8,7 @@ import * as startCase from 'lodash.startcase';
 @EntityRepository(StaffDetails)
 export class StaffRepository extends Repository<StaffDetails> {
 
-     serializeData = (item) => {
-        try {
-            return Object.values(item)[1];
-        } catch (e) {
-            return item;
-        }
-    }
-
-    async saveDetails(staffDto: any, department: Department, user: User, specialization, pic, username) {
+    async saveDetails(staffDto: any, department: Department, user: User, specialization, username: string) {
         try {
             const staff = new StaffDetails();
             staff.first_name = startCase(staffDto?.first_name?.toLocaleLowerCase());
@@ -28,32 +20,32 @@ export class StaffRepository extends Repository<StaffDetails> {
             staff.nationality = staffDto.nationality;
             staff.state_of_origin = staffDto.state_of_origin;
             staff.lga = staffDto.lga;
-            staff.bank_name = this.serializeData(staffDto.bank_name);
-            staff.account_number = this.serializeData(staffDto.account_number);
-            staff.pension_mngr = this.serializeData(staffDto.pension_mngr);
+            staff.bank_name = staffDto.bank_name;
+            staff.account_number = staffDto.account_number;
+            staff.pension_mngr = staffDto.pension_mngr;
             staff.gender = staffDto.gender;
-            staff.marital_status = this.serializeData(staffDto.marital_status);
-            staff.number_of_children = this.serializeData(staffDto.number_of_children);
+            staff.marital_status = staffDto.marital_status;
+            staff.number_of_children = staffDto.number_of_children;
             staff.religion = staffDto.religion;
             staff.date_of_birth = staffDto.date_of_birth;
-            staff.next_of_kin = this.serializeData(staffDto.next_of_kin);
-            staff.next_of_kin_dob = this.serializeData(staffDto.next_of_kin_dob);
-            staff.next_of_kin_address = this.serializeData(staffDto.next_of_kin_address);
-            staff.next_of_kin_relationship = this.serializeData(staffDto.next_of_kin_relationship);
-            staff.next_of_kin_contact_no = this.serializeData(staffDto.next_of_kin_contact_no);
-            staff.job_title = this.serializeData(staffDto.job_title);
-            staff.contract_type = this.serializeData(staffDto.contract_type);
-            staff.employment_start_date = this.serializeData(staffDto.employment_start_date);
-            staff.annual_salary = this.serializeData(staffDto.annual_salary);
-            staff.monthly_salary = this.serializeData(staffDto.monthly_salary);
+            staff.next_of_kin = staffDto.next_of_kin;
+            staff.next_of_kin_dob = staffDto.next_of_kin_dob;
+            staff.next_of_kin_address = staffDto.next_of_kin_address;
+            staff.next_of_kin_relationship = staffDto.next_of_kin_relationship;
+            staff.next_of_kin_contact_no = staffDto.next_of_kin_contact_no;
+            staff.job_title = staffDto.job_title;
+            staff.contract_type = staffDto.contract_type;
+            staff.employment_start_date = staffDto.employment_start_date;
+            staff.annual_salary = staffDto.annual_salary;
+            staff.monthly_salary = staffDto.monthly_salary;
             staff.department = department;
             staff.is_consultant = staffDto.is_consultant;
-            staff.profile_pic = (pic) ? pic.filename : '';
             staff.specialization = specialization;
             staff.user = user;
             staff.employee_number = staffDto.employee_number;
             staff.createdBy = username;
             staff.profession = staffDto.profession;
+            staff.createdBy = username;
 
             const rs = await staff.save();
             console.log(rs);

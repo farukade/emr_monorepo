@@ -7,6 +7,7 @@ import { IvfEnrollment } from '../ivf/entities/ivf_enrollment.entity';
 import { Encounter } from '../consultation/encouter.entity';
 import { AntenatalEnrollment } from '../antenatal/entities/antenatal-enrollment.entity';
 import { Admission } from '../admissions/entities/admission.entity';
+import { Nicu } from '../nicu/entities/nicu.entity';
 
 @Entity({ name: 'patient_requests' })
 export class PatientRequest extends CustomBaseEntity {
@@ -36,6 +37,10 @@ export class PatientRequest extends CustomBaseEntity {
     @ManyToOne(type => Admission, { nullable: true })
     @JoinColumn({ name: 'admission_id' })
     admission: Admission;
+
+    @ManyToOne(type => Nicu, { nullable: true })
+    @JoinColumn({ name: 'nicu_id' })
+    nicu: Nicu;
 
     @ManyToOne(() => Encounter, item => item.requests, { nullable: true, eager: true })
     @JoinColumn({ name: 'encounter_id' })

@@ -44,6 +44,9 @@ import { AppointmentRepository } from '../frontdesk/appointment/appointment.repo
 import { Department } from '../settings/entities/department.entity';
 import { Service } from '../settings/entities/service.entity';
 import { AppGateway } from '../../app.gateway';
+import { NicuRepository } from '../patient/nicu/nicu.repository';
+import { PatientNote } from '../patient/entities/patient_note.entity';
+import { PatientRequestItemRepository } from '../patient/repositories/patient_request_items.repository';
 
 @Processor(process.env.MIGRATION_QUEUE_NAME)
 export class MigrationProcessor {
@@ -112,6 +115,10 @@ export class MigrationProcessor {
 		private careTeamRepository: CareTeamRepository,
 		@InjectRepository(AppointmentRepository)
 		private appointmentRepository: AppointmentRepository,
+		@InjectRepository(NicuRepository)
+		private nicuRepository: NicuRepository,
+		@InjectRepository(PatientRequestItemRepository)
+		private patientRequestItemRepository: PatientRequestItemRepository,
 		private readonly appGateway: AppGateway,
 	) {
 	}
@@ -926,13 +933,71 @@ export class MigrationProcessor {
 		});
 
 		for (const admission of admissions) {
-			const patient = await this.patientRepository.findOne({
-				where: { id: admission.patient.id, is_admitted: false },
-			});
+			const patient = await this.patientRepository.findOne(admission.patient.id);
 
 			if (patient) {
-				patient.is_admitted = true;
+				patient.admission_id = admission.id;
 				await patient.save();
+			}
+		}
+
+		const nicus = await this.nicuRepository.find({
+			where: { status: 0 },
+			relations: ['patient'],
+		});
+
+		for (const nicu of nicus) {
+			const patient = await this.patientRepository.findOne(nicu.patient.id);
+
+			if (patient) {
+				patient.nicu_id = nicu.id;
+				await patient.save();
+			}
+		}
+	}
+
+	@Process('transfer-dn')
+	async transferDischargeNote(job: Job<any>): Promise<any> {
+		const admissions = await this.admissionsRepository.find({
+			where: { status: 1 },
+			relations: ['patient', 'dischargedBy', 'dischargedBy.user'],
+		});
+
+		for (const admission of admissions) {
+			const patient = await this.patientRepository.findOne(admission.patient.id);
+
+			if (admission.discharge_note) {
+				const note  = new PatientNote();
+				note.description = admission.discharge_note;
+				note.patient = patient;
+				note.admission = admission;
+				note.type = 'discharge';
+				note.createdBy = admission?.dischargedBy?.user?.username || 'it-admin';
+
+				await note.save();
+			}
+		}
+	}
+
+	@Process('fix-procedure')
+	async fixProcedure(job: Job<any>): Promise<any> {
+		const items = await this.patientRequestItemRepository.find({
+			where: { scheduledDate: true },
+		});
+
+		for (const item of items) {
+			try {
+				const request = await this.patientRequestItemRepository.findOne(item.id);
+				if (request) {
+					const startDate = moment(request.scheduledStartDate, 'DD/MM/YYYY h:mm A');
+					const endDate = moment(request.scheduledEndDate, 'DD/MM/YYYY h:mm A');
+
+					request.scheduledStartDate = startDate.format('YYYY-MM-DD HH:mm:ss');
+					request.scheduledEndDate = endDate.format('YYYY-MM-DD HH:mm:ss');
+					await request.save();
+				}
+			} catch (e) {
+				console.log(e);
 			}
 		}
 	}

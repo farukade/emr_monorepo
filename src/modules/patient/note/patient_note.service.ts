@@ -11,6 +11,7 @@ import { IvfEnrollmentRepository } from '../ivf/ivf_enrollment.repository';
 import { AntenatalEnrollmentRepository } from '../antenatal/enrollment.repository';
 import { DrugGenericRepository } from '../../inventory/pharmacy/generic/generic.repository';
 import { LabourEnrollmentRepository } from '../labour-management/repositories/labour-enrollment.repository';
+import { NicuRepository } from '../nicu/nicu.repository';
 
 @Injectable()
 export class PatientNoteService {
@@ -31,11 +32,13 @@ export class PatientNoteService {
         private drugGenericRepository: DrugGenericRepository,
         @InjectRepository(LabourEnrollmentRepository)
         private labourEnrollmentRepository: LabourEnrollmentRepository,
+        @InjectRepository(NicuRepository)
+        private nicuRepository: (NicuRepository),
     ) {
     }
 
     async getNotes(options: PaginationOptionsInterface, params): Promise<any> {
-        const { patient_id, type, admission_id, visit, ivf_id, antenatal_id, procedure_id, labour_id } = params;
+        const { patient_id, type, admission_id, visit, ivf_id, antenatal_id, procedure_id, labour_id, nicu_id } = params;
 
         const query = this.patientNoteRepository.createQueryBuilder('q').select('q.*');
 
@@ -65,6 +68,10 @@ export class PatientNoteService {
 
         if (labour_id && labour_id !== '') {
             query.andWhere('q.labour_id = :labour_id', { labour_id });
+        }
+
+        if (nicu_id && nicu_id !== '') {
+            query.andWhere('q.nicu_id = :nicu_id', { nicu_id });
         }
 
         if (type && type !== '') {
@@ -100,8 +107,8 @@ export class PatientNoteService {
         };
     }
 
-    async saveNote(param, createdBy) {
-        const { patient_id, description, type, admission_id, note_type, specialty, procedure_id, ivf_id, antenatal_id, labour_id } = param;
+    async saveNote(param: any, createdBy: string) {
+        const { patient_id, description, type, admission_id, note_type, specialty, procedure_id, ivf_id, antenatal_id, labour_id, nicu_id } = param;
 
         const patient = await this.patientRepository.findOne(patient_id);
 
@@ -134,18 +141,22 @@ export class PatientNoteService {
             note.labour = await this.labourEnrollmentRepository.findOne(labour_id);
         }
 
+        if (nicu_id && nicu_id !== '') {
+            note.nicu = await this.nicuRepository.findOne(nicu_id);
+        }
+
         note.specialty = specialty;
-        note.noteType = note_type;
+        note.note_type = note_type;
         note.createdBy = createdBy;
 
         const rs = await note.save();
 
         const staff = await getStaff(createdBy);
 
-        return { ...rs, note_type: rs.noteType, staff };
+        return { ...rs, note_type: rs.note_type, staff };
     }
 
-    async updateNote(id: number, param, username: string) {
+    async updateNote(id: number, param: any, username: string) {
         try {
             const note = await this.patientNoteRepository.findOne(id);
             note.lastChangedBy = username;

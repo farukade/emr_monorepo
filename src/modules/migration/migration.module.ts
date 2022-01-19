@@ -37,6 +37,8 @@ import { EncounterRepository } from '../patient/consultation/encounter.repositor
 import { CareTeamRepository } from '../patient/care-team/team.repository';
 import { AppointmentRepository } from '../frontdesk/appointment/appointment.repository';
 import { AppGateway } from '../../app.gateway';
+import { NicuRepository } from '../patient/nicu/nicu.repository';
+import { PatientRequestItemRepository } from '../patient/repositories/patient_request_items.repository';
 
 @Module({
     imports: [
@@ -87,6 +89,8 @@ import { AppGateway } from '../../app.gateway';
             EncounterRepository,
             CareTeamRepository,
             AppointmentRepository,
+            NicuRepository,
+            PatientRequestItemRepository,
         ]),
     ],
     providers: [MigrationService, MigrationProcessor, AppGateway],

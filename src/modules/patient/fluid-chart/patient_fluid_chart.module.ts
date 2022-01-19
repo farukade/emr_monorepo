@@ -6,6 +6,9 @@ import { PatientFluidChartController } from './patient_fluid_chart.controller';
 import { PatientRepository } from '../repositories/patient.repository';
 import { AdmissionClinicalTaskRepository } from '../admissions/repositories/admission-clinical-tasks.repository';
 import { PatientVitalRepository } from '../repositories/patient_vitals.repository';
+import { AdmissionsRepository } from '../admissions/repositories/admissions.repository';
+import { NicuRepository } from '../nicu/nicu.repository';
+import { LabourEnrollmentRepository } from '../labour-management/repositories/labour-enrollment.repository';
 
 @Module({
     imports: [TypeOrmModule.forFeature([
@@ -13,6 +16,9 @@ import { PatientVitalRepository } from '../repositories/patient_vitals.repositor
         PatientRepository,
         AdmissionClinicalTaskRepository,
         PatientVitalRepository,
+        AdmissionsRepository,
+        NicuRepository,
+        LabourEnrollmentRepository,
     ])],
     controllers: [PatientFluidChartController],
     providers: [PatientFluidChartService],

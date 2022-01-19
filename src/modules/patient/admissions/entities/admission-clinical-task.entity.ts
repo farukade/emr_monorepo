@@ -4,8 +4,10 @@ import { Admission } from './admission.entity';
 import { Patient } from '../../entities/patient.entity';
 import { PatientVital } from '../../entities/patient_vitals.entity';
 import { PatientRequest } from '../../entities/patient_requests.entity';
+import { Nicu } from '../../nicu/entities/nicu.entity';
+import { LabourEnrollment } from '../../labour-management/entities/labour_enrollment.entity';
 
-@Entity({ name: 'admission_clinical_tasks' })
+@Entity({ name: 'clinical_tasks' })
 export class AdmissionClinicalTask extends CustomBaseEntity {
     @Column()
     task: string;
@@ -46,9 +48,17 @@ export class AdmissionClinicalTask extends CustomBaseEntity {
     @Column({ default: false })
     completed: boolean;
 
-    @ManyToOne(() => Admission)
+    @ManyToOne(() => Admission, { nullable: true })
     @JoinColumn({ name: 'admission_id' })
     admission: Admission;
+
+    @ManyToOne(() => Nicu, { nullable: true })
+    @JoinColumn({ name: 'nicu_id' })
+    nicu: Nicu;
+
+    @ManyToOne(() => LabourEnrollment, { nullable: true })
+    @JoinColumn({ name: 'labour_id' })
+    labour: LabourEnrollment;
 
     @ManyToOne(() => Patient)
     @JoinColumn({ name: 'patient_id' })

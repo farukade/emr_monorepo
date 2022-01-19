@@ -21,4 +21,13 @@ export class PatientVital extends CustomBaseEntity {
 
     @Column({ type: 'boolean', default: false, name: 'is_abnormal' })
     isAbnormal: boolean;
+
+    @Column({ nullable: true })
+    admission_id: number;
+
+    @Column({ nullable: true })
+    nicu_id: number;
+
+    @Column({ nullable: true })
+    labour_id: number;
 }

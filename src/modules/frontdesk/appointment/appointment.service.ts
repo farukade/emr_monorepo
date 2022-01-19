@@ -442,6 +442,7 @@ export class AppointmentService {
 			hmo_approval_code: null,
 			transaction_details: null,
 			admission_id: null,
+			nicu_id: null,
 			staff_id: null,
 			lastChangedBy: null,
 		};

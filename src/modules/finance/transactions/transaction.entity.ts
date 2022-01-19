@@ -8,6 +8,7 @@ import { Appointment } from '../../frontdesk/appointment/appointment.entity';
 import { HmoScheme } from '../../hmo/entities/hmo_scheme.entity';
 import { ServiceCost } from '../../settings/entities/service_cost.entity';
 import { Admission } from '../../patient/admissions/entities/admission.entity';
+import { Nicu } from '../../patient/nicu/entities/nicu.entity';
 
 @Entity({ name: 'transactions' })
 export class Transaction extends CustomBaseEntity {
@@ -90,6 +91,10 @@ export class Transaction extends CustomBaseEntity {
     @ManyToOne(type => Admission, { nullable: true })
     @JoinColumn({ name: 'admission_id' })
     admission: Admission;
+
+    @ManyToOne(type => Nicu, { nullable: true })
+    @JoinColumn({ name: 'nicu_id' })
+    nicu: Nicu;
 
     @ManyToOne(type => HmoScheme, { nullable: true })
     @JoinColumn({ name: 'hmo_scheme_id' })

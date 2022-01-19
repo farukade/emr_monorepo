@@ -84,14 +84,6 @@ export class PatientController {
     }
 
     @UseGuards(AuthGuard('jwt'))
-    @Post('check-payment-status')
-    checkPaymentStatus(
-        @Body() param,
-    ) {
-        return this.patientService.checkPaymentStatus(param);
-    }
-
-    @UseGuards(AuthGuard('jwt'))
     @Get(':id/vouchers')
     getVouchers(
         @Param('id') id: string,

@@ -90,11 +90,11 @@ export class CareTeamService {
 
     async saveTeamMembers(careTeamDto: CareTeamDto, username): Promise<any> {
         try {
-            const { admission_id, type, staffs, patient_id, primary_care_id } = careTeamDto;
+            const { item_id, type, staffs, patient_id, primary_care_id } = careTeamDto;
 
             const patient = await this.patientRepository.findOne(patient_id);
 
-            await this.careTeamRepository.softDelete({ type, item_id: admission_id });
+            await this.careTeamRepository.softDelete({ type, item_id });
 
             let results = [];
             for (const item of staffs) {
@@ -104,7 +104,7 @@ export class CareTeamService {
                 member.member = staff;
                 member.isPrimaryCareGiver = staff.id === primary_care_id;
                 member.type = type;
-                member.item_id = admission_id;
+                member.item_id = item_id;
                 member.patient = patient;
                 member.createdBy = username;
 

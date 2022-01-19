@@ -106,28 +106,33 @@ export class StaffService {
 		return await query.take(options.limit).getRawMany();
 	}
 
-	async addNewStaff(staffDto: StaffDto, pic, username): Promise<any> {
+	async addNewStaff(staffDto: StaffDto, createdBy: string): Promise<any> {
+		const { role_id, department_id, specialization_id, username } = staffDto;
+
 		// find role
-		const role = await this.roleRepository.findOne(staffDto.role_id);
+		const role = await this.roleRepository.findOne(role_id);
+
 		// find department
-		const department = await this.departmentRepository.findOne(staffDto.department_id);
+		const department = await this.departmentRepository.findOne(department_id);
+
 		// find specialization
 		let specialization;
-		if (staffDto.specialization_id) {
-			specialization = await getRepository(Specialization).findOne(staffDto.specialization_id);
+		if (specialization_id) {
+			specialization = await getRepository(Specialization).findOne(specialization_id);
 		}
+
 		// save user
 		const user = await this.authRepository.save({
-			username: staffDto.username.toLocaleLowerCase(),
+			username: username.replace(/\s/g, '').toLocaleLowerCase(),
 			password: await this.getHash('password'),
 			role,
 		});
 
 		// save staff
-		return await this.staffRepository.saveDetails(staffDto, department, user, specialization, pic, username);
+		return await this.staffRepository.saveDetails(staffDto, department, user, specialization, createdBy);
 	}
 
-	async updateStaffDetails(id: string, staffDto: StaffDto, pic): Promise<any> {
+	async updateStaffDetails(id: string, staffDto: StaffDto, username: string): Promise<any> {
 		try {
 			// find role
 			const role = await this.roleRepository.findOne(staffDto.role_id);
@@ -158,14 +163,6 @@ export class StaffService {
 			user.role = role;
 			await user.save();
 
-			function serializeData(item) {
-				try {
-					return Object.values(item)[1];
-				} catch (e) {
-					return item;
-				}
-			}
-
 			staff.first_name = staffDto.first_name.toLocaleLowerCase();
 			staff.last_name = staffDto.last_name.toLocaleLowerCase();
 			staff.other_names = staffDto.other_names.toLocaleLowerCase();
@@ -175,31 +172,30 @@ export class StaffService {
 			staff.nationality = staffDto.nationality;
 			staff.state_of_origin = staffDto.state_of_origin;
 			staff.lga = staffDto.lga;
-			staff.bank_name = serializeData(staffDto.bank_name);
-			staff.account_number = serializeData(staffDto.account_number);
-			staff.pension_mngr = serializeData(staffDto.pension_mngr);
+			staff.bank_name = staffDto.bank_name;
+			staff.account_number = staffDto.account_number;
+			staff.pension_mngr = staffDto.pension_mngr;
 			staff.gender = staffDto.gender;
-			staff.marital_status = serializeData(staffDto.marital_status);
-			staff.number_of_children = serializeData(staffDto.number_of_children);
+			staff.marital_status = staffDto.marital_status;
+			staff.number_of_children = staffDto.number_of_children;
 			staff.religion = staffDto.religion;
 			staff.date_of_birth = staffDto.date_of_birth;
-			staff.next_of_kin = serializeData(staffDto.next_of_kin);
-			staff.next_of_kin_dob = serializeData(staffDto.next_of_kin_dob);
-			staff.next_of_kin_address = serializeData(staffDto.next_of_kin_address);
-			staff.next_of_kin_relationship = serializeData(staffDto.next_of_kin_relationship);
-			staff.next_of_kin_contact_no = serializeData(staffDto.next_of_kin_contact_no);
-			staff.job_title = serializeData(staffDto.job_title);
-			staff.contract_type = serializeData(staffDto.contract_type);
-			staff.employment_start_date = serializeData(staffDto.employment_start_date);
-			staff.annual_salary = serializeData(staffDto.annual_salary);
-			staff.monthly_salary = serializeData(staffDto.monthly_salary);
+			staff.next_of_kin = staffDto.next_of_kin;
+			staff.next_of_kin_dob = staffDto.next_of_kin_dob;
+			staff.next_of_kin_address = staffDto.next_of_kin_address;
+			staff.next_of_kin_relationship = staffDto.next_of_kin_relationship;
+			staff.next_of_kin_contact_no = staffDto.next_of_kin_contact_no;
+			staff.job_title = staffDto.job_title;
+			staff.contract_type = staffDto.contract_type;
+			staff.employment_start_date = staffDto.employment_start_date;
+			staff.annual_salary = staffDto.annual_salary;
+			staff.monthly_salary = staffDto.monthly_salary;
 			staff.is_consultant = staffDto.is_consultant;
 			staff.department = department;
 			staff.specialization = specialization;
 			staff.profession = staffDto.profession;
-			if (pic) {
-				staff.profile_pic = pic.filename;
-			}
+			staff.lastChangedBy = username;
+
 			await staff.save();
 
 			return { success: true, staff };
@@ -209,23 +205,27 @@ export class StaffService {
 		}
 	}
 
-	async deleteStaff(id: number) {
+	async deleteStaff(id: number, username: string) {
 		try {
-			const result = await this.staffRepository.findOne(id);
-			result.isActive = false;
-			await result.save();
-			return { success: true, result };
+			const staff = await this.staffRepository.findOne(id);
+			staff.isActive = false;
+			staff.lastChangedBy = username;
+			await staff.save();
+
+			return { success: true, result: staff };
 		} catch (e) {
 			return { success: false, message: e.message };
 		}
 	}
 
-	async enableStaff(id: number) {
+	async enableStaff(id: number, username: string) {
 		try {
-			const result = await this.staffRepository.findOne(id);
-			result.isActive = true;
-			await result.save();
-			return { success: true, result };
+			const staff = await this.staffRepository.findOne(id);
+			staff.isActive = true;
+			staff.lastChangedBy = username;
+			const rs = await staff.save();
+
+			return { success: true, result: rs };
 		} catch (e) {
 			return { success: false, message: e.message };
 		}

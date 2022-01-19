@@ -197,7 +197,7 @@ export class TransactionsService {
 
 		const { voucher_id, amount_paid, voucher_amount, payment_method, patient_id, is_part_payment } = transactionDto;
 		try {
-			const transaction = await this.transactionsRepository.findOne(id, { relations: ['patient', 'staff', 'appointment', 'hmo', 'admission'] });
+			const transaction = await this.transactionsRepository.findOne(id, { relations: ['patient', 'staff', 'appointment', 'hmo', 'admission', 'nicu'] });
 
 			const amount = Math.abs(transaction.amount);
 
@@ -219,6 +219,7 @@ export class TransactionsService {
 				hmo_approval_code: null,
 				transaction_details: null,
 				admission_id: transaction.admission?.id || null,
+				nicu_id: transaction.nicu?.id || null,
 				staff_id: transaction.staff?.id || null,
 				lastChangedBy: updatedBy,
 			};
@@ -296,6 +297,7 @@ export class TransactionsService {
 					hmo_approval_code: transaction.hmo_approval_code,
 					transaction_details: transaction.transaction_details,
 					admission_id: transaction.admission?.id || null,
+					nicu_id: transaction.nicu?.id || null,
 					staff_id: transaction.staff?.id || null,
 					lastChangedBy: updatedBy,
 				};
@@ -330,7 +332,7 @@ export class TransactionsService {
 		try {
 			let transactions = [];
 			for (const item of items) {
-				const transaction = await this.transactionsRepository.findOne(item.id, { relations: ['patient', 'staff', 'appointment', 'hmo'] });
+				const transaction = await this.transactionsRepository.findOne(item.id, { relations: ['patient', 'staff', 'appointment', 'hmo', 'admission', 'nicu'] });
 
 				const data: TransactionCreditDto = {
 					patient_id: transaction.patient.id,
@@ -350,6 +352,7 @@ export class TransactionsService {
 					hmo_approval_code: null,
 					transaction_details: null,
 					admission_id: transaction.admission?.id || null,
+					nicu_id: transaction.nicu?.id || null,
 					staff_id: transaction.staff?.id || null,
 					lastChangedBy: updatedBy,
 				};
@@ -416,6 +419,7 @@ export class TransactionsService {
 				hmo_approval_code: null,
 				transaction_details: null,
 				admission_id: null,
+				nicu_id: null,
 				staff_id: null,
 				lastChangedBy: null,
 			};
@@ -438,7 +442,7 @@ export class TransactionsService {
 		try {
 			let transactions = [];
 			for (const item of items) {
-				const transaction = await this.transactionsRepository.findOne(item.id, { relations: ['patient', 'staff', 'appointment', 'hmo'] });
+				const transaction = await this.transactionsRepository.findOne(item.id, { relations: ['patient', 'staff', 'appointment', 'hmo', 'admission', 'nicu'] });
 
 				const data: TransactionCreditDto = {
 					patient_id: transaction.patient.id,
@@ -458,6 +462,7 @@ export class TransactionsService {
 					hmo_approval_code: null,
 					transaction_details: null,
 					admission_id: transaction.admission?.id || null,
+					nicu_id: transaction.nicu?.id || null,
 					staff_id: transaction.staff?.id || null,
 					lastChangedBy: updatedBy,
 				};
@@ -529,7 +534,7 @@ export class TransactionsService {
 	}
 
 	async approve(id: number, createdBy): Promise<any> {
-		const transaction = await this.transactionsRepository.findOne(id, { relations: ['patient', 'staff', 'appointment', 'hmo', 'admission'] });
+		const transaction = await this.transactionsRepository.findOne(id, { relations: ['patient', 'staff', 'appointment', 'hmo', 'admission', 'nicu'] });
 
 		const appointment = await this.appointmentRepository.findOne({
 			where: { transaction },
@@ -562,6 +567,7 @@ export class TransactionsService {
 			hmo_approval_code: null,
 			transaction_details: null,
 			admission_id: transaction.admission?.id || null,
+			nicu_id: transaction.nicu?.id || null,
 			staff_id: transaction.staff?.id || null,
 			lastChangedBy: createdBy,
 		};
@@ -577,7 +583,7 @@ export class TransactionsService {
 	}
 
 	async payWithHmoCode(id: string, { hmo_approval_code }, createdBy): Promise<any> {
-		const transaction = await this.transactionsRepository.findOne(id, { relations: ['patient', 'staff', 'appointment', 'hmo', 'admission'] });
+		const transaction = await this.transactionsRepository.findOne(id, { relations: ['patient', 'staff', 'appointment', 'hmo', 'admission', 'nicu'] });
 
 		const appointment = await this.appointmentRepository.findOne({
 			where: { transaction },
@@ -610,6 +616,7 @@ export class TransactionsService {
 			hmo_approval_code,
 			transaction_details: null,
 			admission_id: transaction.admission?.id || null,
+			nicu_id: transaction.nicu?.id || null,
 			staff_id: transaction.staff?.id || null,
 			lastChangedBy: createdBy,
 		};

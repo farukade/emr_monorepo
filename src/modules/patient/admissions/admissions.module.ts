@@ -16,6 +16,7 @@ import { ServiceCostRepository } from '../../settings/services/repositories/serv
 import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
 import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repository';
 import { NicuAccommodationRepository } from '../../settings/nicu-accommodation/accommodation.repository';
+import { LabourEnrollmentRepository } from '../labour-management/repositories/labour-enrollment.repository';
 
 @Module({
     imports: [TypeOrmModule.forFeature([
@@ -32,6 +33,7 @@ import { NicuAccommodationRepository } from '../../settings/nicu-accommodation/a
         TransactionsRepository,
         HmoSchemeRepository,
         NicuAccommodationRepository,
+        LabourEnrollmentRepository,
     ])],
     controllers: [AdmissionsController],
     providers: [AppGateway, AdmissionsService],

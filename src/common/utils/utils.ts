@@ -18,6 +18,7 @@ import { AccountDeposit } from '../../modules/finance/transactions/entities/depo
 import { PatientRequest } from '../../modules/patient/entities/patient_requests.entity';
 import { ServiceCost } from '../../modules/settings/entities/service_cost.entity';
 import { Service } from '../../modules/settings/entities/service.entity';
+import { Nicu } from '../../modules/patient/nicu/entities/nicu.entity';
 
 // tslint:disable-next-line:no-var-requires
 const mysql = require('mysql2/promise');
@@ -325,6 +326,7 @@ export const postDebit = async (data: TransactionCreditDto, service, voucher, re
 		hmo_approval_code,
 		transaction_details,
 		admission_id,
+		nicu_id,
 		staff_id,
 		lastChangedBy,
 	} = data;
@@ -333,6 +335,7 @@ export const postDebit = async (data: TransactionCreditDto, service, voucher, re
 
 	const patient = patient_id ? await connection.getRepository(Patient).findOne(patient_id) : null;
 	const admission = admission_id ? await connection.getRepository(Admission).findOne(admission_id) : null;
+	const nicu = nicu_id ? await connection.getRepository(Nicu).findOne(nicu_id) : null;
 	const staff = staff_id ? await connection.getRepository(StaffDetails).findOne(staff_id) : null;
 
 	const staffHmo = await connection.getRepository(HmoScheme).findOne(5);
@@ -363,6 +366,7 @@ export const postDebit = async (data: TransactionCreditDto, service, voucher, re
 	transaction.patientRequestItem = requestItem;
 	transaction.appointment = appointment;
 	transaction.admission = admission;
+	transaction.nicu = nicu;
 	transaction.hmo = hmo;
 	transaction.createdBy = username;
 	transaction.lastChangedBy = lastChangedBy;
@@ -390,6 +394,7 @@ export const postCredit = async (data: TransactionCreditDto, service, voucher, r
 		hmo_approval_code,
 		transaction_details,
 		admission_id,
+		nicu_id,
 		staff_id,
 		lastChangedBy,
 	} = data;
@@ -398,6 +403,7 @@ export const postCredit = async (data: TransactionCreditDto, service, voucher, r
 
 	const patient = patient_id ? await connection.getRepository(Patient).findOne(patient_id) : null;
 	const admission = admission_id ? await connection.getRepository(Admission).findOne(admission_id) : null;
+	const nicu = nicu_id ? await connection.getRepository(Nicu).findOne(nicu_id) : null;
 	const staff = staff_id ? await connection.getRepository(StaffDetails).findOne(staff_id) : null;
 
 	const isStaffHmo = await connection.getRepository(HmoScheme).findOne(hmo.id);
@@ -427,6 +433,7 @@ export const postCredit = async (data: TransactionCreditDto, service, voucher, r
 	transaction.patientRequestItem = requestItem;
 	transaction.appointment = appointment;
 	transaction.admission = admission;
+	transaction.nicu = nicu;
 	transaction.hmo = hmo;
 	transaction.createdBy = username;
 	transaction.lastChangedBy = lastChangedBy;

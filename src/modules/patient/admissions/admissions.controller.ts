@@ -36,9 +36,10 @@ export class AdmissionsController {
     @UsePipes(ValidationPipe)
     startDischarge(
         @Param('id') id: number,
+        @Body() params,
         @Request() req,
     ): Promise<any> {
-        return this.admissionService.startDischarge(id, req.user.username);
+        return this.admissionService.startDischarge(id, params, req.user.username);
     }
 
     @Put(':id/complete-discharge')
@@ -86,23 +87,21 @@ export class AdmissionsController {
         return this.admissionService.saveClinicalTasks(id, params, req.user.username);
     }
 
-    @Get(':id/ward-rounds')
+    @Get('ward-rounds')
     getWardRounds(
-        @Param('id') admissionId: number,
         @Query() urlParams,
         @Request() request,
     ) {
         const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 10;
         const page = request.query.hasOwnProperty('page') ? request.query.page : 1;
-        return this.admissionService.getWardRounds(admissionId, { page, limit }, urlParams);
+        return this.admissionService.getWardRounds({ page, limit }, urlParams);
     }
 
-    @Post(':id/soap')
+    @Post('/soap')
     saveSoap(
-        @Param('id') admissionId: number,
         @Body() param: SoapDto,
         @Request() req,
     ) {
-        return this.admissionService.saveSoap(admissionId, param, req.user.username);
+        return this.admissionService.saveSoap(param, req.user.username);
     }
 }

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Patch, Param, Get, Delete, UsePipes, ValidationPipe, Query, Request, UseInterceptors, UploadedFile, UseGuards,
+import { Controller, Post, Body, Patch, Param, Get, Delete, UsePipes, ValidationPipe, Query, Request, Put, UploadedFile, UseGuards,
 } from '@nestjs/common';
 import { StaffDto } from './dto/staff.dto';
 import { StaffDetails } from './entities/staff_details.entity';
@@ -15,7 +15,7 @@ export class StaffController {
     constructor(private staffService: StaffService) {
     }
 
-    @Get()
+    @Get('')
     listStaffs(
         @Query() urlParams,
         @Request() request,
@@ -25,7 +25,7 @@ export class StaffController {
         return this.staffService.getStaffs({ page, limit }, urlParams);
     }
 
-    @Get('find')
+    @Get('/find')
     findStaffDetails(
         @Query() param,
         @Request() request,
@@ -34,48 +34,30 @@ export class StaffController {
         return this.staffService.findStaffs({ limit }, param);
     }
 
-    @Patch('enable')
+    @Patch(':id/enable')
     enableStaff(
+        @Param('id') id: number,
         @Request() req,
     ) {
-        return this.staffService.enableStaff(req.query.id);
+        return this.staffService.enableStaff(id, req.user.username);
     }
 
-    @Post()
+    @Post('')
     @UsePipes(ValidationPipe)
-    @UseInterceptors(FileInterceptor('avatar', {
-        storage: diskStorage({
-            destination: './uploads/avatars',
-            filename: (req, file, cb) => {
-                const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('');
-                return cb(null, `${randomName}${extname(file.originalname)}`);
-            },
-        }),
-    }))
     createNewStaff(
         @Request() req,
         @Body() staffDto: StaffDto,
-        @UploadedFile() pic,
     ): Promise<StaffDetails> {
-        return this.staffService.addNewStaff(staffDto, pic, req.user.username);
+        return this.staffService.addNewStaff(staffDto, req.user.username);
     }
 
-    @Patch(':id/update')
-    @UseInterceptors(FileInterceptor('avatar', {
-        storage: diskStorage({
-            destination: './uploads/avatars',
-            filename: (req, file, cb) => {
-                const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('');
-                return cb(null, `${randomName}${extname(file.originalname)}`);
-            },
-        }),
-    }))
+    @Put(':id')
     updateStaffDetails(
         @Param('id') id: string,
         @Body() staffDto: StaffDto,
-        @UploadedFile() pic,
+        @Request() req,
     ): Promise<any> {
-        return this.staffService.updateStaffDetails(id, staffDto, pic);
+        return this.staffService.updateStaffDetails(id, staffDto, req.user.username);
     }
 
     @Post('set-consulting-room')
@@ -95,7 +77,8 @@ export class StaffController {
     @Delete(':id')
     deleteStaff(
         @Param('id') id: number,
+        @Request() req,
     ) {
-        return this.staffService.deleteStaff(id);
+        return this.staffService.deleteStaff(id, req.user.username);
     }
 }

@@ -20,12 +20,13 @@ import { PatientNoteRepository } from '../repositories/patient_note.repository';
 import { PatientNote } from '../entities/patient_note.entity';
 import { getStaff, postDebit } from '../../../common/utils/utils';
 import { ServiceCostRepository } from '../../settings/services/repositories/service_cost.repository';
-import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
-import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repository';
 import { NicuAccommodationRepository } from '../../settings/nicu-accommodation/accommodation.repository';
 import { TransactionCreditDto } from '../../finance/transactions/dto/transaction-credit.dto';
 import { Transaction } from '../../finance/transactions/transaction.entity';
 import { getConnection } from 'typeorm';
+import { Nicu } from '../nicu/entities/nicu.entity';
+import { Admission } from './entities/admission.entity';
+import { LabourEnrollmentRepository } from '../labour-management/repositories/labour-enrollment.repository';
 
 @Injectable()
 export class AdmissionsService {
@@ -51,20 +52,17 @@ export class AdmissionsService {
         private patientNoteRepository: PatientNoteRepository,
         @InjectRepository(ServiceCostRepository)
         private serviceCostRepository: ServiceCostRepository,
-        @InjectRepository(TransactionsRepository)
-        private transactionsRepository: TransactionsRepository,
-        @InjectRepository(HmoSchemeRepository)
-        private hmoSchemeRepository: HmoSchemeRepository,
+        @InjectRepository(LabourEnrollmentRepository)
+        private labourEnrollmentRepository: LabourEnrollmentRepository,
         @InjectRepository(NicuAccommodationRepository)
         private nicuAccommodationRepository: NicuAccommodationRepository,
     ) {
     }
 
     async getAdmissions(options: PaginationOptionsInterface, params): Promise<Pagination> {
-        const { startDate, endDate, patient_id, status, name } = params;
+        const { startDate, endDate, patient_id, status } = params;
 
-        const query = this.admissionRepository.createQueryBuilder('q').select('q.*')
-            .where('q.nicu_id is null');
+        const query = this.admissionRepository.createQueryBuilder('q').select('q.*');
 
         if (startDate && startDate !== '') {
             const start = moment(startDate).endOf('day').toISOString();
@@ -77,15 +75,11 @@ export class AdmissionsService {
         }
 
         if (patient_id && patient_id !== '') {
-            query.andWhere('q.patient = :patient_id', { patient_id });
+            query.andWhere('q.patient_id = :patient_id', { patient_id });
         }
 
         if (status && status !== '') {
             query.andWhere('q.status = :status', { status });
-        }
-
-        if (name) {
-            query.andWhere('q.patient_name like :name', { name: `%${name}%` });
         }
 
         const page = options.page - 1;
@@ -104,9 +98,6 @@ export class AdmissionsService {
                     relations: ['nextOfKin', 'immunization', 'hmo'],
                 });
             }
-
-            item.nicu = await this.nicuRepository.createQueryBuilder('n').select('n.*')
-                .where('n.admission_id = :id', { id: item.id }).getRawOne();
 
             if (item.room_id) {
                 item.room = await this.roomRepository.findOne(item.room_id, { relations: ['category'] });
@@ -128,45 +119,45 @@ export class AdmissionsService {
     }
 
     async saveAdmission(id: string, createDto: CreateAdmissionDto, username): Promise<any> {
-        const { healthState, riskToFall, reason, discharge_date, nicu } = createDto;
-
-        // find patient info
-        const patient = await this.patientRepository.findOne(id, {
-            relations: ['nextOfKin', 'immunization', 'hmo'],
-        });
-
         try {
-            // save admission info
-            const admission = await this.admissionRepository.save({
-                patient, healthState, riskToFall, reason,
-                createdBy: username,
-                status: 0,
+            const { health_state, reason, nicu } = createDto;
+
+            const patient = await this.patientRepository.findOne(id, {
+                relations: ['nextOfKin', 'immunization', 'hmo'],
             });
 
-            patient.is_admitted = true;
-            await patient.save();
+            let admission: Nicu | Admission;
 
-            try {
-                await getConnection().createQueryBuilder().update(Transaction)
-                    .set({ status: -1 })
-                    .where('patient_id = :id', { id: patient.id })
-                    .andWhere('status = :status', { status: 0 })
-                    .execute();
-                // tslint:disable-next-line:no-empty
-            } catch (e) {}
+            const data = {
+                patient,
+                health_state,
+                reason,
+                createdBy: username,
+                status: 0,
+            };
 
             if (nicu) {
                 // save to nicu
-                admission.nicu = await this.nicuRepository.save({
-                    patient,
-                    createdBy: username,
-                    admission,
-                });
-                await admission.save();
-            }
+                admission = await this.nicuRepository.save(data);
 
-            // send new opd socket message
-            this.appGateway.server.emit('new-admission', admission);
+                patient.nicu_id = admission.id;
+                await patient.save();
+            } else {
+                // save admission info
+                admission = await this.admissionRepository.save(data);
+
+                patient.admission_id = admission.id;
+                await patient.save();
+
+                try {
+                    await getConnection().createQueryBuilder().update(Transaction)
+                        .set({ status: -1, is_admitted: true })
+                        .where('patient_id = :id', { id: patient.id })
+                        .andWhere('status = :status', { status: 0 })
+                        .execute();
+                    // tslint:disable-next-line:no-empty
+                } catch (e) {}
+            }
 
             return { success: true, patient };
         } catch (err) {
@@ -174,17 +165,24 @@ export class AdmissionsService {
         }
     }
 
-    async startDischarge(id: number, username): Promise<any> {
+    async startDischarge(id: number, params: any, username: string): Promise<any> {
         try {
-            const admission = await this.admissionRepository.findOne(id);
+            const { note } = params;
+
+            const admission = await this.admissionRepository.findOne(id, { relations: ['patient'] });
+
+            const dischargeNote  = new PatientNote();
+            dischargeNote.description = note;
+            dischargeNote.patient = admission.patient;
+            dischargeNote.admission = admission;
+            dischargeNote.type = 'discharge';
+            dischargeNote.createdBy = username;
+            await dischargeNote.save();
 
             admission.start_discharge = true;
             admission.start_discharge_date = moment().format('YYYY-MM-DD HH:mm:ss');
             admission.start_discharge_by = username;
             const rs = await admission.save();
-
-            // send start start socket message
-            this.appGateway.server.emit('start-discharge', rs);
 
             return { success: true, admission: rs };
         } catch (err) {
@@ -192,7 +190,7 @@ export class AdmissionsService {
         }
     }
 
-    async completeDischarge(id: number, params, username): Promise<any> {
+    async completeDischarge(id: number, params: any, username: string): Promise<any> {
         try {
             const { note } = params;
 
@@ -200,12 +198,19 @@ export class AdmissionsService {
 
             const staff = await getStaff(username);
 
-            admission.discharge_note = note;
             admission.date_discharged = moment().format('YYYY-MM-DD HH:mm:ss');
             admission.dischargedBy = staff;
             admission.status = 1;
             admission.lastChangedBy = username;
             await admission.save();
+
+            const dischargeNote  = new PatientNote();
+            dischargeNote.description = note;
+            dischargeNote.patient = admission.patient;
+            dischargeNote.admission = admission;
+            dischargeNote.type = 'discharge';
+            dischargeNote.createdBy = username;
+            await dischargeNote.save();
 
             const room = await this.roomRepository.findOne(admission.room?.id);
             if (room) {
@@ -214,26 +219,11 @@ export class AdmissionsService {
                 await room.save();
             }
 
-            const nicu = await this.nicuRepository.findOne({ where: { admission }, relations: ['accommodation'] });
-            if (nicu) {
-                nicu.status = 1;
-                await nicu.save();
-            }
-
-            const accommodation = await this.nicuAccommodationRepository.findOne({ id: nicu?.accommodation?.id });
-            if (accommodation) {
-                accommodation.quantity_unused = accommodation.quantity_unused + 1;
-                await accommodation.save();
-            }
-
             const patient = await this.patientRepository.findOne(admission.patient.id);
-            patient.is_admitted = false;
+            patient.admission_id = null;
             await patient.save();
 
             const discharged = await this.admissionRepository.findOne(id, { relations: ['room', 'patient'] });
-
-            // send start start socket message
-            this.appGateway.server.emit('discharged', discharged);
 
             return { success: true, admission: discharged };
         } catch (err) {
@@ -294,6 +284,7 @@ export class AdmissionsService {
                 hmo_approval_code: null,
                 transaction_details: null,
                 admission_id: admission?.id || null,
+                nicu_id: null,
                 staff_id: null,
                 lastChangedBy: null,
             };
@@ -306,7 +297,9 @@ export class AdmissionsService {
         }
     }
 
-    async getTasks(options: PaginationOptionsInterface, { patient_id }) {
+    async getTasks(options: PaginationOptionsInterface, params: any) {
+        const { patient_id, type, item_id } = params;
+
         const query = this.clinicalTaskRepository.createQueryBuilder('q')
             .leftJoinAndSelect('q.patient', 'patient')
             .leftJoinAndSelect('q.request', 'request')
@@ -316,6 +309,18 @@ export class AdmissionsService {
 
         if (patient_id && patient_id !== '') {
             query.andWhere('q.patient_id = :patient_id', { patient_id });
+        }
+
+        if (type && type === 'admission') {
+            query.andWhere('q.admission_id = :id', { id: item_id });
+        }
+
+        if (type && type === 'nicu') {
+            query.andWhere('q.nicu_id = :id', { id: item_id });
+        }
+
+        if (type && type === 'labour') {
+            query.andWhere('q.labour_id = :id', { id: item_id });
         }
 
         const count = await query.getCount();
@@ -333,10 +338,13 @@ export class AdmissionsService {
                 order: { createdAt: 'DESC' },
             });
 
-            const admission = await this.admissionRepository.findOne({
-                where: { id: request.admission_id },
-                relations: ['room'],
-            });
+            let admission: Admission;
+            if (request.admission_id) {
+                admission =  await this.admissionRepository.findOne({
+                    where: { id: request.admission_id },
+                    relations: ['room'],
+                });
+            }
 
             const patient = await this.patientRepository.findOne({
                 where: { id: request.patient_id },
@@ -379,12 +387,17 @@ export class AdmissionsService {
         return result.softRemove();
     }
 
-    async saveClinicalTasks(patientId: number, params, username: string): Promise<any> {
+    async saveClinicalTasks(patientId: number, params: any, username: string): Promise<any> {
         try {
             const { tasks, prescription } = params;
 
             const patient = await this.patientRepository.findOne(patientId);
-            const admission = await this.admissionRepository.findOne({ where: { patient: patient.id } });
+
+            const admission = await this.admissionRepository.findOne({ where: { patient, status: 0 } });
+
+            const nicu = await this.nicuRepository.findOne({ where: { patient, status: 0 } });
+
+            const labour = await this.labourEnrollmentRepository.findOne({ where: { patient, status: 0 } });
 
             let request;
             if (prescription.items && prescription.items.length > 0) {
@@ -422,6 +435,8 @@ export class AdmissionsService {
                 newTask.nextTime = task.startTime === '' ? moment().format('YYYY-MM-DD HH:mm:ss') : moment(task.startTime).format('YYYY-MM-DD HH:mm:ss');
                 newTask.patient = patient;
                 newTask.admission = admission;
+                newTask.nicu = nicu;
+                newTask.labour = labour;
                 newTask.createdBy = username;
 
                 const rs = await newTask.save();
@@ -435,20 +450,29 @@ export class AdmissionsService {
         }
     }
 
-    async getWardRounds(id: number, options: PaginationOptionsInterface, urlParams): Promise<any> {
+    async getWardRounds(options: PaginationOptionsInterface, params: any): Promise<any> {
         try {
-            const {} = urlParams;
+            const { type, item_id } = params;
 
-            const admission = await this.admissionRepository.findOne(id);
+            const query = this.patientNoteRepository.createQueryBuilder('q')
+                .select('q.*')
+                .where('q.visit = :visit', { visit: 'soap' });
+
+            if (type && type === 'admission') {
+                query.andWhere('q.admission_id = :id', { id: item_id });
+            }
+
+            if (type && type === 'nicu') {
+                query.andWhere('q.nicu_id = :id', { id: item_id });
+            }
+
+            const count = await query.getCount();
+
+            query.orderBy({ 'q.createdAt': 'DESC' });
 
             const page = options.page - 1;
 
-            const [result, total] = await this.patientNoteRepository.findAndCount({
-                where: { admission, visit: 'soap' },
-                order: { createdAt: 'DESC' },
-                take: options.limit,
-                skip: (page * options.limit),
-            });
+            const result = await query.take(options.limit).skip(page * options.limit).getRawMany();
 
             let notes = [];
             for (const item of result) {
@@ -459,9 +483,9 @@ export class AdmissionsService {
 
             return {
                 result: notes,
-                lastPage: Math.ceil(total / options.limit),
+                lastPage: Math.ceil(count / options.limit),
                 itemsPerPage: options.limit,
-                totalPages: total,
+                totalPages: count,
                 currentPage: options.page,
             };
 
@@ -470,11 +494,14 @@ export class AdmissionsService {
         }
     }
 
-    async saveSoap(id: number, param: SoapDto, createdBy) {
+    async saveSoap(param: SoapDto, createdBy: string) {
         try {
-            const { patient_id, complaints, treatmentPlan, physicalExaminationSummary } = param;
+            const { patient_id, complaints, treatmentPlan, physicalExaminationSummary, item_id, type } = param;
 
-            const admission = await this.admissionRepository.findOne(id);
+            const admission = type === 'admission' ? await this.admissionRepository.findOne(item_id) : null;
+
+            const nicu = type === 'nicu' ? await this.nicuRepository.findOne(item_id) : null;
+
             const patient = await this.patientRepository.findOne(patient_id);
 
             if (complaints !== '') {
@@ -482,6 +509,7 @@ export class AdmissionsService {
                 complaint.description = complaints;
                 complaint.patient = patient;
                 complaint.admission = admission;
+                complaint.nicu = nicu;
                 complaint.type = 'complaints';
                 complaint.visit = 'soap';
                 complaint.createdBy = createdBy;
@@ -493,6 +521,7 @@ export class AdmissionsService {
                 plan.description = treatmentPlan;
                 plan.patient = patient;
                 plan.admission = admission;
+                plan.nicu = nicu;
                 plan.type = 'treatment-plan';
                 plan.visit = 'soap';
                 plan.createdBy = createdBy;
@@ -500,14 +529,15 @@ export class AdmissionsService {
             }
 
             if (physicalExaminationSummary !== '') {
-                const plan = new PatientNote();
-                plan.description = physicalExaminationSummary;
-                plan.patient = patient;
-                plan.admission = admission;
-                plan.type = 'physical-examination-summary';
-                plan.visit = 'soap';
-                plan.createdBy = createdBy;
-                await plan.save();
+                const examination = new PatientNote();
+                examination.description = physicalExaminationSummary;
+                examination.patient = patient;
+                examination.admission = admission;
+                examination.nicu = nicu;
+                examination.type = 'physical-examination-summary';
+                examination.visit = 'soap';
+                examination.createdBy = createdBy;
+                await examination.save();
             }
 
             for (const diagnosis of param.diagnosis) {
@@ -516,6 +546,7 @@ export class AdmissionsService {
                 patientDiagnosis.status = 'Active';
                 patientDiagnosis.patient = patient;
                 patientDiagnosis.admission = admission;
+                patientDiagnosis.nicu = nicu;
                 patientDiagnosis.diagnosisType = diagnosis.type.value;
                 patientDiagnosis.comment = diagnosis.comment;
                 patientDiagnosis.type = 'diagnosis';
@@ -534,6 +565,7 @@ export class AdmissionsService {
                 review.description = reviewOfSystems.join(', ');
                 review.patient = patient;
                 review.admission = admission;
+                review.nicu = nicu;
                 review.type = 'review-of-systems';
                 review.visit = 'soap';
                 review.createdBy = createdBy;

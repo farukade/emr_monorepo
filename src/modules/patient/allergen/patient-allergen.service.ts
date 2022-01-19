@@ -6,6 +6,8 @@ import { Raw } from 'typeorm';
 import { PatientNoteRepository } from '../repositories/patient_note.repository';
 import { PatientNote } from '../entities/patient_note.entity';
 import { DrugGenericRepository } from '../../inventory/pharmacy/generic/generic.repository';
+import { AdmissionsRepository } from '../admissions/repositories/admissions.repository';
+import { NicuRepository } from '../nicu/nicu.repository';
 
 @Injectable()
 export class PatientAllergenService {
@@ -16,6 +18,10 @@ export class PatientAllergenService {
 		private patientRepository: PatientRepository,
 		@InjectRepository(DrugGenericRepository)
 		private drugGenericRepository: DrugGenericRepository,
+		@InjectRepository(AdmissionsRepository)
+		private admissionRepository: AdmissionsRepository,
+		@InjectRepository(NicuRepository)
+		private nicuRepository: NicuRepository,
 	) {
 
 	}
@@ -67,11 +73,17 @@ export class PatientAllergenService {
 
 			const generic = generic_id ? await this.drugGenericRepository.findOne(generic_id) : null;
 
+			const admission = await this.admissionRepository.findOne({ where: { patient, status: 0 } });
+
+			const nicu = await this.nicuRepository.findOne({ where: { patient, status: 0 } });
+
 			const patientAllergen = new PatientNote();
 			patientAllergen.category = category;
 			patientAllergen.allergy = allergy;
 			patientAllergen.drugGeneric = generic;
 			patientAllergen.severity = severity;
+			patientAllergen.admission = admission;
+			patientAllergen.nicu = nicu;
 			patientAllergen.reaction = reaction;
 			patientAllergen.patient = patient;
 			patientAllergen.type = 'allergy';

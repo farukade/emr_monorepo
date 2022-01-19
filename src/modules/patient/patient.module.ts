@@ -19,7 +19,6 @@ import { AppGateway } from '../../app.gateway';
 import { AppointmentRepository } from '../frontdesk/appointment/appointment.repository';
 import { ImmunizationModule } from './immunization/immunization.module';
 import { NicuModule } from './nicu/nicu.module';
-import { AuthRepository } from '../auth/auth.repository';
 import { TransactionsRepository } from '../finance/transactions/transactions.repository';
 import { AdmissionClinicalTaskRepository } from './admissions/repositories/admission-clinical-tasks.repository';
 import { AdmissionsRepository } from './admissions/repositories/admissions.repository';
@@ -40,6 +39,8 @@ import { ServiceCategoryRepository } from '../settings/services/repositories/ser
 import { ServiceCostRepository } from '../settings/services/repositories/service_cost.repository';
 import { CareTeamModule } from './care-team/team.module';
 import { PatientNoteRepository } from './repositories/patient_note.repository';
+import { NicuRepository } from './nicu/nicu.repository';
+import { LabourEnrollmentRepository } from './labour-management/repositories/labour-enrollment.repository';
 
 @Module({
     imports: [
@@ -58,7 +59,6 @@ import { PatientNoteRepository } from './repositories/patient_note.repository';
             IvfEnrollmentRepository,
             StaffRepository,
             AppointmentRepository,
-            AuthRepository,
             TransactionsRepository,
             AdmissionClinicalTaskRepository,
             AdmissionsRepository,
@@ -67,6 +67,8 @@ import { PatientNoteRepository } from './repositories/patient_note.repository';
             PatientAlertRepository,
             ServiceCostRepository,
             PatientNoteRepository,
+            NicuRepository,
+            LabourEnrollmentRepository,
         ]),
         AntenatalModule,
         AdmissionsModule,

@@ -1,8 +1,5 @@
 export class CreateAdmissionDto {
-
-    healthState: string;
-    riskToFall: boolean;
+    health_state: string;
     reason: string;
-    discharge_date: string;
     nicu: boolean;
 }

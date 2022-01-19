@@ -13,7 +13,7 @@ import { getStaff, postDebit } from '../../../common/utils/utils';
 import { AntenatalEnrollment } from './entities/antenatal-enrollment.entity';
 import { AntenatalPackageRepository } from '../../settings/antenatal-packages/antenatal-package.repository';
 import { AdmissionsRepository } from '../admissions/repositories/admissions.repository';
-import { Brackets, getConnection } from 'typeorm';
+import { Brackets, getConnection, ObjectID } from 'typeorm';
 import { PatientNoteRepository } from '../repositories/patient_note.repository';
 import { AntenatalAssessment } from './entities/antenatal-assessment.entity';
 import { PatientNote } from '../entities/patient_note.entity';
@@ -137,7 +137,7 @@ export class AntenatalService {
 			// find patient
 			const patient = await this.patientRepository.findOne(patient_id, { relations: ['hmo'] });
 
-			const admission = await this.admissionsRepository.findOne({ where: { patient } });
+			const admission = await this.admissionsRepository.findOne({ where: { patient, status: 0 } });
 
 			const enrollment = new AntenatalEnrollment();
 			enrollment.serial_code = code;
@@ -172,7 +172,8 @@ export class AntenatalService {
 					status: -1,
 					hmo_approval_code: null,
 					transaction_details: null,
-					admission_id: null,
+					admission_id: admission?.id || null,
+					nicu_id: null,
 					staff_id: null,
 					lastChangedBy: null,
 				};
@@ -255,7 +256,7 @@ export class AntenatalService {
 		};
 	}
 
-	async saveAntenatalAssessment(id, params, createdBy: string) {
+	async saveAntenatalAssessment(id: number, params: any, createdBy: string) {
 		try {
 			const {
 				measurement,
@@ -280,6 +281,8 @@ export class AntenatalService {
 				relations: ['patient', 'whomToSee', 'consultingRoom', 'transaction', 'department'],
 			}) : null;
 
+			const admission = await this.admissionsRepository.findOne({ where: { patient, status: 0 } });
+
 			let savedNote = null;
 			if (comment) {
 				const note = new PatientNote();
@@ -287,6 +290,7 @@ export class AntenatalService {
 				note.description = comment;
 				note.type = 'anc-comment';
 				note.antenatal = antenatalEnrolment;
+				note.admission = admission;
 				note.createdBy = createdBy;
 				savedNote = await note.save();
 			}

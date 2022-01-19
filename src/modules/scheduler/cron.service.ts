@@ -70,52 +70,53 @@ export class TasksService {
 				where: { status: 0 },
 			});
 
-			for (const item of admissions) {
-				if (item.room_assigned_at && item.room_assigned_at !== '') {
-					const roomAssignedAt = moment(item.room_assigned_at);
-					if (moment().isAfter(roomAssignedAt, 'day')) {
-						const transaction = await getConnection().getRepository(Transaction)
-							.createQueryBuilder('t')
-							.select('t.*')
-							.andWhere('t.bill_source = :source', { source: 'ward' })
-							.andWhere('t.admission_id = :id', { id: item.id })
-							.getRawOne();
+			// for (const item of admissions) {
+			// 	if (item.room_assigned_at && item.room_assigned_at !== '') {
+			// 		const roomAssignedAt = moment(item.room_assigned_at);
+			// 		if (moment().isAfter(roomAssignedAt, 'day')) {
+			// 			const transaction = await getConnection().getRepository(Transaction)
+			// 				.createQueryBuilder('t')
+			// 				.select('t.*')
+			// 				.andWhere('t.bill_source = :source', { source: 'ward' })
+			// 				.andWhere('t.admission_id = :id', { id: item.id })
+			// 				.getRawOne();
 
-						if (transaction) {
-							const count = await getConnection().getRepository(Transaction).count(
-								{ admission: item, bill_source: 'ward' },
-							);
+			// 			if (transaction) {
+			// 				const count = await getConnection().getRepository(Transaction).count(
+			// 					{ admission: item, bill_source: 'ward' },
+			// 				);
 
-							const service = await getConnection().getRepository(ServiceCost).findOne(transaction.service_cost_id);
-							const hmo = await getConnection().getRepository(HmoScheme).findOne(transaction.hmo_scheme_id);
+			// 				const service = await getConnection().getRepository(ServiceCost).findOne(transaction.service_cost_id);
+			// 				const hmo = await getConnection().getRepository(HmoScheme).findOne(transaction.hmo_scheme_id);
 
-							const data: TransactionCreditDto = {
-								patient_id: transaction.patient_id,
-								username: transaction.createdBy,
-								sub_total: 0,
-								vat: 0,
-								amount: transaction.amount * -1,
-								voucher_amount: 0,
-								amount_paid: 0,
-								change: 0,
-								description: `${transaction.description.split(' - ')[0]} - Day ${count + 1}`,
-								payment_method: null,
-								part_payment_expiry_date: null,
-								bill_source: 'ward',
-								next_location: null,
-								status: -1,
-								hmo_approval_code: null,
-								transaction_details: null,
-								admission_id: item.id,
-								staff_id: null,
-								lastChangedBy: null,
-							};
+			// 				const data: TransactionCreditDto = {
+			// 					patient_id: transaction.patient_id,
+			// 					username: transaction.createdBy,
+			// 					sub_total: 0,
+			// 					vat: 0,
+			// 					amount: transaction.amount * -1,
+			// 					voucher_amount: 0,
+			// 					amount_paid: 0,
+			// 					change: 0,
+			// 					description: `${transaction.description.split(' - ')[0]} - Day ${count + 1}`,
+			// 					payment_method: null,
+			// 					part_payment_expiry_date: null,
+			// 					bill_source: 'ward',
+			// 					next_location: null,
+			// 					status: -1,
+			// 					hmo_approval_code: null,
+			// 					transaction_details: null,
+			// 					admission_id: item.id,
+			// 					nicu_id: item.id,
+			// 					staff_id: null,
+			// 					lastChangedBy: null,
+			// 				};
 
-							await postDebit(data, service, null, null, null, hmo);
-						}
-					}
-				}
-			}
+			// 				await postDebit(data, service, null, null, null, hmo);
+			// 			}
+			// 		}
+			// 	}
+			// }
 		} catch (e) {
 			this.logger.error(e);
 		}
@@ -131,52 +132,53 @@ export class TasksService {
 				relations: ['admission'],
 			});
 
-			for (const item of nicuAdmissions) {
-				if (item.accommodation_assigned_at && item.accommodation_assigned_at !== '') {
-					const accommodationAssignedAt = moment(item.accommodation_assigned_at);
-					if (moment().isAfter(accommodationAssignedAt, 'day')) {
-						const transaction = await getConnection().getRepository(Transaction)
-							.createQueryBuilder('t')
-							.select('t.*')
-							.andWhere('t.bill_source = :source', { source: 'nicu-accommodation' })
-							.andWhere('t.admission_id = :id', { id: item.admission.id })
-							.getRawOne();
+			// for (const item of nicuAdmissions) {
+			// 	if (item.accommodation_assigned_at && item.accommodation_assigned_at !== '') {
+			// 		const accommodationAssignedAt = moment(item.accommodation_assigned_at);
+			// 		if (moment().isAfter(accommodationAssignedAt, 'day')) {
+			// 			const transaction = await getConnection().getRepository(Transaction)
+			// 				.createQueryBuilder('t')
+			// 				.select('t.*')
+			// 				.andWhere('t.bill_source = :source', { source: 'nicu-accommodation' })
+			// 				.andWhere('t.admission_id = :id', { id: item.admission.id })
+			// 				.getRawOne();
 
-						if (transaction) {
-							const count = await getConnection().getRepository(Transaction).count(
-								{ admission: item.admission, bill_source: 'nicu-accommodation' },
-							);
+			// 			if (transaction) {
+			// 				const count = await getConnection().getRepository(Transaction).count(
+			// 					{ admission: item.admission, bill_source: 'nicu-accommodation' },
+			// 				);
 
-							const service = await getConnection().getRepository(ServiceCost).findOne(transaction.service_cost_id);
-							const hmo = await getConnection().getRepository(HmoScheme).findOne(transaction.hmo_scheme_id);
+			// 				const service = await getConnection().getRepository(ServiceCost).findOne(transaction.service_cost_id);
+			// 				const hmo = await getConnection().getRepository(HmoScheme).findOne(transaction.hmo_scheme_id);
 
-							const data: TransactionCreditDto = {
-								patient_id: transaction.patient_id,
-								username: transaction.createdBy,
-								sub_total: 0,
-								vat: 0,
-								amount: transaction.amount * -1,
-								voucher_amount: 0,
-								amount_paid: 0,
-								change: 0,
-								description: `${transaction.description.split(' - ')[0]} - Day ${count + 1}`,
-								payment_method: null,
-								part_payment_expiry_date: null,
-								bill_source: 'nicu-accommodation',
-								next_location: null,
-								status: -1,
-								hmo_approval_code: null,
-								transaction_details: null,
-								admission_id: item.id,
-								staff_id: null,
-								lastChangedBy: null,
-							};
+			// 				const data: TransactionCreditDto = {
+			// 					patient_id: transaction.patient_id,
+			// 					username: transaction.createdBy,
+			// 					sub_total: 0,
+			// 					vat: 0,
+			// 					amount: transaction.amount * -1,
+			// 					voucher_amount: 0,
+			// 					amount_paid: 0,
+			// 					change: 0,
+			// 					description: `${transaction.description.split(' - ')[0]} - Day ${count + 1}`,
+			// 					payment_method: null,
+			// 					part_payment_expiry_date: null,
+			// 					bill_source: 'nicu-accommodation',
+			// 					next_location: null,
+			// 					status: -1,
+			// 					hmo_approval_code: null,
+			// 					transaction_details: null,
+			// 					admission_id: item.id,
+			// 					nicu_id: item.id,
+			// 					staff_id: null,
+			// 					lastChangedBy: null,
+			// 				};
 
-							await postDebit(data, service, null, null, null, hmo);
-						}
-					}
-				}
-			}
+			// 				await postDebit(data, service, null, null, null, hmo);
+			// 			}
+			// 		}
+			// 	}
+			// }
 		} catch (e) {
 			this.logger.error(e);
 		}

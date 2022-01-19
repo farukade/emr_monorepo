@@ -1,7 +1,6 @@
 import { Column, Entity, ManyToOne, JoinColumn } from 'typeorm';
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 import { RoomCategory } from './room_category.entity';
-import { Admission } from '../../patient/admissions/entities/admission.entity';
 
 @Entity({ name: 'rooms' })
 export class Room extends CustomBaseEntity {

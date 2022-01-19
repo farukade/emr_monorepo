@@ -29,6 +29,8 @@ import { PatientRequest } from '../entities/patient_requests.entity';
 import { AntenatalEnrollment } from '../antenatal/entities/antenatal-enrollment.entity';
 import { IvfEnrollment } from '../ivf/entities/ivf_enrollment.entity';
 import { Encounter } from '../consultation/encouter.entity';
+import { Nicu } from '../nicu/entities/nicu.entity';
+import { NicuRepository } from '../nicu/nicu.repository';
 
 @Injectable()
 export class PatientRequestService {
@@ -48,23 +50,22 @@ export class PatientRequestService {
 		private admissionRepository: AdmissionsRepository,
 		@InjectRepository(DrugRepository)
 		private drugRepository: DrugRepository,
+		@InjectRepository(NicuRepository)
+		private nicuRepository: NicuRepository,
 	) {
 
 	}
 
-	async listRequests(requestType, urlParams): Promise<any> {
+	async listRequests(requestType: string, urlParams: any): Promise<any> {
 		const { startDate, endDate, status, page, limit, today, item_id, type, patient_id } = urlParams;
 
 		const queryLimit = limit ? parseInt(limit, 10) : 30;
 		const offset = (page ? parseInt(page, 10) : 1) - 1;
 
 		const query = this.patientRequestRepository.createQueryBuilder('q')
-			.leftJoin('q.patient', 'patient')
-			.leftJoin(User, 'creator', 'q.createdBy = creator.username')
-			.innerJoin(StaffDetails, 'staff1', 'staff1.user_id = creator.id')
-			.select('q.id, q.requestType, q.code, q.createdAt, q.status, q.urgent, q.requestNote')
-			.addSelect('CONCAT(staff1.first_name || \' \' || staff1.last_name) as created_by, staff1.id as created_by_id')
-			.addSelect('CONCAT(patient.other_names || \' \' || patient.surname) as patient_name, patient.id as patient_id')
+			.innerJoin(PatientRequestItem, 'i', 'i.request_id = q.id')
+			.select('q.*')
+			.addSelect('i.scheduled_start_date as scheduled_start_date, i.scheduled_date as scheduled_date')
 			.where('q.requestType = :requestType', { requestType });
 
 		if (startDate && startDate !== '') {
@@ -89,6 +90,10 @@ export class PatientRequestService {
 			query.andWhere('q.admission_id = :item_id', { item_id });
 		}
 
+		if (type && type === 'nicu') {
+			query.andWhere('q.nicu_id = :item_id', { item_id });
+		}
+
 		if (type && type === 'procedure') {
 			query.andWhere('q.procedure_id = :item_id', { item_id });
 		}
@@ -107,11 +112,14 @@ export class PatientRequestService {
 
 		const count = await query.getCount();
 
-		if (type && type === 'procedure') {
-			query.orderBy({ 'q.scheduled_start_date': 'DESC' });
+		if (requestType && requestType === 'procedure') {
+			query.orderBy({ scheduled_date: 'ASC', scheduled_start_date: 'ASC' });
 		} else {
 			query.orderBy({ 'q.urgent': 'DESC', 'q.createdAt': 'DESC' });
 		}
+
+		// const sql = query.limit(queryLimit).offset(offset * queryLimit).getSql();
+		// console.log(sql);
 
 		const items = await query.limit(queryLimit).offset(offset * queryLimit).getRawMany();
 
@@ -187,6 +195,10 @@ export class PatientRequestService {
 
 		if (type && type === 'admission') {
 			query.andWhere('q.admission_id = :item_id', { item_id });
+		}
+
+		if (type && type === 'nicu') {
+			query.andWhere('q.nicu_id = :item_id', { item_id });
 		}
 
 		if (type && type === 'procedure') {
@@ -303,6 +315,10 @@ export class PatientRequestService {
 
 		if (type && type === 'admission') {
 			query.andWhere('q.admission_id = :item_id', { item_id });
+		}
+
+		if (type && type === 'nicu') {
+			query.andWhere('q.nicu_id = :item_id', { item_id });
 		}
 
 		if (type && type === 'procedure') {
@@ -424,7 +440,9 @@ export class PatientRequestService {
 		try {
 			const { dose_quantity, frequency, frequencyType, duration, request_id } = param;
 
-			const request = await getConnection().getRepository(PatientRequest).createQueryBuilder('r').select('r.*')
+			const request = await getConnection().getRepository(PatientRequest)
+				.createQueryBuilder('r')
+				.select('r.*')
 				.where('r.id = :id', { id: request_id })
 				.getRawOne();
 
@@ -568,7 +586,9 @@ export class PatientRequestService {
 
 					const amount = batch.unitPrice * parseInt(reqItem.item.fill_quantity, 10);
 
-					const admission = await getConnection().getRepository(Admission).findOne({ where: { patient } });
+					const admission = await getConnection().getRepository(Admission).findOne({ where: { patient, status: 0 } });
+
+					const nicu = await getConnection().getRepository(Nicu).findOne({ where: { patient, status: 0 } });
 
 					// save transaction
 					const data: TransactionCreditDto = {
@@ -589,6 +609,7 @@ export class PatientRequestService {
 						hmo_approval_code: null,
 						transaction_details: null,
 						admission_id: admission?.id || null,
+						nicu_id: nicu?.id || null,
 						staff_id: null,
 						lastChangedBy: null,
 					};
@@ -706,7 +727,9 @@ export class PatientRequestService {
 					}
 
 					for (const reqItem of requests) {
-						const admission = await this.admissionRepository.findOne({ where: { patient: reqItem.patient } });
+						const admission = await this.admissionRepository.findOne({ where: { patient: reqItem.patient, status: 0 } });
+
+						const nicu = await this.nicuRepository.findOne({ where: { patient: reqItem.patient, status: 0 } });
 
 						// @ts-ignore
 						const { vaccine } = reqItem.item;
@@ -726,6 +749,7 @@ export class PatientRequestService {
 							newTask.nextTime = moment().format('YYYY-MM-DD HH:mm:ss');
 							newTask.patient = reqItem.patient;
 							newTask.admission = admission;
+							newTask.nicu = nicu;
 							newTask.createdBy = username;
 							newTask.request = reqItem;
 

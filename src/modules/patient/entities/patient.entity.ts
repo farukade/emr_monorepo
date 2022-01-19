@@ -67,8 +67,11 @@ export class Patient extends CustomBaseEntity {
     @JoinColumn({ name: 'hmo_scheme_id' })
     hmo: HmoScheme;
 
-    @Column({ default: false })
-    is_admitted: boolean;
+    @Column({ nullable: true })
+    admission_id: number;
+
+    @Column({ nullable: true })
+    nicu_id: number;
 
     @ManyToOne(() => StaffDetails, { nullable: true })
     @JoinColumn({ name: 'staff_id' })
@@ -97,9 +100,6 @@ export class Patient extends CustomBaseEntity {
 
     @OneToMany(type => Immunization, immunization => immunization.patient)
     immunization: Immunization[];
-
-    @OneToMany(type => Nicu, nicu => nicu.patient)
-    nicu: Nicu[];
 
     @Column({ type: 'boolean', default: true })
     is_active: boolean;

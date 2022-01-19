@@ -16,6 +16,7 @@ export class TransactionCreditDto {
     hmo_approval_code: string;
     transaction_details: any;
     admission_id: number;
+    nicu_id: number;
     staff_id: number;
     lastChangedBy: string;
 }
