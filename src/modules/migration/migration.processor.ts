@@ -956,28 +956,28 @@ export class MigrationProcessor {
 		}
 	}
 
-	@Process('transfer-dn')
-	async transferDischargeNote(job: Job<any>): Promise<any> {
-		const admissions = await this.admissionsRepository.find({
-			where: { status: 1 },
-			relations: ['patient', 'dischargedBy', 'dischargedBy.user'],
-		});
+	// @Process('transfer-dn')
+	// async transferDischargeNote(job: Job<any>): Promise<any> {
+	// 	const admissions = await this.admissionsRepository.find({
+	// 		where: { status: 1 },
+	// 		relations: ['patient', 'dischargedBy', 'dischargedBy.user'],
+	// 	});
 
-		for (const admission of admissions) {
-			const patient = await this.patientRepository.findOne(admission.patient.id);
+	// 	for (const admission of admissions) {
+	// 		const patient = await this.patientRepository.findOne(admission.patient.id);
 
-			if (admission.discharge_note) {
-				const note  = new PatientNote();
-				note.description = admission.discharge_note;
-				note.patient = patient;
-				note.admission = admission;
-				note.type = 'discharge';
-				note.createdBy = admission?.dischargedBy?.user?.username || 'it-admin';
+	// 		if (admission.discharge_note) {
+	// 			const note  = new PatientNote();
+	// 			note.description = admission.discharge_note;
+	// 			note.patient = patient;
+	// 			note.admission = admission;
+	// 			note.type = 'discharge';
+	// 			note.createdBy = admission?.dischargedBy?.user?.username || 'it-admin';
 
-				await note.save();
-			}
-		}
-	}
+	// 			await note.save();
+	// 		}
+	// 	}
+	// }
 
 	@Process('fix-procedure')
 	async fixProcedure(job: Job<any>): Promise<any> {

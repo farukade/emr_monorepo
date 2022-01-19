@@ -92,10 +92,10 @@ export class MigrationController {
         return this.migrationService.queueMigration('fix-inpatients');
     }
 
-    @Get('/transfer-discharge-note')
-    transferDischargeNote(): Promise<any> {
-        return this.migrationService.queueMigration('transfer-dn');
-    }
+    // @Get('/transfer-discharge-note')
+    // transferDischargeNote(): Promise<any> {
+    //     return this.migrationService.queueMigration('transfer-dn');
+    // }
 
     @Get('/fix-procedure')
     fixProcedure(): Promise<any> {

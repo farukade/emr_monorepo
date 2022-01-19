@@ -79,7 +79,11 @@ export class PatientRequestService {
 		}
 
 		if (today && today !== '') {
-			query.andWhere(`CAST(q.createdAt as text) LIKE '%${today}%'`);
+			if (requestType && requestType === 'procedure') {
+				query.andWhere(`CAST(q.scheduled_start_date as text) LIKE '%${today}%'`);
+			} else {
+				query.andWhere(`CAST(q.createdAt as text) LIKE '%${today}%'`);
+			}
 		}
 
 		if (status === 'Completed') {

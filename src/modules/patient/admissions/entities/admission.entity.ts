@@ -51,7 +51,4 @@ export class Admission extends CustomBaseEntity {
 	@ManyToOne(() => StaffDetails, { nullable: true })
 	@JoinColumn({ name: 'discharged_by' })
 	dischargedBy: StaffDetails;
-
-	@Column({ type: 'text', nullable: true })
-	discharge_note: string;
 }
