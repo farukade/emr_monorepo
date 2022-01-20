@@ -9,6 +9,8 @@ export class StaffDto {
 
     other_names: string;
 
+    profile_pic: string;
+
     address: string;
 
     phone_number: string;

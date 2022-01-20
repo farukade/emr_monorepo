@@ -4,16 +4,18 @@ import { Department } from '../../settings/entities/department.entity';
 import { User } from '../../auth/entities/user.entity';
 // @ts-ignore
 import * as startCase from 'lodash.startcase';
+import { StaffDto } from './dto/staff.dto';
 
 @EntityRepository(StaffDetails)
 export class StaffRepository extends Repository<StaffDetails> {
 
-    async saveDetails(staffDto: any, department: Department, user: User, specialization, username: string) {
+    async saveDetails(staffDto: StaffDto, department: Department, user: User, specialization, username: string) {
         try {
             const staff = new StaffDetails();
             staff.first_name = startCase(staffDto?.first_name?.toLocaleLowerCase());
             staff.last_name = startCase(staffDto?.last_name?.toLocaleLowerCase());
             staff.other_names = startCase(staffDto?.other_names?.toLocaleLowerCase());
+            staff.profile_pic = staffDto.profile_pic;
             staff.address = staffDto.address;
             staff.phone_number = staffDto.phone_number;
             staff.email = staffDto.email;

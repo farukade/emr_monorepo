@@ -16,6 +16,8 @@ import { AppointmentRepository } from '../../frontdesk/appointment/appointment.r
 import * as moment from 'moment';
 import { SpecializationRepository } from '../../settings/specialization/specialization.repository';
 import { PatientRepository } from '../../patient/repositories/patient.repository';
+// @ts-ignore
+import * as startCase from 'lodash.startcase';
 
 @Injectable()
 export class StaffService {
@@ -163,9 +165,10 @@ export class StaffService {
 			user.role = role;
 			await user.save();
 
-			staff.first_name = staffDto.first_name.toLocaleLowerCase();
-			staff.last_name = staffDto.last_name.toLocaleLowerCase();
-			staff.other_names = staffDto.other_names.toLocaleLowerCase();
+			staff.first_name = startCase(staffDto?.first_name?.toLocaleLowerCase());
+			staff.last_name = startCase(staffDto?.last_name?.toLocaleLowerCase());
+			staff.other_names = startCase(staffDto?.other_names?.toLocaleLowerCase());
+			staff.profile_pic = staffDto.profile_pic;
 			staff.address = staffDto.address;
 			staff.phone_number = staffDto.phone_number;
 			staff.email = staffDto.email;
