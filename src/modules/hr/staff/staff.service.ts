@@ -197,6 +197,7 @@ export class StaffService {
 			staff.department = department;
 			staff.specialization = specialization;
 			staff.profession = staffDto.profession;
+			staff.employee_number = staffDto.employee_number;
 			staff.lastChangedBy = username;
 
 			await staff.save();
