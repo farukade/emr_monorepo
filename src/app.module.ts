@@ -1,4 +1,4 @@
-import { CacheModule, Module } from '@nestjs/common';
+import { CacheModule, MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
@@ -25,6 +25,7 @@ import { AccountingModule } from './modules/accounting/accounting.module';
 import { ReportModule } from './modules/report/report.module';
 import { MigrationModule } from './modules/migration/migration.module';
 import * as redisStore from 'cache-manager-redis-store';
+import { RequestLoggerMiddleware } from './middleware/request-logger.middleware';
 
 fs.writeFileSync(
     './ormconfig.json',
@@ -66,5 +67,8 @@ fs.writeFileSync(
     controllers: [AppController],
     providers: [AppGateway, JwtStrategy],
 })
-export class AppModule {
+export class AppModule implements NestModule {
+    configure(consumer: MiddlewareConsumer): void {
+        consumer.apply(RequestLoggerMiddleware).forRoutes('*');
+    }
 }
