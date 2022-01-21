@@ -517,8 +517,16 @@ export class PatientService {
 			}
 
 			if (patient) {
-				const values = Object.values(reading);
-				const single = values[0];
+				const values: any = Object.values(reading);
+				let single: number;
+
+				try {
+					single = parseFloat(values[0].replace(/[^\d.-]/g, ''));
+				} catch (e) {
+					console.log(`parse float of vital sign: ${values[0]}`);
+					return { success: false, message: 'take reading failed!' };
+				}
+
 				const message = `${readingType} Value ${single} is not within the NORMAL range`;
 
 				let isAbnormal = false;
