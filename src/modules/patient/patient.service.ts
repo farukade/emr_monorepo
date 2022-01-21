@@ -521,7 +521,7 @@ export class PatientService {
 				let single: number;
 
 				try {
-					single = parseFloat(values[0].replace(/[^\d.-]/g, ''));
+					single = parseFloat(values[0]);
 				} catch (e) {
 					console.log(`parse float of vital sign: ${values[0]}`);
 					return { success: false, message: 'take reading failed!' };
