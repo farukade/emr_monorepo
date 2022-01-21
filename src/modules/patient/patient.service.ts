@@ -366,6 +366,7 @@ export class PatientService {
 			patient.profile_pic = patientDto?.avatar || null;
 			patient.lastChangedBy = updatedBy;
 			patient.hmo = hmo;
+			patient.enrollee_id = patientDto.enrollee_id;
 
 			await patient.save();
 

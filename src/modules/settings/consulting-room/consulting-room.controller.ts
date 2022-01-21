@@ -23,7 +23,7 @@ export class ConsultingRoomController {
         return this.consultingRoomService.createConsultingRoom(consultingRoomDto, req.user.username);
     }
 
-    @Patch('/:id/update')
+    @Patch('/:id')
     @UsePipes(ValidationPipe)
     updateConsultingRoom(
         @Param('id') id: string,
@@ -34,7 +34,10 @@ export class ConsultingRoomController {
     }
 
     @Delete('/:id')
-    deleteConsultingRoom(@Param('id') id: string): Promise<any> {
-        return this.consultingRoomService.deleteConsultingRoom(id);
+    deleteConsultingRoom(
+        @Param('id') id: string,
+        @Request() req,
+    ): Promise<any> {
+        return this.consultingRoomService.deleteConsultingRoom(id, req.user.username);
     }
 }

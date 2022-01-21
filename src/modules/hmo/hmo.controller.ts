@@ -47,32 +47,36 @@ export class HmoController {
     @UsePipes(ValidationPipe)
     createHmo(
         @Body() hmoDto: HmoDto,
+        @Request() req,
     ): Promise<Hmo> {
-        return this.hmoService.createHmo(hmoDto);
+        return this.hmoService.createHmo(hmoDto, req.user.username);
     }
 
     @Post('/schemes')
     @UsePipes(ValidationPipe)
     createScheme(
         @Body() hmoSchemeDto: HmoSchemeDto,
+        @Request() req,
     ): Promise<Hmo> {
-        return this.hmoService.createScheme(hmoSchemeDto);
+        return this.hmoService.createScheme(hmoSchemeDto, req.user.username);
     }
 
     @Patch('/owners/:id')
     updateHmo(
         @Param('id') id: string,
         @Body() hmoDto: HmoDto,
+        @Request() req,
     ): Promise<Hmo> {
-        return this.hmoService.updateHmo(id, hmoDto);
+        return this.hmoService.updateHmo(id, hmoDto, req.user.username);
     }
 
     @Patch('/schemes/:id')
     updateScheme(
         @Param('id') id: string,
         @Body() hmoSchemeDto: HmoSchemeDto,
+        @Request() req,
     ): Promise<Hmo> {
-        return this.hmoService.updateScheme(id, hmoSchemeDto);
+        return this.hmoService.updateScheme(id, hmoSchemeDto, req.user.username);
     }
 
     @Delete('/owners/:id')

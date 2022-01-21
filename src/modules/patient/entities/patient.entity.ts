@@ -103,4 +103,7 @@ export class Patient extends CustomBaseEntity {
 
     @Column({ type: 'boolean', default: true })
     is_active: boolean;
+
+    @Column({ nullable: true })
+    enrollee_id: string;
 }

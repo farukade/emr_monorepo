@@ -193,7 +193,7 @@ export class LabService {
         }
     }
 
-    async deleteLabTest(id: number, username): Promise<LabTest> {
+    async deleteLabTest(id: number, username: string): Promise<any> {
         const test = await this.labTestRepository.findOne(id);
 
         if (!test) {
@@ -202,8 +202,25 @@ export class LabService {
 
         test.deletedBy = username;
         await test.save();
+        await test.softRemove();
 
-        return test.softRemove();
+        const service = await this.serviceRepository.findOne({
+            where: { code: test.code },
+        });
+        await service?.softRemove();
+
+        const services = await this.serviceCostRepository.find({
+            where: { code: test.code },
+            relations: ['hmo'],
+        });
+        for (const item of services) {
+            await item?.softRemove();
+        }
+
+        const group = await this.groupTestRepository.findOne({ where: { labTest: test } });
+        await group?.softRemove();
+
+        return { ...test, service: services.find(s => s.hmo.name === 'Private') };
     }
 
     /*

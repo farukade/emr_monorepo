@@ -3,15 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { HmoOwnerRepository } from './repositories/hmo.repository';
 import { Hmo } from './entities/hmo.entity';
 import { HmoDto } from './dto/hmo.dto';
-import { ServiceRepository } from '../settings/services/repositories/service.repository';
 import { TransactionsRepository } from '../finance/transactions/transactions.repository';
 import * as moment from 'moment';
 import { getConnection, Like, Raw } from 'typeorm';
-import { QueueSystemRepository } from '../frontdesk/queue-system/queue-system.repository';
 import { PaginationOptionsInterface } from '../../common/paginate';
 import { Pagination } from '../../common/paginate/paginate.interface';
 import { PatientRepository } from '../patient/repositories/patient.repository';
-import { ServiceCategoryRepository } from '../settings/services/repositories/service_category.repository';
 import { HmoSchemeDto } from './dto/hmo_scheme.dto';
 import { HmoSchemeRepository } from './repositories/hmo_scheme.repository';
 import { HmoTypeRepository } from './repositories/hmo_type.repository';
@@ -20,7 +17,6 @@ import { HmoType } from './entities/hmo_type.entity';
 import { ServiceCostRepository } from '../settings/services/repositories/service_cost.repository';
 import { PatientRequestItemRepository } from '../patient/repositories/patient_request_items.repository';
 import { MigrationService } from '../migration/migration.service';
-import { Transaction } from '../finance/transactions/transaction.entity';
 import { Patient } from '../patient/entities/patient.entity';
 
 @Injectable()
@@ -33,22 +29,14 @@ export class HmoService {
         private hmoSchemeRepository: HmoSchemeRepository,
         @InjectRepository(HmoTypeRepository)
         private hmoTypeRepository: HmoTypeRepository,
-        @InjectRepository(ServiceRepository)
-        private serviceRepository: ServiceRepository,
         @InjectRepository(TransactionsRepository)
         private transactionsRepository: TransactionsRepository,
-        @InjectRepository(QueueSystemRepository)
-        private queueSystemRepository: QueueSystemRepository,
         @InjectRepository(PatientRepository)
         private patientRepository: PatientRepository,
-        @InjectRepository(ServiceCategoryRepository)
-        private serviceCategory: ServiceCategoryRepository,
         @InjectRepository(ServiceCostRepository)
         private serviceCostRepository: ServiceCostRepository,
         @InjectRepository(PatientRequestItemRepository)
         private patientRequestItemRepository: PatientRequestItemRepository,
-        @InjectRepository(ServiceCategoryRepository)
-        private serviceCategoryRepository: ServiceCategoryRepository,
     ) {
     }
 
@@ -120,11 +108,11 @@ export class HmoService {
         return this.hmoSchemeRepository.findOne({ where: { name } });
     }
 
-    async createHmo(hmoDto: HmoDto): Promise<Hmo> {
-        return this.hmoOwnerRepository.saveHmo(hmoDto);
+    async createHmo(hmoDto: HmoDto, username: string): Promise<Hmo> {
+        return this.hmoOwnerRepository.saveHmo(hmoDto, username);
     }
 
-    async updateHmo(id: string, hmoDto: HmoDto): Promise<any> {
+    async updateHmo(id: string, hmoDto: HmoDto, username: string): Promise<any> {
         const { name, address, phoneNumber, email } = hmoDto;
         const hmo = await this.hmoOwnerRepository.findOne(id);
 
@@ -136,6 +124,7 @@ export class HmoService {
         hmo.address = address;
         hmo.phoneNumber = phoneNumber;
         hmo.email = email;
+        hmo.lastChangedBy = username;
         await hmo.save();
 
         return hmo;
@@ -155,7 +144,7 @@ export class HmoService {
         return data.softRemove();
     }
 
-    async createScheme(hmoSchemeDto: HmoSchemeDto): Promise<HmoScheme> {
+    async createScheme(hmoSchemeDto: HmoSchemeDto, username: string): Promise<HmoScheme> {
         try {
             let hmoCompany;
             if (hmoSchemeDto.hmo_id === '') {
@@ -164,6 +153,7 @@ export class HmoService {
                 item.phoneNumber = hmoSchemeDto.phoneNumber;
                 item.address = hmoSchemeDto.address;
                 item.email = hmoSchemeDto.email;
+                item.createdBy = username;
                 hmoCompany = await item.save();
             } else {
                 hmoCompany = await this.hmoOwnerRepository.findOne(hmoSchemeDto.hmo_id);
@@ -171,11 +161,7 @@ export class HmoService {
 
             const type = await this.hmoTypeRepository.findOne(hmoSchemeDto.hmo_type_id);
 
-            const scheme = await this.hmoSchemeRepository.saveScheme(hmoSchemeDto, hmoCompany, type);
-
-            const _coverage = hmoSchemeDto.coverage && hmoSchemeDto.coverage !== '' ? hmoSchemeDto.coverage : 100;
-            const coverage = hmoSchemeDto.coverageType === 'full' ? 100 : _coverage;
-            await this.migrationService.queueJob('tariffs', { scheme, coverage });
+            const scheme = await this.hmoSchemeRepository.saveScheme(hmoSchemeDto, hmoCompany, type, username);
 
             return scheme;
         } catch (error) {
@@ -184,8 +170,9 @@ export class HmoService {
         }
     }
 
-    async updateScheme(id: string, hmoSchemeDto: HmoSchemeDto): Promise<any> {
-        const { name, address, phoneNumber, email, cacNumber, coverageType, logo, hmo_id, hmo_type_id } = hmoSchemeDto;
+    async updateScheme(id: string, hmoSchemeDto: HmoSchemeDto, username: string): Promise<any> {
+        const { name, address, phoneNumber, email, cacNumber, coverageType, logo, hmo_type_id } = hmoSchemeDto;
+
         const scheme = await this.hmoSchemeRepository.findOne(id);
 
         if (!scheme) {
@@ -200,6 +187,7 @@ export class HmoService {
                 item.phoneNumber = hmoSchemeDto.phoneNumber;
                 item.address = hmoSchemeDto.address;
                 item.email = hmoSchemeDto.email;
+                item.createdBy = username;
                 hmoCompany = await item.save();
             } else {
                 hmoCompany = await this.hmoOwnerRepository.findOne(hmoSchemeDto.hmo_id);
@@ -207,22 +195,17 @@ export class HmoService {
 
             const type = await this.hmoTypeRepository.findOne(hmo_type_id);
 
-            const _coverage = hmoSchemeDto.coverage && hmoSchemeDto.coverage !== '' ? hmoSchemeDto.coverage : 100;
-            const coverage = hmoSchemeDto.coverageType === 'full' ? 100 : _coverage;
-
             scheme.name = name;
             scheme.logo = logo;
             scheme.address = address;
             scheme.phoneNumber = phoneNumber;
             scheme.email = email;
             scheme.cacNumber = cacNumber;
-            scheme.coverage = coverageType === 'full' ? 100 : coverage;
             scheme.coverageType = coverageType;
             scheme.owner = hmoCompany;
             scheme.hmoType = type;
+            scheme.lastChangedBy = username;
             const rs = await scheme.save();
-
-            await this.migrationService.queueJob('tariffs', { scheme, coverage });
 
             return { success: true, scheme: rs };
         } catch (e) {
@@ -232,7 +215,6 @@ export class HmoService {
     }
 
     async deleteScheme(id: number, username): Promise<Hmo> {
-        // delete hmo
         const data = await this.hmoSchemeRepository.findOne(id);
 
         if (!data) {

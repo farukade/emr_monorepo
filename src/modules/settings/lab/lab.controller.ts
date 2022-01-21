@@ -66,7 +66,7 @@ export class LabController {
     deleteLabTest(
         @Param('id') id: number,
         @Request() req,
-    ): Promise<LabTest> {
+    ): Promise<any> {
         return this.labService.deleteLabTest(id, req.user.username);
     }
 

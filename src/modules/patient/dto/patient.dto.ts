@@ -53,4 +53,6 @@ export class PatientDto {
     phone_number: string;
 
     referredBy: string;
+
+    enrollee_id: string;
 }

@@ -5,11 +5,12 @@ import { PatientNOK } from '../entities/patient-next-of-kin.entity';
 import { HmoScheme } from '../../hmo/entities/hmo_scheme.entity';
 // @ts-ignore
 import * as startCase from 'lodash.startcase';
+import { StaffDetails } from 'src/modules/hr/staff/entities/staff_details.entity';
 
 @EntityRepository(Patient)
 export class PatientRepository extends Repository<Patient> {
 
-    async savePatient(patientDto: PatientDto, nextOfkin: PatientNOK, hmo: HmoScheme, createdBy, staff) {
+    async savePatient(patientDto: PatientDto, nextOfkin: PatientNOK, hmo: HmoScheme, createdBy: string, staff: StaffDetails) {
         const patient = new Patient();
         patient.surname = startCase(patientDto.surname.toLocaleLowerCase());
         patient.other_names = startCase(patientDto.other_names.toLocaleLowerCase());
@@ -26,6 +27,7 @@ export class PatientRepository extends Repository<Patient> {
         patient.nextOfKin = nextOfkin;
         patient.profile_pic = patientDto.avatar || '';
         patient.hmo = hmo;
+        patient.enrollee_id = patientDto.enrollee_id;
 
         if (staff) {
             patient.staff = staff;

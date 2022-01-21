@@ -6,7 +6,6 @@ import { PatientRepository } from '../patient/repositories/patient.repository';
 import { DiagnosisRepository } from '../settings/diagnosis/diagnosis.repository';
 import { BullModule } from '@nestjs/bull';
 import { MigrationProcessor } from './migration.processor';
-import { LoggerRepository } from '../logger/logger.repository';
 import { HmoOwnerRepository } from '../hmo/repositories/hmo.repository';
 import { HmoTypeRepository } from '../hmo/repositories/hmo_type.repository';
 import { HmoSchemeRepository } from '../hmo/repositories/hmo_scheme.repository';
@@ -59,7 +58,6 @@ import { PatientRequestItemRepository } from '../patient/repositories/patient_re
         TypeOrmModule.forFeature([
             PatientRepository,
             DiagnosisRepository,
-            LoggerRepository,
             HmoOwnerRepository,
             HmoTypeRepository,
             HmoSchemeRepository,

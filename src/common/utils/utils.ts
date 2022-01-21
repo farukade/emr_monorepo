@@ -19,6 +19,8 @@ import { PatientRequest } from '../../modules/patient/entities/patient_requests.
 import { ServiceCost } from '../../modules/settings/entities/service_cost.entity';
 import { Service } from '../../modules/settings/entities/service.entity';
 import { Nicu } from '../../modules/patient/nicu/entities/nicu.entity';
+import { Voucher } from '../../modules/finance/vouchers/voucher.entity';
+import { PatientRequestItem } from '../../modules/patient/entities/patient_request_items.entity';
 
 // tslint:disable-next-line:no-var-requires
 const mysql = require('mysql2/promise');
@@ -306,7 +308,7 @@ export const hasNumber = (myString) => {
 	return /\d/.test(myString);
 };
 
-export const postDebit = async (data: TransactionCreditDto, service, voucher, requestItem, appointment, hmo) => {
+export const postDebit = async (data: TransactionCreditDto, service: ServiceCost, voucher: Voucher, requestItem: PatientRequestItem, appointment: Appointment, hmo: HmoScheme) => {
 	// tslint:disable-next-line:max-line-length
 	const {
 		patient_id,
@@ -341,6 +343,50 @@ export const postDebit = async (data: TransactionCreditDto, service, voucher, re
 	const staffHmo = await connection.getRepository(HmoScheme).findOne(5);
 	const isStaffHmo = staffHmo && hmo && staffHmo.id === hmo.id;
 
+	let difference = 0;
+	let paypoint: Transaction;
+	if (hmo.coverageType !== 'full') {
+		const privateHmo = await connection.getRepository(HmoScheme).findOne({ where: { name: 'Private' } });
+		const privateCost = await connection.getRepository(ServiceCost).findOne({
+			where: { code: service.code, hmo: privateHmo },
+		});
+		difference = (privateCost.tariff - Math.abs(amount)) * -1;
+
+		if (difference > 0) {
+			const _transaction = new Transaction();
+			_transaction.patient = patient;
+			_transaction.staff = staff;
+			_transaction.service = service;
+			_transaction.voucher = voucher;
+			_transaction.sub_total = sub_total;
+			_transaction.vat = vat;
+			_transaction.amount = difference;
+			_transaction.voucher_amount = voucher_amount;
+			_transaction.amount_paid = amount_paid;
+			_transaction.change = change;
+			_transaction.description = description;
+			_transaction.payment_type = 'self';
+			_transaction.payment_method = payment_method;
+			_transaction.transaction_type = 'debit';
+			_transaction.part_payment_expiry_date = part_payment_expiry_date;
+			_transaction.is_admitted = (admission !== null);
+			_transaction.bill_source = bill_source;
+			_transaction.next_location = next_location;
+			_transaction.status = isStaffHmo ? -1 : (admission ? -1 : status);
+			_transaction.hmo_approval_code = hmo_approval_code;
+			_transaction.transaction_details = transaction_details;
+			_transaction.patientRequestItem = requestItem;
+			_transaction.appointment = appointment;
+			_transaction.admission = admission;
+			_transaction.nicu = nicu;
+			_transaction.hmo = hmo;
+			_transaction.createdBy = username;
+			_transaction.lastChangedBy = lastChangedBy;
+
+			paypoint = await _transaction.save();
+		}
+	}
+
 	const transaction = new Transaction();
 	transaction.patient = patient;
 	transaction.staff = staff;
@@ -371,7 +417,13 @@ export const postDebit = async (data: TransactionCreditDto, service, voucher, re
 	transaction.createdBy = username;
 	transaction.lastChangedBy = lastChangedBy;
 
-	return await transaction.save();
+	const rs = await transaction.save();
+
+	if (!paypoint) {
+		paypoint = rs;
+	}
+
+	return paypoint;
 };
 
 export const postCredit = async (data: TransactionCreditDto, service, voucher, requestItem, appointment, hmo) => {

@@ -102,6 +102,11 @@ export class MigrationController {
         return this.migrationService.queueMigration('fix-procedure');
     }
 
+    @Get('/del-lab')
+    fixDelLabs(): Promise<any> {
+        return this.migrationService.queueMigration('fix-deleted-labs');
+    }
+
     @Get('/socket')
     emitSocket(): Promise<any> {
         return this.migrationService.queueMigration('emit-socket');

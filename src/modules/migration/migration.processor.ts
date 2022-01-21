@@ -45,16 +45,16 @@ import { Department } from '../settings/entities/department.entity';
 import { Service } from '../settings/entities/service.entity';
 import { AppGateway } from '../../app.gateway';
 import { NicuRepository } from '../patient/nicu/nicu.repository';
-import { PatientNote } from '../patient/entities/patient_note.entity';
 import { PatientRequestItemRepository } from '../patient/repositories/patient_request_items.repository';
+import { GroupTestRepository } from '../settings/lab/repositories/group_tests.repository';
 
 @Processor(process.env.MIGRATION_QUEUE_NAME)
 export class MigrationProcessor {
 	private readonly logger = new Logger(this.constructor.name);
 
 	constructor(
-		@InjectRepository(LoggerRepository)
-		private loggerRepository: LoggerRepository,
+		@InjectRepository(GroupTestRepository)
+		private groupTestRepository: GroupTestRepository,
 		@InjectRepository(DiagnosisRepository)
 		private diagnosisRepository: DiagnosisRepository,
 		@InjectRepository(HmoOwnerRepository)
@@ -995,6 +995,37 @@ export class MigrationProcessor {
 					request.scheduledStartDate = startDate.format('YYYY-MM-DD HH:mm:ss');
 					request.scheduledEndDate = endDate.format('YYYY-MM-DD HH:mm:ss');
 					await request.save();
+				}
+			} catch (e) {
+				console.log(e);
+			}
+		}
+	}
+
+	@Process('fix-deleted-labs')
+	async fixDelLabs(job: Job<any>): Promise<any> {
+		const labTests = await this.labTestRepository.find({
+			withDeleted: true,
+		});
+
+		for (const test of labTests) {
+			try {
+				if (test.deleted_at) {
+					const service = await this.serviceRepository.findOne({
+						where: { code: test.code },
+					});
+					await service?.softRemove();
+
+					const services = await this.serviceCostRepository.find({
+						where: { code: test.code },
+						relations: ['hmo'],
+					});
+					for (const item of services) {
+						await item?.softRemove();
+					}
+
+					const group = await this.groupTestRepository.findOne({ where: { labTest: test } });
+					await group?.softRemove();
 				}
 			} catch (e) {
 				console.log(e);
