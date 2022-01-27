@@ -1,6 +1,6 @@
 import { OnQueueActive, OnQueueCompleted, OnQueueFailed, Process, Processor } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
-import { callPatient1, formatPID, hasNumber, mysqlConnect, slugify } from '../../common/utils/utils';
+import { callPatient1, formatPID, getStaff, hasNumber, mysqlConnect, slugify } from '../../common/utils/utils';
 import { Job } from 'bull';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LoggerRepository } from '../logger/logger.repository';
@@ -34,7 +34,7 @@ import { StaffRepository } from '../hr/staff/staff.repository';
 import { AuthRepository } from '../auth/auth.repository';
 import * as bcrypt from 'bcrypt';
 import { RoleRepository } from '../settings/roles-permissions/role.repository';
-import { getConnection, Raw } from 'typeorm';
+import { getConnection, LessThan, Raw } from 'typeorm';
 import { PatientAlertRepository } from '../patient/repositories/patient_alert.repository';
 import { AdmissionsRepository } from '../patient/admissions/repositories/admissions.repository';
 import { PatientNoteRepository } from '../patient/repositories/patient_note.repository';
@@ -692,7 +692,6 @@ export class MigrationProcessor {
 				await this.admissionsRepository.save({
 					patient,
 					health_state: item.health_state,
-					risk_to_fall: item.risk_to_fall === 1,
 					room_assigned_at: item.bed_assign_date ? moment(item.bed_assign_date).format('YYYY-MM-DD HH:mm:ss') : null,
 					reason: item.reason,
 					status: item.status === 'Discharged' ? 1 : 0,
@@ -927,33 +926,49 @@ export class MigrationProcessor {
 
 	@Process('fix-inpatients')
 	async fixInPatients(job: Job<any>): Promise<any> {
+		const date_discharged = moment('2019-12-12 23:00:00').format('YYYY-MM-DD HH:mm:ss');
+
 		const admissions = await this.admissionsRepository.find({
-			where: { status: 0 },
+			where: { status: 0, start_discharge: true, start_discharge_date: LessThan(date_discharged) },
 			relations: ['patient'],
 		});
 
-		for (const admission of admissions) {
-			const patient = await this.patientRepository.findOne(admission.patient.id);
+		const staff = await getStaff('admin');
 
-			if (patient) {
-				patient.admission_id = admission.id;
-				await patient.save();
+		for (const item of admissions) {
+			const admission = await this.admissionsRepository.findOne(item.id);
+			if (admission) {
+				console.log(admission.start_discharge_date);
+				admission.date_discharged = moment().format('YYYY-MM-DD HH:mm:ss');
+				admission.dischargedBy = staff;
+				admission.status = 1;
+				admission.lastChangedBy = 'admin';
+				await admission.save();
 			}
 		}
 
-		const nicus = await this.nicuRepository.find({
-			where: { status: 0 },
-			relations: ['patient'],
-		});
+		// for (const admission of admissions) {
+		// 	const patient = await this.patientRepository.findOne(admission.patient.id);
 
-		for (const nicu of nicus) {
-			const patient = await this.patientRepository.findOne(nicu.patient.id);
+		// 	if (patient) {
+		// 		patient.admission_id = admission.id;
+		// 		await patient.save();
+		// 	}
+		// }
 
-			if (patient) {
-				patient.nicu_id = nicu.id;
-				await patient.save();
-			}
-		}
+		// const nicus = await this.nicuRepository.find({
+		// 	where: { status: 0 },
+		// 	relations: ['patient'],
+		// });
+
+		// for (const nicu of nicus) {
+		// 	const patient = await this.patientRepository.findOne(nicu.patient.id);
+
+		// 	if (patient) {
+		// 		patient.nicu_id = nicu.id;
+		// 		await patient.save();
+		// 	}
+		// }
 	}
 
 	// @Process('transfer-dn')

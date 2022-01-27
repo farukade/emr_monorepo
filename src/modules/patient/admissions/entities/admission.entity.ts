@@ -14,9 +14,6 @@ export class Admission extends CustomBaseEntity {
 	@Column({ nullable: true })
 	health_state: string;
 
-	@Column({ default: false })
-	risk_to_fall: boolean;
-
 	@ManyToOne(() => Room, { nullable: true })
 	@JoinColumn({ name: 'room_id' })
 	room: Room;
