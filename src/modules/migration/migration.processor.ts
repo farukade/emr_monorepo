@@ -34,7 +34,7 @@ import { StaffRepository } from '../hr/staff/staff.repository';
 import { AuthRepository } from '../auth/auth.repository';
 import * as bcrypt from 'bcrypt';
 import { RoleRepository } from '../settings/roles-permissions/role.repository';
-import { getConnection, LessThan, Raw } from 'typeorm';
+import { getConnection, Raw } from 'typeorm';
 import { PatientAlertRepository } from '../patient/repositories/patient_alert.repository';
 import { AdmissionsRepository } from '../patient/admissions/repositories/admissions.repository';
 import { PatientNoteRepository } from '../patient/repositories/patient_note.repository';
@@ -926,73 +926,57 @@ export class MigrationProcessor {
 
 	@Process('fix-inpatients')
 	async fixInPatients(job: Job<any>): Promise<any> {
-		const date_discharged = moment('2019-12-12 23:00:00').format('YYYY-MM-DD HH:mm:ss');
+		const admissions = await this.admissionsRepository.createQueryBuilder('q').select('q.*')
+			.where('q.status = :status', { status: 0 })
+			.getRawMany();
 
-		const admissions = await this.admissionsRepository.find({
-			where: { status: 0, start_discharge: true, start_discharge_date: LessThan(date_discharged) },
-			relations: ['patient'],
-		});
-
-		const staff = await getStaff('admin');
+		// const staff = await getStaff('admin');
 
 		for (const item of admissions) {
-			const admission = await this.admissionsRepository.findOne(item.id);
-			if (admission) {
-				console.log(admission.start_discharge_date);
-				admission.date_discharged = moment().format('YYYY-MM-DD HH:mm:ss');
-				admission.dischargedBy = staff;
-				admission.status = 1;
-				admission.lastChangedBy = 'admin';
-				await admission.save();
-			}
+			// console.log(item);
+			const patient = await this.patientRepository.findOne(item.patient_id);
+			console.log(`${item.id} --- patient: ${patient?.admission_id}[${patient?.id}]`);
+			patient.admission_id = item.id;
+			await patient.save();
 		}
 
-		// for (const admission of admissions) {
-		// 	const patient = await this.patientRepository.findOne(admission.patient.id);
+		const patients = await this.patientRepository.createQueryBuilder('q').select('q.*')
+			.where('q.admission_id is not null')
+			.getRawMany();
 
-		// 	if (patient) {
-		// 		patient.admission_id = admission.id;
-		// 		await patient.save();
-		// 	}
-		// }
-
-		// const nicus = await this.nicuRepository.find({
-		// 	where: { status: 0 },
-		// 	relations: ['patient'],
-		// });
-
-		// for (const nicu of nicus) {
-		// 	const patient = await this.patientRepository.findOne(nicu.patient.id);
-
-		// 	if (patient) {
-		// 		patient.nicu_id = nicu.id;
-		// 		await patient.save();
-		// 	}
-		// }
+		for (const item of patients) {
+			// console.log(item);
+			const admission = await this.admissionsRepository.findOne(item.admission_id, { relations: ['patient'] });
+			console.log(`${item.id} --- admission: ${admission?.status} - ${admission?.id}[${admission?.patient?.id}]`);
+		}
 	}
 
-	// @Process('transfer-dn')
-	// async transferDischargeNote(job: Job<any>): Promise<any> {
-	// 	const admissions = await this.admissionsRepository.find({
-	// 		where: { status: 1 },
-	// 		relations: ['patient', 'dischargedBy', 'dischargedBy.user'],
-	// 	});
+	@Process('fix-nicu')
+	async fixNicu(job: Job<any>): Promise<any> {
+		const nicus = await this.nicuRepository.createQueryBuilder('q').select('q.*')
+			.where('q.status = :status', { status: 0 })
+			.getRawMany();
 
-	// 	for (const admission of admissions) {
-	// 		const patient = await this.patientRepository.findOne(admission.patient.id);
+		// const staff = await getStaff('admin');
 
-	// 		if (admission.discharge_note) {
-	// 			const note  = new PatientNote();
-	// 			note.description = admission.discharge_note;
-	// 			note.patient = patient;
-	// 			note.admission = admission;
-	// 			note.type = 'discharge';
-	// 			note.createdBy = admission?.dischargedBy?.user?.username || 'it-admin';
+		for (const item of nicus) {
+			// console.log(item);
+			const patient = await this.patientRepository.findOne(item.patient_id);
+			console.log(`${item.id} --- patient: ${patient?.nicu_id}[${patient?.id}]`);
+			patient.nicu_id = item.id;
+			// await patient.save();
+		}
 
-	// 			await note.save();
-	// 		}
-	// 	}
-	// }
+		const patients = await this.patientRepository.createQueryBuilder('q').select('q.*')
+			.where('q.nicu_id is not null')
+			.getRawMany();
+
+		for (const item of patients) {
+			// console.log(item);
+			const nicu = await this.nicuRepository.findOne(item.nicu_id, { relations: ['patient'] });
+			console.log(`${item.id} --- nicu: ${nicu?.id}[${nicu?.patient?.id}]`);
+		}
+	}
 
 	@Process('fix-procedure')
 	async fixProcedure(job: Job<any>): Promise<any> {

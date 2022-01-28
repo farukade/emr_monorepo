@@ -118,7 +118,7 @@ export class AdmissionsService {
         };
     }
 
-    async saveAdmission(id: string, createDto: CreateAdmissionDto, username): Promise<any> {
+    async saveAdmission(id: string, createDto: CreateAdmissionDto, username: string): Promise<any> {
         try {
             const { health_state, reason, nicu } = createDto;
 
