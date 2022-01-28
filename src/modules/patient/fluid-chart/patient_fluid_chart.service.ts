@@ -33,7 +33,7 @@ export class PatientFluidChartService {
     }
 
     async getCharts(options: PaginationOptionsInterface, params: any): Promise<any> {
-        const { patient_id, admission_id, nicu_id, labour_id } = params;
+        const { patient_id, type, item_id } = params;
 
         const query = this.patientFluidChartRepository.createQueryBuilder('q').select('q.*');
 
@@ -41,16 +41,16 @@ export class PatientFluidChartService {
             query.andWhere('q.patient_id = :patient_id', { patient_id });
         }
 
-        if (admission_id && admission_id !== '') {
-            query.andWhere('q.admission_id = :admission_id', { admission_id });
+        if (type && type === 'admission') {
+            query.andWhere('q.admission_id = :id', { id: item_id });
         }
 
-        if (labour_id && labour_id !== '') {
-            query.andWhere('q.labour_id = :labour_id', { labour_id });
+        if (type && type === 'nicu') {
+            query.andWhere('q.nicu_id = :id', { id: item_id });
         }
 
-        if (nicu_id && nicu_id !== '') {
-            query.andWhere('q.nicu_id = :nicu_id', { nicu_id });
+        if (type && type === 'labour') {
+            query.andWhere('q.labour_id = :id', { id: item_id });
         }
 
         const page = options.page - 1;
