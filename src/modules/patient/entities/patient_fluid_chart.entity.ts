@@ -18,4 +18,13 @@ export class PatientFluidChart extends CustomBaseEntity {
     @JoinColumn({ name: 'patient_id' })
     patient: Patient;
 
+    @Column({ nullable: true })
+    admission_id: number;
+
+    @Column({ nullable: true })
+    nicu_id: number;
+
+    @Column({ nullable: true })
+    labour_id: number;
+
 }

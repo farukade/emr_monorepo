@@ -32,23 +32,45 @@ export class PatientFluidChartService {
     ) {
     }
 
-    async getCharts(options: PaginationOptionsInterface, params): Promise<any> {
-        const { patient_id } = params;
+    async getCharts(options: PaginationOptionsInterface, params: any): Promise<any> {
+        const { patient_id, admission_id, nicu_id, labour_id } = params;
 
-        const patient = await this.patientRepository.findOne(patient_id);
+        const query = this.patientFluidChartRepository.createQueryBuilder('q').select('q.*');
+
+        if (patient_id && patient_id !== '') {
+            query.andWhere('q.patient_id = :patient_id', { patient_id });
+        }
+
+        if (admission_id && admission_id !== '') {
+            query.andWhere('q.admission_id = :admission_id', { admission_id });
+        }
+
+        if (labour_id && labour_id !== '') {
+            query.andWhere('q.labour_id = :labour_id', { labour_id });
+        }
+
+        if (nicu_id && nicu_id !== '') {
+            query.andWhere('q.nicu_id = :nicu_id', { nicu_id });
+        }
 
         const page = options.page - 1;
 
-        const [result, total] = await this.patientFluidChartRepository.findAndCount({
-            where: { patient },
-            relations: ['patient'],
-            order: { createdAt: 'ASC' },
-            take: options.limit,
-            skip: (page * options.limit),
-        });
+        const items = await query.offset(page * options.limit)
+            .limit(options.limit)
+            .orderBy('q.createdAt', 'DESC')
+            .getRawMany();
+
+        const total = await query.getCount();
+
+        let charts = [];
+        for (const item of items) {
+            const patient = await this.patientRepository.findOne(patient_id);
+
+            charts = [...charts, { ...item, patient }];
+        }
 
         return {
-            result,
+            result: charts,
             lastPage: Math.ceil(total / options.limit),
             itemsPerPage: options.limit,
             totalPages: total,
@@ -56,10 +78,16 @@ export class PatientFluidChartService {
         };
     }
 
-    async saveChart(param, createdBy) {
+    async saveChart(param: any, createdBy: string) {
         const { patient_id, type, fluidRoute, volume, task_id } = param;
 
         const patient = await this.patientRepository.findOne(patient_id);
+
+        const admission = await this.admissionRepository.findOne({ where: { patient, status: 0 } });
+
+        const nicu = await this.nicuRepository.findOne({ where: { patient, status: 0 } });
+
+        const labour = await this.labourEnrollmentRepository.findOne({ where: { patient, status: 0 } });
 
         const chart = new PatientFluidChart();
         chart.type = type;
@@ -67,8 +95,11 @@ export class PatientFluidChartService {
         chart.patient = patient;
         chart.volume = volume;
         chart.createdBy = createdBy;
+        chart.admission_id = admission?.id || null;
+        chart.nicu_id = nicu?.id || null;
+        chart.labour_id = labour?.id || null;
 
-        await chart.save();
+        const fluidChart = await chart.save();
 
         let task: AdmissionClinicalTask;
         if (task_id !== '') {
@@ -106,12 +137,6 @@ export class PatientFluidChartService {
             }
         }
 
-        const admission = await this.admissionRepository.findOne({ where: { patient, status: 0 } });
-
-        const nicu = await this.nicuRepository.findOne({ where: { patient, status: 0 } });
-
-        const labour = await this.labourEnrollmentRepository.findOne({ where: { patient, status: 0 } });
-
         const data = {
             readingType: 'Fluid Chart',
             reading: {type, fluid_route: fluidRoute, volume},
@@ -121,6 +146,7 @@ export class PatientFluidChartService {
             admission_id: admission?.id || null,
             nicu_id: nicu?.id || null,
             labour_id: labour?.id || null,
+            fluidChart,
         };
 
         // @ts-ignore

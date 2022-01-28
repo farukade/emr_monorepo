@@ -1,4 +1,4 @@
-import { Controller, Get, Request, UseGuards, Query, Patch, Body, Param } from '@nestjs/common';
+import { Controller, Get, Request, UseGuards, Query, Patch, Body, Param, Put, ValidationPipe, UsePipes } from '@nestjs/common';
 import { NicuService } from './nicu.service';
 import { AuthGuard } from '@nestjs/passport';
 import { Pagination } from '../../../common/paginate/paginate.interface';
@@ -26,5 +26,25 @@ export class NicuController {
         @Request() req,
     ) {
         return this.nicuService.saveAccommodation(id, params, req.user.username);
+    }
+
+    @Put(':id/start-discharge')
+    @UsePipes(ValidationPipe)
+    startDischarge(
+        @Param('id') id: number,
+        @Body() params,
+        @Request() req,
+    ): Promise<any> {
+        return this.nicuService.startDischarge(id, params, req.user.username);
+    }
+
+    @Put(':id/complete-discharge')
+    @UsePipes(ValidationPipe)
+    completeDischarge(
+        @Param('id') id: number,
+        @Body() params,
+        @Request() req,
+    ): Promise<any> {
+        return this.nicuService.completeDischarge(id, params, req.user.username);
     }
 }

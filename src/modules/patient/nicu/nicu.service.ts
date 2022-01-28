@@ -92,60 +92,60 @@ export class NicuService {
 
     async saveAccommodation(id, params, username: string) {
         try {
-            // const { accommodation_id, patient_id } = params;
+            const { accommodation_id, patient_id } = params;
 
-            // // find admission
-            // const nicu = await this.nicuRepository.findOne(id, { relations: ['patient'] });
+            // find admission
+            const nicu = await this.nicuRepository.findOne(id, { relations: ['patient'] });
 
-            // // find patient
-            // const patient = await this.patientRepository.findOne(patient_id, { relations: ['hmo'] });
+            // find patient
+            const patient = await this.patientRepository.findOne(patient_id, { relations: ['hmo'] });
 
-            // // find accommodation
-            // const accommodation = await this.nicuAccommodationRepository.findOne(accommodation_id);
-            // if (accommodation.quantity_unused <= 0) {
-            //     return { success: false, message: `all ${accommodation.name}s are occupied` };
-            // }
+            // find accommodation
+            const accommodation = await this.nicuAccommodationRepository.findOne(accommodation_id);
+            if (accommodation.quantity_unused <= 0) {
+                return { success: false, message: `all ${accommodation.name}s are occupied` };
+            }
 
-            // // save room
-            // accommodation.quantity_unused = accommodation.quantity_unused - 1;
-            // await accommodation.save();
+            // save room
+            accommodation.quantity_unused = accommodation.quantity_unused - 1;
+            await accommodation.save();
 
-            // // update admission with room
-            // nicu.accommodation = accommodation;
-            // nicu.accommodation_assigned_at = moment().format('YYYY-MM-DD HH:mm:ss');
-            // nicu.accommodation_assigned_by = username;
-            // const rs = await nicu.save();
+            // update admission with room
+            nicu.accommodation = accommodation;
+            nicu.accommodation_assigned_at = moment().format('YYYY-MM-DD HH:mm:ss');
+            nicu.accommodation_assigned_by = username;
+            const rs = await nicu.save();
 
-            // // find service cost
-            // const amount = accommodation.amount;
+            // find service cost
+            const amount = accommodation.amount;
 
-            // // save transaction
-            // const data: TransactionCreditDto = {
-            //     patient_id: patient.id,
-            //     username,
-            //     sub_total: 0,
-            //     vat: 0,
-            //     amount: amount * -1,
-            //     voucher_amount: 0,
-            //     amount_paid: 0,
-            //     change: 0,
-            //     description: `Nicu Accommodation: ${accommodation.name} - Day 1`,
-            //     payment_method: null,
-            //     part_payment_expiry_date: null,
-            //     bill_source: 'nicu-accommodation',
-            //     next_location: null,
-            //     status: -1,
-            //     hmo_approval_code: null,
-            //     transaction_details: null,
-            //     admission_id: null,
-            //     nicu_id: nicu.id,
-            //     staff_id: null,
-            //     lastChangedBy: null,
-            // };
+            // save transaction
+            const data: TransactionCreditDto = {
+                patient_id: patient.id,
+                username,
+                sub_total: 0,
+                vat: 0,
+                amount: amount * -1,
+                voucher_amount: 0,
+                amount_paid: 0,
+                change: 0,
+                description: `Nicu Accommodation: ${accommodation.name} - Day 1`,
+                payment_method: null,
+                part_payment_expiry_date: null,
+                bill_source: 'nicu-accommodation',
+                next_location: null,
+                status: -1,
+                hmo_approval_code: null,
+                transaction_details: null,
+                admission_id: null,
+                nicu_id: nicu.id,
+                staff_id: null,
+                lastChangedBy: null,
+            };
 
-            // await postDebit(data, null, null, null, null, patient.hmo);
+            await postDebit(data, null, null, null, null, patient.hmo);
 
-            // return { success: true, nicu: rs };
+            return { success: true, nicu: rs };
         } catch (e) {
             return { success: false, message: e.message };
         }
