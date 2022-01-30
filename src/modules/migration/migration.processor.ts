@@ -50,6 +50,7 @@ import { GroupTestRepository } from '../settings/lab/repositories/group_tests.re
 import { PatientVitalRepository } from '../patient/repositories/patient_vitals.repository';
 import { PatientFluidChart } from '../patient/entities/patient_fluid_chart.entity';
 import { AdmissionClinicalTaskRepository } from '../patient/admissions/repositories/admission-clinical-tasks.repository';
+import { PatientFluidChartRepository } from '../patient/repositories/patient_fluid_chart.repository';
 
 @Processor(process.env.MIGRATION_QUEUE_NAME)
 export class MigrationProcessor {
@@ -1047,7 +1048,7 @@ export class MigrationProcessor {
 	@Process('fix-fluid')
 	async fixFluid(job: Job<any>): Promise<any> {
 		const { data } = job;
-
+		console.log(data);
 		const vital = await this.patientVitalRepository.createQueryBuilder('q')
 			.select('q.*')
 			.where('q.patientId = :id', { id: data })
@@ -1055,15 +1056,21 @@ export class MigrationProcessor {
 			.getRawOne();
 
 		if (vital) {
-			await getConnection()
-				.createQueryBuilder()
-				.update(PatientFluidChart)
-				.set({
-					admission_id: vital.admission_id,
-					nicu_id: vital.nicu_id,
-				})
-				.where('patient_id = :id', { id: vital.patient_id })
-				.execute();
+			console.log(vital);
+			const patient = await this.patientRepository.findOne(vital.patient_id);
+
+			const fluids = await getConnection()
+				.getRepository(PatientFluidChart)
+				.find({where: { patient }});
+
+			for (const item of fluids) {
+				const fluid = await getConnection().getRepository(PatientFluidChart).findOne(item.id);
+				if (fluid) {
+					fluid.nicu_id = vital.nicu_id;
+					fluid.admission_id = vital.admission_id;
+					await fluid.save();
+				}
+			}
 		}
 	}
 
