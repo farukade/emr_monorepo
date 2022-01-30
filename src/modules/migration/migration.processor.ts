@@ -47,6 +47,9 @@ import { AppGateway } from '../../app.gateway';
 import { NicuRepository } from '../patient/nicu/nicu.repository';
 import { PatientRequestItemRepository } from '../patient/repositories/patient_request_items.repository';
 import { GroupTestRepository } from '../settings/lab/repositories/group_tests.repository';
+import { PatientVitalRepository } from '../patient/repositories/patient_vitals.repository';
+import { PatientFluidChart } from '../patient/entities/patient_fluid_chart.entity';
+import { AdmissionClinicalTaskRepository } from '../patient/admissions/repositories/admission-clinical-tasks.repository';
 
 @Processor(process.env.MIGRATION_QUEUE_NAME)
 export class MigrationProcessor {
@@ -119,6 +122,10 @@ export class MigrationProcessor {
 		private nicuRepository: NicuRepository,
 		@InjectRepository(PatientRequestItemRepository)
 		private patientRequestItemRepository: PatientRequestItemRepository,
+		@InjectRepository(PatientVitalRepository)
+		private patientVitalRepository: PatientVitalRepository,
+		@InjectRepository(AdmissionClinicalTaskRepository)
+		private admissionClinicalTask: AdmissionClinicalTaskRepository,
 		private readonly appGateway: AppGateway,
 	) {
 	}
@@ -1035,5 +1042,54 @@ export class MigrationProcessor {
 	@Process('emit-socket')
 	async emitSocket(job: Job<any>): Promise<any> {
 		this.appGateway.server.emit('new-appointment', { appointment: 1 });
+	}
+
+	@Process('fix-fluid')
+	async fixFluid(job: Job<any>): Promise<any> {
+		const { data } = job;
+
+		const vitals = await this.patientVitalRepository.createQueryBuilder('q').select('q.*')
+			.where('q.patientId = :id', { id: data })
+			.andWhere('q.readingType = :type', { type: 'Fluid Chart' })
+			.getRawOne();
+
+		if (vitals) {
+			await getConnection()
+				.createQueryBuilder()
+				.update(PatientFluidChart)
+				.set({
+					admission_id: vitals.admission_id,
+					nicu_id: vitals.nicu_id,
+				})
+				.where('id = :id', { id: 1 })
+				.execute();
+		}
+	}
+
+	@Process('fix-tasks')
+	async fixTasks(job: Job<any>): Promise<any> {
+		const tasks = await this.admissionClinicalTask.createQueryBuilder('q').select('q.*')
+			.withDeleted()
+			.getRawMany();
+
+		for (const task of tasks) {
+			if (task.deleted_at) {
+				const vitals = await this.patientVitalRepository.find({ where: { task } });
+				for (const item of vitals) {
+					const vital = await this.patientVitalRepository.findOne(item.id, { relations: ['fluidChart'] });
+					vital.deletedBy = 'admin';
+					await vital.save();
+
+					const fluid = await getConnection().getRepository(PatientFluidChart).findOne(item.id);
+					if (fluid) {
+						fluid.deletedBy = 'admin';
+						await fluid.save();
+						await fluid.softRemove();
+					}
+
+					await vital.softRemove();
+				}
+			}
+		}
 	}
 }

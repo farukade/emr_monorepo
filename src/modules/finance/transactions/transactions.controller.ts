@@ -26,7 +26,7 @@ export class TransactionsController {
     getPendingTransactions(
         @Query() urlParams,
         @Request() request,
-    ): Promise<Pagination> {
+    ): Promise<any> {
         const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
         const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
         return this.transactionsService.fetchPending({ page, limit }, urlParams);

@@ -27,6 +27,7 @@ import { getConnection } from 'typeorm';
 import { Nicu } from '../nicu/entities/nicu.entity';
 import { Admission } from './entities/admission.entity';
 import { LabourEnrollmentRepository } from '../labour-management/repositories/labour-enrollment.repository';
+import { PatientFluidChart } from '../entities/patient_fluid_chart.entity';
 
 @Injectable()
 export class AdmissionsService {
@@ -94,9 +95,13 @@ export class AdmissionsService {
         let result = [];
         for (const item of admissions) {
             if (item.patient_id) {
-                item.patient = await this.patientRepository.findOne(item.patient_id, {
+                const patient = await this.patientRepository.findOne(item.patient_id, {
                     relations: ['nextOfKin', 'immunization', 'hmo'],
                 });
+
+                const admission = patient.admission_id ? await this.admissionRepository.findOne(patient.admission_id) : null;
+
+                item.patient = { ...patient, admission };
             }
 
             if (item.room_id) {
@@ -171,13 +176,15 @@ export class AdmissionsService {
 
             const admission = await this.admissionRepository.findOne(id, { relations: ['patient'] });
 
-            const dischargeNote  = new PatientNote();
-            dischargeNote.description = note;
-            dischargeNote.patient = admission.patient;
-            dischargeNote.admission = admission;
-            dischargeNote.type = 'discharge';
-            dischargeNote.createdBy = username;
-            await dischargeNote.save();
+            if (note && note !== '') {
+                const dischargeNote  = new PatientNote();
+                dischargeNote.description = note;
+                dischargeNote.patient = admission.patient;
+                dischargeNote.admission = admission;
+                dischargeNote.type = 'discharge';
+                dischargeNote.createdBy = username;
+                await dischargeNote.save();
+            }
 
             admission.start_discharge = true;
             admission.start_discharge_date = moment().format('YYYY-MM-DD HH:mm:ss');
@@ -202,15 +209,17 @@ export class AdmissionsService {
             admission.dischargedBy = staff;
             admission.status = 1;
             admission.lastChangedBy = username;
-            await admission.save();
+            const rs = await admission.save();
 
-            const dischargeNote  = new PatientNote();
-            dischargeNote.description = note;
-            dischargeNote.patient = admission.patient;
-            dischargeNote.admission = admission;
-            dischargeNote.type = 'discharge';
-            dischargeNote.createdBy = username;
-            await dischargeNote.save();
+            if (note && note !== '') {
+                const dischargeNote  = new PatientNote();
+                dischargeNote.description = note;
+                dischargeNote.patient = admission.patient;
+                dischargeNote.admission = admission;
+                dischargeNote.type = 'discharge';
+                dischargeNote.createdBy = username;
+                await dischargeNote.save();
+            }
 
             const room = await this.roomRepository.findOne(admission.room?.id);
             if (room) {
@@ -223,9 +232,7 @@ export class AdmissionsService {
             patient.admission_id = null;
             await patient.save();
 
-            const discharged = await this.admissionRepository.findOne(id, { relations: ['room', 'patient'] });
-
-            return { success: true, admission: discharged };
+            return { success: true, admission: rs };
         } catch (err) {
             return { success: false, message: err.message };
         }
@@ -275,7 +282,7 @@ export class AdmissionsService {
                 voucher_amount: 0,
                 amount_paid: 0,
                 change: 0,
-                description: `${room.category.name}, ${room.name} - Day 1`,
+                description: `${room.category.name}, Room ${room.name} - Day 1`,
                 payment_method: null,
                 part_payment_expiry_date: null,
                 bill_source: 'ward',
@@ -376,7 +383,7 @@ export class AdmissionsService {
     }
 
     async deleteTask(id: number, username): Promise<any> {
-        const result = await this.clinicalTaskRepository.findOne(id);
+        const result = await this.clinicalTaskRepository.findOne(id, { relations: ['admission', 'nicu'] });
 
         if (!result) {
             throw new NotFoundException(`Clinical Task with ID '${id}' not found`);
@@ -384,6 +391,23 @@ export class AdmissionsService {
 
         result.deletedBy = username;
         await result.save();
+
+        const vitals = await this.patientVitalRepository.find({ where: { task: result } });
+        for (const item of vitals) {
+            const vital = await this.patientVitalRepository.findOne(item.id, { relations: ['fluidChart'] });
+            vital.deletedBy = username;
+            await vital.save();
+
+            const fluid = await getConnection().getRepository(PatientFluidChart).findOne(item.id);
+            if (fluid) {
+                fluid.deletedBy = username;
+                await fluid.save();
+                await fluid.softRemove();
+            }
+
+            await vital.softRemove();
+        }
+
         return result.softRemove();
     }
 

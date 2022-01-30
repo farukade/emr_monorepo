@@ -12,9 +12,9 @@ export class MigrationService {
     ) {
     }
 
-    async queueMigration(category: string): Promise<boolean> {
+    async queueMigration(category: string, param: any = ''): Promise<boolean> {
         try {
-            await this.migrationQueue.add(category);
+            await this.migrationQueue.add(category, param);
             return true;
         } catch (error) {
             console.log(error);

@@ -145,9 +145,8 @@ export class PatientService {
 				patient.nextOfKin = await this.nextOfKinRepository.findOne(patient.next_of_kin_id);
 			}
 
-			patient.admission = await this.admissionRepository.findOne({
-				where: { status: 0, patient },
-			});
+			patient.admission = patient.admission_id ? await this.admissionRepository.findOne(patient.admission_id) : null;
+			patient.nicu = patient.nicu_id ? await this.admissionRepository.findOne(patient.nicu_id) : null;
 
 			patient.balance = await getBalance(patient.id);
 			patient.outstanding = await getOutstanding(patient.id);
@@ -213,9 +212,8 @@ export class PatientService {
 				patient.staff = await this.staffRepository.findOne(patient.staff_id);
 			}
 
-			patient.admission = await this.admissionRepository.findOne({
-				where: { status: 0, patient },
-			});
+			patient.admission = patient.admission_id ? await this.admissionRepository.findOne(patient.admission_id) : null;
+			patient.nicu = patient.nicu_id ? await this.admissionRepository.findOne(patient.nicu_id) : null;
 		}
 
 		return patients;

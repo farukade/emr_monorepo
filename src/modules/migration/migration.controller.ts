@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Request } from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import { MigrationService } from './migration.service';
 
 @Controller('migrations')
@@ -105,6 +105,18 @@ export class MigrationController {
     @Get('/del-lab')
     fixDelLabs(): Promise<any> {
         return this.migrationService.queueMigration('fix-deleted-labs');
+    }
+
+    @Get('fix-fluid/:id')
+    fixFluid(
+        @Param('id') id: number,
+    ): Promise<any> {
+        return this.migrationService.queueMigration('fix-fluid', id);
+    }
+
+    @Get('/fix-tasks')
+    fixTasks(): Promise<any> {
+        return this.migrationService.queueMigration('fix-tasks');
     }
 
     @Get('/socket')

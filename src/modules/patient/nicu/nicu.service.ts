@@ -66,9 +66,13 @@ export class NicuService {
         let result = [];
         for (const item of admissions) {
             if (item.patient_id) {
-                item.patient = await this.patientRepository.findOne(item.patient_id, {
+                const patient = await this.patientRepository.findOne(item.patient_id, {
                     relations: ['nextOfKin', 'immunization', 'hmo'],
                 });
+
+                const nicu = patient.nicu_id ? await this.nicuRepository.findOne(patient.nicu_id) : null;
+
+                item.patient = { ...patient, nicu };
             }
 
             if (item.accommodation_id) {
@@ -157,20 +161,22 @@ export class NicuService {
 
             const nicu = await this.nicuRepository.findOne(id, { relations: ['patient'] });
 
-            const dischargeNote  = new PatientNote();
-            dischargeNote.description = note;
-            dischargeNote.patient = nicu.patient;
-            dischargeNote.nicu = nicu;
-            dischargeNote.type = 'discharge';
-            dischargeNote.createdBy = username;
-            await dischargeNote.save();
+            if (note && note !== '') {
+                const dischargeNote  = new PatientNote();
+                dischargeNote.description = note;
+                dischargeNote.patient = nicu.patient;
+                dischargeNote.nicu = nicu;
+                dischargeNote.type = 'discharge';
+                dischargeNote.createdBy = username;
+                await dischargeNote.save();
+            }
 
             nicu.start_discharge = true;
             nicu.start_discharge_date = moment().format('YYYY-MM-DD HH:mm:ss');
             nicu.start_discharge_by = username;
             const rs = await nicu.save();
 
-            return { success: true, nicu: rs };
+            return { success: true, admission: rs };
         } catch (err) {
             return { success: false, message: err.message };
         }
@@ -188,15 +194,17 @@ export class NicuService {
             nicu.dischargedBy = staff;
             nicu.status = 1;
             nicu.lastChangedBy = username;
-            await nicu.save();
+            const rs  = await nicu.save();
 
-            const dischargeNote  = new PatientNote();
-            dischargeNote.description = note;
-            dischargeNote.patient = nicu.patient;
-            dischargeNote.nicu = nicu;
-            dischargeNote.type = 'discharge';
-            dischargeNote.createdBy = username;
-            await dischargeNote.save();
+            if (note && note !== '') {
+                const dischargeNote  = new PatientNote();
+                dischargeNote.description = note;
+                dischargeNote.patient = nicu.patient;
+                dischargeNote.nicu = nicu;
+                dischargeNote.type = 'discharge';
+                dischargeNote.createdBy = username;
+                await dischargeNote.save();
+            }
 
             const accommodation = await this.nicuAccommodationRepository.findOne({ id: nicu?.accommodation?.id });
             if (accommodation) {
@@ -208,9 +216,7 @@ export class NicuService {
             patient.nicu_id = null;
             await patient.save();
 
-            const discharged = await this.nicuRepository.findOne(id, { relations: ['accommodation', 'patient'] });
-
-            return { success: true, nicu: discharged };
+            return { success: true, admission: rs };
         } catch (err) {
             return { success: false, message: err.message };
         }

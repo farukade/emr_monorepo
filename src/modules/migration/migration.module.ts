@@ -38,6 +38,8 @@ import { AppointmentRepository } from '../frontdesk/appointment/appointment.repo
 import { AppGateway } from '../../app.gateway';
 import { NicuRepository } from '../patient/nicu/nicu.repository';
 import { PatientRequestItemRepository } from '../patient/repositories/patient_request_items.repository';
+import { PatientVitalRepository } from '../patient/repositories/patient_vitals.repository';
+import { AdmissionClinicalTaskRepository } from '../patient/admissions/repositories/admission-clinical-tasks.repository';
 
 @Module({
     imports: [
@@ -89,6 +91,8 @@ import { PatientRequestItemRepository } from '../patient/repositories/patient_re
             AppointmentRepository,
             NicuRepository,
             PatientRequestItemRepository,
+            PatientVitalRepository,
+            AdmissionClinicalTaskRepository,
         ]),
     ],
     providers: [MigrationService, MigrationProcessor, AppGateway],

@@ -3,10 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { TransactionsRepository } from './transactions.repository';
 import * as moment from 'moment';
 import { PatientRepository } from '../../patient/repositories/patient.repository';
-import { ServiceRepository } from '../../settings/services/repositories/service.repository';
 import { ProcessTransactionDto } from './dto/process-transaction.dto';
 import { VoucherRepository } from '../vouchers/voucher.repository';
-import { StaffRepository } from '../../hr/staff/staff.repository';
 import { PaginationOptionsInterface } from '../../../common/paginate';
 import { QueueSystemRepository } from '../../frontdesk/queue-system/queue-system.repository';
 import { AppointmentRepository } from '../../frontdesk/appointment/appointment.repository';
@@ -25,6 +23,10 @@ import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repositor
 import { PatientRequestItemRepository } from '../../patient/repositories/patient_request_items.repository';
 import { TransactionCreditDto } from './dto/transaction-credit.dto';
 import { AccountDeposit } from './entities/deposit.entity';
+import { Transaction } from './transaction.entity';
+import { Admission } from '../../patient/admissions/entities/admission.entity';
+import { Nicu } from '../../patient/nicu/entities/nicu.entity';
+import { Queue } from 'src/modules/frontdesk/queue-system/queue.entity';
 
 @Injectable()
 export class TransactionsService {
@@ -36,14 +38,10 @@ export class TransactionsService {
 		private transactionsRepository: TransactionsRepository,
 		@InjectRepository(PatientRepository)
 		private patientRepository: PatientRepository,
-		@InjectRepository(ServiceRepository)
-		private serviceRepository: ServiceRepository,
 		@InjectRepository(ServiceCostRepository)
 		private serviceCostRepository: ServiceCostRepository,
 		@InjectRepository(VoucherRepository)
 		private voucherRepository: VoucherRepository,
-		@InjectRepository(StaffRepository)
-		private staffRepository: StaffRepository,
 		@InjectRepository(HmoSchemeRepository)
 		private hmoSchemeRepository: HmoSchemeRepository,
 		@InjectRepository(QueueSystemRepository)
@@ -88,7 +86,13 @@ export class TransactionsService {
 		}
 
 		if (status && status !== '') {
-			query.andWhere('q.status = :status', { status });
+			if (status === 1) {
+				query.andWhere('q.status = :status', { status: 1 });
+			} else {
+				query.andWhere(new Brackets(qb => {
+					qb.where('q.status = :status', { status: 0 }).orWhere('q.status = :status', { status: -1 });
+				}));
+			}
 		}
 
 		const transactions = await query.offset(page * options.limit)
@@ -129,8 +133,8 @@ export class TransactionsService {
 		};
 	}
 
-	async fetchPending(options: PaginationOptionsInterface, params): Promise<Pagination> {
-		const { startDate, endDate, patient_id, bill_source } = params;
+	async fetchPending(options: PaginationOptionsInterface, params): Promise<any> {
+		const { startDate, endDate, patient_id, bill_source, fetch } = params;
 
 		const query = this.transactionsRepository.createQueryBuilder('q').select('q.*')
 			.where('q.payment_type = :type', { type: 'self' });
@@ -155,6 +159,8 @@ export class TransactionsService {
 		if (bill_source && bill_source !== '') {
 			query.where('q.bill_source = :type', { type: bill_source });
 		}
+
+		const allTransactions = fetch && fetch === '1' ? await query.getRawMany() : [];
 
 		const page = options.page - 1;
 
@@ -188,6 +194,7 @@ export class TransactionsService {
 			itemsPerPage: options.limit,
 			totalPages: total,
 			currentPage: options.page,
+			all: allTransactions.map(t => ({ id: t.id, amount: t.amount })),
 		};
 	}
 
@@ -241,7 +248,7 @@ export class TransactionsService {
 				await voucher.save();
 			}
 
-			let queue;
+			let queue: Queue;
 			let appointment = null;
 			if (transaction.next_location && transaction.next_location === 'vitals') {
 				// find appointment
@@ -275,6 +282,7 @@ export class TransactionsService {
 
 			const credit = await postCredit(data, transaction.service, voucher, transaction.patientRequestItem, appointment, transaction.hmo);
 
+			let balancePayment: Transaction;
 			if (is_part_payment && is_part_payment === 1) {
 				const duration = await getConnection().getRepository(Settings).findOne({ where: { slug: 'part-payment-duration' } });
 				const date = moment().add(duration.value, 'd').format('YYYY-MM-DD');
@@ -302,7 +310,7 @@ export class TransactionsService {
 					lastChangedBy: updatedBy,
 				};
 
-				await postDebit(value, transaction.service, null, transaction.patientRequestItem, transaction.appointment, transaction.hmo);
+				balancePayment = await postDebit(value, transaction.service, null, transaction.patientRequestItem, transaction.appointment, transaction.hmo);
 			}
 
 			await queryRunner.commitTransaction();
@@ -318,7 +326,7 @@ export class TransactionsService {
 
 			rs.staff = await getStaff(transaction.lastChangedBy);
 
-			return { success: true, transaction: rs, credit: { ...creditTransaction, cashier }, queue };
+			return { success: true, transaction: rs, credit: { ...creditTransaction, cashier }, queue, balancePayment };
 		} catch (error) {
 			await queryRunner.rollbackTransaction();
 			await queryRunner.release();
@@ -327,8 +335,8 @@ export class TransactionsService {
 		}
 	}
 
-	async processBulkTransaction(transactionDto: ProcessTransactionDto, updatedBy): Promise<any> {
-		const { payment_method, items } = transactionDto;
+	async processBulkTransaction(transactionDto: ProcessTransactionDto, username: string): Promise<any> {
+		const { payment_method, items, patient_id, amount_paid, is_part_payment, partAmount } = transactionDto;
 		try {
 			let transactions = [];
 			for (const item of items) {
@@ -336,7 +344,7 @@ export class TransactionsService {
 
 				const data: TransactionCreditDto = {
 					patient_id: transaction.patient.id,
-					username: updatedBy,
+					username,
 					sub_total: 0,
 					vat: 0,
 					amount: Math.abs(item.amount),
@@ -354,10 +362,10 @@ export class TransactionsService {
 					admission_id: transaction.admission?.id || null,
 					nicu_id: transaction.nicu?.id || null,
 					staff_id: transaction.staff?.id || null,
-					lastChangedBy: updatedBy,
+					lastChangedBy: username,
 				};
 
-				let queue;
+				let queue: Queue;
 				let appointment = null;
 				if (transaction.next_location && transaction.next_location === 'vitals') {
 					// find appointment
@@ -380,7 +388,7 @@ export class TransactionsService {
 
 				transaction.next_location = null;
 				transaction.status = 1;
-				transaction.lastChangedBy = updatedBy;
+				transaction.lastChangedBy = username;
 				const rs = await transaction.save();
 
 				rs.staff = await getStaff(transaction.lastChangedBy);
@@ -388,14 +396,55 @@ export class TransactionsService {
 				transactions = [...transactions, rs];
 			}
 
-			return { success: true, transactions };
+			const patient = await this.patientRepository.findOne(patient_id, { relations: ['staff'] });
+
+			const admission = await getConnection().getRepository(Admission).findOne({
+				where: { patient, status: 0 },
+			});
+
+			const nicu = await getConnection().getRepository(Nicu).findOne({
+				where: { patient, status: 0 },
+			});
+
+			let balancePayment: Transaction;
+			if (is_part_payment && is_part_payment === 1) {
+				const duration = await getConnection().getRepository(Settings).findOne({ where: { slug: 'part-payment-duration' } });
+				const date = moment().add(duration.value, 'd').format('YYYY-MM-DD');
+
+				const value: TransactionCreditDto = {
+					patient_id,
+					username,
+					sub_total: 0,
+					vat: 0,
+					amount: (amount_paid - partAmount) * -1,
+					voucher_amount: 0,
+					amount_paid,
+					change: 0,
+					description: null,
+					payment_method,
+					part_payment_expiry_date: date,
+					bill_source: 'debit',
+					next_location: null,
+					status: -1,
+					hmo_approval_code: null,
+					transaction_details: null,
+					admission_id: admission?.id || null,
+					nicu_id: nicu?.id || null,
+					staff_id: patient.staff?.id || null,
+					lastChangedBy: username,
+				};
+
+				balancePayment = await postDebit(value, null, null, null, null, patient.hmo);
+			}
+
+			return { success: true, transactions, balancePayment };
 		} catch (error) {
 			console.log(error);
 			return { success: false, message: error.message };
 		}
 	}
 
-	async creditAccount(params, createdBy): Promise<any> {
+	async creditAccount(params, createdBy: string): Promise<any> {
 		try {
 			const { patient_id, amount, payment_method } = params;
 
