@@ -1060,12 +1060,13 @@ export class MigrationProcessor {
 			const patient = await this.patientRepository.findOne(vital.patient_id);
 
 			const fluids = await getConnection()
-				.getRepository(PatientFluidChart)
-				.find({where: { patient }});
+				.getRepository(PatientFluidChart).find({ where: { patient } });
 
 			for (const item of fluids) {
 				const fluid = await getConnection().getRepository(PatientFluidChart).findOne(item.id);
 				if (fluid) {
+					console.log(fluid.id);
+
 					fluid.nicu_id = vital.nicu_id;
 					fluid.admission_id = vital.admission_id;
 					await fluid.save();
