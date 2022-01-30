@@ -1048,20 +1048,21 @@ export class MigrationProcessor {
 	async fixFluid(job: Job<any>): Promise<any> {
 		const { data } = job;
 
-		const vitals = await this.patientVitalRepository.createQueryBuilder('q').select('q.*')
+		const vital = await this.patientVitalRepository.createQueryBuilder('q')
+			.select('q.*')
 			.where('q.patientId = :id', { id: data })
 			.andWhere('q.readingType = :type', { type: 'Fluid Chart' })
 			.getRawOne();
 
-		if (vitals) {
+		if (vital) {
 			await getConnection()
 				.createQueryBuilder()
 				.update(PatientFluidChart)
 				.set({
-					admission_id: vitals.admission_id,
-					nicu_id: vitals.nicu_id,
+					admission_id: vital.admission_id,
+					nicu_id: vital.nicu_id,
 				})
-				.where('id = :id', { id: 1 })
+				.where('patient_id = :id', { id: vital.patient_id })
 				.execute();
 		}
 	}
