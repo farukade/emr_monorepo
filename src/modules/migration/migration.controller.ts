@@ -119,6 +119,11 @@ export class MigrationController {
         return this.migrationService.queueMigration('fix-tasks');
     }
 
+    @Get('/fix-nicu-transactions')
+    fixNicuTransactions(): Promise<any> {
+        return this.migrationService.queueMigration('fix-nicu-transactions');
+    }
+
     @Get('/socket')
     emitSocket(): Promise<any> {
         return this.migrationService.queueMigration('emit-socket');

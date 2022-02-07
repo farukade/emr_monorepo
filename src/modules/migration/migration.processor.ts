@@ -1,9 +1,8 @@
 import { OnQueueActive, OnQueueCompleted, OnQueueFailed, Process, Processor } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
-import { callPatient1, formatPID, getStaff, hasNumber, mysqlConnect, slugify } from '../../common/utils/utils';
+import { callPatient1, formatPID, hasNumber, mysqlConnect, slugify } from '../../common/utils/utils';
 import { Job } from 'bull';
 import { InjectRepository } from '@nestjs/typeorm';
-import { LoggerRepository } from '../logger/logger.repository';
 import { DiagnosisRepository } from '../settings/diagnosis/diagnosis.repository';
 import { HmoOwnerRepository } from '../hmo/repositories/hmo.repository';
 import { HmoTypeRepository } from '../hmo/repositories/hmo_type.repository';
@@ -50,7 +49,7 @@ import { GroupTestRepository } from '../settings/lab/repositories/group_tests.re
 import { PatientVitalRepository } from '../patient/repositories/patient_vitals.repository';
 import { PatientFluidChart } from '../patient/entities/patient_fluid_chart.entity';
 import { AdmissionClinicalTaskRepository } from '../patient/admissions/repositories/admission-clinical-tasks.repository';
-import { PatientFluidChartRepository } from '../patient/repositories/patient_fluid_chart.repository';
+import { Transaction } from '../finance/transactions/transaction.entity';
 
 @Processor(process.env.MIGRATION_QUEUE_NAME)
 export class MigrationProcessor {
@@ -1100,5 +1099,14 @@ export class MigrationProcessor {
 				}
 			}
 		}
+	}
+
+	@Process('fix-nicu-transactions')
+	async fixNicuTransactions(job: Job<any>): Promise<any> {
+		await getConnection().createQueryBuilder().update(Transaction)
+			.set({ status: -1, is_admitted: true })
+			.where('nicu_id is not null')
+			.andWhere('status = :status', { status: 0 })
+			.execute();
 	}
 }

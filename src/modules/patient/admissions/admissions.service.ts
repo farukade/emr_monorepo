@@ -153,16 +153,16 @@ export class AdmissionsService {
 
                 patient.admission_id = admission.id;
                 await patient.save();
-
-                try {
-                    await getConnection().createQueryBuilder().update(Transaction)
-                        .set({ status: -1, is_admitted: true })
-                        .where('patient_id = :id', { id: patient.id })
-                        .andWhere('status = :status', { status: 0 })
-                        .execute();
-                    // tslint:disable-next-line:no-empty
-                } catch (e) {}
             }
+
+            try {
+                await getConnection().createQueryBuilder().update(Transaction)
+                    .set({ status: -1, is_admitted: true })
+                    .where('patient_id = :id', { id: patient.id })
+                    .andWhere('status = :status', { status: 0 })
+                    .execute();
+                // tslint:disable-next-line:no-empty
+            } catch (e) {}
 
             return { success: true, patient };
         } catch (err) {

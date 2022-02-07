@@ -369,10 +369,10 @@ export const postDebit = async (data: TransactionCreditDto, service: ServiceCost
 			_transaction.payment_method = payment_method;
 			_transaction.transaction_type = 'debit';
 			_transaction.part_payment_expiry_date = part_payment_expiry_date;
-			_transaction.is_admitted = (admission !== null);
+			_transaction.is_admitted = (admission !== null || nicu !== null);
 			_transaction.bill_source = bill_source;
 			_transaction.next_location = next_location;
-			_transaction.status = isStaffHmo ? -1 : (admission ? -1 : status);
+			_transaction.status = isStaffHmo ? -1 : ((admission || nicu) ? -1 : status);
 			_transaction.hmo_approval_code = hmo_approval_code;
 			_transaction.transaction_details = transaction_details;
 			_transaction.patientRequestItem = requestItem;
@@ -403,10 +403,10 @@ export const postDebit = async (data: TransactionCreditDto, service: ServiceCost
 	transaction.payment_method = payment_method;
 	transaction.transaction_type = 'debit';
 	transaction.part_payment_expiry_date = part_payment_expiry_date;
-	transaction.is_admitted = (admission !== null);
+	transaction.is_admitted = (admission !== null || nicu !== null);
 	transaction.bill_source = bill_source;
 	transaction.next_location = next_location;
-	transaction.status = isStaffHmo ? -1 : (admission ? -1 : status);
+	transaction.status = isStaffHmo ? -1 : ((admission || nicu) ? -1 : status);
 	transaction.hmo_approval_code = hmo_approval_code;
 	transaction.transaction_details = transaction_details;
 	transaction.patientRequestItem = requestItem;
@@ -476,7 +476,7 @@ export const postCredit = async (data: TransactionCreditDto, service, voucher, r
 	transaction.payment_method = payment_method;
 	transaction.transaction_type = 'credit';
 	transaction.part_payment_expiry_date = part_payment_expiry_date;
-	transaction.is_admitted = (admission !== null);
+	transaction.is_admitted = (admission !== null || nicu !== null);
 	transaction.bill_source = bill_source;
 	transaction.next_location = next_location;
 	transaction.status = status;
