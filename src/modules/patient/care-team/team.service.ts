@@ -71,7 +71,7 @@ export class CareTeamService {
 
             item.member = staff;
 
-            if (item.isPrimaryCareGiver) {
+            if (item.is_primary_care_giver) {
                 primaryCareGiver = staff;
             }
 
@@ -102,7 +102,7 @@ export class CareTeamService {
 
                 const member = new CareTeam();
                 member.member = staff;
-                member.isPrimaryCareGiver = staff.id === primary_care_id;
+                member.is_primary_care_giver = staff.id === primary_care_id;
                 member.type = type;
                 member.item_id = item_id;
                 member.patient = patient;

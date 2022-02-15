@@ -10,8 +10,8 @@ export class CareTeam extends CustomBaseEntity {
     @JoinColumn({ name: 'care_giver_id' })
     member: StaffDetails;
 
-    @Column({ default: false, name: 'is_primary_care_giver' })
-    isPrimaryCareGiver: boolean;
+    @Column({ default: false })
+    is_primary_care_giver: boolean;
 
     @Column()
     type: string;

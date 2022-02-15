@@ -826,7 +826,7 @@ export class MigrationProcessor {
 
 				await this.careTeamRepository.save({
 					member,
-					isPrimaryCareGiver: member?.id === primaryMember?.id,
+					is_primary_care_giver: member?.id === primaryMember?.id,
 					patient: admission?.patient,
 					type: admission ? 'admission' : null,
 					item_id: admission?.id?.toString(10),
