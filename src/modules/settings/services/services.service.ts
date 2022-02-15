@@ -317,7 +317,13 @@ export class ServicesService {
 	/*
 		Service CATEGORY SERVICES
 	*/
-	async getServicesCategory(): Promise<ServiceCategory[]> {
+	async getServicesCategory(params: any): Promise<ServiceCategory[]> {
+		const { paypoint } = params;
+
+		if (paypoint && paypoint === '1') {
+			return this.serviceCategoryRepository.find({ where: [{ slug: 'labs' }, { slug: 'scans' }] });
+		}
+
 		return this.serviceCategoryRepository.find();
 	}
 

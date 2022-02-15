@@ -11,12 +11,7 @@ import { AppointmentRepository } from '../../frontdesk/appointment/appointment.r
 import { AppGateway } from '../../../app.gateway';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import { Brackets, getConnection } from 'typeorm';
-import {
-	getDepositBalance,
-	getStaff,
-	postCredit,
-	postDebit,
-} from '../../../common/utils/utils';
+import { createServiceCost, getDepositBalance, getSerialCode, getStaff, postCredit, postDebit } from '../../../common/utils/utils';
 import { Settings } from '../../settings/entities/settings.entity';
 import { ServiceCostRepository } from '../../settings/services/repositories/service_cost.repository';
 import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repository';
@@ -27,6 +22,9 @@ import { Transaction } from './transaction.entity';
 import { Admission } from '../../patient/admissions/entities/admission.entity';
 import { Nicu } from '../../patient/nicu/entities/nicu.entity';
 import { Queue } from 'src/modules/frontdesk/queue-system/queue.entity';
+import { PatientRequestRepository } from '../../patient/repositories/patient_request.repository';
+import { ServiceCost } from '../../settings/entities/service_cost.entity';
+import { PatientRequestItem } from '../../patient/entities/patient_request_items.entity';
 
 @Injectable()
 export class TransactionsService {
@@ -48,6 +46,8 @@ export class TransactionsService {
 		private queueSystemRepository: QueueSystemRepository,
 		@InjectRepository(PatientRequestItemRepository)
 		private patientRequestItemRepository: PatientRequestItemRepository,
+		@InjectRepository(PatientRequestRepository)
+		private patientRequestRepository: PatientRequestRepository,
 		private readonly appGateway: AppGateway,
 	) {
 	}
@@ -196,6 +196,87 @@ export class TransactionsService {
 			currentPage: options.page,
 			all: allTransactions.map(t => ({ id: t.id, amount: t.amount })),
 		};
+	}
+
+	async saveRequest(params: any, username: string): Promise<any> {
+		try {
+			const { patient_id, items } = params;
+
+			const patient = await this.patientRepository.findOne(patient_id, { relations: ['hmo'] });
+
+			let transactions = [];
+			for (const item of items) {
+				if (item.code && item.code !== '') {
+					const serialCode = await getSerialCode(item.category);
+					const nextId = `00000${serialCode}`;
+					const code = `${item.category.toUpperCase().substring(0, 1)}R${moment().format('YY')}/${moment().format('MM')}/${nextId.slice(-5)}`;
+
+					const hmo = patient.hmo;
+
+					const data = {
+						code,
+						serial_code: serialCode,
+						patient,
+						requestType: item.category,
+						requestNote: '',
+						urgent: false,
+						createdBy: username,
+					};
+
+					const request = await this.patientRequestRepository.save(data);
+
+					let serviceCost = await getConnection().getRepository(ServiceCost).findOne({
+						where: { code: item.code, hmo },
+					});
+					if (!serviceCost) {
+						serviceCost = await createServiceCost(item.code, hmo);
+					}
+
+					const _requestItem = {
+						request,
+						service: serviceCost.item,
+						createdBy: username,
+					};
+					const requestItem = await this.patientRequestItemRepository.save(_requestItem);
+
+					const transactionCreditDto: TransactionCreditDto = {
+						patient_id: patient.id,
+						username,
+						sub_total: 0,
+						vat: 0,
+						amount: (serviceCost?.tariff || 0) * -1,
+						voucher_amount: 0,
+						amount_paid: 0,
+						change: 0,
+						description: `Payment for ${item.category}`,
+						payment_method: null,
+						part_payment_expiry_date: null,
+						bill_source: item.category,
+						next_location: null,
+						status: 0,
+						hmo_approval_code: null,
+						transaction_details: null,
+						admission_id: null,
+						nicu_id: null,
+						staff_id: null,
+						lastChangedBy: null,
+					};
+
+					const payment = await postDebit(transactionCreditDto, serviceCost, null, requestItem, null, hmo);
+
+					const rqItem = await getConnection().getRepository(PatientRequestItem).findOne(requestItem.id);
+					rqItem.transaction = await getConnection().getRepository(Transaction).findOne(payment.id);
+					await rqItem.save();
+
+					transactions = [...transactions, payment];
+				}
+			}
+
+			return { success: true, transactions };
+		} catch (error) {
+			console.log(error);
+			return { success: false, message: error.message };
+		}
 	}
 
 	async processTransaction(id: number, transactionDto: ProcessTransactionDto, updatedBy): Promise<any> {

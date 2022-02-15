@@ -47,6 +47,7 @@ import * as startCase from 'lodash.startcase';
 import { AdmissionClinicalTask } from './admissions/entities/admission-clinical-task.entity';
 import { NicuRepository } from './nicu/nicu.repository';
 import { LabourEnrollmentRepository } from './labour-management/repositories/labour-enrollment.repository';
+import { HmoScheme } from '../hmo/entities/hmo_scheme.entity';
 
 @Injectable()
 export class PatientService {
@@ -167,7 +168,7 @@ export class PatientService {
 	}
 
 	async findPatient(options, param): Promise<Patient[]> {
-		const { q, gender, isOpd } = param;
+		const { q, gender, is_opd } = param;
 
 		const query = this.patientRepository.createQueryBuilder('p')
 			.select('p.*')
@@ -180,9 +181,8 @@ export class PatientService {
 					.orWhere('CAST(p.id AS text) LIKE :id', { id: `%${q}%` });
 			}));
 
-		if (isOpd && isOpd !== '') {
-			const isOutPatient = (isOpd === 1);
-			query.andWhere('p.is_out_patient Like :isOutPatient', { isOutPatient });
+		if (is_opd && is_opd !== '') {
+			query.andWhere('p.is_out_patient = :is_opd', { is_opd: parseInt(is_opd, 10) === 1 });
 		}
 
 		if (gender && gender !== '') {
@@ -314,29 +314,33 @@ export class PatientService {
 		}
 	}
 
-	async saveNewOpdPatient(patientDto: OpdPatientDto, createdBy: string): Promise<any> {
+	async saveNewOpdPatient(patientDto: OpdPatientDto, username: string): Promise<any> {
 		try {
-			console.log(patientDto);
+			const privateHmo = await this.hmoSchemeRepository.findOne({ where: { name: 'Private' } });
+
+			const opdPatient = await this.patientRepository.findOne({
+				where: [{ phone_number: patientDto.phone_number }, { email: patientDto.email }],
+			});
+
+			if (opdPatient) {
+				return { success: false, message: 'patient record exists' };
+			}
 
 			const patient = new Patient();
 			patient.surname = patientDto.surname.toLocaleLowerCase();
 			patient.other_names = patientDto.other_names.toLocaleLowerCase();
 			patient.address = patientDto.address.toLocaleLowerCase();
-			patient.date_of_birth = moment(patientDto.date_of_birth).format('YYYY-MM-DD');
+			patient.date_of_birth = patientDto.date_of_birth;
 			patient.gender = patientDto.gender;
 			patient.email = patientDto.email;
-			patient.phone_number = patientDto.phoneNumber;
-			patient.createdBy = createdBy;
-			console.log(patient);
+			patient.phone_number = patientDto.phone_number;
+			patient.createdBy = username;
+			patient.hmo = privateHmo;
+			patient.is_out_patient = true;
 
-			return { success: false, message: 'could not save patient' };
+			const rs = await patient.save();
 
-			await patient.save();
-
-			// save appointment
-			const appointment = await this.appointmentRepository.saveOPDAppointment(patient, patientDto.opdType);
-
-			return { success: true, patient };
+			return { success: true, patient: rs };
 		} catch (err) {
 			return { success: false, message: err.message };
 		}

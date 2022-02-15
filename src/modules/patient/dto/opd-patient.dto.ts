@@ -16,9 +16,7 @@ export class OpdPatientDto {
     @IsEmail()
     email: string;
 
-    phoneNumber: string;
+    phone_number: string;
 
     gender: string;
-
-    opdType: string;
 }

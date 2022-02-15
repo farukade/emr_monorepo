@@ -14,6 +14,7 @@ import { AppGateway } from '../../../app.gateway';
 import { ServiceCostRepository } from '../../settings/services/repositories/service_cost.repository';
 import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repository';
 import { PatientRequestItemRepository } from '../../patient/repositories/patient_request_items.repository';
+import { PatientRequestRepository } from '../../patient/repositories/patient_request.repository';
 
 @Module({
     imports: [TypeOrmModule.forFeature([
@@ -28,6 +29,7 @@ import { PatientRequestItemRepository } from '../../patient/repositories/patient
         ServiceCostRepository,
         HmoSchemeRepository,
         PatientRequestItemRepository,
+        PatientRequestRepository,
     ])],
     controllers: [TransactionsController],
     providers: [AppGateway, TransactionsService],

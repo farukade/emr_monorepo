@@ -1,7 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from '../../auth/entities/user.entity';
-import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 import * as moment from 'moment';
 import { PatientRequestHelper } from '../../../common/utils/PatientRequestHelper';
 import { RequestPaymentHelper } from '../../../common/utils/RequestPaymentHelper';
@@ -216,6 +214,8 @@ export class PatientRequestService {
 		if (type && type === 'ivf') {
 			query.andWhere('q.ivf_id = :item_id', { item_id });
 		}
+
+		// console.log(query.getSql());
 
 		return query;
 	}

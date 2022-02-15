@@ -11,8 +11,10 @@ export class ServicesCategoryController {
     }
 
     @Get('')
-    getCategories(): Promise<ServiceCategory[]> {
-        return this.servicesService.getServicesCategory();
+    getCategories(
+      @Query() urlParams,
+    ): Promise<ServiceCategory[]> {
+        return this.servicesService.getServicesCategory(urlParams);
     }
 
     @Get('/:slug')

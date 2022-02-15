@@ -32,6 +32,15 @@ export class TransactionsController {
         return this.transactionsService.fetchPending({ page, limit }, urlParams);
     }
 
+    @Post('')
+    @UsePipes(ValidationPipe)
+    saveTransaction(
+      @Body() transactionDto: any,
+      @Request() req,
+    ): Promise<any> {
+        return this.transactionsService.saveRequest(transactionDto, req.user.username);
+    }
+
     @Post('/:id/process')
     @UsePipes(ValidationPipe)
     processTransaction(
@@ -103,14 +112,5 @@ export class TransactionsController {
         @Request() req,
     ): Promise<any> {
         return this.transactionsService.deleteTransaction(id, req.user.username);
-    }
-
-    @Post('')
-    @UsePipes(ValidationPipe)
-    saveTransaction(
-        @Body() transactionDto: TransactionDto,
-        @Request() req,
-    ): Promise<any> {
-        return; // this.transactionsService.save(transactionDto, req.user.username);
     }
 }
