@@ -862,4 +862,30 @@ export class PatientService {
 			return { success: false, message: error.message };
 		}
 	}
+
+	async enable(id, username: string): Promise<any> {
+		try {
+			const patient = await this.patientRepository.findOne(id);
+			patient.is_active = true;
+			patient.lastChangedBy = username;
+			const rs = await patient.save();
+
+			return { success: true, patient: rs };
+		} catch (error) {
+			return { success: false, message: error.message };
+		}
+	}
+
+	async disable(id, username: string): Promise<any> {
+		try {
+			const patient = await this.patientRepository.findOne(id);
+			patient.is_active = false;
+			patient.lastChangedBy = username;
+			const rs = await patient.save();
+
+			return { success: true, patient: rs };
+		} catch (error) {
+			return { success: false, message: error.message };
+		}
+	}
 }

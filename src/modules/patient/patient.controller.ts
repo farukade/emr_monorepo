@@ -224,4 +224,22 @@ export class PatientController {
     ) {
         return this.patientService.doSaveCreditLimit(id, param, req.user.username);
     }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Post(':id/enable')
+    enablePatient(
+        @Param('id') id: number,
+        @Request() req,
+    ) {
+        return this.patientService.enable(id, req.user.username);
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Post(':id/disable')
+    disablePatient(
+        @Param('id') id: number,
+        @Request() req,
+    ) {
+        return this.patientService.disable(id, req.user.username);
+    }
 }
