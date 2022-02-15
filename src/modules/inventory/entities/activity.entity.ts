@@ -21,6 +21,6 @@ export class InventoryActivity extends CustomBaseEntity {
     @Column({ default: 0 })
     quantity: number;
 
-    @Column({ default: 0, name: 'unit_price' })
+    @Column({ type: 'float4', default: 0.00, name: 'unit_price' })
     unitPrice: number;
 }
