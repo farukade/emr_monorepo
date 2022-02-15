@@ -622,8 +622,7 @@ export class PatientService {
 		const { startDate, endDate, q, status } = params;
 
 		const query = this.transactionsRepository.createQueryBuilder('t').select('t.*')
-			.where('t.patient_id = :id', { id })
-			.andWhere('t.bill_source != :source', { source: 'credit-deposit' });
+			.where('t.patient_id = :id', { id });
 
 		const page = options.page - 1;
 
