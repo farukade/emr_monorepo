@@ -2,6 +2,7 @@ import { CustomBaseEntity } from '../../../../common/entities/custom-base.entity
 import { Entity, ManyToOne, Column, JoinColumn } from 'typeorm';
 import { Patient } from '../../entities/patient.entity';
 import { AntenatalPackage } from '../../../settings/entities/antenatal-package.entity';
+import { StaffDetails } from '../../../hr/staff/entities/staff_details.entity';
 
 @Entity({name: 'antenatal_enrollments'})
 export class AntenatalEnrollment extends CustomBaseEntity {
@@ -40,6 +41,13 @@ export class AntenatalEnrollment extends CustomBaseEntity {
     @ManyToOne(() => AntenatalPackage, item => item.enrolment, { nullable: true })
     @JoinColumn({ name: 'package_id' })
     ancpackage: AntenatalPackage;
+
+    @Column({ nullable: true })
+    date_closed: string;
+
+    @ManyToOne(() => StaffDetails, { nullable: true })
+    @JoinColumn({ name: 'closed_by' })
+    closedBy: StaffDetails;
 
     @Column({ type: 'smallint', default: 0 })
     status: number;

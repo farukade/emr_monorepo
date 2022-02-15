@@ -73,7 +73,7 @@ export class IvfService {
                 ivf.wife = await this.patientRepository.findOne(ivf.wife_id, { relations: ['hmo'] });
             }
 
-            const requests = await this.patientRequestRepository.find({ where: { ivf }, relations: ['items'] });
+            const requests = await this.patientRequestRepository.find({ where: { ivf }, relations: ['item'] });
 
             ivf.staff = await getStaff(ivf.createdBy);
 
@@ -93,15 +93,24 @@ export class IvfService {
         try {
             const { wife, husband } = ivfEnrollmentDto;
 
+            const requestCount = await getConnection()
+              .createQueryBuilder()
+              .select('*')
+              .from(IvfEnrollment, 'q')
+              .withDeleted()
+              .getCount();
+
+            const nextId = `00000${requestCount + 1}`;
+            const code = `IVF${moment().format('YY')}/${moment().format('MM')}/${nextId.slice(-5)}`;
+
             // wife patient details
-            const patient = await this.patientRepository.findOne(wife.id, { relations: ['hmo'] });
-            ivfEnrollmentDto.wife = patient;
+            ivfEnrollmentDto.wife = await this.patientRepository.findOne(wife.id);
 
             // husband patient details
             ivfEnrollmentDto.husband = await this.patientRepository.findOne(husband.id);
 
             // save enrollment details
-            const data = await this.ivfEnrollmentRepo.save({ ...ivfEnrollmentDto, createdBy });
+            const data = await this.ivfEnrollmentRepo.save({ ...ivfEnrollmentDto, serial_code: code, createdBy });
 
             return { success: true, data };
         } catch (err) {
