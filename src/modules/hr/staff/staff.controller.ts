@@ -42,6 +42,14 @@ export class StaffController {
         return this.staffService.enableStaff(id, req.user.username);
     }
 
+    @Post(':id/reset-password')
+    resetPassword(
+        @Param('id') id: number,
+        @Request() req,
+    ) {
+        return this.staffService.resetPassword(id, req.user.username);
+    }
+
     @Post('')
     @UsePipes(ValidationPipe)
     createNewStaff(

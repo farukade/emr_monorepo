@@ -54,7 +54,6 @@ export class AuthService {
 	}
 
 	async loginUser(loginUserDto: LoginUserDto) {
-		console.log(loginUserDto);
 		const user = await this.getUserByUsername(loginUserDto.username);
 
 		if (user) {

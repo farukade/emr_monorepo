@@ -235,6 +235,25 @@ export class StaffService {
 		}
 	}
 
+	async resetPassword(id: number, username: string) {
+		try {
+			const staff = await this.staffRepository.findOne(id, { relations: ['user'] });
+			if (!staff) {
+				throw new NotFoundException(`Staff with ID '${id}' not found`);
+			}
+
+			const user = await this.authRepository.findOne(staff.user.id);
+			user.password = await this.getHash('password');
+			user.passwordChanged = false;
+			user.lastChangedBy = username;
+			await user.save();
+
+			return { success: true, user };
+		} catch (e) {
+			return { success: false, message: e.message };
+		}
+	}
+
 	async setConsultingRoom({ userId, roomId }) {
 		try {
 			// find room
