@@ -78,7 +78,7 @@ export class PatientRequestService {
 
 		if (today && today !== '') {
 			if (requestType && requestType === 'procedure') {
-				query.andWhere(`CAST(q.scheduled_start_date as text) LIKE '%${today}%'`);
+				query.andWhere(`CAST(scheduled_start_date as text) LIKE '%${today}%'`);
 			} else {
 				query.andWhere(`CAST(q.createdAt as text) LIKE '%${today}%'`);
 			}
@@ -148,7 +148,9 @@ export class PatientRequestService {
 					relations: ['nextOfKin', 'immunization', 'hmo'],
 				});
 
-				result = [...result, { ...req, ...theRequest, patient }];
+				const admission = req.admission_id ? await this.admissionRepository.findOne(req.admission_id, { relations: ['room', 'room.category'] }) : null;
+
+				result = [...result, { ...req, ...theRequest, patient, admission }];
 			}
 		}
 
@@ -264,6 +266,8 @@ export class PatientRequestService {
 					relations: ['nextOfKin', 'immunization', 'hmo'],
 				});
 
+				const admission = req.admission_id ? await this.admissionRepository.findOne(req.admission_id, { relations: ['room', 'room.category'] }) : null;
+
 				const patientReq = allRequests.find(r => r.item?.substituted === 0);
 				const hasPaid = allRequests.find(r => r.item?.transaction?.status === 1);
 				result = [...result, {
@@ -276,6 +280,7 @@ export class PatientRequestService {
 					transaction_status: hasPaid ? 1 : 0,
 					patient,
 					requests: allRequests,
+					admission,
 				}];
 			}
 
@@ -366,7 +371,9 @@ export class PatientRequestService {
 					relations: ['nextOfKin', 'immunization', 'hmo'],
 				});
 
-				result = [...result, { ...req, ...theRequest, patient }];
+				const admission = req.admission_id ? await this.admissionRepository.findOne(req.admission_id, { relations: ['room', 'room.category'] }) : null;
+
+				result = [...result, { ...req, ...theRequest, patient, admission }];
 			}
 		}
 
@@ -463,7 +470,7 @@ export class PatientRequestService {
 
 			let admission = null;
 			if (request.admission_id && request.admission_id !== '') {
-				admission = await getConnection().getRepository(Admission).findOne(request.admission_id);
+				admission = await this.admissionRepository.findOne(request.admission_id);
 			}
 
 			let encounter = null;
@@ -548,7 +555,13 @@ export class PatientRequestService {
 
 	async receiveSpecimen(id: number, username: string) {
 		try {
-			const request = await this.patientRequestRepository.findOne(id, { relations: ['item'] });
+			const request = await this.patientRequestRepository.findOne(id, { relations: ['item', 'patient'] });
+
+			const admission = await this.admissionRepository.findOne({
+				where: { patient: request.patient, status: 0 }
+			});
+			request.admission = admission;
+			await request.save();
 
 			const item = await this.patientRequestItemRepository.findOne(request.item.id);
 			item.received = 1;
@@ -590,9 +603,9 @@ export class PatientRequestService {
 
 					const amount = batch.unitPrice * parseInt(reqItem.item.fill_quantity, 10);
 
-					const admission = await getConnection().getRepository(Admission).findOne({ where: { patient, status: 0 } });
+					const admission = await this.admissionRepository.findOne({ where: { patient, status: 0 } });
 
-					const nicu = await getConnection().getRepository(Nicu).findOne({ where: { patient, status: 0 } });
+					const nicu = await this.nicuRepository.findOne({ where: { patient, status: 0 } });
 
 					// save transaction
 					const data: TransactionCreditDto = {
@@ -656,11 +669,17 @@ export class PatientRequestService {
 
 			const requests = await this.patientRequestRepository.find({
 				where: { code },
-				relations: ['item'],
+				relations: ['item', 'patient'],
 			});
 
 			let allRequests = [];
 			for (const single of requests) {
+				const admission = await this.admissionRepository.findOne({
+					where: { patient: single.patient, status: 0 }
+				});
+				single.admission = admission;
+				await single.save();
+
 				let drug: Drug;
 				if (single?.item?.drug) {
 					drug = await this.drugRepository.findOne({
@@ -692,7 +711,13 @@ export class PatientRequestService {
 			case 'labs':
 			case 'scans':
 				try {
-					const request = await this.patientRequestRepository.findOne(id, { relations: ['item'] });
+					const request = await this.patientRequestRepository.findOne(id, { relations: ['item', 'patient'] });
+
+					const admission = await this.admissionRepository.findOne({
+						where: { patient: request.patient, status: 0 }
+					});
+					request.admission = admission;
+					await request.save();
 
 					const item = await this.patientRequestItemRepository.findOne(request.item.id);
 
@@ -732,6 +757,8 @@ export class PatientRequestService {
 
 					for (const reqItem of requests) {
 						const admission = await this.admissionRepository.findOne({ where: { patient: reqItem.patient, status: 0 } });
+						reqItem.admission = admission;
+						await reqItem.save();
 
 						const nicu = await this.nicuRepository.findOne({ where: { patient: reqItem.patient, status: 0 } });
 
@@ -776,7 +803,13 @@ export class PatientRequestService {
 		try {
 			const { parameters, note, result } = param;
 
-			const request = await this.patientRequestRepository.findOne(id, { relations: ['item'] });
+			const request = await this.patientRequestRepository.findOne(id, { relations: ['item', 'patient'] });
+
+			const admission = await this.admissionRepository.findOne({
+				where: { patient: request.patient, status: 0 }
+			});
+			request.admission = admission;
+			await request.save();
 
 			const item = await this.patientRequestItemRepository.findOne(request.item.id);
 			item.filled = 1;
@@ -796,7 +829,13 @@ export class PatientRequestService {
 
 	async rejectResult(id: string, params, username: string) {
 		try {
-			const request = await this.patientRequestRepository.findOne(id, { relations: ['item'] });
+			const request = await this.patientRequestRepository.findOne(id, { relations: ['item', 'patient'] });
+
+			const admission = await this.admissionRepository.findOne({
+				where: { patient: request.patient, status: 0 }
+			});
+			request.admission = admission;
+			await request.save();
 
 			const item = await this.patientRequestItemRepository.findOne(request.item.id);
 			item.filled = 0;

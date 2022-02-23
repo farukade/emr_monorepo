@@ -156,6 +156,8 @@ export class PatientService {
 			if (patient.staff_id) {
 				patient.staff = await this.staffRepository.findOne(patient.staff_id);
 			}
+
+			patient.admission = patient.admission_id ? await this.admissionRepository.findOne(patient.admission_id, { relations: ['room', 'room.category'] }) : null;
 		}
 
 		return {
@@ -685,11 +687,19 @@ export class PatientService {
 		};
 	}
 
-	async getAmounts(id): Promise<any> {
+	async getAmounts(id: number): Promise<any> {
 		const balance = await getBalance(id);
 		const outstanding = await getOutstanding(id);
 
 		return { balance, outstanding };
+	}
+
+	async getAdmission(id: number): Promise<any> {
+		const admission = await this.admissionRepository.findOne(id, {
+			relations: ['room', 'room.category']
+		});
+
+		return admission;
 	}
 
 	async getDeposit(id): Promise<any> {

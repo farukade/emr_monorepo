@@ -25,6 +25,7 @@ import { Queue } from 'src/modules/frontdesk/queue-system/queue.entity';
 import { PatientRequestRepository } from '../../patient/repositories/patient_request.repository';
 import { ServiceCost } from '../../settings/entities/service_cost.entity';
 import { PatientRequestItem } from '../../patient/entities/patient_request_items.entity';
+import { AdmissionsRepository } from '../../patient/admissions/repositories/admissions.repository';
 
 @Injectable()
 export class TransactionsService {
@@ -48,6 +49,8 @@ export class TransactionsService {
 		private patientRequestItemRepository: PatientRequestItemRepository,
 		@InjectRepository(PatientRequestRepository)
 		private patientRequestRepository: PatientRequestRepository,
+		@InjectRepository(AdmissionsRepository)
+		private admissionRepository: AdmissionsRepository,
 		private readonly appGateway: AppGateway,
 	) {
 	}
@@ -121,6 +124,8 @@ export class TransactionsService {
 				transaction.patientRequestItem = await this.patientRequestItemRepository.findOne(transaction.patient_request_item_id, { relations: ['request'] });
 			}
 
+			transaction.admission = transaction.admission_id ? await this.admissionRepository.findOne(transaction.admission_id, { relations: ['room', 'room.category'] }) : null;
+
 			transaction.cashier = await getStaff(transaction.createdBy);
 		}
 
@@ -184,6 +189,8 @@ export class TransactionsService {
 			if (transaction.patient_request_item_id) {
 				transaction.patientRequestItem = await this.patientRequestItemRepository.findOne(transaction.patient_request_item_id, { relations: ['request'] });
 			}
+
+			transaction.admission = transaction.admission_id ? await this.admissionRepository.findOne(transaction.admission_id, { relations: ['room', 'room.category'] }) : null;
 
 			transaction.cashier = await getStaff(transaction.createdBy);
 		}

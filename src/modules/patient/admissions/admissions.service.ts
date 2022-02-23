@@ -8,7 +8,6 @@ import { PatientRepository } from '../repositories/patient.repository';
 import { RoomRepository } from '../../settings/room/room.repository';
 import { AdmissionClinicalTask } from './entities/admission-clinical-task.entity';
 import * as moment from 'moment';
-import { AppGateway } from '../../../app.gateway';
 import { PaginationOptionsInterface } from '../../../common/paginate';
 import { PatientVitalRepository } from '../repositories/patient_vitals.repository';
 import { PatientRequestHelper } from '../../../common/utils/PatientRequestHelper';
@@ -44,7 +43,6 @@ export class AdmissionsService {
         private staffRepository: StaffRepository,
         @InjectRepository(RoomRepository)
         private roomRepository: RoomRepository,
-        private readonly appGateway: AppGateway,
         @InjectRepository(PatientVitalRepository)
         private patientVitalRepository: PatientVitalRepository,
         @InjectRepository(NicuRepository)
@@ -307,12 +305,9 @@ export class AdmissionsService {
     async getTasks(options: PaginationOptionsInterface, params: any) {
         const { patient_id, type, item_id } = params;
 
-        const query = this.clinicalTaskRepository.createQueryBuilder('q')
-            .leftJoinAndSelect('q.patient', 'patient')
-            .leftJoinAndSelect('q.request', 'request')
-            .select('q.*')
-            .addSelect('CONCAT(patient.other_names || \' \' || patient.surname) as patient_name')
-            .addSelect('request.status as request_status');
+		const page = options.page - 1;
+
+        const query = this.clinicalTaskRepository.createQueryBuilder('q').select('q.*');
 
         if (patient_id && patient_id !== '') {
             query.andWhere('q.patient_id = :patient_id', { patient_id });
@@ -330,13 +325,12 @@ export class AdmissionsService {
             query.andWhere('q.labour_id = :id', { id: item_id });
         }
 
-        const count = await query.getCount();
+		const result = await query.offset(page * options.limit)
+			.limit(options.limit)
+			.orderBy({ 'q.completed': 'ASC', 'q.nextTime': 'ASC' })
+			.getRawMany();
 
-        query.orderBy({ 'q.completed': 'ASC', 'q.nextTime': 'ASC' });
-
-        const page = options.page - 1;
-
-        const result = await query.take(options.limit).skip(page * options.limit).getRawMany();
+		const total = await query.getCount();
 
         let results = [];
         for (const request of result) {
@@ -349,7 +343,7 @@ export class AdmissionsService {
             if (request.admission_id) {
                 admission =  await this.admissionRepository.findOne({
                     where: { id: request.admission_id },
-                    relations: ['room'],
+                    relations: ['room', 'room.category'],
                 });
             }
 
@@ -375,9 +369,9 @@ export class AdmissionsService {
 
         return {
             result: results,
-            lastPage: Math.ceil(count / options.limit),
+            lastPage: Math.ceil(total / options.limit),
             itemsPerPage: options.limit,
-            totalPages: count,
+            totalPages: total,
             currentPage: options.page,
         };
     }

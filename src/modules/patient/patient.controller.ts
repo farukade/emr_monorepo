@@ -113,6 +113,14 @@ export class PatientController {
     }
 
     @UseGuards(AuthGuard('jwt'))
+    @Get('/:id/admission')
+    getAdmission(
+        @Param('id') id: number,
+    ): Promise<any> {
+        return this.patientService.getAdmission(id);
+    }
+
+    @UseGuards(AuthGuard('jwt'))
     @Get('/:id/deposit-balance')
     getDepositBalance(
         @Param('id') id: number,
