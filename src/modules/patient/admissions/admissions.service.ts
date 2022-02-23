@@ -27,6 +27,8 @@ import { Nicu } from '../nicu/entities/nicu.entity';
 import { Admission } from './entities/admission.entity';
 import { LabourEnrollmentRepository } from '../labour-management/repositories/labour-enrollment.repository';
 import { PatientFluidChart } from '../entities/patient_fluid_chart.entity';
+import { AdmissionRoom } from './entities/admission-room.entity';
+import { AdmissionRoomRepository } from './repositories/admission-room.repository';
 
 @Injectable()
 export class AdmissionsService {
@@ -55,6 +57,8 @@ export class AdmissionsService {
         private labourEnrollmentRepository: LabourEnrollmentRepository,
         @InjectRepository(NicuAccommodationRepository)
         private nicuAccommodationRepository: NicuAccommodationRepository,
+        @InjectRepository(AdmissionRoomRepository)
+        private admissionRoomRepository: AdmissionRoomRepository,
     ) {
     }
 
@@ -224,6 +228,13 @@ export class AdmissionsService {
                 room.status = 'Not Occupied';
                 room.admission_id = null;
                 await room.save();
+
+                const admissionRoom = await this.admissionRoomRepository.findOne({ where: { room, admission } });
+                if(admissionRoom) {
+                    admissionRoom.checked_out_at = moment().format('YYYY-MM-DD HH:mm:ss');
+                    admissionRoom.checked_out_by = username;
+                    await admissionRoom.save();
+                }
             }
 
             const patient = await this.patientRepository.findOne(admission.patient.id);
@@ -236,10 +247,12 @@ export class AdmissionsService {
         }
     }
 
-    async saveAssignBed({ admission_id, room_id }, username: string) {
+    async saveAssignBed(params: any, username: string) {
         try {
+            const { admission_id, room_id, reassign } = params;
+
             // find admission
-            const admission = await this.admissionRepository.findOne(admission_id, { relations: ['patient'] });
+            const admission = await this.admissionRepository.findOne(admission_id, { relations: ['patient', 'room'] });
 
             // find patient
             const patient_id = admission.patient.id;
@@ -250,6 +263,33 @@ export class AdmissionsService {
             if (room.status === 'Occupied') {
                 return { success: false, message: 'room is already occupied' };
             }
+
+            if(reassign && reassign === 1) {
+                if(admission.room.id === room.id) {
+                    return { success: false, message: 'room is already given to patient' };
+                }
+
+                const previousRoom = await this.roomRepository.findOne(admission.room.id);
+                previousRoom.status = 'Not Occupied';
+                previousRoom.admission_id = null;
+                await previousRoom.save();
+
+                const admissionRoom = await this.admissionRoomRepository.findOne({
+                    where: { room: previousRoom, admission },
+                });
+                if(admissionRoom) {
+                    admissionRoom.checked_out_at = moment().format('YYYY-MM-DD HH:mm:ss');
+                    admissionRoom.checked_out_by = username;
+                    await admissionRoom.save();
+                }
+            }
+
+            const admissionRoom = new AdmissionRoom();
+            admissionRoom.admission = admission;
+            admissionRoom.room = room;
+            admissionRoom.assigned_at = moment().format('YYYY-MM-DD HH:mm:ss');
+            admissionRoom.assigned_by = username;
+            await admissionRoom.save();
 
             // save room
             room.status = 'Occupied';
