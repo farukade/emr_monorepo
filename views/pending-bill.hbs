@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<body style="background-color: #ffffff; padding: 20px; font-size: 14px; line-height: 1.43; font-family: 'Helvetica Neue', 'Segoe UI', Helvetica, Arial, sans-serif;">
+<div style="width: 100%; margin: 0px auto; background-color: #fff;">
+    <div style="text-align: center">
+        <img alt="" src={{ logo }} style="max-width: 230px; height: auto;">
+    </div>
+    <div style="color: #636363; font-size: 14px;text-align: center;margin-top: 10px">
+        Plot 1847 Cadastral Zone B07, Behind ABC Cargo, Katampe, Abuja, Nigeria. ☎ +2348184227707<br/>email: dedahospital@yahoo.com, website: https://www.dedahospital.com
+    </div>
+    <h2 style="text-align: center; margin: 34px 0 0;">Transaction Bill</h2>
+    <div style="color: #636363; font-size: 14px; padding: 0px;">
+        <table style="margin-top: 20px; width: 100%;">
+            <tr>
+                <td style="vertical-align: top">
+                    <div style="display: flex; align-content: space-between; width: 100%;">
+                        <div style="font-size: 14px; font-weight: 500; color: #111111; margin-right: 12px;">NAME:</div>
+                        <div style="font-size: 14px; font-weight: 500; color: #7D7D7D; text-transform: capitalize;">{{ patient.surname }} {{ patient.other_names }}</div>
+                    </div>
+                    <div style="display: flex;">
+                        <div style="font-size: 14px; font-weight: 500; color: #111111; margin-right: 12px;">EMR ID:</div>
+                        <div style="font-size: 14px; font-weight: 500; color: #7D7D7D;">{{ patient_id }}</div>
+                    </div>
+                </td>
+                <td style="vertical-align: top">
+                    <div style="display: flex;">
+                        <div style="font-size: 14px; font-weight: 500; color: #111111; margin-right: 12px;">SCHEME:</div>
+                        <div style="font-size: 14px; font-weight: 500; color: #7D7D7D;">{{ patient.hmo.name }}</div>
+                    </div>
+                    <div style="display: flex;">
+                        <div style="font-size: 14px; font-weight: 500; color: #111111; margin-right: 12px;">AGE/SEX:</div>
+                        <div style="font-size: 14px; font-weight: 500; color: #7D7D7D;">{{ age }}years / {{ patient.gender }}</div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <div style="padding: 35px 0px">
+        <table style="width: 100%;">
+            <thead>
+            <tr>
+                <th style="text-align: left">DATE</th>
+                <th style="text-align: left">SERVICE</th>
+                <th style="text-align: left">AMOUNT</th>
+            </tr>
+            </thead>
+            {{#each results}}
+                <tr>
+                    <td>{{ createdAt }}</td>
+                    <td>{{ description }}</td>
+                    <td>{{ amount }} </td>
+                </tr>
+            {{/each}}
+            <tr>
+                <td>
+                    <div style="width: 240px;border-bottom: 1px dotted #000000;margin-top: 120px;"></div>
+                    <div style="width: 240px;margin-top:4px;text-align: center;font-size: 14px;font-weight: 500;">(Accounts Officer)</div>
+                </td>
+            </tr>
+        </table>
+    </div>
+</div>
+</body>
+</html>

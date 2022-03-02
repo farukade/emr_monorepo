@@ -11,7 +11,7 @@ import { AppointmentRepository } from '../../frontdesk/appointment/appointment.r
 import { AppGateway } from '../../../app.gateway';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import { Brackets, getConnection } from 'typeorm';
-import { createServiceCost, getDepositBalance, getSerialCode, getStaff, postCredit, postDebit } from '../../../common/utils/utils';
+import { createServiceCost, getDepositBalance, getSerialCode, getStaff, postCredit, postDebit, formatPID, generatePDF } from '../../../common/utils/utils';
 import { Settings } from '../../settings/entities/settings.entity';
 import { ServiceCostRepository } from '../../settings/services/repositories/service_cost.repository';
 import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repository';
@@ -26,6 +26,7 @@ import { PatientRequestRepository } from '../../patient/repositories/patient_req
 import { ServiceCost } from '../../settings/entities/service_cost.entity';
 import { PatientRequestItem } from '../../patient/entities/patient_request_items.entity';
 import { AdmissionsRepository } from '../../patient/admissions/repositories/admissions.repository';
+import * as path from 'path';
 
 @Injectable()
 export class TransactionsService {
@@ -779,5 +780,98 @@ export class TransactionsService {
 		await transaction.save();
 
 		return transaction.softRemove();
+	}
+
+	async printBill(params) {
+		try {
+			const { startDate, endDate, patient_id, bill_source, fetch, type } = params;
+
+			const query = this.transactionsRepository.createQueryBuilder('q').select('q.*')
+				.where('q.payment_type = :type', { type: 'self' });
+
+			query.where(new Brackets(qb => {
+				qb.where('q.status = 0').orWhere('q.status = -1');
+			}));
+
+			if (startDate && startDate !== '') {
+				const start = moment(startDate).endOf('day').toISOString();
+				query.andWhere(`q.createdAt >= '${start}'`);
+			}
+			if (endDate && endDate !== '') {
+				const end = moment(endDate).endOf('day').toISOString();
+				query.andWhere(`q.createdAt <= '${end}'`);
+			}
+
+			if (patient_id && patient_id !== '') {
+				query.andWhere('q.patient_id = :patient_id', { patient_id });
+			}
+
+			if (bill_source && bill_source !== '') {
+				query.where('q.bill_source = :type', { type: bill_source });
+			}
+
+			const allTransactions = fetch && fetch === '1' ? await query.getRawMany() : [];
+
+			const transactions = await query.offset()
+				.orderBy('q.createdAt', 'DESC')
+				.getRawMany();
+
+			const total = await query.getCount();
+
+			for (const transaction of transactions) {
+
+				if (transaction.patient_id) {
+					transaction.patient = await this.patientRepository.findOne(transaction.patient_id);
+				}
+
+				if (transaction.service_cost_id) {
+					transaction.service = await this.serviceCostRepository.findOne(transaction.service_cost_id);
+				}
+
+				if (transaction.patient_request_item_id) {
+					transaction.patientRequestItem = await this.patientRequestItemRepository.findOne(transaction.patient_request_item_id, { relations: ['request'] });
+				}
+
+				transaction.admission = transaction.admission_id ? await this.admissionRepository.findOne(transaction.admission_id, { relations: ['room', 'room.category'] }) : null;
+
+				transaction.cashier = await getStaff(transaction.createdBy);
+			}
+
+			const results = transactions;
+
+			const patient = await this.patientRepository.findOne(params.patient_id, { relations: ['hmo'] });
+
+			const date = new Date();
+			const filename = `bill-${date.getTime()}.pdf`;
+			const filepath = path.resolve(__dirname, `../../../../public/result/${filename}`);
+			const dob = moment(patient.date_of_birth, 'YYYY-MM-DD HH:mm:ss').format('YYYY-MM-DD');
+
+			const data = {
+				patient,
+				date: moment(params.createdAt, 'YYYY-MM-DD HH:mm:ss').format('DD-MMM-YYYY'),
+				age: moment().diff(dob, 'years'),
+				filepath,
+				results,
+				patient_id: formatPID(patient_id),
+				logo: `${process.env.ENDPOINT}/public/images/logo.png`,
+				// total: totalAmount
+			};
+
+			let content;
+			content = {
+				...data,
+			};
+
+			await generatePDF('pending-bill', content);
+
+			return {
+				success: true,
+				file: `${process.env.ENDPOINT}/public/result/${filename}`
+			};
+
+		} catch (error) {
+			console.log(error);
+			return { success: false, message: error.message };
+		}
 	}
 }

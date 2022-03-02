@@ -32,6 +32,14 @@ export class TransactionsController {
         return this.transactionsService.fetchPending({ page, limit }, urlParams);
     }
 
+    @Get('print-pending')
+    printBill(
+        @Query() urlParams,
+        @Request() request,
+    ): Promise<any> {
+        return this.transactionsService.printBill(urlParams);
+    }
+
     @Post('')
     @UsePipes(ValidationPipe)
     saveTransaction(
