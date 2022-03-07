@@ -16,10 +16,11 @@ export class HousekeepingController {
     @Get('download-roster')
     @Header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     @Header('Content-Disposition', 'attachment; filename=roaster.csv')
-    async downloadRoaster(@Query() query, @Res() res) {
+    async downloadRoaster(@Query() query, @Res() res): Promise<void> {
         const resp = await this.housekeepingService.downloadEmtpyRoaster(query);
-        if (resp.message === 'Completed') {
-            res.sendFile(join(__dirname, '../../../../') + '/roaster.csv');
+        if (resp.message === 'completed') {
+            res.sendFile(join(__dirname, '../../../../') + 'roaster.csv');
+            // res.download(join(__dirname, '../../../../'),+ 'roaster.csv')
         }
     }
 

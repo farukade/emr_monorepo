@@ -9,6 +9,7 @@ import { Roaster } from './entities/roaster.entity';
 import { Department } from '../../settings/entities/department.entity';
 import { StaffDetails } from '../staff/entities/staff_details.entity';
 import { UploadRoasterDto } from './dto/upload-roaster.dto';
+import * as path from 'path'
 
 @Injectable()
 export class HousekeepingService {
@@ -22,53 +23,62 @@ export class HousekeepingService {
     ) {}
 
     async downloadEmtpyRoaster(query) {
-        const { department_id, period } = query;
-        // find department
-        const department = await this.departmentRepository.findOne(department_id);
-        const filename = `roaster.csv`;
-        const noOfDays = moment(period, 'YYYY-MM').daysInMonth();
-        const fs = require('fs');
-        const createCsvWriter = require('csv-writer').createObjectCsvWriter;
-        const csvWriter = createCsvWriter({
-            path: filename,
-            header: [
-                {id: 'sn', title: 'S/N'},
-                {id: 'employee_number', title: 'EMPLOYEE No'},
-                {id: 'name', title: 'NAME'},
-            ],
-        });
-
-        for (let index = 1; index <= noOfDays; index++) {
-            csvWriter.csvStringifier.header.push({id: `day${index}`, title: `Day${index}`});
-        }
-
-        // find staffs
-        const staffs = await this.staffRepository.find({where: {department}});
-        if (staffs) {
-            let sn = 1;
-            for (const staff of staffs) {
+        try {
+            const { department_id, period } = query;
+            // find department
+            const department = await this.departmentRepository.findOne(department_id);
+            const filename = `roaster.csv`;
+            const filepath = path.resolve(__dirname, `../../../../${filename}`)
+            const noOfDays = moment(period, 'YYYY-MM').daysInMonth();
+            const fs = require('fs');
+            const createCsvWriter = require('csv-writer').createObjectCsvWriter;
+            const csvWriter = createCsvWriter({
+                path: filepath,
+                header: [
+                    {id: 'sn', title: 'S/N'},
+                    {id: 'employee_number', title: 'EMPLOYEE No'},
+                    {id: 'name', title: 'NAME'},
+                ],
+            });
+    
+            for (let index = 1; index <= noOfDays; index++) {
+                csvWriter.csvStringifier.header.push({id: `day${index}`, title: `Day${index}`});
+            }
+    
+            // find staffs
+            const staffs = await this.staffRepository.find({where: {department}});
+            if (staffs) {
+                let sn = 1;
+                for (const staff of staffs) {
+                    const data = [
+                        {
+                            sn,
+                            employee_number: staff.employee_number,
+                            name: `${staff.last_name}, ${staff.first_name}`,
+                        },
+                    ];
+    
+                    await csvWriter.writeRecords(data);
+                    sn++;
+                }
+            } else {
                 const data = [
                     {
-                        sn,
-                        employee_number: staff.employee_number,
-                        name: `${staff.last_name}, ${staff.first_name}`,
+                        sn: '',
+                        employee_number: '',
+                        name: '',
                     },
                 ];
-
-                await csvWriter.writeRecords(data);
-                sn++;
+                await csvWriter.writeRecords({data});
             }
-        } else {
-            const data = [
-                {
-                    sn: '',
-                    employee_number: '',
-                    name: '',
-                },
-            ];
-            await csvWriter.writeRecords({data});
+
+            return { 
+                message: 'Completed',
+                filename,
+            };
+        } catch (err) {
+            return {success: false, message: err.message}
         }
-        return {message: 'Completed', filename};
     }
 
     async doUploadRoaster(file: any, uploadRoasterDto: UploadRoasterDto) {
