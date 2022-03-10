@@ -3,8 +3,8 @@ import { ManyToOne, Column, Entity, JoinColumn, OneToMany } from 'typeorm';
 import { Department } from '../../../settings/entities/department.entity';
 import { StaffDetails } from '../../staff/entities/staff_details.entity';
 
-@Entity({ name: 'roasters' })
-export class Roaster extends CustomBaseEntity {
+@Entity({ name: 'duty_rosters' })
+export class Roster extends CustomBaseEntity {
     @ManyToOne(type => Department)
     @JoinColumn({ name: 'department_id'})
     department: Department;

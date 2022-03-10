@@ -1,6 +1,6 @@
-import { IsNotEmpty } from "class-validator";
+import { IsNotEmpty } from 'class-validator';
 
-export class UploadRoasterDto {
+export class UploadRosterDto {
     @IsNotEmpty()
     department_id: string;
 

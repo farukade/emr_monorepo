@@ -3,9 +3,8 @@ import { HousekeepingService } from './housekeeping.service';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { UploadRoasterDto } from './dto/upload-roaster.dto';
-import { ListRoasterDto } from './dto/list-roaster.dto';
-import { Roaster } from './entities/roaster.entity';
+import { UploadRosterDto } from './dto/upload-roster.dto';
+import { Roster } from './entities/roster.entity';
 import { AuthGuard } from '@nestjs/passport';
 
 @UseGuards(AuthGuard('jwt'))
@@ -13,15 +12,19 @@ import { AuthGuard } from '@nestjs/passport';
 export class HousekeepingController {
     constructor(private housekeepingService: HousekeepingService) {}
 
-    @Get('download-roster')
-    @Header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    @Header('Content-Disposition', 'attachment; filename=roaster.csv')
-    async downloadRoaster(@Query() query, @Res() res): Promise<void> {
-        const resp = await this.housekeepingService.downloadEmtpyRoaster(query);
-        if (resp.message === 'completed') {
-            res.sendFile(join(__dirname, '../../../../') + 'roaster.csv');
-            // res.download(join(__dirname, '../../../../'),+ 'roaster.csv')
-        }
+    @Get('rosters')
+    @UsePipes(ValidationPipe)
+    listRoster(
+      @Query() urlParams,
+    ): Promise<Roster[]> {
+        return this.housekeepingService.listRoster(urlParams);
+    }
+
+    @Get('/download-roster')
+    downloadRoster(
+      @Query() query,
+    ): Promise<any> {
+        return this.housekeepingService.downloadEmptyRoster(query);
     }
 
     @Post('/upload-roster')
@@ -34,22 +37,10 @@ export class HousekeepingController {
             },
         }),
     }))
-    uploadRoaster(
+    uploadRoster(
         @UploadedFile() file,
-        @Body() uploadRoasterDto: UploadRoasterDto,
+        @Body() uplodRosterDto: UploadRosterDto,
     ) {
-        return this.housekeepingService.doUploadRoaster(file, uploadRoasterDto);
-    }
-
-    @Post('list-roster')
-    @UsePipes(ValidationPipe)
-    listRoaster(@Body() listRoasterDto: ListRoasterDto): Promise<Roaster[]> {
-        return this.housekeepingService.listRoaster(listRoasterDto);
-    }
-
-    @Get('list-roster')
-    @UsePipes(ValidationPipe)
-    singleRoaster(@Body() listRoasterDto: ListRoasterDto, @Request() req ): Promise<Roaster[]> {
-        return this.housekeepingService.singleRoaster(listRoasterDto, req.user.userId);
+        return this.housekeepingService.doUploadRoster(file, uplodRosterDto);
     }
 }
