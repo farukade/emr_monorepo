@@ -21,6 +21,9 @@ import { Service } from '../../modules/settings/entities/service.entity';
 import { Nicu } from '../../modules/patient/nicu/entities/nicu.entity';
 import { Voucher } from '../../modules/finance/vouchers/voucher.entity';
 import { PatientRequestItem } from '../../modules/patient/entities/patient_request_items.entity';
+import * as numeral from 'numeral';
+// @ts-ignore
+import * as startCase from 'lodash.startcase';
 
 // tslint:disable-next-line:no-var-requires
 const mysql = require('mysql2/promise');
@@ -519,4 +522,30 @@ export const createServiceCost = async (code: string, scheme: HmoScheme) => {
 	}
 
 	return null;
+};
+
+export const formatCurrency = (amount, abs = false) => `₦${numeral(abs ? Math.abs(amount) : amount).format('0,0.00')}`;
+
+export const parseSource = source => source === 'ward' ? 'Room' : startCase(source);
+
+export const parseDescription = item => {
+	if (!item) {
+		return '--';
+	}
+
+	if (item.bill_source === 'ward' || item.bill_source === 'nicu-accommodation') {
+		return `: ${item.description}`;
+	}
+
+	if (item.bill_source === 'drugs') {
+		const reqItem = item.patientRequestItem;
+
+		return ` : ${reqItem.fill_quantity} ${reqItem.drug.unitOfMeasure} of ${reqItem.drugGeneric.name} (${reqItem.drug.name}) at ${formatCurrency(reqItem.drugBatch.unitPrice)} each`;
+	}
+
+	if ((item.bill_source === 'consultancy' || item.bill_source === 'labs' || item.bill_source === 'scans' || item.bill_source === 'procedure' || item.bill_source === 'nursing-service') && item.service?.item?.name) {
+		return `: ${item.service?.item?.name}`;
+	}
+
+	return '--';
 };

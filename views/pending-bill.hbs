@@ -46,8 +46,12 @@
             </thead>
             {{#each results}}
                 <tr>
-                    <td>{{ createdAt }}</td>
-                    <td>{{ description }}</td>
+                    <td>{{ date }}</td>
+                    <td>
+											<span style="text-transform: capitalize !important;">
+												<strong>{{ source }}</strong> {{ description }}
+											</span>
+										</td>
                     <td>{{ amount }} </td>
                 </tr>
             {{/each}}
