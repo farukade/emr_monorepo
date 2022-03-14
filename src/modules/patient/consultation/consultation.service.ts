@@ -140,6 +140,7 @@ export class ConsultationService {
 			data.createdBy = createdBy;
 			const encounter = await data.save();
 
+			// 1
 			const complain = param.complaints.replace(/(<([^>]+)>)/gi, '')
 				.replace(/&nbsp;/g, '')
 				.replace('Presenting Complaints', '')
@@ -147,6 +148,9 @@ export class ConsultationService {
 				.replace(/\s/g, '')
 				.replace(/\/r/g, '')
 				.split(':').join('');
+
+			console.log(complain);
+			console.log(encodeURIComponent(complain));
 
 			if (encodeURIComponent(complain) !== '%E2%80%8B') {
 				const complaint = new PatientNote();
@@ -159,35 +163,67 @@ export class ConsultationService {
 				await complaint.save();
 			}
 
-			const treatmentPlan = param.treatmentPlan.replace(/(<([^>]+)>)/gi, '')
-				.replace(/&nbsp;/g, '')
-				.replace('Treatment Plan', '')
-				.replace(/\s/g, '')
-				.replace(/\/r/g, '')
-				.split(':').join('');
-
-			if (encodeURIComponent(treatmentPlan) !== '%E2%80%8B') {
-				const plan = new PatientNote();
-				plan.description = param.treatmentPlan;
-				plan.patient = patient;
-				plan.encounter = encounter;
-				plan.type = 'treatment-plan';
-				plan.visit = 'encounter';
-				plan.createdBy = createdBy;
-				await plan.save();
+			// 2
+			let reviewOfSystems = [];
+			for (const exam of param.reviewOfSystem) {
+				reviewOfSystems = [...reviewOfSystems, `${exam.label}: ${exam.value}`];
 			}
 
-			if (param.instruction !== '') {
-				const instruction = new PatientNote();
-				instruction.description = param.instruction;
-				instruction.patient = patient;
-				instruction.encounter = encounter;
-				instruction.type = 'instruction';
-				instruction.visit = 'encounter';
-				instruction.createdBy = createdBy;
-				await instruction.save();
+			if (reviewOfSystems.length > 0) {
+				const review = new PatientNote();
+				review.description = reviewOfSystems.join(', ');
+				review.patient = patient;
+				review.encounter = encounter;
+				review.type = 'review-of-systems';
+				review.visit = 'encounter';
+				review.createdBy = createdBy;
+				await review.save();
 			}
 
+			// 3
+			for (const item of param.patientHistorySelected) {
+				const history = new PatientNote();
+				history.category = item.category;
+				history.history = item.description;
+				history.patient = patient;
+				history.encounter = encounter;
+				history.type = 'patient-history';
+				history.visit = 'encounter';
+				history.createdBy = createdBy;
+				await history.save();
+			}
+
+			// 4
+			if (param.medicalHistory) {
+				let his = '';
+				try {
+					his = param.medicalHistory.replace(/(<([^>]+)>)/gi, '')
+						.replace(/&nbsp;/g, '')
+						.replace('Past Medical History', '')
+						.replace(/\s/g, '')
+						.replace(/\/r/g, '')
+						.split(':').join('');
+				} catch (e) {
+					console.log('------------------encounter error');
+					console.log(param.medicalHistory);
+					console.log(e);
+				}
+				console.log(his);
+				console.log(encodeURIComponent(his));
+
+				if (encodeURIComponent(his) !== '%E2%80%8B') {
+					const patHistory = new PatientNote();
+					patHistory.description = param.medicalHistory;
+					patHistory.patient = patient;
+					patHistory.encounter = encounter;
+					patHistory.type = 'medical-history';
+					patHistory.visit = 'encounter';
+					patHistory.createdBy = createdBy;
+					await patHistory.save();
+				}
+			}
+
+			// 5
 			for (const allergen of param.allergies) {
 				const generic = allergen.generic_id && allergen.generic_id !== '' ? await this.drugGenericRepository.findOne(allergen.generic_id) : null;
 				const patientAllergen = new PatientNote();
@@ -204,59 +240,7 @@ export class ConsultationService {
 				await patientAllergen.save();
 			}
 
-			for (const diagnosis of param.diagnosis) {
-				const patientDiagnosis = new PatientNote();
-				patientDiagnosis.diagnosis = diagnosis.diagnosis;
-				patientDiagnosis.status = 'Active';
-				patientDiagnosis.patient = patient;
-				patientDiagnosis.encounter = encounter;
-				patientDiagnosis.diagnosisType = diagnosis.type.value;
-				patientDiagnosis.comment = diagnosis.comment;
-				patientDiagnosis.visit = 'encounter';
-				patientDiagnosis.type = 'diagnosis';
-				patientDiagnosis.createdBy = createdBy;
-				await patientDiagnosis.save();
-			}
-
-			if (param.medicalHistory) {
-				let his = '';
-				try {
-					his = param.medicalHistory.replace(/(<([^>]+)>)/gi, '')
-						.replace(/&nbsp;/g, '')
-						.replace('Past Medical History', '')
-						.replace(/\s/g, '')
-						.replace(/\/r/g, '')
-						.split(':').join('');
-				} catch (e) {
-					console.log('------------------encounter error');
-					console.log(param.medicalHistory);
-					console.log(e);
-				}
-
-				if (encodeURIComponent(his) !== '%E2%80%8B') {
-					const patHistory = new PatientNote();
-					patHistory.description = param.medicalHistory;
-					patHistory.patient = patient;
-					patHistory.encounter = encounter;
-					patHistory.type = 'medical-history';
-					patHistory.visit = 'encounter';
-					patHistory.createdBy = createdBy;
-					await patHistory.save();
-				}
-			}
-
-			for (const item of param.patientHistorySelected) {
-				const history = new PatientNote();
-				history.category = item.category;
-				history.history = item.description;
-				history.patient = patient;
-				history.encounter = encounter;
-				history.type = 'patient-history';
-				history.visit = 'encounter';
-				history.createdBy = createdBy;
-				await history.save();
-			}
-
+			// 6
 			let physicalExaminations = [];
 			for (const exam of param.physicalExamination) {
 				physicalExaminations = [...physicalExaminations, `${exam.label}: ${exam.value}`];
@@ -284,20 +268,52 @@ export class ConsultationService {
 				await exam.save();
 			}
 
-			let reviewOfSystems = [];
-			for (const exam of param.reviewOfSystem) {
-				reviewOfSystems = [...reviewOfSystems, `${exam.label}: ${exam.value}`];
+			// 7
+			for (const diagnosis of param.diagnosis) {
+				const patientDiagnosis = new PatientNote();
+				patientDiagnosis.diagnosis = diagnosis.diagnosis;
+				patientDiagnosis.status = 'Active';
+				patientDiagnosis.patient = patient;
+				patientDiagnosis.encounter = encounter;
+				patientDiagnosis.diagnosisType = diagnosis.type.value;
+				patientDiagnosis.comment = diagnosis.comment;
+				patientDiagnosis.visit = 'encounter';
+				patientDiagnosis.type = 'diagnosis';
+				patientDiagnosis.createdBy = createdBy;
+				await patientDiagnosis.save();
 			}
 
-			if (reviewOfSystems.length > 0) {
-				const review = new PatientNote();
-				review.description = reviewOfSystems.join(', ');
-				review.patient = patient;
-				review.encounter = encounter;
-				review.type = 'review-of-systems';
-				review.visit = 'encounter';
-				review.createdBy = createdBy;
-				await review.save();
+			// 8
+			const treatmentPlan = param.treatmentPlan.replace(/(<([^>]+)>)/gi, '')
+				.replace(/&nbsp;/g, '')
+				.replace('Treatment Plan', '')
+				.replace(/\s/g, '')
+				.replace(/\/r/g, '')
+				.split(':').join('');
+			console.log(treatmentPlan);
+			console.log(encodeURIComponent(treatmentPlan));
+
+			if (encodeURIComponent(treatmentPlan) !== '%E2%80%8B') {
+				const plan = new PatientNote();
+				plan.description = param.treatmentPlan;
+				plan.patient = patient;
+				plan.encounter = encounter;
+				plan.type = 'treatment-plan';
+				plan.visit = 'encounter';
+				plan.createdBy = createdBy;
+				await plan.save();
+			}
+
+			// 9
+			if (param.instruction !== '') {
+				const instruction = new PatientNote();
+				instruction.description = param.instruction;
+				instruction.patient = patient;
+				instruction.encounter = encounter;
+				instruction.type = 'instruction';
+				instruction.visit = 'encounter';
+				instruction.createdBy = createdBy;
+				await instruction.save();
 			}
 
 			if (param.consumables) {

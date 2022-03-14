@@ -9,6 +9,7 @@ import { IvfEnrollment } from '../ivf/entities/ivf_enrollment.entity';
 import { AntenatalEnrollment } from '../antenatal/entities/antenatal-enrollment.entity';
 import { LabourEnrollment } from '../labour-management/entities/labour_enrollment.entity';
 import { Nicu } from '../nicu/entities/nicu.entity';
+import { PatientExcuseDuty } from './patient_excuse_duty.entity';
 
 @Entity({ name: 'patient_notes' })
 export class PatientNote extends CustomBaseEntity {
@@ -90,5 +91,9 @@ export class PatientNote extends CustomBaseEntity {
     @ManyToOne(type => LabourEnrollment, { nullable: true })
     @JoinColumn({ name: 'labour_id' })
     labour: LabourEnrollment;
+
+    @ManyToOne(type => PatientExcuseDuty, { nullable: true })
+    @JoinColumn({ name: 'excuse_duty_id' })
+    excuseDuty: PatientExcuseDuty;
 
 }
