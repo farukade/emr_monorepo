@@ -8,6 +8,9 @@ import { InventoryDto } from '../dto/inventory.dto';
 import { formatPID } from '../../../common/utils/utils';
 import { InventoryActivityRepository } from '../activity/activity.repository';
 import { CafeteriaInventory } from '../entities/cafeteria_inventory.entity';
+import { InventoryPurchase } from '../entities/purchase.entity';
+import { VendorRepository } from '../vendor/vendor.repository';
+import { Vendor } from '../entities/vendor.entity';
 
 @Injectable()
 export class CafeteriaInventoryService {
@@ -16,6 +19,8 @@ export class CafeteriaInventoryService {
         private cafeteriaInventoryRepository: CafeteriaInventoryRepository,
         @InjectRepository(InventoryActivityRepository)
         private inventoryActivityRepository: InventoryActivityRepository,
+        @InjectRepository(VendorRepository)
+        private vendorRepository: VendorRepository,
     ) {
     }
 
@@ -54,7 +59,7 @@ export class CafeteriaInventoryService {
 
     async createItem(inventoryDto: InventoryDto, username: string): Promise<any> {
         try {
-            const { name, quantity, unitPrice, unitOfMeasure } = inventoryDto;
+            const { name, unitOfMeasure } = inventoryDto;
 
             const lastItem = await this.cafeteriaInventoryRepository.findOne({
                 order: { code: 'DESC' },
@@ -74,16 +79,11 @@ export class CafeteriaInventoryService {
             const item = new CafeteriaInventory();
             item.name = name;
             item.code = code;
-            item.quantity = quantity;
+            item.quantity = 0;
             item.unitOfMeasure = unitOfMeasure;
-            item.unitPrice = unitPrice;
+            item.unitPrice = 0;
             item.createdBy = username;
             const rs = await item.save();
-
-            await this.inventoryActivityRepository.saveActivity(
-                { cafeteria: rs, quantity, unitPrice },
-                username,
-            );
 
             return { success: true, item: rs };
         } catch (e) {
@@ -94,19 +94,13 @@ export class CafeteriaInventoryService {
 
     async updateItem(id: string, inventoryDto: InventoryDto, username: string): Promise<any> {
         try {
-            const { name, unitPrice, unitOfMeasure } = inventoryDto;
+            const { name, unitOfMeasure } = inventoryDto;
 
             const item = await this.cafeteriaInventoryRepository.findOne(id);
             item.name = name;
-            item.unitPrice = unitPrice;
             item.unitOfMeasure = unitOfMeasure;
             item.lastChangedBy = username;
             const rs = await item.save();
-
-            await this.inventoryActivityRepository.saveActivity(
-                { cafeteria: rs, quantity: 0, unitPrice },
-                username,
-            );
 
             return { success: true, item: rs };
         } catch (e) {
@@ -117,10 +111,11 @@ export class CafeteriaInventoryService {
 
     async updateQty(id, inventoryDto: InventoryDto, username: string): Promise<any> {
         try {
-            const { quantity } = inventoryDto;
+            const { quantity, unit_price, vendor_id, vendor_label } = inventoryDto;
 
             const item = await this.cafeteriaInventoryRepository.findOne(id);
             item.quantity = item.quantity + parseInt(quantity, 10);
+            item.unitPrice = unit_price;
             item.lastChangedBy = username;
             const rs = await item.save();
 
@@ -128,6 +123,23 @@ export class CafeteriaInventoryService {
                 { cafeteria: rs, quantity, unitPrice: item.unitPrice },
                 username,
             );
+
+            let vendor;
+            if (vendor_id === '') {
+                const vItem = new Vendor();
+                vItem.name = vendor_label;
+                vendor = await vItem.save();
+            } else {
+                vendor = await this.vendorRepository.findOne(vendor_id);
+            }
+
+            const purchase = new InventoryPurchase();
+            purchase.quantity = quantity;
+            purchase.purchase_price = unit_price;
+            purchase.vendor = vendor;
+            purchase.item_id = item.id;
+            purchase.item_category = 'cafeteria';
+            await purchase.save();
 
             return { success: true, item: rs };
         } catch (e) {

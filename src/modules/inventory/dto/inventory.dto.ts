@@ -4,7 +4,11 @@ export class InventoryDto {
 
     quantity: any;
 
-    unitPrice: any;
+    unit_price: any;
 
     unitOfMeasure: any;
+
+    vendor_id: any;
+
+    vendor_label: any;
 }

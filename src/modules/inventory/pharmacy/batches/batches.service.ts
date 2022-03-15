@@ -11,6 +11,7 @@ import { Vendor } from '../../entities/vendor.entity';
 import { DrugRepository } from '../drug/drug.repository';
 import * as moment from 'moment';
 import { InventoryActivityRepository } from '../../activity/activity.repository';
+import { InventoryPurchase } from '../../entities/purchase.entity';
 
 @Injectable()
 export class DrugBatchService {
@@ -103,6 +104,14 @@ export class DrugBatchService {
                 username,
             );
 
+            const purchase = new InventoryPurchase();
+            purchase.quantity = quantity;
+            purchase.purchase_price = unitPrice;
+            purchase.vendor = vendor;
+            purchase.item_id = rs.id;
+            purchase.item_category = 'drug_batch';
+            await purchase.save();
+
             return { success: true, batch: rs };
         } catch (e) {
             console.log(e);
@@ -155,7 +164,7 @@ export class DrugBatchService {
         try {
             const { quantity } = drugBatchDto;
 
-            const batch = await this.drugBatchRepository.findOne(id);
+            const batch = await this.drugBatchRepository.findOne(id, { relations: ['vendor'] });
             batch.quantity = batch.quantity + parseInt(quantity, 10);
             const rs = await batch.save();
 
@@ -163,6 +172,16 @@ export class DrugBatchService {
                 { batch: rs, quantity, unitPrice: batch.unitPrice },
                 username,
             );
+
+            // const vendor = await this.vendorRepository.findOne(batch.vendor.id);
+            //
+            // const purchase = new InventoryPurchase();
+            // purchase.quantity = quantity;
+            // purchase.purchase_price = batch.unitPrice;
+            // purchase.vendor = vendor;
+            // purchase.item_id = batch.id;
+            // purchase.item_category = 'drug_batch';
+            // await purchase.save();
 
             return { success: true, item: rs };
         } catch (e) {
