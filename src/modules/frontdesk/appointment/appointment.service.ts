@@ -133,6 +133,7 @@ export class AppointmentService {
 				where: { patient: patientProfile, status: 0 },
 				relations: ['ancpackage'],
 			});
+
 			let antenatal = null;
 			if (ancEnrolment) {
 				const staff = await getStaff(ancEnrolment.createdBy);
@@ -176,7 +177,6 @@ export class AppointmentService {
 		});
 
 		return appointment;
-
 	}
 
 	async checkDate(param): Promise<any> {

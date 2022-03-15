@@ -230,7 +230,7 @@ export class AdmissionsService {
                 await room.save();
 
                 const admissionRoom = await this.admissionRoomRepository.findOne({ where: { room, admission } });
-                if(admissionRoom) {
+                if (admissionRoom) {
                     admissionRoom.checked_out_at = moment().format('YYYY-MM-DD HH:mm:ss');
                     admissionRoom.checked_out_by = username;
                     await admissionRoom.save();
@@ -264,8 +264,8 @@ export class AdmissionsService {
                 return { success: false, message: 'room is already occupied' };
             }
 
-            if(reassign && reassign === 1) {
-                if(admission.room.id === room.id) {
+            if (reassign && reassign === 1) {
+                if (admission.room.id === room.id) {
                     return { success: false, message: 'room is already given to patient' };
                 }
 
@@ -277,7 +277,7 @@ export class AdmissionsService {
                 const admissionRoom = await this.admissionRoomRepository.findOne({
                     where: { room: previousRoom, admission },
                 });
-                if(admissionRoom) {
+                if (admissionRoom) {
                     admissionRoom.checked_out_at = moment().format('YYYY-MM-DD HH:mm:ss');
                     admissionRoom.checked_out_by = username;
                     await admissionRoom.save();
@@ -343,14 +343,18 @@ export class AdmissionsService {
     }
 
     async getTasks(options: PaginationOptionsInterface, params: any) {
-        const { patient_id, type, item_id } = params;
+        const { patient_id, type, item_id, admission_id } = params;
 
-		const page = options.page - 1;
+        const page = options.page - 1;
 
         const query = this.clinicalTaskRepository.createQueryBuilder('q').select('q.*');
 
         if (patient_id && patient_id !== '') {
             query.andWhere('q.patient_id = :patient_id', { patient_id });
+        }
+
+        if (admission_id && admission_id !== '') {
+            query.andWhere('q.admission_id = :admission_id', { admission_id });
         }
 
         if (type && type === 'admission') {
@@ -365,12 +369,12 @@ export class AdmissionsService {
             query.andWhere('q.labour_id = :id', { id: item_id });
         }
 
-		const result = await query.offset(page * options.limit)
-			.limit(options.limit)
-			.orderBy({ 'q.completed': 'ASC', 'q.nextTime': 'ASC' })
-			.getRawMany();
+        const result = await query.offset(page * options.limit)
+          .limit(options.limit)
+          .orderBy({ 'q.completed': 'ASC', 'q.nextTime': 'ASC' })
+          .getRawMany();
 
-		const total = await query.getCount();
+        const total = await query.getCount();
 
         let results = [];
         for (const request of result) {

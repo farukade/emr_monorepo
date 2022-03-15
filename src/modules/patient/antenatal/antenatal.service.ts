@@ -383,7 +383,7 @@ export class AntenatalService {
 				await appointment.save();
 			}
 
-			return { success: true, assessment };
+			return { success: true, assessment, appointment };
 		} catch (err) {
 			console.log(err);
 			return { success: false, message: err.message };
