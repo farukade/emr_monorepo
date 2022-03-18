@@ -128,6 +128,10 @@ export class TransactionsService {
 			transaction.admission = transaction.admission_id ? await this.admissionRepository.findOne(transaction.admission_id, { relations: ['room', 'room.category'] }) : null;
 
 			transaction.cashier = await getStaff(transaction.createdBy);
+
+			transaction.appointment = await this.appointmentRepository.findOne({
+				where: { transaction: transaction.id },
+			});
 		}
 
 		return {
@@ -194,6 +198,10 @@ export class TransactionsService {
 			transaction.admission = transaction.admission_id ? await this.admissionRepository.findOne(transaction.admission_id, { relations: ['room', 'room.category'] }) : null;
 
 			transaction.cashier = await getStaff(transaction.createdBy);
+
+			transaction.appointment = await this.appointmentRepository.findOne({
+				where: { transaction: transaction.id },
+			});
 		}
 
 		return {
@@ -419,6 +427,49 @@ export class TransactionsService {
 		} catch (error) {
 			await queryRunner.rollbackTransaction();
 			await queryRunner.release();
+			console.log(error);
+			return { success: false, message: error.message };
+		}
+	}
+
+	async skipPaymentToQueue(id: number, transactionDto: ProcessTransactionDto, username: string): Promise<any> {
+		const { patient_id } = transactionDto;
+		try {
+			const transaction = await this.transactionsRepository.findOne(id);
+
+			let queue: Queue;
+			let appointment = null;
+			if (transaction.next_location && transaction.next_location === 'vitals') {
+				// find appointment
+				console.log(transaction.id);
+				appointment = await this.appointmentRepository.findOne({
+					where: { transaction: transaction.id },
+					relations: ['patient', 'whomToSee', 'consultingRoom', 'serviceCategory'],
+				});
+
+				if (!appointment) {
+					return { success: false, message: 'Cannot find appointment' };
+				}
+
+				appointment.status = 'Approved';
+				appointment.save();
+				console.log(appointment);
+
+				// create new queue
+				queue = await this.queueSystemRepository.saveQueue(appointment, transaction.next_location, appointment.patient);
+				this.appGateway.server.emit('nursing-queue', { queue });
+
+				const expiry_date = moment().add(7, 'days').format('YYYY-MM-DD');
+
+				const patient = await this.patientRepository.findOne(patient_id);
+				patient.credit_limit = 2000000;
+				patient.credit_limit_expiry_date = expiry_date;
+				patient.lastChangedBy = username;
+				await patient.save();
+			}
+
+			return { success: true, appointment };
+		} catch (error) {
 			console.log(error);
 			return { success: false, message: error.message };
 		}

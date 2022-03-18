@@ -51,6 +51,16 @@ export class TransactionsController {
         return this.transactionsService.processTransaction(id, transactionDto, req.user.username);
     }
 
+    @Post('/:id/skip-to-queue')
+    @UsePipes(ValidationPipe)
+    skipPaymentToQueue(
+      @Param('id') id: number,
+      @Body() transactionDto: ProcessTransactionDto,
+      @Request() req,
+    ): Promise<any> {
+        return this.transactionsService.skipPaymentToQueue(id, transactionDto, req.user.username);
+    }
+
     @Post('/process-bulk')
     @UsePipes(ValidationPipe)
     processBulkTransaction(
