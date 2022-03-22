@@ -83,7 +83,7 @@ export class PatientNoteService {
         const items = await query.offset(page * options.limit)
             .limit(options.limit)
             .orderBy('q.id', 'DESC')
-            .orderBy('q.createdAt', 'ASC')
+            .orderBy('q.createdAt', 'DESC')
             .getRawMany();
 
         const total = await query.getCount();
