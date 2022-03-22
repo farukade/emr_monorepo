@@ -208,9 +208,7 @@ export const getOutstanding = async (patient_id) => {
 		where: { patient, bill_source: Not('credit-deposit') },
 	});
 
-	return patient.credit_limit > 0 ? 0 : transactions
-		.filter(t => t.status !== 1)
-		.reduce((totalAmount, item) => {
+	return patient.credit_limit > 0 ? 0 : transactions.reduce((totalAmount, item) => {
 			return totalAmount + item.amount;
 		}, 0);
 };
@@ -223,7 +221,7 @@ export const getBalance = async (patient_id) => {
 		where: { patient, bill_source: Not('credit-deposit') },
 	});
 
-	return patient.credit_limit > 0 ? 0 : transactions.reduce((totalAmount, item) => {
+	return transactions.reduce((totalAmount, item) => {
 		return totalAmount + item.amount;
 	}, 0);
 };

@@ -330,7 +330,7 @@ export class AntenatalService {
 					urgent: labRequest.lab_urgent || false,
 					antenatal_id: id,
 				};
-				console.log(request);
+
 				const lab = await PatientRequestHelper.handleLabRequest(request, patient, createdBy);
 				if (lab.success) {
 					await RequestPaymentHelper.clinicalLabPayment(lab.data, patient, createdBy, 0);

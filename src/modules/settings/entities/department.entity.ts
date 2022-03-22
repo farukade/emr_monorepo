@@ -16,4 +16,7 @@ export class Department extends CustomBaseEntity {
     )
     @JoinColumn({ name: 'hod_id' })
     staff: StaffDetails;
+
+    @Column({ type: 'int', default: 0 })
+    has_appointment: number;
 }

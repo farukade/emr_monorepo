@@ -17,7 +17,7 @@ export class DepartmentsService {
 
     async getDepartments(): Promise<Department[]> {
         const results = await this.departmentRepository.createQueryBuilder('q')
-            .select('q.id, q.name, q.description, q.hod_id')
+            .select('q.id, q.name, q.description, q.hod_id, q.has_appointment')
             .orderBy('q.createdAt')
             .getRawMany();
 

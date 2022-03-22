@@ -165,11 +165,6 @@ export class AuthService {
 			user.role = role;
 			await user.save();
 
-			console.log(await this.staffRepository.findOne({
-				where: { user },
-				relations: ['user', 'user.role', 'department', 'specialization'],
-			}));
-
 			return await this.staffRepository.findOne({
 				where: { user },
 				relations: ['user', 'user.role', 'department', 'specialization'],
