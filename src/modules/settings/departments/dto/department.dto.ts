@@ -7,4 +7,6 @@ export class DepartmentDto {
   description: string;
 
   hod_id: string;
+
+  has_appointment: number;
 }

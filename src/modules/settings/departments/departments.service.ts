@@ -23,8 +23,7 @@ export class DepartmentsService {
 
         for (const result of results) {
             if (result.hod_id) {
-                const staff = await this.staffRepository.findOne(result.hod_id);
-                result.hod_name = staff.first_name + ' ' + staff.last_name;
+                result.staff = await this.staffRepository.findOne(result.hod_id);
             }
         }
         return results;
@@ -41,10 +40,10 @@ export class DepartmentsService {
 
     async updateDepartment(id: string, departmentDto: DepartmentDto, updatedBy): Promise<any> {
         try {
-            const { name, description, hod_id } = departmentDto;
+            const { name, description, hod_id, has_appointment } = departmentDto;
 
             let staff;
-            if (hod_id) {
+            if (hod_id && hod_id !== '') {
                 staff = await this.staffRepository.findOne(hod_id);
 
                 const dept = await this.departmentRepository.findOne({
@@ -61,10 +60,12 @@ export class DepartmentsService {
             department.name = name;
             department.description = description;
             department.lastChangedBy = updatedBy;
+            department.has_appointment = has_appointment;
             if (staff) {
                 department.staff = staff;
             }
             await department.save();
+
             return {
                 success: true,
                 department: { ...department, hod_name: (staff) ? `${staff.first_name} ${staff.last_name}` : '' },

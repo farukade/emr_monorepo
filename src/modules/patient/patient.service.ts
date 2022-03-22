@@ -48,6 +48,7 @@ import { AdmissionClinicalTask } from './admissions/entities/admission-clinical-
 import { NicuRepository } from './nicu/nicu.repository';
 import { LabourEnrollmentRepository } from './labour-management/repositories/labour-enrollment.repository';
 import { HmoScheme } from '../hmo/entities/hmo_scheme.entity';
+import { PatientFluidChart } from './entities/patient_fluid_chart.entity';
 
 @Injectable()
 export class PatientService {
@@ -467,11 +468,11 @@ export class PatientService {
 		return await patient.softRemove();
 	}
 
-	async doSaveVitals(param: any, createdBy: string): Promise<any> {
+	async doSaveVitals(param: any, username: string): Promise<any> {
 		try {
-			const { patient_id, readingType, reading, task_id } = param;
+			const { patient_id, readingType, reading, task_id, is_fluid } = param;
 
-			const staff = await getStaff(createdBy);
+			const staff = await getStaff(username);
 
 			const patient = await this.patientRepository.findOne(patient_id);
 
@@ -505,7 +506,7 @@ export class PatientService {
 
 					task.nextTime = nextTime;
 					task.tasksCompleted = completed;
-					task.lastChangedBy = createdBy;
+					task.lastChangedBy = username;
 					task.completed = completed === task.taskCount;
 					await task.save();
 
@@ -560,7 +561,7 @@ export class PatientService {
 					readingType,
 					reading,
 					patient,
-					createdBy,
+					createdBy: username,
 					task: task || null,
 					isAbnormal,
 					admission_id: admission?.id || null,
@@ -574,7 +575,25 @@ export class PatientService {
 					alert.patient = patient;
 					alert.type = readingType;
 					alert.message = message;
+					alert.createdBy = username;
 					await alert.save();
+				}
+
+				const is_admitted = admission || nicu || labour;
+
+				if (is_fluid && is_fluid === 1 && is_admitted) {
+					const volume = Object.values(reading);
+
+					const chart = new PatientFluidChart();
+					chart.type = 'output';
+					chart.fluid_route = readingType;
+					chart.patient = patient;
+					chart.volume = parseFloat(`${volume[0]}`);
+					chart.createdBy = username;
+					chart.admission_id = admission?.id || null;
+					chart.nicu_id = nicu?.id || null;
+					chart.labour_id = labour?.id || null;
+					await chart.save();
 				}
 
 				return { success: true, readings };
@@ -696,7 +715,7 @@ export class PatientService {
 
 	async getAdmission(id: number): Promise<any> {
 		const admission = await this.admissionRepository.findOne(id, {
-			relations: ['room', 'room.category']
+			relations: ['room', 'room.category'],
 		});
 
 		return admission;
