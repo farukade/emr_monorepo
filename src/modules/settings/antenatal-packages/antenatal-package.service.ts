@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, Delete } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Pagination, PaginationOptionsInterface } from '../../../common/paginate';
+import { PaginationOptionsInterface } from '../../../common/paginate';
 import { AntenatalPackage } from '../entities/antenatal-package.entity';
 import { AntenatalPackageRepository } from './antenatal-package.repository';
 import { AntenatalPackageDto } from './dto/antenatal-package.dto';
@@ -49,7 +49,7 @@ export class AntenatalPackageService {
     async savePackage(createDto: AntenatalPackageDto, createdBy): Promise<AntenatalPackage> {
         const { name, amount, description } = createDto;
 
-        const coverage = {labs: [], drugs: [], consultancy: []};
+        const coverage = {labs: [], drugs: [], consultancy: [], scans: []};
 
         const antePackage = new AntenatalPackage();
         antePackage.name = name;
@@ -62,13 +62,13 @@ export class AntenatalPackageService {
     }
 
     async updatePackage(id, updateDto: AntenatalPackageDto, updatedBy) {
-        const { name, amount, description, coverage } = updateDto;
+        const { name, amount, description } = updateDto;
 
         const antenatalPackage = await this.antenatalPackageRepository.findOne(id);
         antenatalPackage.name = name;
         antenatalPackage.description = description;
         antenatalPackage.amount = amount;
-        antenatalPackage.coverage = coverage;
+        antenatalPackage.coverage = { ...antenatalPackage.coverage, scans: [] };
         antenatalPackage.lastChangedBy = updatedBy;
 
         return await antenatalPackage.save();
