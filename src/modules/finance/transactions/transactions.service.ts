@@ -303,6 +303,10 @@ export class TransactionsService {
 		try {
 			const transaction = await this.transactionsRepository.findOne(id, { relations: ['patient', 'staff', 'appointment', 'hmo', 'admission', 'nicu'] });
 
+			if (transaction.status === 1) {
+				return { success: false, message: 'payment has already been processed.' };
+			}
+
 			const amount = Math.abs(transaction.amount);
 
 			let data: TransactionCreditDto = {
