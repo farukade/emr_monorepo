@@ -231,13 +231,13 @@ export class PatientService {
 
 			const hmo = await this.hmoSchemeRepository.findOne(hmo_id);
 
-			let nok = await this.patientNOKRepository.findOne({
-				where: [{ phoneNumber: patientDto.nok_phoneNumber }, { email: patientDto.nok_email }],
-			});
+			// let nok = await this.patientNOKRepository.findOne({
+			// 	where: [{ phoneNumber: patientDto.nok_phoneNumber }, { email: patientDto.nok_email }],
+			// });
 
-			if (!nok) {
-				nok = await this.patientNOKRepository.saveNOK(patientDto);
-			}
+			// if (!nok) {
+			const	nok = await this.patientNOKRepository.saveNOK(patientDto);
+			// }
 
 			let staff;
 			if (staff_id) {

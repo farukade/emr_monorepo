@@ -144,9 +144,18 @@ export class ServicesService {
 			const filepath = path.resolve(__dirname, `../../../../public/downloads/${filename}`);
 
 			let result = [];
-			const query = await this.serviceRepository.find({ where: { category } });
+			const query = await this.serviceRepository.find({ where: { category }, order: { code: 'ASC' } });
 			for (const item of query) {
-				const serviceCost = await this.serviceCostRepository.findOne({ where: { code: item.code, hmo } });
+				let serviceCost = await this.serviceCostRepository.findOne({ where: { code: item.code, hmo } });
+
+				if (!serviceCost) {
+					const cost = new ServiceCost();
+					cost.code = item.code;
+					cost.item = item;
+					cost.hmo = hmo;
+					cost.tariff = 0;
+					serviceCost = await cost.save();
+				}
 
 				result = [...result, { ...item, serviceCost }];
 			}
@@ -181,6 +190,37 @@ export class ServicesService {
 			return { url: `${process.env.ENDPOINT}/public/downloads/${filename}` };
 		} catch (e) {
 			throw e;
+		}
+	}
+
+	async upload(categoryId: number, file, params): Promise<any> {
+		try {
+			const { hmo_id } = params;
+
+			const hmo = await this.hmoSchemeRepository.findOne(hmo_id);
+
+			const workbook = new Excel.Workbook();
+			await workbook.xlsx.readFile(file.path);
+			const worksheet = workbook.getWorksheet(1);
+
+			let items = [];
+			worksheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
+				items = [...items, { ...row.values }];
+			});
+
+			for (const item of items) {
+				const row = Object.values(item);
+				const serviceCost = await this.serviceCostRepository.findOne({ where: { code: row[1], hmo } });
+				console.log(serviceCost?.code);
+				if (serviceCost) {
+					serviceCost.tariff = parseFloat(row[3].toString());
+					await serviceCost.save();
+				}
+			}
+
+			return { success: true };
+		} catch (e) {
+			return { success: false, message: e.message };
 		}
 	}
 

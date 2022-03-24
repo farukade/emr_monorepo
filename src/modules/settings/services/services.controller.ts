@@ -1,10 +1,13 @@
-import { Controller, Get, Post, Patch, UsePipes, ValidationPipe, Body, Param, Delete, Request, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, UsePipes, ValidationPipe, Body, Param, Delete, Request, Query, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { ServicesService } from './services.service';
 import { Service } from '../entities/service.entity';
 import { ServiceDto } from './dto/service.dto';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import { AuthGuard } from '@nestjs/passport';
 import { ServiceCost } from '../entities/service_cost.entity';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { extname } from 'path';
+import { diskStorage } from 'multer';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('services')
@@ -38,9 +41,26 @@ export class ServicesController {
     @Get('/download/:category')
     downloadServices(
         @Query() urlParams,
-        @Param('category') category: string,
+        @Param('category') id: string,
     ): Promise<any> {
-        return this.servicesService.download(category, urlParams);
+        return this.servicesService.download(id, urlParams);
+    }
+
+    @Post('/upload/:category')
+    @UseInterceptors(FileInterceptor('file', {
+        storage: diskStorage({
+            filename: (req, file, cb) => {
+                const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('');
+                return cb(null, `${randomName}${extname(file.originalname)}`);
+            },
+        }),
+    }))
+    uploadServices(
+        @Body() body,
+        @UploadedFile() file,
+        @Param('category') id: number,
+    ): Promise<any> {
+        return this.servicesService.upload(id, file, body);
     }
 
     @Get('/private/:code')
