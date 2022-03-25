@@ -82,7 +82,7 @@ export class TransactionsService {
 			}
 
 			if (bill_source && bill_source !== '') {
-				query.andWhere('t.bill_source = :bill_source', { bill_source });
+				query.andWhere('q.bill_source = :bill_source', { bill_source });
 			}
 		}
 
@@ -201,7 +201,7 @@ export class TransactionsService {
 			}
 
 			if (bill_source && bill_source !== '') {
-				query.andWhere('t.bill_source = :bill_source', { bill_source });
+				query.andWhere('q.bill_source = :bill_source', { bill_source });
 			}
 		}
 
@@ -330,11 +330,11 @@ export class TransactionsService {
 		}
 	}
 
-	async processTransaction(id: number, transactionDto: ProcessTransactionDto, updatedBy): Promise<any> {
+	async processTransaction(id: number, transactionDto: ProcessTransactionDto, username): Promise<any> {
 		const queryRunner = getConnection().createQueryRunner();
 		await queryRunner.startTransaction();
 
-		const { voucher_id, amount_paid, voucher_amount, payment_method, patient_id, is_part_payment } = transactionDto;
+		const { voucher_id, amount_paid, voucher_amount, payment_method, patient_id } = transactionDto;
 		try {
 			const transaction = await this.transactionsRepository.findOne(id, { relations: ['patient', 'staff', 'appointment', 'hmo', 'admission', 'nicu'] });
 
@@ -344,12 +344,15 @@ export class TransactionsService {
 
 			const amount = Math.abs(transaction.amount);
 
+			const balance_amount = amount_paid - amount;
+			console.log(`balance: ${balance_amount}, amount paid: ${amount_paid}, transaction amount: ${amount}`);
+
 			let data: TransactionCreditDto = {
 				patient_id,
-				username: updatedBy,
+				username,
 				sub_total: 0,
 				vat: 0,
-				amount: Math.abs(amount_paid),
+				amount: Math.abs(amount),
 				voucher_amount: 0,
 				amount_paid,
 				change: 0,
@@ -364,7 +367,7 @@ export class TransactionsService {
 				admission_id: transaction.admission?.id || null,
 				nicu_id: transaction.nicu?.id || null,
 				staff_id: transaction.staff?.id || null,
-				lastChangedBy: updatedBy,
+				lastChangedBy: username,
 			};
 
 			let voucher = null;
@@ -407,33 +410,37 @@ export class TransactionsService {
 				this.appGateway.server.emit('nursing-queue', { queue });
 			}
 
-			if (is_part_payment && is_part_payment === 1) {
-				transaction.amount = Math.abs(amount_paid) * -1;
-			}
-
+			// approve debit
 			transaction.next_location = null;
 			transaction.status = 1;
-			transaction.lastChangedBy = updatedBy;
+			transaction.lastChangedBy = username;
+			transaction.amount_paid = Math.abs(amount_paid);
+			transaction.payment_method = payment_method;
 			const rs = await transaction.save();
 
 			const credit = await postCredit(data, transaction.service, voucher, transaction.patientRequestItem, appointment, transaction.hmo);
 
 			let balancePayment: Transaction;
-			if (is_part_payment && is_part_payment === 1) {
+			let balance = 0;
+			if (balance_amount > 0) {
+				// save excess amount as credit
+				balance = await this.addCredit(transaction.patient, balance_amount, 'Credit Balance', username);
+			} else if (balance_amount < 0) {
+				// create debit transaction
 				const duration = await getConnection().getRepository(Settings).findOne({ where: { slug: 'part-payment-duration' } });
-				const date = moment().add(duration.value, 'd').format('YYYY-MM-DD');
+				const date = transaction.admission ? null : moment().add(duration.value, 'd').format('YYYY-MM-DD');
 
 				const value: TransactionCreditDto = {
 					patient_id: transaction.patient?.id || null,
-					username: transaction.createdBy,
+					username,
 					sub_total: 0,
 					vat: 0,
-					amount: (amount - amount_paid) * -1,
+					amount: Math.abs(balance_amount) * -1,
 					voucher_amount: 0,
-					amount_paid,
+					amount_paid: 0,
 					change: 0,
 					description: transaction.description,
-					payment_method,
+					payment_method: null,
 					part_payment_expiry_date: date,
 					bill_source: transaction.bill_source,
 					next_location: transaction.next_location,
@@ -443,7 +450,7 @@ export class TransactionsService {
 					admission_id: transaction.admission?.id || null,
 					nicu_id: transaction.nicu?.id || null,
 					staff_id: transaction.staff?.id || null,
-					lastChangedBy: updatedBy,
+					lastChangedBy: username,
 				};
 
 				balancePayment = await postDebit(value, transaction.service, null, transaction.patientRequestItem, transaction.appointment, transaction.hmo);
@@ -462,7 +469,7 @@ export class TransactionsService {
 
 			rs.staff = await getStaff(transaction.lastChangedBy);
 
-			return { success: true, transaction: rs, credit: { ...creditTransaction, cashier }, queue, balancePayment };
+			return { success: true, transaction: rs, credit: { ...creditTransaction, cashier }, queue, balancePayment, balance };
 		} catch (error) {
 			await queryRunner.rollbackTransaction();
 			await queryRunner.release();
@@ -515,7 +522,7 @@ export class TransactionsService {
 	}
 
 	async processBulkTransaction(transactionDto: ProcessTransactionDto, username: string): Promise<any> {
-		const { payment_method, items, patient_id, amount_paid, is_part_payment, partAmount } = transactionDto;
+		const { payment_method, items, patient_id, amount_paid } = transactionDto;
 		try {
 			let transactions = [];
 			for (const item of items) {
@@ -528,7 +535,7 @@ export class TransactionsService {
 					vat: 0,
 					amount: Math.abs(item.amount),
 					voucher_amount: 0,
-					amount_paid: 0,
+					amount_paid: Math.abs(item.amount),
 					change: 0,
 					description: transaction.description,
 					payment_method,
@@ -568,6 +575,7 @@ export class TransactionsService {
 				transaction.next_location = null;
 				transaction.status = 1;
 				transaction.lastChangedBy = username;
+				transaction.amount_paid = Math.abs(item.amount);
 				const rs = await transaction.save();
 
 				rs.staff = await getStaff(transaction.lastChangedBy);
@@ -585,22 +593,31 @@ export class TransactionsService {
 				where: { patient, status: 0 },
 			});
 
+			const total = transactions.reduce((sum, item) => sum + Math.abs(parseFloat(item.amount)), 0);
+			const balance_amount = amount_paid - total;
+			console.log(`balance: ${balance_amount}, amount paid: ${amount_paid}, transaction amount: ${total}`);
+
 			let balancePayment: Transaction;
-			if (is_part_payment && is_part_payment === 1) {
+			let balance = 0;
+			if (balance_amount > 0) {
+				// save excess amount as credit
+				balance = await this.addCredit(patient, balance_amount, 'Credit Balance', username);
+			} else if (balance_amount < 0) {
+				// create debit transaction
 				const duration = await getConnection().getRepository(Settings).findOne({ where: { slug: 'part-payment-duration' } });
-				const date = moment().add(duration.value, 'd').format('YYYY-MM-DD');
+				const date = admission ? null : moment().add(duration.value, 'd').format('YYYY-MM-DD');
 
 				const value: TransactionCreditDto = {
 					patient_id,
 					username,
 					sub_total: 0,
 					vat: 0,
-					amount: (amount_paid - partAmount) * -1,
+					amount: Math.abs(balance_amount) * -1,
 					voucher_amount: 0,
-					amount_paid,
+					amount_paid: 0,
 					change: 0,
 					description: null,
-					payment_method,
+					payment_method: null,
 					part_payment_expiry_date: date,
 					bill_source: 'debit',
 					next_location: null,
@@ -616,7 +633,7 @@ export class TransactionsService {
 				balancePayment = await postDebit(value, null, null, null, null, patient.hmo);
 			}
 
-			return { success: true, transactions, balancePayment };
+			return { success: true, transactions, balancePayment, balance };
 		} catch (error) {
 			console.log(error);
 			return { success: false, message: error.message };
@@ -629,34 +646,7 @@ export class TransactionsService {
 
 			const patient = await this.patientRepository.findOne(patient_id, { relations: ['hmo'] });
 
-			const data: TransactionCreditDto = {
-				patient_id,
-				username: createdBy,
-				sub_total: 0,
-				vat: 0,
-				amount: Math.abs(amount),
-				voucher_amount: 0,
-				amount_paid: 0,
-				change: 0,
-				description: 'credit account',
-				payment_method: payment_method || 'Cash',
-				part_payment_expiry_date: null,
-				bill_source: 'credit-deposit',
-				next_location: null,
-				status: 1,
-				hmo_approval_code: null,
-				transaction_details: null,
-				admission_id: null,
-				nicu_id: null,
-				staff_id: null,
-				lastChangedBy: null,
-			};
-
-			const rs = await postCredit(data, null, null, null, null, patient.hmo);
-
-			await getConnection().getRepository(AccountDeposit).save({ patient, amount: Math.abs(amount), transaction: rs });
-
-			const balance = await getDepositBalance(patient_id, true);
+			const balance = await this.addCredit(patient, amount, payment_method, createdBy);
 
 			return { success: true, balance };
 		} catch (error) {
@@ -741,7 +731,7 @@ export class TransactionsService {
 		}
 	}
 
-	async processCreditTransaction(transactionDto: ProcessTransactionDto, updatedBy): Promise<any> {
+	async processCreditTransaction(transactionDto: ProcessTransactionDto, username): Promise<any> {
 		const { payment_method, items } = transactionDto;
 		try {
 			let transactions = [];
@@ -750,7 +740,7 @@ export class TransactionsService {
 
 				const data: TransactionCreditDto = {
 					patient_id: transaction.patient.id,
-					username: updatedBy,
+					username,
 					sub_total: 0,
 					vat: 0,
 					amount: Math.abs(item.amount),
@@ -768,7 +758,7 @@ export class TransactionsService {
 					admission_id: transaction.admission?.id || null,
 					nicu_id: transaction.nicu?.id || null,
 					staff_id: transaction.staff?.id || null,
-					lastChangedBy: updatedBy,
+					lastChangedBy: username,
 				};
 
 				let queue;
@@ -800,7 +790,7 @@ export class TransactionsService {
 
 				transaction.next_location = null;
 				transaction.status = 1;
-				transaction.lastChangedBy = updatedBy;
+				transaction.lastChangedBy = username;
 				const rs = await transaction.save();
 
 				rs.staff = await getStaff(transaction.lastChangedBy);
@@ -860,7 +850,7 @@ export class TransactionsService {
 			vat: 0,
 			amount: Math.abs(transaction.amount),
 			voucher_amount: 0,
-			amount_paid: 0,
+			amount_paid: Math.abs(transaction.amount),
 			change: 0,
 			description: transaction.description,
 			payment_method: 'HMO',
@@ -881,6 +871,7 @@ export class TransactionsService {
 		transaction.status = 1;
 		transaction.payment_method = 'HMO';
 		transaction.lastChangedBy = createdBy;
+		transaction.amount_paid = Math.abs(transaction.amount);
 		const rs = await transaction.save();
 
 		return { success: true, transaction: rs };
@@ -909,7 +900,7 @@ export class TransactionsService {
 			vat: 0,
 			amount: Math.abs(transaction.amount),
 			voucher_amount: 0,
-			amount_paid: 0,
+			amount_paid: Math.abs(transaction.amount),
 			change: 0,
 			description: transaction.description,
 			payment_method: 'HMO',
@@ -931,6 +922,7 @@ export class TransactionsService {
 		transaction.status = 1;
 		transaction.payment_method = 'HMO';
 		transaction.lastChangedBy = createdBy;
+		transaction.amount_paid = Math.abs(transaction.amount);
 		await transaction.save();
 
 		return { success: true, transaction };
@@ -950,7 +942,7 @@ export class TransactionsService {
 
 	async printBill(params: any): Promise<any> {
 		try {
-			const { startDate, endDate, patient_id, bill_source, status } = params;
+			const { start_date, end_date, patient_id, service_id, status } = params;
 
 			const query = this.transactionsRepository.createQueryBuilder('q').select('q.*')
 				.where('q.payment_type = :type', { type: 'self' })
@@ -962,12 +954,12 @@ export class TransactionsService {
 				}));
 			}
 
-			if (startDate && startDate !== '') {
-				const start = moment(startDate).endOf('day').toISOString();
+			if (start_date && start_date !== '') {
+				const start = moment(start_date).endOf('day').toISOString();
 				query.andWhere(`q.createdAt >= '${start}'`);
 			}
-			if (endDate && endDate !== '') {
-				const end = moment(endDate).endOf('day').toISOString();
+			if (end_date && end_date !== '') {
+				const end = moment(end_date).endOf('day').toISOString();
 				query.andWhere(`q.createdAt <= '${end}'`);
 			}
 
@@ -975,8 +967,25 @@ export class TransactionsService {
 				query.andWhere('q.patient_id = :patient_id', { patient_id });
 			}
 
-			if (bill_source && bill_source !== '') {
-				query.where('q.bill_source = :type', { type: bill_source });
+			if (service_id && service_id !== '') {
+				let bill_source = '';
+
+				if (service_id === 'credit') {
+					bill_source = 'credit-deposit';
+				} else if (service_id === 'transfer') {
+					bill_source = 'credit-transfer';
+				} else if (service_id === 'cafeteria') {
+					bill_source = 'cafeteria';
+				} else if (service_id === 'drugs') {
+					bill_source = 'drugs';
+				} else {
+					const serviceCategory = await this.serviceCategoryRepository.findOne(service_id);
+					bill_source = serviceCategory?.slug || '';
+				}
+
+				if (bill_source && bill_source !== '') {
+					query.andWhere('q.bill_source = :bill_source', { bill_source });
+				}
 			}
 
 			const transactions = await query.orderBy('q.createdAt', 'DESC').getRawMany();
@@ -1026,5 +1035,36 @@ export class TransactionsService {
 			console.log(error);
 			return { success: false, message: error.message };
 		}
+	}
+
+	async addCredit(patient, amount, payment_method, username) {
+		const data: TransactionCreditDto = {
+			patient_id: patient.id,
+			username,
+			sub_total: 0,
+			vat: 0,
+			amount: Math.abs(amount),
+			voucher_amount: 0,
+			amount_paid: 0,
+			change: 0,
+			description: 'credit account',
+			payment_method: payment_method || 'Cash',
+			part_payment_expiry_date: null,
+			bill_source: 'credit-deposit',
+			next_location: null,
+			status: 1,
+			hmo_approval_code: null,
+			transaction_details: null,
+			admission_id: null,
+			nicu_id: null,
+			staff_id: null,
+			lastChangedBy: null,
+		};
+
+		const rs = await postCredit(data, null, null, null, null, patient.hmo);
+
+		await getConnection().getRepository(AccountDeposit).save({ patient, amount: Math.abs(amount), transaction: rs });
+
+		return await getDepositBalance(patient.id, true);
 	}
 }

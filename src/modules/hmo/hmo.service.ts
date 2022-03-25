@@ -274,7 +274,7 @@ export class HmoService {
             }
 
             if (bill_source && bill_source !== '') {
-                query.andWhere('t.bill_source = :bill_source', { bill_source });
+                query.andWhere('q.bill_source = :bill_source', { bill_source });
             }
         }
 

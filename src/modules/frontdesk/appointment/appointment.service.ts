@@ -17,7 +17,7 @@ import { Brackets, getConnection, getRepository, Not, Raw } from 'typeorm';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import { PaginationOptionsInterface } from '../../../common/paginate';
-import { callPatient, getStaff, postDebit } from '../../../common/utils/utils';
+import { callPatient, getStaff, postCredit, postDebit } from '../../../common/utils/utils';
 import { ServiceCostRepository } from '../../settings/services/repositories/service_cost.repository';
 import { ServiceCost } from '../../settings/entities/service_cost.entity';
 import { StaffRepository } from '../../hr/staff/staff.repository';
@@ -278,24 +278,58 @@ export class AppointmentService {
 			await appointment.save();
 
 			if (consultation_id === 'initial') {
-				let payment;
-
-				if (!isCovered) {
-					// save payment
-					payment = await this.saveTransaction(patient, hmo, service, serviceCost, username, appointment);
-					await getConnection()
-						.createQueryBuilder()
-						.update(Appointment)
-						.set({ transaction: payment })
-						.where('id = :id', { id: appointment.id })
-						.execute();
-				}
+				// save payment
+				const amount = serviceCost?.tariff || 0;
+				const payment = await this.saveTransaction(patient, hmo, service, serviceCost, username, appointment);
+				await getConnection()
+					.createQueryBuilder()
+					.update(Appointment)
+					.set({ transaction: payment })
+					.where('id = :id', { id: appointment.id })
+					.execute();
 
 				// send queue message
 				if (sendToQueue) {
 					const type = isCovered ? 'vitals' : hmo.name === 'Private' ? 'paypoint' : 'hmo';
 					queue = await this.queueSystemRepository.saveQueue(appointment, type, patient);
 					this.appGateway.server.emit('paypoint-queue', { queue, payment });
+				}
+
+				if (isCovered) {
+					// credit paypoint
+					const creditData: TransactionCreditDto = {
+						patient_id: patient.id,
+						username,
+						sub_total: 0,
+						vat: 0,
+						amount: Math.abs(amount),
+						voucher_amount: 0,
+						amount_paid: Math.abs(amount),
+						change: 0,
+						description: payment.description,
+						payment_method: 'ANC Covered',
+						part_payment_expiry_date: null,
+						bill_source: payment.bill_source,
+						next_location: null,
+						status: 1,
+						hmo_approval_code: null,
+						transaction_details: null,
+						admission_id: null,
+						nicu_id: null,
+						staff_id: null,
+						lastChangedBy: username,
+					};
+
+					// approve debit
+					payment.next_location = null;
+					payment.status = 1;
+					payment.lastChangedBy = username;
+					payment.amount_paid = Math.abs(amount);
+					payment.payment_method = 'ANC Covered';
+					payment.next_location = null;
+					await payment.save();
+
+					await postCredit(creditData, payment.service, null, payment.patientRequestItem, null, hmo);
 				}
 			} else {
 				// send queue message
