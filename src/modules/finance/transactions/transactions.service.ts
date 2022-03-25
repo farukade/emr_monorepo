@@ -11,7 +11,7 @@ import { AppointmentRepository } from '../../frontdesk/appointment/appointment.r
 import { AppGateway } from '../../../app.gateway';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import { Brackets, getConnection } from 'typeorm';
-import { createServiceCost, getDepositBalance, getSerialCode, getStaff, postCredit, postDebit, formatPID, generatePDF, formatCurrency, parseSource, parseDescription } from '../../../common/utils/utils';
+import { createServiceCost, getDepositBalance, getSerialCode, getStaff, postCredit, postDebit, formatPID, generatePDF, formatCurrency, parseSource, parseDescription, formatPatientId } from '../../../common/utils/utils';
 import { Settings } from '../../settings/entities/settings.entity';
 import { ServiceCostRepository } from '../../settings/services/repositories/service_cost.repository';
 import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repository';
@@ -27,6 +27,7 @@ import { ServiceCost } from '../../settings/entities/service_cost.entity';
 import { PatientRequestItem } from '../../patient/entities/patient_request_items.entity';
 import { AdmissionsRepository } from '../../patient/admissions/repositories/admissions.repository';
 import * as path from 'path';
+import { ServiceCategoryRepository } from '../../settings/services/repositories/service_category.repository';
 
 @Injectable()
 export class TransactionsService {
@@ -52,20 +53,37 @@ export class TransactionsService {
 		private patientRequestRepository: PatientRequestRepository,
 		@InjectRepository(AdmissionsRepository)
 		private admissionRepository: AdmissionsRepository,
+		@InjectRepository(ServiceCategoryRepository)
+		private serviceCategoryRepository: ServiceCategoryRepository,
 		private readonly appGateway: AppGateway,
 	) {
 	}
 
 	async fetchList(options: PaginationOptionsInterface, params): Promise<Pagination> {
-		const { startDate, endDate, patient_id, staff_id, bill_source, status } = params;
+		const { startDate, endDate, patient_id, staff_id, service_id, status } = params;
 
 		const page = options.page - 1;
 
 		const query = this.transactionsRepository.createQueryBuilder('q').select('q.*')
 			.where('q.payment_type = :type', { type: 'self' });
 
-		if (bill_source && bill_source !== '') {
-			query.where('q.bill_source = :type', { type: bill_source });
+		if (service_id && service_id !== '') {
+			let bill_source = '';
+
+			if (service_id === 'credit') {
+				bill_source = 'credit-deposit';
+			} else if (service_id === 'transfer') {
+				bill_source = 'credit-transfer';
+			} else if (service_id === 'cafeteria') {
+				bill_source = 'cafeteria';
+			} else {
+				const serviceCategory = await this.serviceCategoryRepository.findOne(service_id);
+				bill_source = serviceCategory?.slug || '';
+			}
+
+			if (bill_source && bill_source !== '') {
+				query.andWhere('t.bill_source = :bill_source', { bill_source });
+			}
 		}
 
 		if (startDate && startDate !== '' && endDate && endDate !== '' && endDate === startDate) {
@@ -144,7 +162,7 @@ export class TransactionsService {
 	}
 
 	async fetchPending(options: PaginationOptionsInterface, params): Promise<any> {
-		const { startDate, endDate, patient_id, bill_source, fetch } = params;
+		const { startDate, endDate, patient_id, service_id, fetch } = params;
 
 		const query = this.transactionsRepository.createQueryBuilder('q').select('q.*')
 			.where('q.payment_type = :type', { type: 'self' });
@@ -166,8 +184,25 @@ export class TransactionsService {
 			query.andWhere('q.patient_id = :patient_id', { patient_id });
 		}
 
-		if (bill_source && bill_source !== '') {
-			query.where('q.bill_source = :type', { type: bill_source });
+		if (service_id && service_id !== '') {
+			let bill_source = '';
+
+			if (service_id === 'credit') {
+				bill_source = 'credit-deposit';
+			} else if (service_id === 'transfer') {
+				bill_source = 'credit-transfer';
+			} else if (service_id === 'cafeteria') {
+				bill_source = 'cafeteria';
+			} else if (service_id === 'drugs') {
+				bill_source = 'drugs';
+			} else {
+				const serviceCategory = await this.serviceCategoryRepository.findOne(service_id);
+				bill_source = serviceCategory?.slug || '';
+			}
+
+			if (bill_source && bill_source !== '') {
+				query.andWhere('t.bill_source = :bill_source', { bill_source });
+			}
 		}
 
 		const allTransactions = fetch && fetch === '1' ? await query.getRawMany() : [];
@@ -622,6 +657,82 @@ export class TransactionsService {
 			await getConnection().getRepository(AccountDeposit).save({ patient, amount: Math.abs(amount), transaction: rs });
 
 			const balance = await getDepositBalance(patient_id, true);
+
+			return { success: true, balance };
+		} catch (error) {
+			console.log(error);
+			return { success: false, message: error.message };
+		}
+	}
+
+	async transferCredit(params, username: string): Promise<any> {
+		try {
+			const { patient_id, amount, recipient_id } = params;
+
+			const patient = await this.patientRepository.findOne(patient_id, { relations: ['hmo'] });
+
+			const recipient = await this.patientRepository.findOne(recipient_id, { relations: ['hmo'] });
+
+			const creditAmount = await getDepositBalance(patient.id, true);
+			const balance = creditAmount - amount;
+
+			if (balance < 0) {
+				return { success: false, message: 'insufficient funds please credit account' };
+			}
+
+			const data: TransactionCreditDto = {
+				patient_id: recipient.id,
+				username,
+				sub_total: 0,
+				vat: 0,
+				amount: Math.abs(amount),
+				voucher_amount: 0,
+				amount_paid: 0,
+				change: 0,
+				description: 'credit account',
+				payment_method: 'Credit Transfer',
+				part_payment_expiry_date: null,
+				bill_source: 'credit-deposit',
+				next_location: null,
+				status: 1,
+				hmo_approval_code: null,
+				transaction_details: null,
+				admission_id: null,
+				nicu_id: null,
+				staff_id: null,
+				lastChangedBy: null,
+			};
+
+			const credit = await postCredit(data, null, null, null, null, recipient.hmo);
+
+			await getConnection().getRepository(AccountDeposit).save({ patient: recipient, amount: Math.abs(amount), transaction: credit });
+
+			const debitTransaction: TransactionCreditDto = {
+				patient_id: patient.id,
+				username,
+				sub_total: 0,
+				vat: 0,
+				amount: Math.abs(amount) * -1,
+				voucher_amount: 0,
+				amount_paid: 0,
+				change: 0,
+				description: `Transfer credit to EMR ID: ${formatPatientId(recipient)}`,
+				payment_method: 'Credit Transfer',
+				part_payment_expiry_date: null,
+				bill_source: 'credit-transfer',
+				next_location: null,
+				status: 1,
+				hmo_approval_code: null,
+				transaction_details: null,
+				admission_id: null,
+				nicu_id: null,
+				staff_id: null,
+				lastChangedBy: null,
+			};
+
+			const debit = await postDebit(debitTransaction, null, null, null, null, patient.hmo);
+
+			await getConnection().getRepository(AccountDeposit).save({ patient, amount: Math.abs(amount) * -1, transaction: debit });
 
 			return { success: true, balance };
 		} catch (error) {

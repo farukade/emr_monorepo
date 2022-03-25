@@ -640,7 +640,7 @@ export class PatientService {
 	}
 
 	async getTransactions(options: PaginationOptionsInterface, id, params): Promise<any> {
-		const { startDate, endDate, q, status } = params;
+		const { startDate, endDate, q, status, service_id } = params;
 
 		const query = this.transactionsRepository.createQueryBuilder('t').select('t.*')
 			.where('t.patient_id = :id', { id });
@@ -666,6 +666,23 @@ export class PatientService {
 
 		if (status && status !== '') {
 			query.andWhere('t.status = :status', { status });
+		}
+
+		if (service_id && service_id !== '') {
+			let bill_source = '';
+
+			if (service_id === 'credit') {
+				bill_source = 'credit-deposit';
+			} else if (service_id === 'transfer') {
+				bill_source = 'credit-transfer';
+			} else {
+				const serviceCategory = await this.serviceCategoryRepository.findOne(service_id);
+				bill_source = serviceCategory?.slug || '';
+			}
+
+			if (bill_source && bill_source !== '') {
+				query.andWhere('t.bill_source = :bill_source', { bill_source });
+			}
 		}
 
 		const transactions = await query.offset(page * options.limit)

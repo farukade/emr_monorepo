@@ -4,7 +4,7 @@ import * as puppeteer from 'puppeteer';
 import * as hbs from 'handlebars';
 import * as utils from 'util';
 import { SmsHistory } from '../entities/sms.entity';
-import { getConnection, Not } from 'typeorm';
+import { Brackets, getConnection, Not } from 'typeorm';
 import { User } from '../../modules/auth/entities/user.entity';
 import { StaffDetails } from '../../modules/hr/staff/entities/staff_details.entity';
 import { LogEntity } from '../../modules/logger/entities/logger.entity';
@@ -189,6 +189,26 @@ export const formatPID = (id, l: number = 8) => {
 	return `${zeros}${String(id)}`.slice(0 - l);
 };
 
+export const formatPatientId = patient => {
+	if (!patient) {
+		return '';
+	}
+
+	let formattedId = String(patient.id);
+	let len = 7 - formattedId.length;
+	while (len >= 0) {
+		formattedId = '0' + formattedId;
+		len--;
+	}
+
+	const legacyId =
+		patient.legacy_patient_id && patient.legacy_patient_id !== ''
+			? ` [${patient.legacy_patient_id}]`
+			: '';
+
+	return `${formattedId}${legacyId}`;
+};
+
 export const getStaff = async (username: string): Promise<StaffDetails> => {
 	const connection = getConnection();
 	// tslint:disable-next-line:no-shadowed-variable
@@ -204,9 +224,11 @@ export const getOutstanding = async (patient_id) => {
 	const connection = getConnection();
 	const patient = await connection.getRepository(Patient).findOne(patient_id);
 
-	const transactions = await connection.getRepository(Transaction).find({
-		where: { patient, bill_source: Not('credit-deposit') },
-	});
+	const transactions = await connection.getRepository(Transaction).createQueryBuilder('q').select('q.amount as amount, q.bill_source as bill_source')
+		.where('q.patient_id = :patient_id', { patient_id })
+		.andWhere('q.bill_source != \'credit-deposit\'')
+		.andWhere('q.bill_source != \'credit-transfer\'')
+		.getRawMany();
 
 	return patient.credit_limit > 0 ? 0 : transactions.reduce((totalAmount, item) => {
 			return totalAmount + item.amount;
@@ -217,9 +239,12 @@ export const getBalance = async (patient_id) => {
 	const connection = getConnection();
 	const patient = await connection.getRepository(Patient).findOne(patient_id);
 
-	const transactions = await connection.getRepository(Transaction).find({
-		where: { patient, bill_source: Not('credit-deposit') },
-	});
+	const transactions = await connection.getRepository(Transaction).createQueryBuilder('q').select('q.amount as amount, q.bill_source as bill_source')
+		.where('q.patient_id = :patient_id', { patient_id })
+		.andWhere('q.bill_source != \'credit-deposit\'')
+		.andWhere('q.bill_source != \'credit-transfer\'')
+		.getRawMany();
+	// console.log(transactions);
 
 	return transactions.reduce((totalAmount, item) => {
 		return totalAmount + item.amount;

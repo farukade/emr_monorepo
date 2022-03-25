@@ -18,6 +18,7 @@ import { ServiceCostRepository } from '../settings/services/repositories/service
 import { PatientRequestItemRepository } from '../patient/repositories/patient_request_items.repository';
 import { MigrationService } from '../migration/migration.service';
 import { Patient } from '../patient/entities/patient.entity';
+import { ServiceCategoryRepository } from '../settings/services/repositories/service_category.repository';
 
 @Injectable()
 export class HmoService {
@@ -37,6 +38,8 @@ export class HmoService {
         private serviceCostRepository: ServiceCostRepository,
         @InjectRepository(PatientRequestItemRepository)
         private patientRequestItemRepository: PatientRequestItemRepository,
+        @InjectRepository(ServiceCategoryRepository)
+        private serviceCategoryRepository: ServiceCategoryRepository,
     ) {
     }
 
@@ -228,7 +231,7 @@ export class HmoService {
     }
 
     async fetchTransactions(options: PaginationOptionsInterface, params): Promise<Pagination> {
-        const { startDate, endDate, patient_id, hmo_id, status } = params;
+        const { startDate, endDate, patient_id, hmo_id, status, service_id } = params;
 
         const query = this.transactionsRepository.createQueryBuilder('q')
             .where('q.payment_type = :type', { type: 'HMO' })
@@ -254,6 +257,25 @@ export class HmoService {
 
         if (status) {
             query.andWhere('q.status = :status', { status });
+        }
+
+        if (service_id && service_id !== '') {
+            let bill_source = '';
+
+            if (service_id === 'credit') {
+                bill_source = 'credit-deposit';
+            } else if (service_id === 'transfer') {
+                bill_source = 'credit-transfer';
+            } else if (service_id === 'cafeteria') {
+                bill_source = 'cafeteria';
+            } else {
+                const serviceCategory = await this.serviceCategoryRepository.findOne(service_id);
+                bill_source = serviceCategory?.slug || '';
+            }
+
+            if (bill_source && bill_source !== '') {
+                query.andWhere('t.bill_source = :bill_source', { bill_source });
+            }
         }
 
         const page = options.page - 1;
