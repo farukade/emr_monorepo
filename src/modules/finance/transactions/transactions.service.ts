@@ -525,8 +525,11 @@ export class TransactionsService {
 		const { payment_method, items, patient_id, amount_paid } = transactionDto;
 		try {
 			let transactions = [];
+			let total = 0;
 			for (const item of items) {
 				const transaction = await this.transactionsRepository.findOne(item.id, { relations: ['patient', 'staff', 'appointment', 'hmo', 'admission', 'nicu'] });
+
+				total = total + Math.abs(item.amount);
 
 				const data: TransactionCreditDto = {
 					patient_id: transaction.patient.id,
@@ -593,7 +596,6 @@ export class TransactionsService {
 				where: { patient, status: 0 },
 			});
 
-			const total = transactions.reduce((sum, item) => sum + Math.abs(parseFloat(item.amount)), 0);
 			const balance_amount = amount_paid - total;
 			console.log(`balance: ${balance_amount}, amount paid: ${amount_paid}, transaction amount: ${total}`);
 
@@ -608,7 +610,7 @@ export class TransactionsService {
 				const date = admission ? null : moment().add(duration.value, 'd').format('YYYY-MM-DD');
 
 				const value: TransactionCreditDto = {
-					patient_id,
+					patient_id: patient.id,
 					username,
 					sub_total: 0,
 					vat: 0,
