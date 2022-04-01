@@ -47,8 +47,9 @@ import * as startCase from 'lodash.startcase';
 import { AdmissionClinicalTask } from './admissions/entities/admission-clinical-task.entity';
 import { NicuRepository } from './nicu/nicu.repository';
 import { LabourEnrollmentRepository } from './labour-management/repositories/labour-enrollment.repository';
-import { HmoScheme } from '../hmo/entities/hmo_scheme.entity';
 import { PatientFluidChart } from './entities/patient_fluid_chart.entity';
+import { AntenatalEnrollmentRepository } from './antenatal/enrollment.repository';
+import { IvfEnrollmentRepository } from './ivf/ivf_enrollment.repository';
 
 @Injectable()
 export class PatientService {
@@ -96,6 +97,10 @@ export class PatientService {
 		private staffRepository: StaffRepository,
 		@InjectRepository(LabourEnrollmentRepository)
 		private labourEnrollmentRepository: LabourEnrollmentRepository,
+		@InjectRepository(AntenatalEnrollmentRepository)
+		private ancEnrollmentRepository: AntenatalEnrollmentRepository,
+		@InjectRepository(IvfEnrollmentRepository)
+		private ivfEnrollmentRepository: IvfEnrollmentRepository,
 	) {
 	}
 
@@ -813,6 +818,62 @@ export class PatientService {
 		return { success: true };
 	}
 
+	async addDiagnoses(id: number, params: any, username: string) {
+		try {
+			const { diagnoses, type } = params;
+
+			const patient = await this.patientRepository.findOne(id);
+
+			const admission = await this.admissionRepository.findOne({ where: { patient, status: 0 } });
+
+			const nicu = await this.nicuRepository.findOne({ where: { patient, status: 0 } });
+
+			const ivf = null ; // await this.ivfEnrollmentRepository.findOne({ where: { patient, status: 0 } });
+
+			const antenatal = await this.ancEnrollmentRepository.findOne({ where: { patient, status: 0 } });
+
+			const labour = await this.labourEnrollmentRepository.findOne({ where: { patient, status: 0 } });
+
+			let diagonsis = [];
+			for (const item of diagnoses) {
+				const patientDiagnosis = new PatientNote();
+				patientDiagnosis.diagnosis = item.diagnosis;
+				patientDiagnosis.status = 'Active';
+				patientDiagnosis.patient = patient;
+				patientDiagnosis.diagnosis_type = item.type.value;
+				patientDiagnosis.comment = item.comment;
+				patientDiagnosis.type = type;
+				patientDiagnosis.admission = admission;
+				patientDiagnosis.nicu = nicu;
+				patientDiagnosis.ivf = ivf;
+				patientDiagnosis.antenatal = antenatal;
+				patientDiagnosis.labour = labour;
+				patientDiagnosis.createdBy = username;
+				const rs = await patientDiagnosis.save();
+
+				let alertItem;
+				if (item?.status === 'critical') {
+					const alert = new PatientAlert();
+					alert.patient = patient;
+					alert.category = item.status;
+					alert.type = item.condition.value;
+					alert.source = type;
+					alert.item_id = rs.id;
+					alert.message = `patient has been diagnosed of ${item.condition.label}`;
+					alert.createdBy = username;
+					alertItem = await alert.save();
+				}
+
+				diagonsis = [...diagonsis, { ...rs, alertItem }];
+			}
+
+			return { success: true, diagonsis };
+		} catch (e) {
+			console.log(e);
+			return { success: false, message: e.message };
+		}
+	}
+
 	async getDiagnoses(id, urlParams: any): Promise<PatientNote[]> {
 		const { startDate, endDate, status, admission_id, nicu_id } = urlParams;
 
@@ -845,19 +906,26 @@ export class PatientService {
 		return await query.orderBy('q.createdAt', 'DESC').getMany();
 	}
 
-	async getAlerts(id: number): Promise<PatientAlert[]> {
+	async getAlerts(id: number, params): Promise<PatientAlert[]> {
+		const { category } = params;
+
 		const query = this.patientAlertRepository.createQueryBuilder('q')
 			.innerJoin(Patient, 'patient', 'q.patient = patient.id')
 			.where('q.patient = :id', { id })
-			.andWhere('q.read = :read', { read: false });
+			.andWhere('q.closed = :closed', { closed: false });
+
+		if (category && category !== '') {
+			query.andWhere('q.category = :category', { category });
+		}
 
 		return await query.orderBy('q.createdAt', 'DESC').getMany();
 	}
 
-	async readAlert(id: number, readBy): Promise<PatientAlert> {
+	async closeAlert(id: number, readBy): Promise<PatientAlert> {
 		const alertItem = await this.patientAlertRepository.findOne(id);
-		alertItem.read = true;
-		alertItem.read_by = readBy;
+		alertItem.closed = true;
+		alertItem.closed_by = readBy;
+		alertItem.closed_at = moment().format('YYYY-MM-DD HH:mm:ss');
 		alertItem.lastChangedBy = readBy;
 
 		return await alertItem.save();

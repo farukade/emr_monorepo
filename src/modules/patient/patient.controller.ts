@@ -177,6 +177,17 @@ export class PatientController {
     }
 
     @UseGuards(AuthGuard('jwt'))
+    @Post(':id/add-diagnosis')
+    @UsePipes(ValidationPipe)
+    addDiagnosis(
+      @Param('id') id: number,
+      @Body() params,
+      @Request() req,
+    ) {
+        return this.patientService.addDiagnoses(id, params, req.user.username);
+    }
+
+    @UseGuards(AuthGuard('jwt'))
     @Get(':id/diagnoses')
     getDiagnoses(
         @Param('id') id: string,
@@ -189,17 +200,18 @@ export class PatientController {
     @Get(':id/alerts')
     getAlerts(
         @Param('id') id: number,
+        @Query() urlParams,
     ): Promise<PatientAlert[]> {
-        return this.patientService.getAlerts(id);
+        return this.patientService.getAlerts(id, urlParams);
     }
 
     @UseGuards(AuthGuard('jwt'))
-    @Patch(':id/read-alert')
-    readAlert(
+    @Patch(':id/close-alert')
+    closeAlert(
         @Param('id') id: number,
         @Request() req,
     ) {
-        return this.patientService.readAlert(id, req.user.username);
+        return this.patientService.closeAlert(id, req.user.username);
     }
 
     @UseGuards(AuthGuard('jwt'))

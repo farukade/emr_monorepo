@@ -8,11 +8,9 @@ export class EncounterDto {
     patientHistorySelected: any[];
     medicalHistory: string;
     allergies: IAllergyInterface[];
-    pastAllergies: any[];
     physicalExamination: any[];
     physicalExaminationNote: string;
     diagnosis: IDiagnosisInterface[];
-    pastDiagnosis: IDiagnosisInterface[];
     investigations: IInvestigationInterface;
     treatmentPlan: string;
     nextAppointment: any;

@@ -93,7 +93,7 @@ export class ExcuseDutyService {
 				patientDiagnosis.patient = patient;
 				patientDiagnosis.admission = admission;
 				patientDiagnosis.nicu = nicu;
-				patientDiagnosis.diagnosisType = 'Query';
+				patientDiagnosis.diagnosis_type = 'Query';
 				patientDiagnosis.type = 'diagnosis';
 				patientDiagnosis.createdBy = username;
 				patientDiagnosis.excuseDuty = rs;

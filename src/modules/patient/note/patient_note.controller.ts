@@ -24,10 +24,10 @@ export class PatientNoteController {
     @Post('')
     @UsePipes(ValidationPipe)
     saveNote(
-        @Body() param,
+        @Body() params,
         @Request() req,
     ) {
-        return this.patientNoteService.saveNote(param, req.user.username);
+        return this.patientNoteService.saveNote(params, req.user.username);
     }
 
     @Patch('/:id')
@@ -38,6 +38,15 @@ export class PatientNoteController {
         @Request() req,
     ) {
         return this.patientNoteService.updateNote(id, param, req.user.username);
+    }
+
+    @Post('/:id/resolve')
+    @UsePipes(ValidationPipe)
+    resolveDiagnosis(
+        @Param('id') id: number,
+        @Request() req,
+    ) {
+        return this.patientNoteService.resolveDiagnosis(id, req.user.username);
     }
 
     @Delete('/:id')

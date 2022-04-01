@@ -11,6 +11,7 @@ import { AntenatalEnrollmentRepository } from '../antenatal/enrollment.repositor
 import { DrugGenericRepository } from '../../inventory/pharmacy/generic/generic.repository';
 import { LabourEnrollmentRepository } from '../labour-management/repositories/labour-enrollment.repository';
 import { NicuRepository } from '../nicu/nicu.repository';
+import { PatientAlertRepository } from '../repositories/patient_alert.repository';
 
 @Module({
     imports: [
@@ -24,6 +25,7 @@ import { NicuRepository } from '../nicu/nicu.repository';
             DrugGenericRepository,
             LabourEnrollmentRepository,
             NicuRepository,
+            PatientAlertRepository,
         ]),
     ],
     controllers: [PatientNoteController],

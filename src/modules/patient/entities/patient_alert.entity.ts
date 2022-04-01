@@ -11,12 +11,24 @@ export class PatientAlert extends CustomBaseEntity {
     @Column()
     type: string;
 
+    @Column({ default: 'normal' })
+    category: string;
+
     @Column()
     message: string;
 
+    @Column({ nullable: true })
+    source: string;
+
+    @Column({ nullable: true })
+    item_id: number;
+
     @Column({ default: false })
-    read: boolean;
+    closed: boolean;
 
     @Column({ type: 'varchar', length: 300, nullable: true })
-    read_by: string;
+    closed_by: string;
+
+    @Column({ nullable: true })
+    closed_at: string;
 }

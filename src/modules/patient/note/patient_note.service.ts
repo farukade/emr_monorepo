@@ -12,6 +12,8 @@ import { AntenatalEnrollmentRepository } from '../antenatal/enrollment.repositor
 import { DrugGenericRepository } from '../../inventory/pharmacy/generic/generic.repository';
 import { LabourEnrollmentRepository } from '../labour-management/repositories/labour-enrollment.repository';
 import { NicuRepository } from '../nicu/nicu.repository';
+import { PatientAlertRepository } from '../repositories/patient_alert.repository';
+import * as moment from 'moment';
 
 @Injectable()
 export class PatientNoteService {
@@ -34,6 +36,8 @@ export class PatientNoteService {
         private labourEnrollmentRepository: LabourEnrollmentRepository,
         @InjectRepository(NicuRepository)
         private nicuRepository: (NicuRepository),
+        @InjectRepository(PatientAlertRepository)
+        private patientAlertRepository: (PatientAlertRepository),
     ) {
     }
 
@@ -82,7 +86,6 @@ export class PatientNoteService {
 
         const items = await query.offset(page * options.limit)
             .limit(options.limit)
-            .orderBy('q.id', 'DESC')
             .orderBy('q.createdAt', 'DESC')
             .getRawMany();
 
@@ -162,6 +165,31 @@ export class PatientNoteService {
             const note = await this.patientNoteRepository.findOne(id);
             note.lastChangedBy = username;
             await note.save();
+
+            return { success: true, data: note };
+        } catch (e) {
+            return { success: false, message: e.message };
+        }
+    }
+
+    async resolveDiagnosis(id: number, username: string) {
+        try {
+            const note = await this.patientNoteRepository.findOne(id);
+            note.status = 'Resolved';
+            note.resolved_by = username;
+            note.resolved_at = moment().format('YYYY-MM-DD HH:mm:ss');
+            note.lastChangedBy = username;
+            await note.save();
+
+            const alertItem = await this.patientAlertRepository.findOne({ item_id: id, category: 'critical' });
+            if (alertItem) {
+                alertItem.closed = true;
+                alertItem.closed_by = username;
+                alertItem.closed_at = moment().format('YYYY-MM-DD HH:mm:ss');
+                alertItem.lastChangedBy = username;
+
+                await alertItem.save();
+            }
 
             return { success: true, data: note };
         } catch (e) {

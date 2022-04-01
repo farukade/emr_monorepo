@@ -29,6 +29,7 @@ import { LabourEnrollmentRepository } from '../labour-management/repositories/la
 import { PatientFluidChart } from '../entities/patient_fluid_chart.entity';
 import { AdmissionRoom } from './entities/admission-room.entity';
 import { AdmissionRoomRepository } from './repositories/admission-room.repository';
+import { PatientAlert } from '../entities/patient_alert.entity';
 
 @Injectable()
 export class AdmissionsService {
@@ -609,12 +610,24 @@ export class AdmissionsService {
                 patientDiagnosis.patient = patient;
                 patientDiagnosis.admission = admission;
                 patientDiagnosis.nicu = nicu;
-                patientDiagnosis.diagnosisType = diagnosis.type.value;
+                patientDiagnosis.diagnosis_type = diagnosis.type.value;
                 patientDiagnosis.comment = diagnosis.comment;
                 patientDiagnosis.type = 'diagnosis';
                 patientDiagnosis.visit = 'soap';
                 patientDiagnosis.createdBy = createdBy;
-                await patientDiagnosis.save();
+                const pd = await patientDiagnosis.save();
+
+                if (diagnosis?.status === 'critical') {
+                    const alert = new PatientAlert();
+                    alert.patient = patient;
+                    alert.category = diagnosis.status;
+                    alert.type = diagnosis.condition.value;
+                    alert.source = 'diagnosis';
+                    alert.item_id = pd.id;
+                    alert.message = `patient has been diagnosed of ${diagnosis.condition.label}`;
+                    alert.createdBy = createdBy;
+                    await alert.save();
+                }
             }
 
             let reviewOfSystems = [];

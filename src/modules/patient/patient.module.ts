@@ -42,6 +42,7 @@ import { PatientNoteRepository } from './repositories/patient_note.repository';
 import { NicuRepository } from './nicu/nicu.repository';
 import { LabourEnrollmentRepository } from './labour-management/repositories/labour-enrollment.repository';
 import { ExcuseDutyModule } from './excuse-duty/excuse-duty.module';
+import { AntenatalEnrollmentRepository } from './antenatal/enrollment.repository';
 
 @Module({
     imports: [
@@ -70,6 +71,7 @@ import { ExcuseDutyModule } from './excuse-duty/excuse-duty.module';
             PatientNoteRepository,
             NicuRepository,
             LabourEnrollmentRepository,
+            AntenatalEnrollmentRepository,
         ]),
         AntenatalModule,
         AdmissionsModule,

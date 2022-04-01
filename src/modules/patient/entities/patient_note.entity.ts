@@ -29,8 +29,8 @@ export class PatientNote extends CustomBaseEntity {
     @Column({ nullable: true })
     type: string;
 
-    @Column({ nullable: true, name: 'diagnosis_type' })
-    diagnosisType: string;
+    @Column({ nullable: true })
+    diagnosis_type: string;
 
     @Column({ nullable: true })
     comment: string;
@@ -60,6 +60,12 @@ export class PatientNote extends CustomBaseEntity {
 
     @Column({ type: 'varchar', default: 'Active' })
     status: string;
+
+    @Column({ type: 'varchar', length: 300, nullable: true })
+    resolved_by: string;
+
+    @Column({ nullable: true })
+    resolved_at: string;
 
     @Column({ nullable: true })
     allergy: string;

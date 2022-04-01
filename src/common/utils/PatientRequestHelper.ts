@@ -15,6 +15,7 @@ import { IvfEnrollment } from '../../modules/patient/ivf/entities/ivf_enrollment
 import { createServiceCost, getSerialCode } from './utils';
 import { Nicu } from '../../modules/patient/nicu/entities/nicu.entity';
 import { Patient } from '../../modules/patient/entities/patient.entity';
+import { PatientAlert } from '../../modules/patient/entities/patient_alert.entity';
 
 export class PatientRequestHelper {
     constructor(private patientRequestRepo: PatientRequestRepository) {
@@ -166,13 +167,25 @@ export class PatientRequestHelper {
                             i.status = 'Active';
                             i.patient = patient;
                             i.request = reqItem;
-                            i.diagnosisType = diag.type.value;
+                            i.diagnosis_type = diag.type.value;
                             i.comment = diag.comment;
                             i.visit = visit;
                             i.type = 'diagnosis';
                             i.createdBy = createdBy;
                             i.admission = admission;
-                            await i.save();
+                            const note = await i.save();
+
+                            if (diag?.status === 'critical') {
+                                const alert = new PatientAlert();
+                                alert.patient = patient;
+                                alert.category = diag.status;
+                                alert.type = diag.condition.value;
+                                alert.source = 'diagnosis';
+                                alert.item_id = note.id;
+                                alert.message = `patient has been diagnosed of ${diag.condition.label}`;
+                                alert.createdBy = createdBy;
+                                await alert.save();
+                            }
 
                             diags = [...diags, i];
                         }
@@ -349,13 +362,25 @@ export class PatientRequestHelper {
                                     i.status = 'Active';
                                     i.patient = patient;
                                     i.request = reqItem;
-                                    i.diagnosisType = diag.type.value;
+                                    i.diagnosis_type = diag.type.value;
                                     i.comment = diag.comment;
                                     i.visit = visit;
                                     i.type = 'diagnosis';
                                     i.createdBy = createdBy;
                                     i.admission = admission;
-                                    await i.save();
+                                    const note = await i.save();
+
+                                    if (diag?.status === 'critical') {
+                                        const alert = new PatientAlert();
+                                        alert.patient = patient;
+                                        alert.category = diag.status;
+                                        alert.type = diag.condition.value;
+                                        alert.source = 'diagnosis';
+                                        alert.item_id = note.id;
+                                        alert.message = `patient has been diagnosed of ${diag.condition.label}`;
+                                        alert.createdBy = createdBy;
+                                        await alert.save();
+                                    }
 
                                     diags = [...diags, i];
                                 }

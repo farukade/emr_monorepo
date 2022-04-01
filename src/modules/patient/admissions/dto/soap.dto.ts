@@ -7,7 +7,6 @@ export class SoapDto {
     complaints: string;
     treatmentPlan: string;
     diagnosis: IDiagnosisInterface[];
-    pastDiagnosis: IDiagnosisInterface[];
     physicalExaminationSummary: string;
     reviewOfSystem: any[];
 }
