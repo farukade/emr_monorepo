@@ -262,4 +262,13 @@ export class PatientController {
     ) {
         return this.patientService.disable(id, req.user.username);
     }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Get(':id/summary')
+    getSummary(
+        @Param('id') id: number,
+        @Query() urlParams,
+    ): Promise<Voucher[]> {
+        return this.patientService.getSummary(id);
+    }
 }

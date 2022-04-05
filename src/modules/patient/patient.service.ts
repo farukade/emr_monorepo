@@ -4,7 +4,7 @@ import { PatientRepository } from './repositories/patient.repository';
 import { PatientNOKRepository } from './repositories/patient.nok.repository';
 import { Patient } from './entities/patient.entity';
 import { PatientDto } from './dto/patient.dto';
-import { Brackets, getConnection } from 'typeorm';
+import { Brackets, getConnection, Raw } from 'typeorm';
 import { PatientVitalRepository } from './repositories/patient_vitals.repository';
 import { PatientVital } from './entities/patient_vitals.entity';
 import * as moment from 'moment';
@@ -15,15 +15,7 @@ import { PatientDocumentRepository } from './repositories/patient_document.repos
 import { OpdPatientDto } from './dto/opd-patient.dto';
 import { AppointmentRepository } from '../frontdesk/appointment/appointment.repository';
 import { TransactionsRepository } from '../finance/transactions/transactions.repository';
-import {
-	formatPID,
-	getBalance,
-	getOutstanding,
-	getStaff,
-	postDebit,
-	getLastAppointment,
-	getDepositBalance, createServiceCost,
-} from '../../common/utils/utils';
+import { createServiceCost, formatPID, getBalance, getDepositBalance, getLastAppointment, getOutstanding, getStaff, postDebit } from '../../common/utils/utils';
 import { AdmissionClinicalTaskRepository } from './admissions/repositories/admission-clinical-tasks.repository';
 import { AdmissionsRepository } from './admissions/repositories/admissions.repository';
 import { Immunization } from './immunization/entities/immunization.entity';
@@ -997,6 +989,43 @@ export class PatientService {
 			const rs = await patient.save();
 
 			return { success: true, patient: rs };
+		} catch (error) {
+			return { success: false, message: error.message };
+		}
+	}
+
+	async getSummary(id: number): Promise<any> {
+		try {
+			const patient = await this.patientRepository.findOne(id);
+
+			const result = await this.patientVitalRepository.createQueryBuilder('v')
+				.select(['v.patientId', 'DATE(v.createdAt) AS created_at'])
+				.groupBy('CAST(v.createdAt AS DATE)')
+				.addGroupBy('v.patientId')
+				.where('v.patientId = :patientId', { patientId: id })
+				.orderBy('created_at', 'DESC')
+				.getRawMany();
+
+			let diagnosis = [];
+
+			for (const item of result) {
+				const date: string = moment(item.created_at).format('YYYY-MM-DD');
+
+				item.data = await this.patientVitalRepository.find({
+					where: { patient, createdAt: Raw(alias => `CAST(${alias} AS DATE) = '${date}'`) },
+				});
+
+				const diagnoses = await this.patientNoteRepository.createQueryBuilder('d')
+					.select('d.*')
+					.where('d.patient_id = :id', { id })
+					.andWhere('d.type = :type', { type: 'diagnosis' })
+					.andWhere('CAST(d.createdAt AS DATE) = :date', { date })
+					.getRawMany();
+
+				diagnosis = [...diagnosis, { date, data: diagnoses }];
+			}
+
+			return { success: true, summary: { vitals: result, diagnosis } };
 		} catch (error) {
 			return { success: false, message: error.message };
 		}
