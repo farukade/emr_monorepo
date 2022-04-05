@@ -14,6 +14,7 @@ import { LabourEnrollmentRepository } from '../labour-management/repositories/la
 import { NicuRepository } from '../nicu/nicu.repository';
 import { PatientAlertRepository } from '../repositories/patient_alert.repository';
 import * as moment from 'moment';
+import { EncounterRepository } from '../consultation/encounter.repository';
 
 @Injectable()
 export class PatientNoteService {
@@ -38,6 +39,8 @@ export class PatientNoteService {
         private nicuRepository: (NicuRepository),
         @InjectRepository(PatientAlertRepository)
         private patientAlertRepository: (PatientAlertRepository),
+        @InjectRepository(EncounterRepository)
+        private encounterRepository: EncounterRepository,
     ) {
     }
 
@@ -112,7 +115,7 @@ export class PatientNoteService {
     }
 
     async saveNote(param: any, createdBy: string) {
-        const { patient_id, description, type, admission_id, note_type, specialty, procedure_id, ivf_id, antenatal_id, labour_id, nicu_id } = param;
+        const { patient_id, description, type, admission_id, note_type, specialty, procedure_id, ivf_id, antenatal_id, labour_id, nicu_id, encounter_id } = param;
 
         const patient = await this.patientRepository.findOne(patient_id);
 
@@ -143,6 +146,10 @@ export class PatientNoteService {
 
         if (labour_id && labour_id !== '') {
             note.labour = await this.labourEnrollmentRepository.findOne(labour_id);
+        }
+
+        if (encounter_id && encounter_id !== '') {
+            note.encounter = await this.encounterRepository.findOne(encounter_id);
         }
 
         if (nicu_id && nicu_id !== '') {

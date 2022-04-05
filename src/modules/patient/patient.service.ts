@@ -1003,6 +1003,8 @@ export class PatientService {
 				.groupBy('CAST(v.createdAt AS DATE)')
 				.addGroupBy('v.patientId')
 				.where('v.patientId = :patientId', { patientId: id })
+				.andWhere('v.readingType != :type1', { type1: 'Fluid Chart' })
+				.andWhere('v.readingType != :type2', { type2: 'regimen' })
 				.orderBy('created_at', 'DESC')
 				.getRawMany();
 

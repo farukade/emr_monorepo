@@ -15,12 +15,14 @@ import { QueueSystemRepository } from '../../frontdesk/queue-system/queue-system
 import { PatientConsumable } from '../entities/patient_consumable.entity';
 import { Appointment } from '../../frontdesk/appointment/appointment.entity';
 import { AuthRepository } from '../../auth/auth.repository';
-import { Connection, getConnection, getRepository } from 'typeorm';
+import { Connection, getConnection, getRepository, Raw } from 'typeorm';
 import { getStaff } from '../../../common/utils/utils';
 import { PatientNoteRepository } from '../repositories/patient_note.repository';
 import { DrugGenericRepository } from '../../inventory/pharmacy/generic/generic.repository';
 import { StoreInventoryRepository } from '../../inventory/store/store.repository';
 import { PatientAlert } from '../entities/patient_alert.entity';
+import { PatientVitalRepository } from '../repositories/patient_vitals.repository';
+import { PatientRequestRepository } from '../repositories/patient_request.repository';
 
 @Injectable()
 export class ConsultationService {
@@ -43,63 +45,96 @@ export class ConsultationService {
 		private patientNoteRepository: PatientNoteRepository,
 		@InjectRepository(AuthRepository)
 		private readonly authRepository: AuthRepository,
+		@InjectRepository(PatientVitalRepository)
+		private patientVitalRepository: PatientVitalRepository,
+		@InjectRepository(PatientRequestRepository)
+		private patientRequestRepository: PatientRequestRepository,
 	) {
 	}
 
 	async getEncounters(options: PaginationOptionsInterface, urlParams): Promise<any> {
-		const { startDate, endDate, patient_id } = urlParams;
-
-		const query = this.encounterRepository.createQueryBuilder('e')
-			.select('e.*');
-
-		if (startDate && startDate !== '') {
-			const start = moment(startDate).endOf('day').toISOString();
-			query.where(`e.createdAt >= '${start}'`);
-		}
-		if (endDate && endDate !== '') {
-			const end = moment(endDate).endOf('day').toISOString();
-			query.andWhere(`e.createdAt <= '${end}'`);
-		}
-
-		if (patient_id && patient_id !== '') {
-			query.andWhere('e.patient_id = :patient_id', { patient_id });
-		}
-
-		const page = options.page - 1;
-
-		const total = await query.getCount();
-
-		const items = await query.orderBy('e.createdAt', 'DESC')
-			.take(options.limit)
-			.skip(page * options.limit)
-			.getRawMany();
-
-		let result = [];
 		try {
+			const { startDate, endDate, patient_id } = urlParams;
+
+			const query = this.encounterRepository.createQueryBuilder('e')
+				.select('e.*');
+
+			if (startDate && startDate !== '') {
+				const start = moment(startDate).endOf('day').toISOString();
+				query.where(`e.createdAt >= '${start}'`);
+			}
+			if (endDate && endDate !== '') {
+				const end = moment(endDate).endOf('day').toISOString();
+				query.andWhere(`e.createdAt <= '${end}'`);
+			}
+
+			if (patient_id && patient_id !== '') {
+				query.andWhere('e.patient_id = :patient_id', { patient_id });
+			}
+
+			const page = options.page - 1;
+
+			const total = await query.getCount();
+
+			const items = await query.orderBy('e.createdAt', 'DESC')
+				.take(options.limit)
+				.skip(page * options.limit)
+				.getRawMany();
+
+			let result = [];
 
 			for (const item of items) {
-				const patient = await this.patientRepository.findOne(item.patient, {
+				const patient = await this.patientRepository.findOne(item.patient_id, {
 					relations: ['nextOfKin', 'immunization', 'hmo'],
 				});
 
-				const staff = await getStaff(item.createdBy);
-
 				item.patient = patient;
-				item.staff = staff;
 
-				const pns = await this.patientNoteRepository.createQueryBuilder('pn')
-					.where('pn.encounter_id = :id', { id: item.id }).getMany();
+				item.staff = await getStaff(item.createdBy);
 
-				const pc = await getRepository(PatientConsumable).createQueryBuilder('pc')
-					.where('pc.encounter_id = :id', { id: item.id }).getMany();
-
-				item.patient_consumables = pc;
-				item.patient_notes = pns;
+				const date: string = moment(item.createdAt).format('YYYY-MM-DD');
 
 				item.appointment = await this.appointmentRepository.findOne({
 					where: { id: item.appointment_id },
 					relations: ['whomToSee', 'consultingRoom', 'department'],
 				});
+
+				item.vitals = await this.patientVitalRepository.createQueryBuilder('v')
+					.select('v.*')
+					.where('v.patientId = :patient_id', { patient_id: patient.id })
+					.andWhere('v.readingType != :type1', { type1: 'Fluid Chart' })
+					.andWhere('v.readingType != :type2', { type2: 'regimen' })
+					.andWhere(`CAST(v.createdAt as DATE) = '%${date}%'`)
+					.getRawMany();
+
+				item.patient_notes = await this.patientNoteRepository.createQueryBuilder('pn')
+					.select('pn.*')
+					.where('pn.encounter_id = :id', { id: item.id })
+					.getRawMany();
+
+				item.encounter_note = await this.patientNoteRepository.createQueryBuilder('n')
+					.select('n.*')
+					.where('n.encounter_id = :id', { id: item.id })
+					.andWhere('n.type = :type', { type: 'encounter-note' })
+					.getRawOne();
+
+				item.allergies = await this.patientNoteRepository.find({
+					where: { patient, type: 'allergy', encounter: item },
+				});
+
+				item.diagnosis = await this.patientNoteRepository.find({
+					where: { patient, type: 'diagnosis', encounter: item },
+				});
+
+				item.investigations = await this.patientRequestRepository.find({
+					where: { patient, encounter: item },
+					relations: ['item'],
+				});
+
+				item.patient_consumables = await getRepository(PatientConsumable).createQueryBuilder('pc')
+					.select('pc.*')
+					.where('pc.encounter_id = :id', { id: item.id })
+					.getRawMany();
 
 				result = [...result, item];
 			}
@@ -111,14 +146,12 @@ export class ConsultationService {
 				totalPages: total,
 				currentPage: options.page,
 			};
-
 		} catch (err) {
 			return {
 				success: false,
 				error: `${err.message || 'problem fetching encounter at the moment please try again later'}`,
 			};
 		}
-
 	}
 
 	async saveEncounter(patientId: number, param: EncounterDto, urlParam, createdBy) {
@@ -344,7 +377,7 @@ export class ConsultationService {
 			}
 
 			if (investigations.labRequest && investigations.labRequest.tests.length > 0) {
-				const labRequest = await PatientRequestHelper.handleLabRequest(investigations.labRequest, patient, createdBy);
+				const labRequest = await PatientRequestHelper.handleLabRequest(investigations.labRequest, patient, createdBy, encounter);
 				console.log(labRequest);
 				if (labRequest.success && labRequest.data.length > 0) {
 					// save transaction
@@ -355,7 +388,7 @@ export class ConsultationService {
 			}
 
 			if (investigations.radiologyRequest && investigations.radiologyRequest.tests.length > 0) {
-				const request = await PatientRequestHelper.handleServiceRequest(investigations.radiologyRequest, patient, createdBy, 'scans', 'encounter');
+				const request = await PatientRequestHelper.handleServiceRequest(investigations.radiologyRequest, patient, createdBy, 'scans', 'encounter', encounter);
 				console.log(request);
 				if (request.success && request.data.length > 0) {
 					// save transaction
@@ -371,7 +404,7 @@ export class ConsultationService {
 			}
 
 			if (investigations.procedureRequest && investigations.procedureRequest.tests.length > 0) {
-				const procedure = await PatientRequestHelper.handleServiceRequest(investigations.procedureRequest, patient, createdBy, 'procedure', 'encounter');
+				const procedure = await PatientRequestHelper.handleServiceRequest(investigations.procedureRequest, patient, createdBy, 'procedure', 'encounter', encounter);
 				console.log(procedure);
 				if (procedure.success && procedure.data.length > 0) {
 					// save transaction
@@ -387,7 +420,7 @@ export class ConsultationService {
 			}
 
 			if (investigations.pharmacyRequest && investigations.pharmacyRequest.items.length > 0) {
-				const regimen = await PatientRequestHelper.handlePharmacyRequest(investigations.pharmacyRequest, patient, createdBy, 'encounter');
+				const regimen = await PatientRequestHelper.handlePharmacyRequest(investigations.pharmacyRequest, patient, createdBy, 'encounter', encounter);
 				console.log(regimen);
 			}
 
@@ -425,7 +458,4 @@ export class ConsultationService {
 		}
 	}
 
-	async getEncounter(id: string) {
-		return await this.encounterRepository.findOne(id);
-	}
 }

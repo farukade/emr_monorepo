@@ -11,6 +11,8 @@ import { AuthRepository } from '../../auth/auth.repository';
 import { PatientNoteRepository } from '../repositories/patient_note.repository';
 import { DrugGenericRepository } from '../../inventory/pharmacy/generic/generic.repository';
 import { StoreInventoryRepository } from '../../inventory/store/store.repository';
+import { PatientVitalRepository } from '../repositories/patient_vitals.repository';
+import { PatientRequestRepository } from '../repositories/patient_request.repository';
 
 @Module({
     imports: [TypeOrmModule.forFeature([
@@ -22,6 +24,8 @@ import { StoreInventoryRepository } from '../../inventory/store/store.repository
         AuthRepository,
         PatientNoteRepository,
         StoreInventoryRepository,
+        PatientVitalRepository,
+        PatientRequestRepository,
     ])],
     controllers: [ConsultationController],
     providers: [ AppGateway, ConsultationService],

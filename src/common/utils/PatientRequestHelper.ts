@@ -21,7 +21,7 @@ export class PatientRequestHelper {
     constructor(private patientRequestRepo: PatientRequestRepository) {
     }
 
-    static async handleLabRequest(param: any, patient: Patient, createdBy: string) {
+    static async handleLabRequest(param: any, patient: Patient, createdBy: string, encounter = null) {
         const { requestType, request_note, tests, urgent, antenatal_id, admission_id, nicu_id, ivf_id } = param;
 
         try {
@@ -64,6 +64,7 @@ export class PatientRequestHelper {
                     createdBy,
                     ivf,
                     nicu,
+                    encounter,
                 };
                 const res = await this.save(data);
                 const lab = res.generatedMaps[0];
@@ -89,7 +90,7 @@ export class PatientRequestHelper {
         }
     }
 
-    static async handlePharmacyRequest(param: any, patient: Patient, createdBy: string, visit = '') {
+    static async handlePharmacyRequest(param: any, patient: Patient, createdBy: string, visit = '', encounter = null) {
         const { requestType, request_note, items, procedure_id, antenatal_id, admission_id, nicu_id } = param;
         try {
             const serialCode = await getSerialCode(requestType);
@@ -126,6 +127,7 @@ export class PatientRequestHelper {
                     admission,
                     nicu,
                     procedure_id: procedure_id && procedure_id !== '' ? procedure_id : null,
+                    encounter,
                 };
                 const res = await this.save(data);
                 const regimen = res.generatedMaps[0];
@@ -204,7 +206,7 @@ export class PatientRequestHelper {
         }
     }
 
-    static async handleVaccinationRequest(param, patient, createdBy) {
+    static async handleVaccinationRequest(param, patient, createdBy, ) {
         const { date_due } = param;
 
         const serialCode = await getSerialCode('drugs');
@@ -288,7 +290,7 @@ export class PatientRequestHelper {
         }
     }
 
-    static async handleServiceRequest(param, patient, createdBy, type, visit = '') {
+    static async handleServiceRequest(param, patient, createdBy, type, visit = '', encounter = null) {
         const { requestType, request_note, tests, diagnosis, urgent, antenatal_id, admission_id, procedure_id, nicu_id } = param;
 
         try {
@@ -330,6 +332,7 @@ export class PatientRequestHelper {
                         nicu,
                         antenatal,
                         procedure_id: procedure_id && procedure_id !== '' ? procedure_id : null,
+                        encounter,
                     };
 
                     const res = await this.save(data);

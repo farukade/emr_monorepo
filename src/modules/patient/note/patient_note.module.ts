@@ -12,6 +12,7 @@ import { DrugGenericRepository } from '../../inventory/pharmacy/generic/generic.
 import { LabourEnrollmentRepository } from '../labour-management/repositories/labour-enrollment.repository';
 import { NicuRepository } from '../nicu/nicu.repository';
 import { PatientAlertRepository } from '../repositories/patient_alert.repository';
+import { EncounterRepository } from '../consultation/encounter.repository';
 
 @Module({
     imports: [
@@ -26,6 +27,7 @@ import { PatientAlertRepository } from '../repositories/patient_alert.repository
             LabourEnrollmentRepository,
             NicuRepository,
             PatientAlertRepository,
+            EncounterRepository,
         ]),
     ],
     controllers: [PatientNoteController],

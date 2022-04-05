@@ -346,7 +346,7 @@ export class AntenatalService {
 					urgent: radiologyRequest.scan_urgent || false,
 					antenatal_id: id,
 				};
-				const scan = await PatientRequestHelper.handleServiceRequest(request, patient, createdBy, 'scans');
+				const scan = await PatientRequestHelper.handleServiceRequest(request, patient, createdBy, 'scans', '');
 				if (scan.success) {
 					await RequestPaymentHelper.servicePayment(scan.data, patient, createdBy, 'scans', 0);
 				}

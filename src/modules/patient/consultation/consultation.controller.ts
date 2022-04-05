@@ -30,11 +30,4 @@ export class ConsultationController {
         return this.consultationService.getEncounters({ page, limit }, urlParams);
     }
 
-    @Get(':id')
-    getEncounter(
-        @Param('id') id: string,
-    ) {
-        return this.consultationService.getEncounter(id);
-    }
-
 }
