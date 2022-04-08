@@ -7,7 +7,7 @@ export abstract class CustomBaseEntity extends BaseEntity {
     @Column({ type: 'varchar', nullable: true })
     old_id: string;
 
-    @Column({ type: 'varchar', length: 300, default: 'it-admin' })
+    @Column({ type: 'varchar', length: 300, default: 'admin' })
     createdBy: string;
 
     @Column({ type: 'varchar', length: 300, nullable: true })

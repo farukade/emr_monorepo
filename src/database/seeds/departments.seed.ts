@@ -14,7 +14,7 @@ export default class CreateDepartments implements Seeder {
         const s = departments[i];
         const department = new Department();
         department.name = s.name;
-        department.createdBy = 'it-admin';
+        department.createdBy = 'admin';
         department.save();
       } catch (error) {
         continue;

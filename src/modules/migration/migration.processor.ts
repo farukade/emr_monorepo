@@ -343,7 +343,7 @@ export class MigrationProcessor {
 						blood_group: item.bloodgroup,
 						blood_type: item.bloodtype,
 						createdAt: item.enrollment_date,
-						createdBy: creator?.user?.username || 'it-admin',
+						createdBy: creator?.user?.username || 'admin',
 						title: item?.title?.replace('|', '') || '',
 					};
 

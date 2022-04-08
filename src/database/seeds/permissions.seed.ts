@@ -14,7 +14,7 @@ export default class CreatePermissions implements Seeder {
                 const s = permissions[i];
                 const permission = new Permission();
                 permission.name = s.name;
-                permission.createdBy = 'it-admin';
+                permission.createdBy = 'admin';
                 permission.save();
             } catch (error) {
                 continue;

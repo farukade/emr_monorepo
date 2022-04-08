@@ -32,7 +32,7 @@ export default class CreateRole implements Seeder {
                 const role = new Role();
                 role.slug = s.slug;
                 role.name = s.name;
-                role.createdBy = 'it-admin';
+                role.createdBy = 'admin';
                 await role.save();
             } catch (error) {
                 continue;

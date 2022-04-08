@@ -202,7 +202,7 @@ export class TasksService {
 
 					if (transaction) {
 						const appTransact = await getConnection().getRepository(Transaction).findOne(transaction.id);
-						appTransact.deletedBy = 'it-admin';
+						appTransact.deletedBy = 'admin';
 						await appTransact.save();
 						await appTransact.softRemove();
 					}
