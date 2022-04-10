@@ -19,4 +19,7 @@ export class InventoryPurchase extends CustomBaseEntity {
 
     @Column({ nullable: true })
     item_category: string;
+    
+    @Column({ type: 'float4', default: 0.00, nullable: true })
+    selling_price: number;
 }
