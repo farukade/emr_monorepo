@@ -7,8 +7,6 @@ import { Immunization } from '../immunization/entities/immunization.entity';
 import { Nicu } from '../nicu/entities/nicu.entity';
 import { HmoScheme } from '../../hmo/entities/hmo_scheme.entity';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
-import { DoctorsAppointment } from 'src/modules/frontdesk/doctors-apointment/appointment.entity';
-import { doctorsAppointmentDto } from 'src/modules/frontdesk/doctors-apointment/dto/appointment.dto';
 
 @Entity({ name: 'patients' })
 export class Patient extends CustomBaseEntity {
@@ -102,9 +100,6 @@ export class Patient extends CustomBaseEntity {
 
     @OneToMany(type => Immunization, immunization => immunization.patient)
     immunization: Immunization[];
-
-    @OneToMany(type => DoctorsAppointment, doctorsAppointment => doctorsAppointment.patient)
-    doctors_appointment: DoctorsAppointment[];
 
     @Column({ type: 'boolean', default: true })
     is_active: boolean;

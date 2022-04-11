@@ -1,4 +1,3 @@
-import { Department } from 'src/modules/settings/entities/department.entity';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
@@ -45,8 +44,4 @@ export class Requisition extends CustomBaseEntity {
 
     @Column({ nullable: true, name: 'decline_reason' })
     declineReason: string;
-
-    @ManyToOne(type => Department, { nullable: true })
-    @JoinColumn({ name: 'department_id' })
-    department: Department;
 }
