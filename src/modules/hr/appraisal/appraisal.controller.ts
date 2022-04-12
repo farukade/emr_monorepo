@@ -1,18 +1,18 @@
 import {
-    Controller,
-    Post,
-    UsePipes,
-    ValidationPipe,
-    Body,
-    Param,
-    Patch,
-    Delete,
-    Get,
-    Header,
-    Res,
-    UseInterceptors,
-    UploadedFile,
-    UseGuards,
+	Controller,
+	Post,
+	UsePipes,
+	ValidationPipe,
+	Body,
+	Param,
+	Patch,
+	Delete,
+	Get,
+	Header,
+	Res,
+	UseInterceptors,
+	UploadedFile,
+	UseGuards,
 } from '@nestjs/common';
 import { CreateAppriasalDto } from './dto/create-appraisal.dto';
 import { AppraisalService } from './appraisal.service';
@@ -26,145 +26,141 @@ import { AuthGuard } from '@nestjs/passport';
 @UseGuards(AuthGuard('jwt'))
 @Controller('hr/appraisal')
 export class AppraisalController {
+	constructor(private appraisalService: AppraisalService) {}
+	@Post('new')
+	@UsePipes(ValidationPipe)
+	createNewAppriasal(@Body() createAppriasalDto: CreateAppriasalDto) {
+		return this.appraisalService.save(createAppriasalDto);
+	}
 
-    constructor(private appraisalService: AppraisalService) {}
-    @Post('new')
-    @UsePipes(ValidationPipe)
-    createNewAppriasal(
-        @Body() createAppriasalDto: CreateAppriasalDto,
-    ) {
-        return this.appraisalService.save(createAppriasalDto);
-    }
+	@Post('save-appraisal-indicator')
+	createNewIndicator(@Body() dto: any) {
+		return this.appraisalService.saveIndicator(dto);
+	}
 
+	@Get('department-indicators/:departmentId')
+	departmentId(@Param('departmentId') departmentId: string) {
+		return this.appraisalService.settingIndicators(departmentId);
+	}
 
-    @Post('save-appraisal-indicator')
-    createNewIndicator(
-        @Body() dto: any,
-    ) {
-        return this.appraisalService.saveIndicator(dto);
-    }
+	@Delete('delete-indicator/:id')
+	deleteIndicator(@Param('id') id: string) {
+		return this.appraisalService.deleteIndicator(id);
+	}
 
-    @Get('department-indicators/:departmentId')
-    departmentId(
-        @Param('departmentId') departmentId: string,
-    ) {
-        return this.appraisalService.settingIndicators(departmentId);
-    }
+	@Patch(':id/update')
+	updateAppraisal(
+		@Param() id: string,
+		@Body() updateAppraisalDto: UpdateAppraisalDto,
+	) {
+		return this.appraisalService.updateAppraisal(id, updateAppraisalDto);
+	}
 
-    @Delete('delete-indicator/:id')
-    deleteIndicator(@Param('id') id: string) {
-        return this.appraisalService.deleteIndicator(id);
-    }
+	@Get('list-periods')
+	getAppraisalPeriods() {
+		return this.appraisalService.getPerformancePeriod();
+	}
 
-    @Patch(':id/update')
-    updateAppraisal(
-        @Param() id: string,
-        @Body() updateAppraisalDto: UpdateAppraisalDto,
-    ) {
-        return this.appraisalService.updateAppraisal(id, updateAppraisalDto);
-    }
+	@Post('save-period')
+	@UsePipes(ValidationPipe)
+	saveAppraisalPeriod(
+		@Body() createAppriasalPeriodDto: CreateAppriasalPeriodDto,
+	) {
+		return this.appraisalService.savePerformancePeriod(
+			createAppriasalPeriodDto,
+		);
+	}
 
-    @Get('list-periods')
-    getAppraisalPeriods() {
-        return this.appraisalService.getPerformancePeriod();
-    }
+	@Patch('update-period')
+	@UsePipes(ValidationPipe)
+	updateAppraisalPeriod(
+		@Body() createAppriasalPeriodDto: CreateAppriasalPeriodDto,
+	) {
+		return this.appraisalService.updatePerformancePeriod(
+			createAppriasalPeriodDto,
+		);
+	}
 
-    @Post('save-period')
-    @UsePipes(ValidationPipe)
-    saveAppraisalPeriod(
-        @Body() createAppriasalPeriodDto: CreateAppriasalPeriodDto,
-    ) {
-        return this.appraisalService.savePerformancePeriod(createAppriasalPeriodDto);
-    }
+	@Get('update-period-status/:id')
+	updatePeriodStatus(@Param('id') id: string) {
+		return this.appraisalService.updatePerformancePeriodStatus(id);
+	}
 
-    @Patch('update-period')
-    @UsePipes(ValidationPipe)
-    updateAppraisalPeriod(
-        @Body() createAppriasalPeriodDto: CreateAppriasalPeriodDto,
-    ) {
-        return this.appraisalService.updatePerformancePeriod(createAppriasalPeriodDto);
-    }
+	@Get('staff-assessment/:staffId')
+	getAssessmentInfo(@Param('staffId') staffId: string) {
+		return this.appraisalService.getStaffAppraisal(staffId);
+	}
 
-    @Get('update-period-status/:id')
-    updatePeriodStatus(
-        @Param('id') id: string,
-    ) {
-        return this.appraisalService.updatePerformancePeriodStatus(id);
-    }
+	@Get('report/:periodId/:staffId')
+	getAssessmentReportInfo(
+		@Param('staffId') staffId: string,
+		@Param('periodId') periodId: string,
+	) {
+		return this.appraisalService.getStaffAppraisalReport(staffId, periodId);
+	}
 
-    @Get('staff-assessment/:staffId')
-    getAssessmentInfo(
-        @Param('staffId') staffId: string,
-    ) {
-        return this.appraisalService.getStaffAppraisal(staffId);
-    }
+	@Post('self-assessment')
+	selfAssessment(@Body() param) {
+		return this.appraisalService.saveSelfAssessment(param);
+	}
 
-    @Get('report/:periodId/:staffId')
-    getAssessmentReportInfo(
-        @Param('staffId') staffId: string,
-        @Param('periodId') periodId: string,
-    ) {
-        return this.appraisalService.getStaffAppraisalReport(staffId, periodId);
-    }
+	@Patch('line-manager-assessment')
+	lineManagerAssessment(@Body() param) {
+		return this.appraisalService.lineManagerAssessment(param);
+	}
 
-    @Post('self-assessment')
-    selfAssessment(
-        @Body() param,
-    ) {
-        return this.appraisalService.saveSelfAssessment(param);
-    }
+	@Patch(':appraisalId/recommendation')
+	recommendation(@Param() id: string, @Body() param) {
+		return this.appraisalService.saveRecommendation(id, param);
+	}
 
-    @Patch('line-manager-assessment')
-    lineManagerAssessment(
-        @Body() param,
-    ) {
-        return this.appraisalService.lineManagerAssessment(param);
-    }
+	@Delete(':id')
+	deleteAppraisal(@Param('id') id: string) {
+		return this.appraisalService.deleteAppraisal(id);
+	}
 
-    @Patch(':appraisalId/recommendation')
-    recommendation(
-        @Param() id: string,
-        @Body() param,
-    ) {
-        return this.appraisalService.saveRecommendation(id, param);
-    }
+	@Post('save-evaluations')
+	saveSupervisorEvaluation(@Body() param) {
+		return this.appraisalService.saveEvaluation(param);
+	}
 
-    @Delete(':id')
-    deleteAppraisal(@Param('id') id: string) {
-        return this.appraisalService.deleteAppraisal(id);
-    }
+	@Get('download-sample')
+	@Header(
+		'Content-Type',
+		'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+	)
+	@Header(
+		'Content-Disposition',
+		'attachment; filename=sample-performace-appraisal.csv',
+	)
+	async downloadRoster(@Res() res) {
+		const resp = await this.appraisalService.downloadAppraisalSample();
+		if (resp.message === 'Completed') {
+			res.sendFile(
+				join(__dirname, '../../../../') + '/sample-performance-appraisal.csv',
+			);
+		}
+	}
 
-    @Post('save-evaluations')
-    saveSupervisorEvaluation(
-        @Body() param,
-    ) {
-        return this.appraisalService.saveEvaluation(param);
-    }
-
-    @Get('download-sample')
-    @Header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    @Header('Content-Disposition', 'attachment; filename=sample-performace-appraisal.csv')
-    async downloadRoster(@Res() res) {
-        const resp = await this.appraisalService.downloadAppraisalSample();
-        if (resp.message === 'Completed') {
-            res.sendFile(join(__dirname, '../../../../') + '/sample-performance-appraisal.csv');
-        }
-    }
-
-    @Post('/upload')
-    // @UsePipes(ValidationPipe)
-    @UseInterceptors(FileInterceptor('file', {
-        storage: diskStorage({
-            filename: (req, file, cb) => {
-                const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('');
-                return cb(null, `${randomName}${extname(file.originalname)}`);
-            },
-        }),
-    }))
-    uploadPerformanceAppraisal(
-        @UploadedFile() file,
-        @Body() createAppraisalDto: CreateAppriasalDto,
-    ) {
-        return this.appraisalService.doUpload(file, createAppraisalDto);
-    }
+	@Post('/upload')
+	// @UsePipes(ValidationPipe)
+	@UseInterceptors(
+		FileInterceptor('file', {
+			storage: diskStorage({
+				filename: (req, file, cb) => {
+					const randomName = Array(32)
+						.fill(null)
+						.map(() => Math.round(Math.random() * 16).toString(16))
+						.join('');
+					return cb(null, `${randomName}${extname(file.originalname)}`);
+				},
+			}),
+		}),
+	)
+	uploadPerformanceAppraisal(
+		@UploadedFile() file,
+		@Body() createAppraisalDto: CreateAppriasalDto,
+	) {
+		return this.appraisalService.doUpload(file, createAppraisalDto);
+	}
 }
