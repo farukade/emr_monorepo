@@ -1,14 +1,15 @@
-
 export class InventoryDto {
-    name: any;
+	name: any;
 
-    quantity: any;
+	quantity: any;
 
-    unit_price: any;
+	unit_price: any;
 
-    unitOfMeasure: any;
+	selling_price: any;
 
-    vendor_id: any;
+	unitOfMeasure: any;
 
-    vendor_label: any;
+	vendor_id: any;
+
+	vendor_label: any;
 }

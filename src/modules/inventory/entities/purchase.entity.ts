@@ -4,22 +4,22 @@ import { Vendor } from './vendor.entity';
 
 @Entity({ name: 'inventory_purchases' })
 export class InventoryPurchase extends CustomBaseEntity {
-    @Column({ default: 0 })
-    quantity: number;
+	@Column({ default: 0 })
+	quantity: number;
 
-    @Column({ type: 'float4', default: 0.00 })
-    purchase_price: number;
-    
-    @Column({ type: 'float4', default: 0.00 })
-    selling_price: number;
+	@Column({ type: 'float4', default: 0.0 })
+	purchase_price: number;
 
-    @ManyToOne(type => Vendor, { nullable: true })
-    @JoinColumn({ name: 'vendor_id' })
-    vendor: Vendor;
+	@Column({ type: 'float4', default: 0.0 })
+	selling_price: number;
 
-    @Column({ nullable: true })
-    item_id: number;
+	@ManyToOne(type => Vendor, { nullable: true })
+	@JoinColumn({ name: 'vendor_id' })
+	vendor: Vendor;
 
-    @Column({ nullable: true })
-    item_category: string;
+	@Column({ nullable: true })
+	item_id: number;
+
+	@Column({ nullable: true })
+	item_category: string;
 }

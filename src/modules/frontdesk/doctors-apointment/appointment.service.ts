@@ -1,13 +1,11 @@
-import { Injectable } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { StaffDetails } from "src/modules/hr/staff/entities/staff_details.entity";
-import { StaffRepository } from "src/modules/hr/staff/staff.repository";
-import { PatientRepository } from "src/modules/patient/repositories/patient.repository";
-import { DepartmentRepository } from "src/modules/settings/departments/department.repository";
-import { getRepository } from "typeorm";
-import { doctorsAppointmentDto } from "./dto/appointment.dto";
-import { DoctorsAppointmentRepository } from "./appointment.repository";
-import { DoctorsAppointment } from "./appointment.entity";
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { StaffDetails } from 'src/modules/hr/staff/entities/staff_details.entity';
+import { PatientRepository } from 'src/modules/patient/repositories/patient.repository';
+import { DepartmentRepository } from 'src/modules/settings/departments/department.repository';
+import { getRepository } from 'typeorm';
+import { DoctorsAppointmentRepository } from './appointment.repository';
+import { DoctorsAppointmentDto } from './dto/appointment.dto';
 
 @Injectable()
 export class DoctorsAppointmentService {
@@ -20,44 +18,49 @@ export class DoctorsAppointmentService {
 		private departmentRepository: DepartmentRepository,
 	) {}
 
-    async createDoctorsAppointment(data: doctorsAppointmentDto) {
-        const {
-            department_id,
-            doctor_id,
-            patient_id,
-        } = data;
+	async getDoctorsAppointments() {
+		try {
+			return await this.doctorsAppointmentRepository.find({
+				where: {
+					isBooked: false,
+				},
+			});
+		} catch (error) {
+			console.log(error);
+			return { success: false, message: 'could no fetch resource' };
+		}
+	}
 
-        // get patient file
-        const patient = await this.patientRepository.findOne(patient_id);
-        if (!patient) {
-            return { success: false, message: 'please select a patient' };
-        }
-        
-        // get doctor
-        let doctor = null;
-			if (doctor_id) {
-				doctor = await getRepository(StaffDetails).findOne(doctor_id);
+	async createAppointment(data: DoctorsAppointmentDto, username: string) {
+		try {
+			const { department_id, doctor_id, patient_id } = data;
+
+			// get patient file
+			const patient = await this.patientRepository.findOne(patient_id);
+			if (!patient) {
+				return { success: false, message: 'please select a patient' };
 			}
 
-        // get doctor's department
+			// get doctor
+			const doctor = await getRepository(StaffDetails).findOne(doctor_id);
+			if (!doctor) {
+				return { success: false, message: 'please select a doctor' };
+			}
+
+			// get doctor's department
 			const department = await this.departmentRepository.findOne(department_id);
 
-            const doctorsAppointment = await this.doctorsAppointmentRepository.saveProposedAppointment(data, patient, doctor, department);
+			const doctorsAppointment = await this.doctorsAppointmentRepository.saveAppointment(
+				data,
+				patient,
+				doctor,
+				department,
+				username,
+			);
 
-            return doctorsAppointment;
-    }
-
-    async getDoctorsAppointments() {
-        try {
-            return await this.doctorsAppointmentRepository.find({
-                where: {
-                    isBooked: false
-                }
-            });
-        } catch (error) {
-            console.log(error);
-            return { success: false, message: "could no fetch resource" }
-        }
-    }
-
+			return { success: false, appointment: doctorsAppointment };
+		} catch (e) {
+			return { success: false, message: e.message };
+		}
+	}
 }

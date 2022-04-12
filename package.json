@@ -12,7 +12,8 @@
     "start:dev": "TZ=UTC nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/src/main",
-    "lint": "tslint -p tsconfig.json -c tslint.json",
+    "lint": "tslint -p tsconfig.json -c tslint.json 'src/**/*{.ts,.tsx}'",
+    "lint:fix": "tslint --fix -p tsconfig.json -c tslint.json 'src/**/*{.ts,.tsx}'",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
@@ -24,7 +25,8 @@
     "typeorm:migration:run": "yarn typeorm migration:run",
     "typeorm:config": "ts-node ./node_modules/typeorm-seeding/dist/cli.js config",
     "typeorm:seed": "ts-node ./node_modules/typeorm-seeding/dist/cli.js seed --configName=ormconfig.json",
-    "migrate": "yarn typeorm:migration:run && yarn typeorm:seed"
+    "migrate": "yarn typeorm:migration:run && yarn typeorm:seed",
+    "prepare": "husky install"
   },
   "dependencies": {
     "@nestjs-modules/mailer": "^1.5.1",
@@ -38,7 +40,7 @@
     "@nestjs/swagger": "^4.2.4",
     "@nestjs/typeorm": "^7.1.5",
     "@nestjs/websockets": "^6.11.7",
-    "bcrypt": "^3.0.7",
+    "bcrypt": "^5.0.1",
     "bluebird": "^3.7.2",
     "bull": "^3.22.9",
     "cache-manager": "^3.4.4",
@@ -63,7 +65,7 @@
     "passport-local": "^1.0.0",
     "pg": "^8.7.1",
     "pg-connection-string": "^2.1.0",
-    "puppeteer": "^5.4.1",
+    "puppeteer": "^13.5.2",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.0",
     "rxjs": "^6.5.3",
@@ -84,9 +86,11 @@
     "@types/node": "^12.7.5",
     "@types/passport-jwt": "^3.0.3",
     "@types/passport-local": "^1.0.33",
-    "@types/puppeteer": "^5.4.0",
+    "@types/puppeteer": "^5.4.5",
     "@types/supertest": "^2.0.8",
+    "husky": "^7.0.0",
     "jest": "^24.9.0",
+    "lint-staged": "^12.3.7",
     "prettier": "^1.18.2",
     "supertest": "^4.0.2",
     "ts-jest": "^24.1.0",
@@ -109,5 +113,11 @@
     },
     "coverageDirectory": "./coverage",
     "testEnvironment": "node"
+  },
+  "lint-staged": {
+    "src/**/*.{ts,tsx}": [
+      "yarn lint:fix",
+      "prettier --write"
+    ]
   }
 }

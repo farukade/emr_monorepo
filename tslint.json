@@ -17,5 +17,10 @@
     "indent": [true],
     "variable-name": [false]
   },
-  "rulesDirectory": []
+  "rulesDirectory": [],
+  "linterOptions": {
+    "exclude": [
+      "src/database/**"
+    ]
+  }
 }

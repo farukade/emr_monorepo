@@ -1,14 +1,15 @@
-
 export class DrugBatchDto {
-    quantity: any;
+	quantity: any;
 
-    expirationDate: any;
+	expirationDate: any;
 
-    unitPrice: any;
+	unitPrice: any;
 
-    vendor_id: any;
+	selling_price: any;
 
-    drug_id: any;
+	vendor_id: any;
 
-    vendor: any;
+	drug_id: any;
+
+	vendor: any;
 }

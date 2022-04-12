@@ -1,37 +1,35 @@
-import { CustomBaseEntity } from "src/common/entities/custom-base.entity";
-import { StaffDetails } from "src/modules/hr/staff/entities/staff_details.entity";
-import { Patient } from "src/modules/patient/entities/patient.entity";
-import { Department } from "src/modules/settings/entities/department.entity";
-import { Column, Entity, JoinColumn, ManyToOne } from "typeorm";
-
+import { CustomBaseEntity } from 'src/common/entities/custom-base.entity';
+import { StaffDetails } from 'src/modules/hr/staff/entities/staff_details.entity';
+import { Patient } from 'src/modules/patient/entities/patient.entity';
+import { Department } from 'src/modules/settings/entities/department.entity';
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
 @Entity({ name: 'doctor_appointments' })
 export class DoctorsAppointment extends CustomBaseEntity {
-    
-    @Column()
-    appointment_date_time: string;
-    
-    @Column()
-    appointment_time: string;
-    
-    @Column()
-    appointment_date: string;
+	@Column()
+	appointment_datetime: string;
 
-    @ManyToOne(type => Department, { nullable: true })
-    @JoinColumn({ name: 'department_id' })
-    department: Department;
+	@Column()
+	appointment_time: string;
 
-    @ManyToOne(type => Patient)
-    @JoinColumn({ name: 'patient_id' })
-    patient: Patient;
+	@Column()
+	appointment_date: string;
 
-    @ManyToOne(type => StaffDetails)
-    @JoinColumn({ name: 'doctor_id' })
-    whomToSee: StaffDetails;
+	@ManyToOne(type => Department, { nullable: true })
+	@JoinColumn({ name: 'department_id' })
+	department: Department;
 
-    @Column({ type: 'boolean', default: false })
-    isOnline: boolean;
+	@ManyToOne(type => Patient)
+	@JoinColumn({ name: 'patient_id' })
+	patient: Patient;
 
-    @Column({ type: 'boolean', default: false, nullable: true })
-    isBooked: boolean;
+	@ManyToOne(type => StaffDetails)
+	@JoinColumn({ name: 'doctor_id' })
+	doctor: StaffDetails;
+
+	@Column({ type: 'boolean', default: false })
+	is_online: boolean;
+
+	@Column({ type: 'boolean', default: false, nullable: true })
+	is_booked: boolean;
 }

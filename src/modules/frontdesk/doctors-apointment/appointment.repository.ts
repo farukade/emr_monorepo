@@ -1,35 +1,38 @@
-import moment = require("moment");
-import { StaffDetails } from "src/modules/hr/staff/entities/staff_details.entity";
-import { Patient } from "src/modules/patient/entities/patient.entity";
-import { Department } from "src/modules/settings/entities/department.entity";
-import { EntityRepository, Repository } from "typeorm";
-import { doctorsAppointmentDto } from "./dto/appointment.dto";
-import { DoctorsAppointment } from "./appointment.entity";
+import moment = require('moment');
+import { StaffDetails } from 'src/modules/hr/staff/entities/staff_details.entity';
+import { Patient } from 'src/modules/patient/entities/patient.entity';
+import { Department } from 'src/modules/settings/entities/department.entity';
+import { EntityRepository, Repository } from 'typeorm';
+import { DoctorsAppointment } from './appointment.entity';
+import { DoctorsAppointmentDto } from './dto/appointment.dto';
 
 @EntityRepository(DoctorsAppointment)
-export class DoctorsAppointmentRepository extends Repository<DoctorsAppointment> {
-    async saveProposedAppointment (
-        data: doctorsAppointmentDto,
-        patient: Patient,
-        doctor: StaffDetails,
-        department: Department,
-        ) {
+export class DoctorsAppointmentRepository extends Repository<
+	DoctorsAppointment
+> {
+	async saveAppointment(
+		data: DoctorsAppointmentDto,
+		patient: Patient,
+		doctor: StaffDetails,
+		department: Department,
+		username: string,
+	) {
+		const date = moment(data.appointment_date).format('YYYY-MM-DD');
 
-        const proposedAppointmentDateTime = `${moment(data.appointment_date).format('YYYY-MM-DD')} ${data.appointment_time}`;
-        const proposedAppointmentDate = moment(data.appointment_date).format('YYYY-MM-DD');
-        const proposedAppointmentTime = data.appointment_time
+		const appointmentDateTime = `${date} ${data.appointment_time}`;
 
-        const proposedAppointment = new DoctorsAppointment();
-        proposedAppointment.appointment_date_time = proposedAppointmentDateTime;
-        proposedAppointment.appointment_time = proposedAppointmentDate;
-        proposedAppointment.appointment_date = proposedAppointmentTime;
-        proposedAppointment.patient = patient; 
-        proposedAppointment.whomToSee = doctor;
-        proposedAppointment.department = department;
-        proposedAppointment.isOnline = data.isOnline;
-            
-        await proposedAppointment.save();
+		const proposedAppointment = new DoctorsAppointment();
+		proposedAppointment.appointment_datetime = appointmentDateTime;
+		proposedAppointment.appointment_date = date;
+		proposedAppointment.appointment_time = data.appointment_time;
+		proposedAppointment.patient = patient;
+		proposedAppointment.doctor = doctor;
+		proposedAppointment.department = department;
+		proposedAppointment.is_online = data.isOnline;
+		proposedAppointment.createdBy = username;
 
-        return proposedAppointment;
-    }
+		await proposedAppointment.save();
+
+		return proposedAppointment;
+	}
 }

@@ -1,23 +1,22 @@
 import { IsNotEmpty } from 'class-validator';
 
-export class doctorsAppointmentDto {
- 
-    @IsNotEmpty()
-    appointment_time: string;
-    
-    @IsNotEmpty()
-    appointment_date: string;
+export class DoctorsAppointmentDto {
+	@IsNotEmpty()
+	appointment_time: string;
 
-    @IsNotEmpty()
-    department_id: string;
+	@IsNotEmpty()
+	appointment_date: string;
 
-    description: string;
+	@IsNotEmpty()
+	department_id: string;
 
-    @IsNotEmpty()
-    doctor_id: string;
+	description: string;
 
-    @IsNotEmpty()
-    patient_id: string;
+	@IsNotEmpty()
+	doctor_id: string;
 
-    isOnline: boolean;
+	@IsNotEmpty()
+	patient_id: string;
+
+	isOnline: boolean;
 }
