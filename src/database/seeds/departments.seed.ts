@@ -2,6 +2,7 @@ import fs = require('fs');
 import { Connection } from 'typeorm';
 import { Factory, Seeder } from 'typeorm-seeding';
 import {Department} from '../../modules/settings/entities/department.entity';
+import { slugify } from '../../common/utils/utils';
 
 export default class CreateDepartments implements Seeder {
   public async run(factory: Factory, connection: Connection): Promise<any> {
@@ -14,6 +15,7 @@ export default class CreateDepartments implements Seeder {
         const s = departments[i];
         const department = new Department();
         department.name = s.name;
+        department.slug = slugify(s.name);
         department.createdBy = 'admin';
         department.save();
       } catch (error) {

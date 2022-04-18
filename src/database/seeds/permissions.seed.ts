@@ -2,6 +2,7 @@ import fs = require('fs');
 import { Connection } from 'typeorm';
 import { Factory, Seeder } from 'typeorm-seeding';
 import { Permission } from '../../modules/settings/entities/permission.entity';
+import { slugify } from '../../common/utils/utils';
 
 export default class CreatePermissions implements Seeder {
     public async run(factory: Factory, connection: Connection): Promise<any> {
@@ -14,6 +15,7 @@ export default class CreatePermissions implements Seeder {
                 const s = permissions[i];
                 const permission = new Permission();
                 permission.name = s.name;
+                permission.slug = slugify(s.name);
                 permission.createdBy = 'admin';
                 permission.save();
             } catch (error) {

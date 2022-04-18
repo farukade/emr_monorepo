@@ -13,39 +13,58 @@ import { AntenatalEnrollment } from '../../modules/patient/antenatal/entities/an
 import { AntenatalPackage } from '../../modules/settings/entities/antenatal-package.entity';
 
 export class RequestPaymentHelper {
-	static async clinicalLabPayment(labRequests, patient: Patient, username, bill) {
+	static async clinicalLabPayment(
+		labRequests,
+		patient: Patient,
+		username,
+		bill,
+	) {
 		let requests = [];
 		let payments = [];
 
 		for (const request of labRequests) {
-			const labRequest = await getConnection().getRepository(PatientRequest).findOne(request.id, { relations: ['item'] });
+			const labRequest = await getConnection()
+				.getRepository(PatientRequest)
+				.findOne(request.id, { relations: ['item'] });
 
-			const labRequestItem = await getConnection().getRepository(PatientRequestItem).findOne(labRequest.item.id);
+			const labRequestItem = await getConnection()
+				.getRepository(PatientRequestItem)
+				.findOne(labRequest.item.id);
 
 			const hmo = patient.hmo;
 
 			const labTest = labRequestItem.labTest;
 			if (labTest) {
-				let serviceCost = await getConnection().getRepository(ServiceCost).findOne({
-					where: { code: labTest.code, hmo },
-				});
+				let serviceCost = await getConnection()
+					.getRepository(ServiceCost)
+					.findOne({
+						where: { code: labTest.code, hmo },
+					});
 				if (!serviceCost) {
 					serviceCost = await createServiceCost(labTest.code, hmo);
 				}
 
-				const category = await getConnection().getRepository(ServiceCategory).findOne({
-					where: { slug: 'labs' },
-				});
+				const category = await getConnection()
+					.getRepository(ServiceCategory)
+					.findOne({
+						where: { slug: 'labs' },
+					});
 
-				const admission = await getConnection().getRepository(Admission).findOne({
-					where: { patient, status: 0 },
-				});
+				const admission = await getConnection()
+					.getRepository(Admission)
+					.findOne({
+						where: { patient, status: 0 },
+					});
 
-				const nicu = await getConnection().getRepository(Nicu).findOne({
-					where: { patient, status: 0 },
-				});
+				const nicu = await getConnection()
+					.getRepository(Nicu)
+					.findOne({
+						where: { patient, status: 0 },
+					});
 
-				const ancEnrollment = await getConnection().getRepository(AntenatalEnrollment).findOne({ patient, status: 0 }, { relations: ['ancpackage'] });
+				const ancEnrollment = await getConnection()
+					.getRepository(AntenatalEnrollment)
+					.findOne({ patient, status: 0 }, { relations: ['ancpackage'] });
 
 				const amount = (serviceCost?.tariff || 0) * -1;
 
@@ -72,10 +91,19 @@ export class RequestPaymentHelper {
 					lastChangedBy: null,
 				};
 
-				const payment = await postDebit(data, serviceCost, null, labRequestItem, null, hmo);
+				const payment = await postDebit(
+					data,
+					serviceCost,
+					null,
+					labRequestItem,
+					null,
+					hmo,
+				);
 
 				if (ancEnrollment) {
-					const ancPackage = await getConnection().getRepository(AntenatalPackage).findOne(ancEnrollment.ancpackage?.id);
+					const ancPackage = await getConnection()
+						.getRepository(AntenatalPackage)
+						.findOne(ancEnrollment.ancpackage?.id);
 
 					if (ancPackage) {
 						let items;
@@ -120,54 +148,84 @@ export class RequestPaymentHelper {
 							payment.payment_method = 'ANC Covered';
 							await payment.save();
 
-							await postCredit(creditData, payment.service, null, payment.patientRequestItem, null, hmo);
+							await postCredit(
+								creditData,
+								payment.service,
+								null,
+								payment.patientRequestItem,
+								null,
+								hmo,
+							);
 						}
 					}
 				}
 
-				const transaction = await getConnection().getRepository(Transaction).findOne(payment.id);
+				const transaction = await getConnection()
+					.getRepository(Transaction)
+					.findOne(payment.id);
 
 				labRequestItem.transaction = transaction;
 				await labRequestItem.save();
 
 				payments = [...payments, transaction];
 
-				requests = [...requests, { ...request, item: { ...labRequestItem, transaction } }];
+				requests = [
+					...requests,
+					{ ...request, item: { ...labRequestItem, transaction } },
+				];
 			}
 		}
 
 		return { labRequest: requests, transactions: payments };
 	}
 
-	static async servicePayment(patientRequests, patient: Patient, username, requestType, bill) {
+	static async servicePayment(
+		patientRequests,
+		patient: Patient,
+		username,
+		requestType,
+		bill,
+	) {
 		let requests = [];
 		let payments = [];
 
 		for (const request of patientRequests) {
-			const labRequest = await getConnection().getRepository(PatientRequest).findOne(request.id, { relations: ['item'] });
+			const labRequest = await getConnection()
+				.getRepository(PatientRequest)
+				.findOne(request.id, { relations: ['item'] });
 
-			const patientRequestItem = await getConnection().getRepository(PatientRequestItem).findOne(labRequest.item.id);
+			const patientRequestItem = await getConnection()
+				.getRepository(PatientRequestItem)
+				.findOne(labRequest.item.id);
 
 			const hmo = patient.hmo;
 
 			const service = patientRequestItem.service;
 			if (service && service.code) {
-				let serviceCost = await getConnection().getRepository(ServiceCost).findOne({
-					where: { code: service.code, hmo },
-				});
+				let serviceCost = await getConnection()
+					.getRepository(ServiceCost)
+					.findOne({
+						where: { code: service.code, hmo },
+					});
 				if (!serviceCost) {
 					serviceCost = await createServiceCost(service.code, hmo);
 				}
 
-				const admission = await getConnection().getRepository(Admission).findOne({
-					where: { patient, status: 0 },
-				});
+				const admission = await getConnection()
+					.getRepository(Admission)
+					.findOne({
+						where: { patient, status: 0 },
+					});
 
-				const nicu = await getConnection().getRepository(Nicu).findOne({
-					where: { patient, status: 0 },
-				});
+				const nicu = await getConnection()
+					.getRepository(Nicu)
+					.findOne({
+						where: { patient, status: 0 },
+					});
 
-				const ancEnrollment = await getConnection().getRepository(AntenatalEnrollment).findOne({ patient, status: 0 });
+				const ancEnrollment = await getConnection()
+					.getRepository(AntenatalEnrollment)
+					.findOne({ patient, status: 0 });
 
 				const amount = (serviceCost?.tariff || 0) * -1;
 
@@ -194,22 +252,26 @@ export class RequestPaymentHelper {
 					lastChangedBy: null,
 				};
 
-				const payment = await postDebit(data, serviceCost, null, patientRequestItem, null, hmo);
+				const payment = await postDebit(
+					data,
+					serviceCost,
+					null,
+					patientRequestItem,
+					null,
+					hmo,
+				);
 
 				if (ancEnrollment) {
-					const ancPackage = await getConnection().getRepository(AntenatalPackage).findOne(ancEnrollment.ancpackage?.id);
+					const ancPackage = await getConnection()
+						.getRepository(AntenatalPackage)
+						.findOne(ancEnrollment.ancpackage?.id);
 
 					if (ancPackage) {
-						let coverage;
-						try {
-							coverage = JSON.parse(ancPackage.coverage);
-						} catch (e) {
-							coverage = ancPackage.coverage;
-						}
+						const coverage = ancPackage.coverage;
 
 						const keys = Object.keys(coverage);
-						const values = Object.values(coverage);
-						const index = keys.find(i => i === requestType);
+						const values: any[] = Object.values(coverage);
+						const index = keys.findIndex(i => i === requestType);
 						const items = values[index];
 						const covered = items.find(i => i.code === service.code);
 
@@ -246,19 +308,31 @@ export class RequestPaymentHelper {
 							payment.payment_method = 'ANC Covered';
 							await payment.save();
 
-							await postCredit(creditData, payment.service, null, payment.patientRequestItem, null, hmo);
+							await postCredit(
+								creditData,
+								payment.service,
+								null,
+								payment.patientRequestItem,
+								null,
+								hmo,
+							);
 						}
 					}
 				}
 
-				const transaction = await getConnection().getRepository(Transaction).findOne(payment.id);
+				const transaction = await getConnection()
+					.getRepository(Transaction)
+					.findOne(payment.id);
 
 				patientRequestItem.transaction = transaction;
 				await patientRequestItem.save();
 
 				payments = [...payments, transaction];
 
-				requests = [...requests, { ...request, item: { ...patientRequestItem, transaction } }];
+				requests = [
+					...requests,
+					{ ...request, item: { ...patientRequestItem, transaction } },
+				];
 			}
 		}
 

@@ -106,7 +106,8 @@ export class DrugBatchService {
 			batch.name = `BA/${month}/${year}`;
 			batch.quantity = quantity;
 			batch.expirationDate = expirationDate;
-			batch.unitPrice = unitPrice;
+			batch.costPrice = unitPrice;
+			batch.unitPrice = selling_price || 0;
 			batch.vendor = vendor;
 			batch.drug = drug;
 			const rs = await batch.save();

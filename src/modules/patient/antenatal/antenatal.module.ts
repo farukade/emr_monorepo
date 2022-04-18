@@ -12,22 +12,27 @@ import { TransactionsRepository } from '../../finance/transactions/transactions.
 import { PatientNoteRepository } from '../repositories/patient_note.repository';
 import { AppointmentRepository } from '../../frontdesk/appointment/appointment.repository';
 import { PatientVitalRepository } from '../repositories/patient_vitals.repository';
+import { StaffRepository } from '../../hr/staff/staff.repository';
+import { DepartmentRepository } from '../../settings/departments/department.repository';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([
-        AntenatalAssessmentRepository,
-        AntenatalEnrollmentRepository,
-        PatientRepository,
-        PatientRequestRepository,
-        AntenatalPackageRepository,
-        AdmissionsRepository,
-        TransactionsRepository,
-        PatientNoteRepository,
-        AppointmentRepository,
-        PatientVitalRepository,
-    ])],
-    providers: [AntenatalService],
-    controllers: [AntenatalController],
+	imports: [
+		TypeOrmModule.forFeature([
+			AntenatalAssessmentRepository,
+			AntenatalEnrollmentRepository,
+			PatientRepository,
+			PatientRequestRepository,
+			AntenatalPackageRepository,
+			AdmissionsRepository,
+			TransactionsRepository,
+			PatientNoteRepository,
+			AppointmentRepository,
+			PatientVitalRepository,
+			StaffRepository,
+			DepartmentRepository,
+		]),
+	],
+	providers: [AntenatalService],
+	controllers: [AntenatalController],
 })
-export class AntenatalModule {
-}
+export class AntenatalModule {}

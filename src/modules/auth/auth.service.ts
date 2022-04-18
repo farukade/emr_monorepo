@@ -27,8 +27,7 @@ export class AuthService {
 		private departmentRepository: DepartmentRepository,
 		@InjectRepository(SpecializationRepository)
 		private specializationRepository: SpecializationRepository,
-	) {
-	}
+	) {}
 
 	async getUsers(): Promise<User[]> {
 		return await this.authRepository.find();
@@ -50,20 +49,27 @@ export class AuthService {
 	}
 
 	async getUserByUsername(username: string): Promise<User> {
-		return await this.authRepository.findOne({ where: { username }, relations: ['role', 'role.permissions'] });
+		return await this.authRepository.findOne({
+			where: { username },
+			relations: ['role', 'role.permissions'],
+		});
 	}
 
 	async loginUser(loginUserDto: LoginUserDto) {
 		const user = await this.getUserByUsername(loginUserDto.username);
 
 		if (user) {
-			const isSame = await this.compareHash(loginUserDto.password, user.password);
+			const isSame = await this.compareHash(
+				loginUserDto.password,
+				user.password,
+			);
 			if (isSame) {
-
 				if (loginUserDto.bypass === 1) {
 					// logout previous user
 				} else {
-					const rs = await this.authRepository.findOne({ where: { isLoggedIn: true } });
+					const rs = await this.authRepository.findOne({
+						where: { isLoggedIn: true },
+					});
 					if (rs) {
 						// return { error: 'already logged in' };
 					}
@@ -73,9 +79,10 @@ export class AuthService {
 				user.isLoggedIn = true;
 				user.macAddress = loginUserDto.address;
 				await user.save();
-				const { expires_in, token } = await JWTHelper.createToken(
-					{ username: user.username, userId: user.id },
-				);
+				const { expires_in, token } = await JWTHelper.createToken({
+					username: user.username,
+					userId: user.id,
+				});
 				const staff = await this.staffRepository.findOne({
 					where: { user },
 					relations: ['department', 'room', 'specialization'],
@@ -90,7 +97,9 @@ export class AuthService {
 				newUser.token = token;
 				newUser.expires_in = expires_in;
 				newUser.details = staff;
-				newUser.permissions = await this.setPermissions(newUser.role.permissions);
+				newUser.permissions = await this.setPermissions(
+					newUser.role.permissions,
+				);
 				delete newUser.role.permissions;
 				delete newUser.password;
 				return newUser;
@@ -101,7 +110,9 @@ export class AuthService {
 	}
 
 	async changePassword(id: number, changePswdDto: ChangePasswordDto) {
-		const user = await this.authRepository.findOne(id, { relations: ['role', 'role.permissions'] });
+		const user = await this.authRepository.findOne(id, {
+			relations: ['role', 'role.permissions'],
+		});
 
 		if (changePswdDto.repassword !== changePswdDto.password) {
 			const pswdError = 'Passwords are not the same';
@@ -114,9 +125,10 @@ export class AuthService {
 			user.macAddress = changePswdDto.address;
 			await user.save();
 
-			const { expires_in, token } = await JWTHelper.createToken(
-				{ username: user.username, userId: user.id },
-			);
+			const { expires_in, token } = await JWTHelper.createToken({
+				username: user.username,
+				userId: user.id,
+			});
 			const staff = await this.staffRepository.findOne({
 				where: { user },
 				relations: ['department', 'room', 'specialization'],
@@ -142,7 +154,9 @@ export class AuthService {
 	}
 
 	async resetPassword(id: number) {
-		const user = await this.authRepository.findOne(id, { relations: ['role', 'role.permissions'] });
+		const user = await this.authRepository.findOne(id, {
+			relations: ['role', 'role.permissions'],
+		});
 
 		if (user) {
 			user.password = await this.getHash('password');
@@ -209,7 +223,7 @@ export class AuthService {
 	async setPermissions(permissions) {
 		const data = [];
 		for (const permission of permissions) {
-			await data.push(permission.name);
+			await data.push(permission.slug);
 		}
 		return data;
 	}

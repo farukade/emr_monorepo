@@ -13,7 +13,6 @@ import { PatientNote } from '../entities/patient_note.entity';
 import { AppGateway } from '../../../app.gateway';
 import { QueueSystemRepository } from '../../frontdesk/queue-system/queue-system.repository';
 import { PatientConsumable } from '../entities/patient_consumable.entity';
-import { Appointment } from '../../frontdesk/appointment/appointment.entity';
 import { AuthRepository } from '../../auth/auth.repository';
 import { Connection, getConnection, getRepository, Raw } from 'typeorm';
 import { getStaff } from '../../../common/utils/utils';
@@ -23,6 +22,9 @@ import { StoreInventoryRepository } from '../../inventory/store/store.repository
 import { PatientAlert } from '../entities/patient_alert.entity';
 import { PatientVitalRepository } from '../repositories/patient_vitals.repository';
 import { PatientRequestRepository } from '../repositories/patient_request.repository';
+import { DoctorsAppointment } from '../../frontdesk/doctors-apointment/appointment.entity';
+import { StaffRepository } from '../../hr/staff/staff.repository';
+import { DepartmentRepository } from '../../settings/departments/department.repository';
 
 @Injectable()
 export class ConsultationService {
@@ -49,22 +51,33 @@ export class ConsultationService {
 		private patientVitalRepository: PatientVitalRepository,
 		@InjectRepository(PatientRequestRepository)
 		private patientRequestRepository: PatientRequestRepository,
-	) {
-	}
+		@InjectRepository(StaffRepository)
+		private staffRepository: StaffRepository,
+		@InjectRepository(DepartmentRepository)
+		private departmentRepository: DepartmentRepository,
+	) {}
 
-	async getEncounters(options: PaginationOptionsInterface, urlParams): Promise<any> {
+	async getEncounters(
+		options: PaginationOptionsInterface,
+		urlParams,
+	): Promise<any> {
 		try {
 			const { startDate, endDate, patient_id } = urlParams;
 
-			const query = this.encounterRepository.createQueryBuilder('e')
+			const query = this.encounterRepository
+				.createQueryBuilder('e')
 				.select('e.*');
 
 			if (startDate && startDate !== '') {
-				const start = moment(startDate).endOf('day').toISOString();
+				const start = moment(startDate)
+					.endOf('day')
+					.toISOString();
 				query.where(`e.createdAt >= '${start}'`);
 			}
 			if (endDate && endDate !== '') {
-				const end = moment(endDate).endOf('day').toISOString();
+				const end = moment(endDate)
+					.endOf('day')
+					.toISOString();
 				query.andWhere(`e.createdAt <= '${end}'`);
 			}
 
@@ -76,7 +89,8 @@ export class ConsultationService {
 
 			const total = await query.getCount();
 
-			const items = await query.orderBy('e.createdAt', 'DESC')
+			const items = await query
+				.orderBy('e.createdAt', 'DESC')
 				.take(options.limit)
 				.skip(page * options.limit)
 				.getRawMany();
@@ -99,7 +113,8 @@ export class ConsultationService {
 					relations: ['whomToSee', 'consultingRoom', 'department'],
 				});
 
-				item.vitals = await this.patientVitalRepository.createQueryBuilder('v')
+				item.vitals = await this.patientVitalRepository
+					.createQueryBuilder('v')
 					.select('v.*')
 					.where('v.patientId = :patient_id', { patient_id: patient.id })
 					.andWhere('v.readingType != :type1', { type1: 'Fluid Chart' })
@@ -107,12 +122,14 @@ export class ConsultationService {
 					.andWhere(`CAST(v.createdAt as DATE) = '%${date}%'`)
 					.getRawMany();
 
-				item.patient_notes = await this.patientNoteRepository.createQueryBuilder('pn')
+				item.patient_notes = await this.patientNoteRepository
+					.createQueryBuilder('pn')
 					.select('pn.*')
 					.where('pn.encounter_id = :id', { id: item.id })
 					.getRawMany();
 
-				item.encounter_note = await this.patientNoteRepository.createQueryBuilder('n')
+				item.encounter_note = await this.patientNoteRepository
+					.createQueryBuilder('n')
 					.select('n.*')
 					.where('n.encounter_id = :id', { id: item.id })
 					.andWhere('n.type = :type', { type: 'encounter-note' })
@@ -131,7 +148,8 @@ export class ConsultationService {
 					relations: ['item'],
 				});
 
-				item.patient_consumables = await getRepository(PatientConsumable).createQueryBuilder('pc')
+				item.patient_consumables = await getRepository(PatientConsumable)
+					.createQueryBuilder('pc')
 					.select('pc.*')
 					.where('pc.encounter_id = :id', { id: item.id })
 					.getRawMany();
@@ -149,12 +167,18 @@ export class ConsultationService {
 		} catch (err) {
 			return {
 				success: false,
-				error: `${err.message || 'problem fetching encounter at the moment please try again later'}`,
+				error: `${err.message ||
+					'problem fetching encounter at the moment please try again later'}`,
 			};
 		}
 	}
 
-	async saveEncounter(patientId: number, param: EncounterDto, urlParam, createdBy) {
+	async saveEncounter(
+		patientId: number,
+		param: EncounterDto,
+		urlParam,
+		username: string,
+	) {
 		const queryRunner = getConnection().createQueryRunner();
 		await queryRunner.startTransaction();
 
@@ -162,16 +186,24 @@ export class ConsultationService {
 			const { appointment_id } = urlParam;
 			const { investigations, nextAppointment } = param;
 
-			const patient = await this.patientRepository.findOne(patientId, { relations: ['hmo'] });
+			const patient = await this.patientRepository.findOne(patientId, {
+				relations: ['hmo'],
+			});
 
 			const appointment = await this.appointmentRepository.findOne({
 				where: { id: appointment_id },
-				relations: ['patient', 'whomToSee', 'consultingRoom', 'transaction', 'department'],
+				relations: [
+					'patient',
+					'whomToSee',
+					'consultingRoom',
+					'transaction',
+					'department',
+				],
 			});
 
 			const data = new Encounter();
 			data.patient = patient;
-			data.createdBy = createdBy;
+			data.createdBy = username;
 			const encounter = await data.save();
 
 			// 9
@@ -182,17 +214,19 @@ export class ConsultationService {
 				instruction.encounter = encounter;
 				instruction.type = 'instruction';
 				instruction.visit = 'encounter';
-				instruction.createdBy = createdBy;
+				instruction.createdBy = username;
 				await instruction.save();
 			}
 
 			// 8
-			const treatmentPlan = param.treatmentPlan.replace(/(<([^>]+)>)/gi, '')
+			const treatmentPlan = param.treatmentPlan
+				.replace(/(<([^>]+)>)/gi, '')
 				.replace(/&nbsp;/g, '')
 				.replace('Treatment Plan', '')
 				.replace(/\s/g, '')
 				.replace(/\/r/g, '')
-				.split(':').join('');
+				.split(':')
+				.join('');
 			console.log(treatmentPlan);
 			console.log(encodeURIComponent(treatmentPlan));
 
@@ -203,7 +237,7 @@ export class ConsultationService {
 				plan.encounter = encounter;
 				plan.type = 'treatment-plan';
 				plan.visit = 'encounter';
-				plan.createdBy = createdBy;
+				plan.createdBy = username;
 				await plan.save();
 			}
 
@@ -218,7 +252,7 @@ export class ConsultationService {
 				patientDiagnosis.comment = diagnosis.comment;
 				patientDiagnosis.visit = 'encounter';
 				patientDiagnosis.type = 'diagnosis';
-				patientDiagnosis.createdBy = createdBy;
+				patientDiagnosis.createdBy = username;
 				const pd = await patientDiagnosis.save();
 
 				if (diagnosis?.status === 'critical') {
@@ -229,7 +263,7 @@ export class ConsultationService {
 					alert.source = 'diagnosis';
 					alert.item_id = pd.id;
 					alert.message = `patient has been diagnosed of ${diagnosis.condition.label}`;
-					alert.createdBy = createdBy;
+					alert.createdBy = username;
 					await alert.save();
 				}
 			}
@@ -237,7 +271,10 @@ export class ConsultationService {
 			// 6
 			let physicalExaminations = [];
 			for (const exam of param.physicalExamination) {
-				physicalExaminations = [...physicalExaminations, `${exam.label}: ${exam.value}`];
+				physicalExaminations = [
+					...physicalExaminations,
+					`${exam.label}: ${exam.value}`,
+				];
 			}
 
 			if (physicalExaminations.length > 0) {
@@ -247,7 +284,7 @@ export class ConsultationService {
 				exam.encounter = encounter;
 				exam.type = 'physical-exam';
 				exam.visit = 'encounter';
-				exam.createdBy = createdBy;
+				exam.createdBy = username;
 				await exam.save();
 			}
 
@@ -258,13 +295,16 @@ export class ConsultationService {
 				exam.encounter = encounter;
 				exam.type = 'physical-exam-note';
 				exam.visit = 'encounter';
-				exam.createdBy = createdBy;
+				exam.createdBy = username;
 				await exam.save();
 			}
 
 			// 5
 			for (const allergen of param.allergies) {
-				const generic = allergen.generic_id && allergen.generic_id !== '' ? await this.drugGenericRepository.findOne(allergen.generic_id) : null;
+				const generic =
+					allergen.generic_id && allergen.generic_id !== ''
+						? await this.drugGenericRepository.findOne(allergen.generic_id)
+						: null;
 				const patientAllergen = new PatientNote();
 				patientAllergen.category = allergen.category.value;
 				patientAllergen.allergy = allergen.allergen;
@@ -275,7 +315,7 @@ export class ConsultationService {
 				patientAllergen.encounter = encounter;
 				patientAllergen.visit = 'encounter';
 				patientAllergen.type = 'allergy';
-				patientAllergen.createdBy = createdBy;
+				patientAllergen.createdBy = username;
 				await patientAllergen.save();
 			}
 
@@ -283,12 +323,14 @@ export class ConsultationService {
 			if (param.medicalHistory) {
 				let his = '';
 				try {
-					his = param.medicalHistory.replace(/(<([^>]+)>)/gi, '')
+					his = param.medicalHistory
+						.replace(/(<([^>]+)>)/gi, '')
 						.replace(/&nbsp;/g, '')
 						.replace('Past Medical History', '')
 						.replace(/\s/g, '')
 						.replace(/\/r/g, '')
-						.split(':').join('');
+						.split(':')
+						.join('');
 				} catch (e) {
 					console.log('------------------encounter error');
 					console.log(param.medicalHistory);
@@ -304,7 +346,7 @@ export class ConsultationService {
 					patHistory.encounter = encounter;
 					patHistory.type = 'medical-history';
 					patHistory.visit = 'encounter';
-					patHistory.createdBy = createdBy;
+					patHistory.createdBy = username;
 					await patHistory.save();
 				}
 			}
@@ -318,7 +360,7 @@ export class ConsultationService {
 				history.encounter = encounter;
 				history.type = 'patient-history';
 				history.visit = 'encounter';
-				history.createdBy = createdBy;
+				history.createdBy = username;
 				await history.save();
 			}
 
@@ -335,18 +377,20 @@ export class ConsultationService {
 				review.encounter = encounter;
 				review.type = 'review-of-systems';
 				review.visit = 'encounter';
-				review.createdBy = createdBy;
+				review.createdBy = username;
 				await review.save();
 			}
 
 			// 1
-			const complain = param.complaints.replace(/(<([^>]+)>)/gi, '')
+			const complain = param.complaints
+				.replace(/(<([^>]+)>)/gi, '')
 				.replace(/&nbsp;/g, '')
 				.replace('Presenting Complaints', '')
 				.replace('History of complains', '')
 				.replace(/\s/g, '')
 				.replace(/\/r/g, '')
-				.split(':').join('');
+				.split(':')
+				.join('');
 
 			console.log(complain);
 			console.log(encodeURIComponent(complain));
@@ -358,90 +402,156 @@ export class ConsultationService {
 				complaint.encounter = encounter;
 				complaint.type = 'complaints';
 				complaint.visit = 'encounter';
-				complaint.createdBy = createdBy;
+				complaint.createdBy = username;
 				await complaint.save();
 			}
 
 			if (param.consumables) {
 				for (const item of param.consumables.items) {
-					const consumableItem = await this.storeInventoryRepository.findOne(item.item.id);
+					const consumableItem = await this.storeInventoryRepository.findOne(
+						item.item.id,
+					);
 					const consumable = new PatientConsumable();
 					consumable.quantity = item.quantity;
 					consumable.consumable = consumableItem;
 					consumable.patient = patient;
 					consumable.encounter = encounter;
 					consumable.request_note = param.consumables.request_note;
-					consumable.createdBy = createdBy;
+					consumable.createdBy = username;
 					await consumable.save();
 				}
 			}
 
-			if (investigations.labRequest && investigations.labRequest.tests.length > 0) {
-				const labRequest = await PatientRequestHelper.handleLabRequest(investigations.labRequest, patient, createdBy, encounter);
+			if (
+				investigations.labRequest &&
+				investigations.labRequest.tests.length > 0
+			) {
+				const labRequest = await PatientRequestHelper.handleLabRequest(
+					investigations.labRequest,
+					patient,
+					username,
+					encounter,
+				);
 				console.log(labRequest);
 				if (labRequest.success && labRequest.data.length > 0) {
 					// save transaction
 					// tslint:disable-next-line:max-line-length
-					const payment = await RequestPaymentHelper.clinicalLabPayment(labRequest.data, patient, createdBy, investigations.labRequest.pay_later);
-					this.appGateway.server.emit('paypoint-queue', { payment: payment.transactions });
+					const payment = await RequestPaymentHelper.clinicalLabPayment(
+						labRequest.data,
+						patient,
+						username,
+						investigations.labRequest.pay_later,
+					);
+					this.appGateway.server.emit('paypoint-queue', {
+						payment: payment.transactions,
+					});
 				}
 			}
 
-			if (investigations.radiologyRequest && investigations.radiologyRequest.tests.length > 0) {
-				const request = await PatientRequestHelper.handleServiceRequest(investigations.radiologyRequest, patient, createdBy, 'scans', 'encounter', encounter);
+			if (
+				investigations.radiologyRequest &&
+				investigations.radiologyRequest.tests.length > 0
+			) {
+				const request = await PatientRequestHelper.handleServiceRequest(
+					investigations.radiologyRequest,
+					patient,
+					username,
+					'scans',
+					'encounter',
+					encounter,
+				);
 				console.log(request);
 				if (request.success && request.data.length > 0) {
 					// save transaction
 					const payment = await RequestPaymentHelper.servicePayment(
 						request.data,
 						patient,
-						createdBy,
+						username,
 						'scans',
 						investigations.radiologyRequest.pay_later,
 					);
-					this.appGateway.server.emit('paypoint-queue', { payment: payment.transactions });
+					this.appGateway.server.emit('paypoint-queue', {
+						payment: payment.transactions,
+					});
 				}
 			}
 
-			if (investigations.procedureRequest && investigations.procedureRequest.tests.length > 0) {
-				const procedure = await PatientRequestHelper.handleServiceRequest(investigations.procedureRequest, patient, createdBy, 'procedure', 'encounter', encounter);
+			if (
+				investigations.procedureRequest &&
+				investigations.procedureRequest.tests.length > 0
+			) {
+				const procedure = await PatientRequestHelper.handleServiceRequest(
+					investigations.procedureRequest,
+					patient,
+					username,
+					'procedure',
+					'encounter',
+					encounter,
+				);
 				console.log(procedure);
 				if (procedure.success && procedure.data.length > 0) {
 					// save transaction
 					const payment = await RequestPaymentHelper.servicePayment(
 						procedure.data,
 						patient,
-						createdBy,
+						username,
 						'procedure',
 						investigations.procedureRequest.bill,
 					);
-					this.appGateway.server.emit('paypoint-queue', { payment: payment.transactions });
+					this.appGateway.server.emit('paypoint-queue', {
+						payment: payment.transactions,
+					});
 				}
 			}
 
-			if (investigations.pharmacyRequest && investigations.pharmacyRequest.items.length > 0) {
-				const regimen = await PatientRequestHelper.handlePharmacyRequest(investigations.pharmacyRequest, patient, createdBy, 'encounter', encounter);
+			if (
+				investigations.pharmacyRequest &&
+				investigations.pharmacyRequest.items.length > 0
+			) {
+				const regimen = await PatientRequestHelper.handlePharmacyRequest(
+					investigations.pharmacyRequest,
+					patient,
+					username,
+					'encounter',
+					encounter,
+				);
 				console.log(regimen);
 			}
 
-			if (nextAppointment && nextAppointment.appointment_date && nextAppointment.appointment_date !== '') {
-				const newAppointment = new Appointment();
+			if (
+				nextAppointment &&
+				nextAppointment.datetime &&
+				nextAppointment.datetime !== ''
+			) {
+				const doctor = await this.staffRepository.findOne(
+					nextAppointment.doctor_id,
+				);
+
+				const department_id = appointment?.department?.id || null;
+				const department = department_id
+					? await this.departmentRepository.findOne(department_id)
+					: null;
+
+				const date = moment(nextAppointment.datetime);
+
+				const newAppointment = new DoctorsAppointment();
 				newAppointment.patient = patient;
-				newAppointment.whomToSee = appointment.whomToSee;
-				newAppointment.appointment_date = nextAppointment.appointment_date;
-				newAppointment.duration = nextAppointment.duration;
-				newAppointment.duration_type = nextAppointment.duration_type;
-				newAppointment.serviceCategory = appointment.serviceCategory;
-				newAppointment.service = appointment.service;
-				newAppointment.description = nextAppointment.description;
-				newAppointment.department = appointment.department;
-				newAppointment.createdBy = createdBy;
+				newAppointment.doctor = doctor;
+				newAppointment.appointment_datetime = nextAppointment.datetime;
+				newAppointment.appointment_date = date.format('YYYY-MM-DD');
+				newAppointment.appointment_time = date.format('HH:mm:ss');
+				newAppointment.appointment_duration = {
+					duration: nextAppointment.duration,
+					duration_type: nextAppointment.duration_type,
+				};
+				newAppointment.department = department;
+				newAppointment.createdBy = username;
 				await newAppointment.save();
 			}
 
 			appointment.status = 'Completed';
 			appointment.encounter = encounter;
-			appointment.lastChangedBy = createdBy;
+			appointment.lastChangedBy = username;
 			const rs = await appointment.save();
 
 			await this.queueSystemRepository.delete({ appointment });
@@ -457,5 +567,4 @@ export class ConsultationService {
 			return { success: false, message: err.message };
 		}
 	}
-
 }

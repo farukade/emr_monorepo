@@ -18,202 +18,243 @@ import { EncounterRepository } from '../consultation/encounter.repository';
 
 @Injectable()
 export class PatientNoteService {
-    constructor(
-        @InjectRepository(PatientRepository)
-        private patientRepository: PatientRepository,
-        @InjectRepository(PatientNoteRepository)
-        private patientNoteRepository: PatientNoteRepository,
-        @InjectRepository(AdmissionsRepository)
-        private admissionsRepository: AdmissionsRepository,
-        @InjectRepository(PatientRequestItemRepository)
-        private patientRequestItemRepository: PatientRequestItemRepository,
-        @InjectRepository(IvfEnrollmentRepository)
-        private ivfEnrollmentRepository: IvfEnrollmentRepository,
-        @InjectRepository(AntenatalEnrollmentRepository)
-        private enrollmentRepository: AntenatalEnrollmentRepository,
-        @InjectRepository(DrugGenericRepository)
-        private drugGenericRepository: DrugGenericRepository,
-        @InjectRepository(LabourEnrollmentRepository)
-        private labourEnrollmentRepository: LabourEnrollmentRepository,
-        @InjectRepository(NicuRepository)
-        private nicuRepository: (NicuRepository),
-        @InjectRepository(PatientAlertRepository)
-        private patientAlertRepository: (PatientAlertRepository),
-        @InjectRepository(EncounterRepository)
-        private encounterRepository: EncounterRepository,
-    ) {
-    }
+	constructor(
+		@InjectRepository(PatientRepository)
+		private patientRepository: PatientRepository,
+		@InjectRepository(PatientNoteRepository)
+		private patientNoteRepository: PatientNoteRepository,
+		@InjectRepository(AdmissionsRepository)
+		private admissionsRepository: AdmissionsRepository,
+		@InjectRepository(PatientRequestItemRepository)
+		private patientRequestItemRepository: PatientRequestItemRepository,
+		@InjectRepository(IvfEnrollmentRepository)
+		private ivfEnrollmentRepository: IvfEnrollmentRepository,
+		@InjectRepository(AntenatalEnrollmentRepository)
+		private enrollmentRepository: AntenatalEnrollmentRepository,
+		@InjectRepository(DrugGenericRepository)
+		private drugGenericRepository: DrugGenericRepository,
+		@InjectRepository(LabourEnrollmentRepository)
+		private labourEnrollmentRepository: LabourEnrollmentRepository,
+		@InjectRepository(NicuRepository)
+		private nicuRepository: NicuRepository,
+		@InjectRepository(PatientAlertRepository)
+		private patientAlertRepository: PatientAlertRepository,
+		@InjectRepository(EncounterRepository)
+		private encounterRepository: EncounterRepository,
+	) {}
 
-    async getNotes(options: PaginationOptionsInterface, params): Promise<any> {
-        const { patient_id, type, admission_id, visit, ivf_id, antenatal_id, procedure_id, labour_id, nicu_id } = params;
+	async getNotes(options: PaginationOptionsInterface, params): Promise<any> {
+		const {
+			patient_id,
+			type,
+			category,
+			admission_id,
+			visit,
+			ivf_id,
+			antenatal_id,
+			procedure_id,
+			labour_id,
+			nicu_id,
+		} = params;
 
-        const query = this.patientNoteRepository.createQueryBuilder('q').select('q.*');
+		const query = this.patientNoteRepository
+			.createQueryBuilder('q')
+			.select('q.*');
 
-        if (patient_id && patient_id !== '') {
-            query.andWhere('q.patient_id = :patient_id', { patient_id });
-        }
+		if (patient_id && patient_id !== '') {
+			query.andWhere('q.patient_id = :patient_id', { patient_id });
+		}
 
-        if (visit && visit !== '') {
-            query.andWhere('q.visit = :visit', { visit });
-        }
+		if (visit && visit !== '') {
+			query.andWhere('q.visit = :visit', { visit });
+		}
 
-        if (admission_id && admission_id !== '') {
-            query.andWhere('q.admission_id = :admission_id', { admission_id });
-        }
+		if (admission_id && admission_id !== '') {
+			query.andWhere('q.admission_id = :admission_id', { admission_id });
+		}
 
-        if (ivf_id && ivf_id !== '') {
-            query.andWhere('q.ivf_id = :ivf_id', { ivf_id });
-        }
+		if (ivf_id && ivf_id !== '') {
+			query.andWhere('q.ivf_id = :ivf_id', { ivf_id });
+		}
 
-        if (antenatal_id && antenatal_id !== '') {
-            query.andWhere('q.antenatal_id = :antenatal_id', { antenatal_id });
-        }
+		if (antenatal_id && antenatal_id !== '') {
+			query.andWhere('q.antenatal_id = :antenatal_id', { antenatal_id });
+		}
 
-        if (procedure_id && procedure_id !== '') {
-            query.andWhere('q.request_item_id = :procedure_id', { procedure_id });
-        }
+		if (procedure_id && procedure_id !== '') {
+			query.andWhere('q.request_item_id = :procedure_id', { procedure_id });
+		}
 
-        if (labour_id && labour_id !== '') {
-            query.andWhere('q.labour_id = :labour_id', { labour_id });
-        }
+		if (labour_id && labour_id !== '') {
+			query.andWhere('q.labour_id = :labour_id', { labour_id });
+		}
 
-        if (nicu_id && nicu_id !== '') {
-            query.andWhere('q.nicu_id = :nicu_id', { nicu_id });
-        }
+		if (nicu_id && nicu_id !== '') {
+			query.andWhere('q.nicu_id = :nicu_id', { nicu_id });
+		}
 
-        if (type && type !== '') {
-            query.andWhere('q.type = :type', { type });
-        }
+		if (type && type !== '') {
+			query.andWhere('q.type = :type', { type });
+		}
 
-        const page = options.page - 1;
+		if (category && category !== '') {
+			query.andWhere('q.category = :category', { category });
+		}
 
-        const items = await query.offset(page * options.limit)
-            .limit(options.limit)
-            .orderBy('q.createdAt', 'DESC')
-            .getRawMany();
+		const page = options.page - 1;
 
-        const total = await query.getCount();
+		const items = await query
+			.offset(page * options.limit)
+			.limit(options.limit)
+			.orderBy('q.createdAt', 'DESC')
+			.getRawMany();
 
-        let notes = [];
-        for (const item of items) {
-            const staff = await getStaff(item.createdBy);
+		const total = await query.getCount();
 
-            if (item.drug_generic_id && item.drug_generic_id !== '') {
-                item.generic = await this.drugGenericRepository.findOne(item.drug_generic_id);
-            }
+		let notes = [];
+		for (const item of items) {
+			const staff = await getStaff(item.createdBy);
 
-            notes = [...notes, { ...item, staff }];
-        }
+			if (item.drug_generic_id && item.drug_generic_id !== '') {
+				item.generic = await this.drugGenericRepository.findOne(
+					item.drug_generic_id,
+				);
+			}
 
-        return {
-            result: notes,
-            lastPage: Math.ceil(total / options.limit),
-            itemsPerPage: options.limit,
-            totalPages: total,
-            currentPage: options.page,
-        };
-    }
+			notes = [...notes, { ...item, staff }];
+		}
 
-    async saveNote(param: any, createdBy: string) {
-        const { patient_id, description, type, admission_id, note_type, specialty, procedure_id, ivf_id, antenatal_id, labour_id, nicu_id, encounter_id } = param;
+		return {
+			result: notes,
+			lastPage: Math.ceil(total / options.limit),
+			itemsPerPage: options.limit,
+			totalPages: total,
+			currentPage: options.page,
+		};
+	}
 
-        const patient = await this.patientRepository.findOne(patient_id);
+	async saveNote(param: any, createdBy: string) {
+		const {
+			patient_id,
+			description,
+			type,
+			admission_id,
+			note_type,
+			specialty,
+			procedure_id,
+			ivf_id,
+			antenatal_id,
+			labour_id,
+			nicu_id,
+			encounter_id,
+			category,
+			history,
+		} = param;
 
-        const note = new PatientNote();
-        note.patient = patient;
-        note.description = description;
-        note.type = type;
+		const patient = await this.patientRepository.findOne(patient_id);
 
-        if (type === 'consultation') {
-            note.visit = 'encounter';
-        }
+		const note = new PatientNote();
+		note.patient = patient;
+		note.description = description;
+		note.history = history;
+		note.type = type;
 
-        if (admission_id && admission_id !== '') {
-            note.admission = await this.admissionsRepository.findOne(admission_id);
-        }
+		if (type === 'consultation') {
+			note.visit = 'encounter';
+		}
 
-        if (procedure_id && procedure_id !== '') {
-            note.request = await this.patientRequestItemRepository.findOne(procedure_id);
-        }
+		if (admission_id && admission_id !== '') {
+			note.admission = await this.admissionsRepository.findOne(admission_id);
+		}
 
-        if (ivf_id && ivf_id !== '') {
-            note.ivf = await this.ivfEnrollmentRepository.findOne(ivf_id);
-        }
+		if (procedure_id && procedure_id !== '') {
+			note.request = await this.patientRequestItemRepository.findOne(
+				procedure_id,
+			);
+		}
 
-        if (antenatal_id && antenatal_id !== '') {
-            note.antenatal = await this.enrollmentRepository.findOne(antenatal_id);
-        }
+		if (ivf_id && ivf_id !== '') {
+			note.ivf = await this.ivfEnrollmentRepository.findOne(ivf_id);
+		}
 
-        if (labour_id && labour_id !== '') {
-            note.labour = await this.labourEnrollmentRepository.findOne(labour_id);
-        }
+		if (antenatal_id && antenatal_id !== '') {
+			note.antenatal = await this.enrollmentRepository.findOne(antenatal_id);
+		}
 
-        if (encounter_id && encounter_id !== '') {
-            note.encounter = await this.encounterRepository.findOne(encounter_id);
-        }
+		if (labour_id && labour_id !== '') {
+			note.labour = await this.labourEnrollmentRepository.findOne(labour_id);
+		}
 
-        if (nicu_id && nicu_id !== '') {
-            note.nicu = await this.nicuRepository.findOne(nicu_id);
-        }
+		if (encounter_id && encounter_id !== '') {
+			note.encounter = await this.encounterRepository.findOne(encounter_id);
+		}
 
-        note.specialty = specialty;
-        note.note_type = note_type;
-        note.createdBy = createdBy;
+		if (nicu_id && nicu_id !== '') {
+			note.nicu = await this.nicuRepository.findOne(nicu_id);
+		}
 
-        const rs = await note.save();
+		note.specialty = specialty;
+		note.note_type = note_type;
+		note.category = category;
+		note.createdBy = createdBy;
 
-        const staff = await getStaff(createdBy);
+		const rs = await note.save();
 
-        return { ...rs, note_type: rs.note_type, staff };
-    }
+		const staff = await getStaff(createdBy);
 
-    async updateNote(id: number, param: any, username: string) {
-        try {
-            const note = await this.patientNoteRepository.findOne(id);
-            note.lastChangedBy = username;
-            await note.save();
+		return { ...rs, note_type: rs.note_type, staff };
+	}
 
-            return { success: true, data: note };
-        } catch (e) {
-            return { success: false, message: e.message };
-        }
-    }
+	async updateNote(id: number, param: any, username: string) {
+		try {
+			const note = await this.patientNoteRepository.findOne(id);
+			note.lastChangedBy = username;
+			await note.save();
 
-    async resolveDiagnosis(id: number, username: string) {
-        try {
-            const note = await this.patientNoteRepository.findOne(id);
-            note.status = 'Resolved';
-            note.resolved_by = username;
-            note.resolved_at = moment().format('YYYY-MM-DD HH:mm:ss');
-            note.lastChangedBy = username;
-            await note.save();
+			return { success: true, data: note };
+		} catch (e) {
+			return { success: false, message: e.message };
+		}
+	}
 
-            const alertItem = await this.patientAlertRepository.findOne({ item_id: id, category: 'critical' });
-            if (alertItem) {
-                alertItem.closed = true;
-                alertItem.closed_by = username;
-                alertItem.closed_at = moment().format('YYYY-MM-DD HH:mm:ss');
-                alertItem.lastChangedBy = username;
+	async resolveDiagnosis(id: number, username: string) {
+		try {
+			const note = await this.patientNoteRepository.findOne(id);
+			note.status = 'Resolved';
+			note.resolved_by = username;
+			note.resolved_at = moment().format('YYYY-MM-DD HH:mm:ss');
+			note.lastChangedBy = username;
+			await note.save();
 
-                await alertItem.save();
-            }
+			const alertItem = await this.patientAlertRepository.findOne({
+				item_id: id,
+				category: 'critical',
+			});
+			if (alertItem) {
+				alertItem.closed = true;
+				alertItem.closed_by = username;
+				alertItem.closed_at = moment().format('YYYY-MM-DD HH:mm:ss');
+				alertItem.lastChangedBy = username;
 
-            return { success: true, data: note };
-        } catch (e) {
-            return { success: false, message: e.message };
-        }
-    }
+				await alertItem.save();
+			}
 
-    async deleteNote(id: number, username: string) {
-        const note = await this.patientNoteRepository.findOne(id);
+			return { success: true, data: note };
+		} catch (e) {
+			return { success: false, message: e.message };
+		}
+	}
 
-        if (!note) {
-            throw new NotFoundException(`Note with ID '${id}' not found`);
-        }
+	async deleteNote(id: number, username: string) {
+		const note = await this.patientNoteRepository.findOne(id);
 
-        note.deletedBy = username;
-        await note.save();
+		if (!note) {
+			throw new NotFoundException(`Note with ID '${id}' not found`);
+		}
 
-        return note.softRemove();
-    }
+		note.deletedBy = username;
+		await note.save();
+
+		return note.softRemove();
+	}
 }

@@ -1,6 +1,18 @@
-import { OnQueueActive, OnQueueCompleted, OnQueueFailed, Process, Processor } from '@nestjs/bull';
+import {
+	OnQueueActive,
+	OnQueueCompleted,
+	OnQueueFailed,
+	Process,
+	Processor,
+} from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
-import { callPatient1, formatPID, hasNumber, mysqlConnect, slugify } from '../../common/utils/utils';
+import {
+	callPatient1,
+	formatPID,
+	hasNumber,
+	mysqlConnect,
+	slugify,
+} from '../../common/utils/utils';
 import { Job } from 'bull';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DiagnosisRepository } from '../settings/diagnosis/diagnosis.repository';
@@ -50,6 +62,11 @@ import { PatientVitalRepository } from '../patient/repositories/patient_vitals.r
 import { PatientFluidChart } from '../patient/entities/patient_fluid_chart.entity';
 import { AdmissionClinicalTaskRepository } from '../patient/admissions/repositories/admission-clinical-tasks.repository';
 import { Transaction } from '../finance/transactions/transaction.entity';
+import { Permission } from '../settings/entities/permission.entity';
+import { Appointment } from '../frontdesk/appointment/appointment.entity';
+import { AntenatalEnrollment } from '../patient/antenatal/entities/antenatal-enrollment.entity';
+import { LabourEnrollment } from '../patient/labour-management/entities/labour_enrollment.entity';
+import { IvfEnrollment } from '../patient/ivf/entities/ivf_enrollment.entity';
 
 @Processor(process.env.MIGRATION_QUEUE_NAME)
 export class MigrationProcessor {
@@ -127,8 +144,7 @@ export class MigrationProcessor {
 		@InjectRepository(AdmissionClinicalTaskRepository)
 		private admissionClinicalTask: AdmissionClinicalTaskRepository,
 		private readonly appGateway: AppGateway,
-	) {
-	}
+	) {}
 
 	@OnQueueActive()
 	onActive(job: Job) {
@@ -142,7 +158,10 @@ export class MigrationProcessor {
 
 	@OnQueueFailed()
 	onError(job: Job<any>, error: any) {
-		this.logger.error(`Failed job ${job.id} of type ${job.name}: ${error.message}`, error.stack);
+		this.logger.error(
+			`Failed job ${job.id} of type ${job.name}: ${error.message}`,
+			error.stack,
+		);
 	}
 
 	async getStaffById(id): Promise<any> {
@@ -171,7 +190,11 @@ export class MigrationProcessor {
 					where: { code: item.code, type: item.type },
 				});
 				if (!diagnosisFind) {
-					await this.diagnosisRepository.save({ ...item, old_id: item.id, description: item.case });
+					await this.diagnosisRepository.save({
+						...item,
+						old_id: item.id,
+						description: item.case,
+					});
 				}
 			}
 
@@ -181,7 +204,11 @@ export class MigrationProcessor {
 					where: { code: item.code, type: item.type },
 				});
 				if (!diagnosisFind) {
-					await this.diagnosisRepository.save({ ...item, old_id: item.id, description: item.case });
+					await this.diagnosisRepository.save({
+						...item,
+						old_id: item.id,
+						description: item.case,
+					});
 				}
 			}
 			await connection.end();
@@ -199,7 +226,9 @@ export class MigrationProcessor {
 		try {
 			const connection = await mysqlConnect();
 
-			const [rows] = await connection.execute('SELECT insurance_schemes.*, insurance_schemes.id as scheme_id, insurance_owners.id as company_id, insurance_owners.company_name, insurance_owners.address, insurance_owners.contact_phone, insurance_owners.contact_email, insurance_type.name as insurance_type_name FROM `insurance_schemes` left join insurance_owners on insurance_owners.id=insurance_schemes.scheme_owner_id left join insurance_type on insurance_type.id = insurance_schemes.insurance_type_id');
+			const [rows] = await connection.execute(
+				'SELECT insurance_schemes.*, insurance_schemes.id as scheme_id, insurance_owners.id as company_id, insurance_owners.company_name, insurance_owners.address, insurance_owners.contact_phone, insurance_owners.contact_email, insurance_type.name as insurance_type_name FROM `insurance_schemes` left join insurance_owners on insurance_owners.id=insurance_schemes.scheme_owner_id left join insurance_type on insurance_type.id = insurance_schemes.insurance_type_id',
+			);
 			for (const item of rows) {
 				let hmoCompany = await this.hmoOwnerRepository.findOne(item.company_id);
 
@@ -214,7 +243,9 @@ export class MigrationProcessor {
 					});
 				}
 
-				const type = await this.hmoTypeRepository.findOne({ where: { name: item.insurance_type_name } });
+				const type = await this.hmoTypeRepository.findOne({
+					where: { name: item.insurance_type_name },
+				});
 
 				await this.hmoSchemeRepository.save({
 					name: item.scheme_name,
@@ -241,13 +272,18 @@ export class MigrationProcessor {
 		try {
 			const connection = await mysqlConnect();
 
-			const [rows] = await connection.execute('SELECT * FROM `staff_directory` WHERE `username` NOT LIKE \'%admin%\'');
+			const [rows] = await connection.execute(
+				"SELECT * FROM `staff_directory` WHERE `username` NOT LIKE '%admin%'",
+			);
 			for (const item of rows) {
 				try {
 					let name = item.profession;
 					if (item.profession === 'Pharmacist') {
 						name = 'Pharmacy';
-					} else if (item.profession === 'Lab Scientist' || item.profession === 'Lab Technician') {
+					} else if (
+						item.profession === 'Lab Scientist' ||
+						item.profession === 'Lab Technician'
+					) {
 						name = 'Laboratory';
 					} else if (item.profession === 'Medical Records') {
 						name = 'Records';
@@ -259,7 +295,9 @@ export class MigrationProcessor {
 						name = 'Paypoint';
 					}
 
-					const role = await this.roleRepository.findOne({ where: { slug: slugify(name) } });
+					const role = await this.roleRepository.findOne({
+						where: { slug: slugify(name) },
+					});
 
 					const user = await this.authRepository.save({
 						username: item.username.toLocaleLowerCase(),
@@ -267,14 +305,18 @@ export class MigrationProcessor {
 						role,
 					});
 
-					let checkEmail = await this.staffRepository.findOne({ where: { email: item.email } });
+					let checkEmail = await this.staffRepository.findOne({
+						where: { email: item.email },
+					});
 
 					let email = item.email;
 					while (checkEmail) {
 						const split = checkEmail.email.split('@');
 						email = `${split[0]}1@${split[1]}`;
 
-						checkEmail = await this.staffRepository.findOne({ where: { email } });
+						checkEmail = await this.staffRepository.findOne({
+							where: { email },
+						});
 					}
 
 					await this.staffRepository.save({
@@ -307,7 +349,9 @@ export class MigrationProcessor {
 		try {
 			const connection = await mysqlConnect();
 
-			const [rows] = await connection.execute('SELECT patient_demograph.*, insurance.insurance_scheme as scheme_id, insurance_schemes.scheme_name as scheme_name, kin_relation.name as kin_relation_name FROM `patient_demograph` left join insurance on insurance.patient_id = patient_demograph.patient_ID left join insurance_schemes on insurance.insurance_scheme = insurance_schemes.id left join kin_relation on kin_relation.id = patient_demograph.kin_relation_id');
+			const [rows] = await connection.execute(
+				'SELECT patient_demograph.*, insurance.insurance_scheme as scheme_id, insurance_schemes.scheme_name as scheme_name, kin_relation.name as kin_relation_name FROM `patient_demograph` left join insurance on insurance.patient_id = patient_demograph.patient_ID left join insurance_schemes on insurance.insurance_scheme = insurance_schemes.id left join kin_relation on kin_relation.id = patient_demograph.kin_relation_id',
+			);
 			for (const item of rows) {
 				try {
 					const nok = await this.patientNOKRepository.save({
@@ -318,12 +362,18 @@ export class MigrationProcessor {
 						relationship: item.kin_relation_name || '',
 					});
 
-					let hmo = await this.hmoSchemeRepository.findOne({ where: { old_id: item.scheme_id } });
+					let hmo = await this.hmoSchemeRepository.findOne({
+						where: { old_id: item.scheme_id },
+					});
 					if (!hmo) {
-						hmo = await this.hmoSchemeRepository.findOne({ where: { name: 'Private' } });
+						hmo = await this.hmoSchemeRepository.findOne({
+							where: { name: 'Private' },
+						});
 					}
 
-					const creator = await this.getStaffById(parseInt(item.registered_By, 10));
+					const creator = await this.getStaffById(
+						parseInt(item.registered_By, 10),
+					);
 
 					const patient = {
 						old_id: item.patient_ID,
@@ -331,7 +381,9 @@ export class MigrationProcessor {
 						legacy_patient_id: item.legacy_patient_id,
 						surname: item.lname,
 						other_names: `${item.fname} ${item.mname}`,
-						date_of_birth: moment(item.date_of_birth, 'YYYY-MM-DD').format('YYYY-MM-DD'),
+						date_of_birth: moment(item.date_of_birth, 'YYYY-MM-DD').format(
+							'YYYY-MM-DD',
+						),
 						occupation: item.occupation,
 						address: item.address,
 						email: item?.email?.toLocaleLowerCase() || null,
@@ -348,16 +400,26 @@ export class MigrationProcessor {
 					};
 
 					let deleted_at = null;
-					if (item.deactivated_on && item.deactivated_on !== '' && item.active === 0) {
-						deleted_at = moment(item.deactivated_on).format('YYYY-MM-DD HH:mm:ss');
+					if (
+						item.deactivated_on &&
+						item.deactivated_on !== '' &&
+						item.active === 0
+					) {
+						deleted_at = moment(item.deactivated_on).format(
+							'YYYY-MM-DD HH:mm:ss',
+						);
 					}
 
 					let staff = null;
 					if (hmo && hmo.name === 'STAFF') {
 						staff = await this.staffRepository.findOne({
 							where: {
-								first_name: Raw((alias) => `LOWER(${alias}) = :first`, { first: item.fname?.toLocaleLowerCase() || '' }),
-								last_name: Raw((alias) => `LOWER(${alias}) = :last`, { last: item.lname?.toLocaleLowerCase() || '' }),
+								first_name: Raw(alias => `LOWER(${alias}) = :first`, {
+									first: item.fname?.toLocaleLowerCase() || '',
+								}),
+								last_name: Raw(alias => `LOWER(${alias}) = :last`, {
+									last: item.lname?.toLocaleLowerCase() || '',
+								}),
 							},
 						});
 					}
@@ -392,7 +454,9 @@ export class MigrationProcessor {
 				});
 			}
 
-			[rows] = await connection.execute('SELECT * FROM `insurance_billable_items`');
+			[rows] = await connection.execute(
+				'SELECT * FROM `insurance_billable_items`',
+			);
 			for (const item of rows) {
 				await this.serviceRepository.save({
 					name: item.item_description,
@@ -426,14 +490,19 @@ export class MigrationProcessor {
 			await connection.end();
 
 			const services = await this.serviceRepository.find();
-			const privateHmo = await this.hmoSchemeRepository.findOne({ where: { name: 'Private' } });
+			const privateHmo = await this.hmoSchemeRepository.findOne({
+				where: { name: 'Private' },
+			});
 			for (const item of services) {
 				const rs = await this.serviceCostRepository.findOne({
 					where: { code: item.code, hmo: privateHmo },
 				});
 
 				if (!rs) {
-					await getConnection().createQueryBuilder().delete().from(Service)
+					await getConnection()
+						.createQueryBuilder()
+						.delete()
+						.from(Service)
 						.where('id = :id', { id: item.id })
 						.execute();
 				}
@@ -452,7 +521,9 @@ export class MigrationProcessor {
 		try {
 			const connection = await mysqlConnect();
 
-			let [rows] = await connection.execute('SELECT * FROM `drug_manufacturers`');
+			let [rows] = await connection.execute(
+				'SELECT * FROM `drug_manufacturers`',
+			);
 			for (const item of rows) {
 				await this.manufacturerRepository.save({ name: item.name });
 			}
@@ -462,7 +533,9 @@ export class MigrationProcessor {
 				await this.drugCategoryRepository.save({ name: item.name });
 			}
 
-			[rows] = await connection.execute('SELECT drug_generics.id, drug_generics.name, drug_category.name as category_name, drug_generics.form, drug_generics.weight, drug_generics.low_stock_level FROM `drug_generics` left join drug_category on drug_category.id=drug_generics.category_ids');
+			[rows] = await connection.execute(
+				'SELECT drug_generics.id, drug_generics.name, drug_category.name as category_name, drug_generics.form, drug_generics.weight, drug_generics.low_stock_level FROM `drug_generics` left join drug_category on drug_category.id=drug_generics.category_ids',
+			);
 			for (const item of rows) {
 				const category = await this.drugCategoryRepository.findOne({
 					where: { name: item.category_name },
@@ -474,11 +547,15 @@ export class MigrationProcessor {
 					category,
 					form: item.form,
 					weight: item.weight,
-					lowStockLevel: item.low_stock_level ? parseInt(item.low_stock_level, 10) : 0,
+					lowStockLevel: item.low_stock_level
+						? parseInt(item.low_stock_level, 10)
+						: 0,
 				});
 			}
 
-			[rows] = await connection.execute('SELECT drugs.id as drug_id, drugs.name, drugs.billing_code, drugs.drug_generic_id, drugs.base_price, drugs.unit_cost, drugs.stock_uom, drug_manufacturers.name as manufacturer_name FROM `drugs` left join drug_generics on drug_generics.id=drugs.drug_generic_id left join drug_manufacturers on drug_manufacturers.id=drugs.manufacturer_id');
+			[rows] = await connection.execute(
+				'SELECT drugs.id as drug_id, drugs.name, drugs.billing_code, drugs.drug_generic_id, drugs.base_price, drugs.unit_cost, drugs.stock_uom, drug_manufacturers.name as manufacturer_name FROM `drugs` left join drug_generics on drug_generics.id=drugs.drug_generic_id left join drug_manufacturers on drug_manufacturers.id=drugs.manufacturer_id',
+			);
 			for (const item of rows) {
 				const generic = await this.drugGenericRepository.findOne({
 					where: { old_id: item.drug_generic_id },
@@ -498,13 +575,17 @@ export class MigrationProcessor {
 				});
 			}
 
-			[rows] = await connection.execute('SELECT drug_batch.*, drugs.name as drug_name FROM `drug_batch` left join drugs on drugs.id=drug_batch.drug_id');
+			[rows] = await connection.execute(
+				'SELECT drug_batch.*, drugs.name as drug_name FROM `drug_batch` left join drugs on drugs.id=drug_batch.drug_id',
+			);
 			for (const item of rows) {
 				const drug = await this.drugRepository.findOne({
 					where: { old_id: item.drug_id },
 				});
 
-				const expirationDate = moment(item.expiration_date).isValid() ? moment(item.expiration_date).format('YYYY-MM-DD') : null;
+				const expirationDate = moment(item.expiration_date).isValid()
+					? moment(item.expiration_date).format('YYYY-MM-DD')
+					: null;
 
 				await this.drugBatchRepository.save({
 					old_id: item.id,
@@ -532,7 +613,9 @@ export class MigrationProcessor {
 		try {
 			const connection = await mysqlConnect();
 
-			let [rows] = await connection.execute('SELECT * FROM `labtests_config_category`');
+			let [rows] = await connection.execute(
+				'SELECT * FROM `labtests_config_category`',
+			);
 			for (const item of rows) {
 				await this.labTestCategoryRepository.save({ name: item.name });
 			}
@@ -542,9 +625,13 @@ export class MigrationProcessor {
 				await this.specimenRepository.save({ name: item.name });
 			}
 
-			[rows] = await connection.execute('SELECT labtests_config.*, labtests_config.id as lab_id, labtests_config_category.name as lab_category FROM `labtests_config` left join labtests_config_category on labtests_config_category.id=labtests_config.category_id');
+			[rows] = await connection.execute(
+				'SELECT labtests_config.*, labtests_config.id as lab_id, labtests_config_category.name as lab_category FROM `labtests_config` left join labtests_config_category on labtests_config_category.id=labtests_config.category_id',
+			);
 			for (const item of rows) {
-				const category = await this.labTestCategoryRepository.findOne({ name: item.lab_category });
+				const category = await this.labTestCategoryRepository.findOne({
+					name: item.lab_category,
+				});
 
 				await this.labTestRepository.save({
 					code: item.billing_code,
@@ -556,14 +643,23 @@ export class MigrationProcessor {
 
 			[rows] = await connection.execute('SELECT * FROM `lab_combo`');
 			for (const item of rows) {
-				await this.groupRepository.save({ name: item.name, slug: slugify(item.name) });
+				await this.groupRepository.save({
+					name: item.name,
+					slug: slugify(item.name),
+				});
 			}
 
-			[rows] = await connection.execute('SELECT labtests_config.billing_code, lab_combo.name as lc FROM `lab_combo_data` join lab_combo on lab_combo.id=lab_combo_data.lab_combo_id join labtests_config on labtests_config.id=lab_combo_data.lab_id');
+			[rows] = await connection.execute(
+				'SELECT labtests_config.billing_code, lab_combo.name as lc FROM `lab_combo_data` join lab_combo on lab_combo.id=lab_combo_data.lab_combo_id join labtests_config on labtests_config.id=lab_combo_data.lab_id',
+			);
 			for (const item of rows) {
-				const lab = await this.labTestRepository.findOne({ code: item.billing_code });
+				const lab = await this.labTestRepository.findOne({
+					code: item.billing_code,
+				});
 				if (item.lc && item.lc !== '') {
-					const group = await this.groupRepository.findOne({ slug: slugify(item.lc) });
+					const group = await this.groupRepository.findOne({
+						slug: slugify(item.lc),
+					});
 
 					const groupTest = new GroupTest();
 					groupTest.group = group;
@@ -593,10 +689,18 @@ export class MigrationProcessor {
 				count++;
 
 				const code = `ST${formatPID(count, 8)}`;
-				const name = hasNumber(item.name) ? item.name : startCase(item.name.toLocaleLowerCase());
-				const unit = hasNumber(item.name) ? item.unit_of_measure : startCase(item.unit_of_measure.toLocaleLowerCase());
+				const name = hasNumber(item.name)
+					? item.name
+					: startCase(item.name.toLocaleLowerCase());
+				const unit = hasNumber(item.name)
+					? item.unit_of_measure
+					: startCase(item.unit_of_measure.toLocaleLowerCase());
 
-				await this.storeInventoryRepository.save({ name, unitOfMeasure: unit, code });
+				await this.storeInventoryRepository.save({
+					name,
+					unitOfMeasure: unit,
+					code,
+				});
 			}
 
 			[rows] = await connection.execute('SELECT * FROM `store_cafeteria`');
@@ -605,10 +709,16 @@ export class MigrationProcessor {
 				count++;
 
 				const code = `CA${formatPID(count, 8)}`;
-				const name = hasNumber(item.name) ? item.name : startCase(item.name.toLocaleLowerCase());
+				const name = hasNumber(item.name)
+					? item.name
+					: startCase(item.name.toLocaleLowerCase());
 				const unit = item.unit_of_measure;
 
-				await this.cafeteriaInventoryRepository.save({ name, unitOfMeasure: unit, code });
+				await this.cafeteriaInventoryRepository.save({
+					name,
+					unitOfMeasure: unit,
+					code,
+				});
 			}
 
 			await connection.end();
@@ -684,28 +794,42 @@ export class MigrationProcessor {
 		try {
 			const connection = await mysqlConnect();
 
-			const [rows] = await connection.execute('SELECT in_patient.*, health_state.state as health_state FROM `in_patient` left join health_state on health_state.id = in_patient.health_state_id');
+			const [rows] = await connection.execute(
+				'SELECT in_patient.*, health_state.state as health_state FROM `in_patient` left join health_state on health_state.id = in_patient.health_state_id',
+			);
 			for (const item of rows) {
 				const patient = await this.patientRepository.findOne({
 					where: { old_id: item.patient_id },
 				});
 
-				const createdBy = await this.getStaffById(parseInt(item.admitted_by, 10));
+				const createdBy = await this.getStaffById(
+					parseInt(item.admitted_by, 10),
+				);
 
-				const startDischargedBy = await this.getStaffById(parseInt(item.discharged_by, 10));
+				const startDischargedBy = await this.getStaffById(
+					parseInt(item.discharged_by, 10),
+				);
 
-				const dischargedBy = await this.getStaffById(parseInt(item.discharged_by_full, 10));
+				const dischargedBy = await this.getStaffById(
+					parseInt(item.discharged_by_full, 10),
+				);
 
 				await this.admissionsRepository.save({
 					patient,
 					health_state: item.health_state,
-					room_assigned_at: item.bed_assign_date ? moment(item.bed_assign_date).format('YYYY-MM-DD HH:mm:ss') : null,
+					room_assigned_at: item.bed_assign_date
+						? moment(item.bed_assign_date).format('YYYY-MM-DD HH:mm:ss')
+						: null,
 					reason: item.reason,
 					status: item.status === 'Discharged' ? 1 : 0,
 					start_discharge: item.status === 'Discharging',
-					start_discharge_date: item.date_discharged ? moment(item.date_discharged).format('YYYY-MM-DD HH:mm:ss') : null,
+					start_discharge_date: item.date_discharged
+						? moment(item.date_discharged).format('YYYY-MM-DD HH:mm:ss')
+						: null,
 					start_discharge_by: startDischargedBy?.user?.username || null,
-					date_discharged: item.date_discharged_full ? moment(item.date_discharged_full).format('YYYY-MM-DD HH:mm:ss') : null,
+					date_discharged: item.date_discharged_full
+						? moment(item.date_discharged_full).format('YYYY-MM-DD HH:mm:ss')
+						: null,
 					dischargedBy,
 					discharge_note: item.discharge_note,
 					createdAt: moment(item.date_admitted).format('YYYY-MM-DD HH:mm:ss'),
@@ -764,7 +888,9 @@ export class MigrationProcessor {
 		try {
 			const connection = await mysqlConnect();
 
-			const [rows] = await connection.execute('SELECT patient_allergen.*, allergen_category.name, drug_generics.id as generic_id FROM `patient_allergen` left join allergen_category on allergen_category.id = patient_allergen.category_id left join drug_super_generic_data on drug_super_generic_data.super_generic_id = patient_allergen.drug_super_gen_id left join drug_generics on drug_generics.id = drug_super_generic_data.drug_generic_id');
+			const [rows] = await connection.execute(
+				'SELECT patient_allergen.*, allergen_category.name, drug_generics.id as generic_id FROM `patient_allergen` left join allergen_category on allergen_category.id = patient_allergen.category_id left join drug_super_generic_data on drug_super_generic_data.super_generic_id = patient_allergen.drug_super_gen_id left join drug_generics on drug_generics.id = drug_super_generic_data.drug_generic_id',
+			);
 			for (const item of rows) {
 				const patient = await this.patientRepository.findOne({
 					where: { old_id: item.patient_ID },
@@ -772,9 +898,15 @@ export class MigrationProcessor {
 
 				const createdBy = await this.getStaffById(parseInt(item.noted_by, 10));
 
-				const generic = item.generic_id ? await this.drugGenericRepository.findOne(item.generic_id) : null;
+				const generic = item.generic_id
+					? await this.drugGenericRepository.findOne(item.generic_id)
+					: null;
 
-				const encounter = item.encounter_id ? await this.encounterRepository.findOne({ where: { old_id: item.encounter_id } }) : null;
+				const encounter = item.encounter_id
+					? await this.encounterRepository.findOne({
+							where: { old_id: item.encounter_id },
+					  })
+					: null;
 
 				await this.patientNoteRepository.save({
 					patient,
@@ -807,13 +939,21 @@ export class MigrationProcessor {
 		try {
 			const connection = await mysqlConnect();
 
-			const [rows] = await connection.execute('SELECT * FROM `patient_care_member`');
+			const [rows] = await connection.execute(
+				'SELECT * FROM `patient_care_member`',
+			);
 			for (const item of rows) {
-				const member = await this.getStaffById(parseInt(item.care_member_id, 10));
+				const member = await this.getStaffById(
+					parseInt(item.care_member_id, 10),
+				);
 
-				const primaryMember = await this.getStaffById(parseInt(item.primary_care_id, 10));
+				const primaryMember = await this.getStaffById(
+					parseInt(item.primary_care_id, 10),
+				);
 
-				const createdBy = await this.getStaffById(parseInt(item.created_by, 10));
+				const createdBy = await this.getStaffById(
+					parseInt(item.created_by, 10),
+				);
 
 				const admission = await this.admissionsRepository.findOne({
 					where: { old_id: item.in_patient_id },
@@ -851,7 +991,9 @@ export class MigrationProcessor {
 		try {
 			const connection = await mysqlConnect();
 
-			const [rows] = await connection.execute('SELECT encounter.*, departments.name as department_name FROM `encounter` join departments on departments.id=encounter.department_id');
+			const [rows] = await connection.execute(
+				'SELECT encounter.*, departments.name as department_name FROM `encounter` join departments on departments.id=encounter.department_id',
+			);
 			for (const item of rows) {
 				const patient = await this.patientRepository.findOne({
 					where: { old_id: item.patient_id },
@@ -859,11 +1001,15 @@ export class MigrationProcessor {
 
 				const doctor = await this.getStaffById(parseInt(item.consulted_by, 10));
 
-				const department = await getConnection().getRepository(Department).findOne({
-					where: { name: item.department_name },
-				});
+				const department = await getConnection()
+					.getRepository(Department)
+					.findOne({
+						where: { name: item.department_name },
+					});
 
-				const createdBy = await this.getStaffById(parseInt(item.initiator_id, 10));
+				const createdBy = await this.getStaffById(
+					parseInt(item.initiator_id, 10),
+				);
 
 				const appointment = await this.appointmentRepository.save({});
 
@@ -902,7 +1048,9 @@ export class MigrationProcessor {
 	async updateCoverage(job: Job<any>): Promise<any> {
 		const { scheme, coverage } = job.data;
 
-		const privateHmo = await this.hmoSchemeRepository.findOne({ where: { name: 'Private' } });
+		const privateHmo = await this.hmoSchemeRepository.findOne({
+			where: { name: 'Private' },
+		});
 		if (privateHmo.name === scheme.name) {
 			this.logger.log('cannot change private services');
 			return;
@@ -914,7 +1062,9 @@ export class MigrationProcessor {
 		});
 
 		for (const cost of privateServiceCosts) {
-			const service = await this.serviceRepository.findOne(cost?.item?.id || '');
+			const service = await this.serviceRepository.findOne(
+				cost?.item?.id || '',
+			);
 			if (service) {
 				const serviceCost = await this.serviceCostRepository.findOne({
 					where: { hmo: scheme, code: service.code },
@@ -933,7 +1083,9 @@ export class MigrationProcessor {
 
 	@Process('fix-inpatients')
 	async fixInPatients(job: Job<any>): Promise<any> {
-		const admissions = await this.admissionsRepository.createQueryBuilder('q').select('q.*')
+		const admissions = await this.admissionsRepository
+			.createQueryBuilder('q')
+			.select('q.*')
 			.where('q.status = :status', { status: 0 })
 			.getRawMany();
 
@@ -942,25 +1094,36 @@ export class MigrationProcessor {
 		for (const item of admissions) {
 			// console.log(item);
 			const patient = await this.patientRepository.findOne(item.patient_id);
-			console.log(`${item.id} --- patient: ${patient?.admission_id}[${patient?.id}]`);
+			console.log(
+				`${item.id} --- patient: ${patient?.admission_id}[${patient?.id}]`,
+			);
 			patient.admission_id = item.id;
 			await patient.save();
 		}
 
-		const patients = await this.patientRepository.createQueryBuilder('q').select('q.*')
+		const patients = await this.patientRepository
+			.createQueryBuilder('q')
+			.select('q.*')
 			.where('q.admission_id is not null')
 			.getRawMany();
 
 		for (const item of patients) {
 			// console.log(item);
-			const admission = await this.admissionsRepository.findOne(item.admission_id, { relations: ['patient'] });
-			console.log(`${item.id} --- admission: ${admission?.status} - ${admission?.id}[${admission?.patient?.id}]`);
+			const admission = await this.admissionsRepository.findOne(
+				item.admission_id,
+				{ relations: ['patient'] },
+			);
+			console.log(
+				`${item.id} --- admission: ${admission?.status} - ${admission?.id}[${admission?.patient?.id}]`,
+			);
 		}
 	}
 
 	@Process('fix-nicu')
 	async fixNicu(job: Job<any>): Promise<any> {
-		const nicus = await this.nicuRepository.createQueryBuilder('q').select('q.*')
+		const nicus = await this.nicuRepository
+			.createQueryBuilder('q')
+			.select('q.*')
 			.where('q.status = :status', { status: 0 })
 			.getRawMany();
 
@@ -969,18 +1132,24 @@ export class MigrationProcessor {
 		for (const item of nicus) {
 			// console.log(item);
 			const patient = await this.patientRepository.findOne(item.patient_id);
-			console.log(`${item.id} --- patient: ${patient?.nicu_id}[${patient?.id}]`);
+			console.log(
+				`${item.id} --- patient: ${patient?.nicu_id}[${patient?.id}]`,
+			);
 			patient.nicu_id = item.id;
 			// await patient.save();
 		}
 
-		const patients = await this.patientRepository.createQueryBuilder('q').select('q.*')
+		const patients = await this.patientRepository
+			.createQueryBuilder('q')
+			.select('q.*')
 			.where('q.nicu_id is not null')
 			.getRawMany();
 
 		for (const item of patients) {
 			// console.log(item);
-			const nicu = await this.nicuRepository.findOne(item.nicu_id, { relations: ['patient'] });
+			const nicu = await this.nicuRepository.findOne(item.nicu_id, {
+				relations: ['patient'],
+			});
 			console.log(`${item.id} --- nicu: ${nicu?.id}[${nicu?.patient?.id}]`);
 		}
 	}
@@ -993,9 +1162,14 @@ export class MigrationProcessor {
 
 		for (const item of items) {
 			try {
-				const request = await this.patientRequestItemRepository.findOne(item.id);
+				const request = await this.patientRequestItemRepository.findOne(
+					item.id,
+				);
 				if (request) {
-					const startDate = moment(request.scheduledStartDate, 'DD/MM/YYYY h:mm A');
+					const startDate = moment(
+						request.scheduledStartDate,
+						'DD/MM/YYYY h:mm A',
+					);
 					const endDate = moment(request.scheduledEndDate, 'DD/MM/YYYY h:mm A');
 
 					request.scheduledStartDate = startDate.format('YYYY-MM-DD HH:mm:ss');
@@ -1030,7 +1204,9 @@ export class MigrationProcessor {
 						await item?.softRemove();
 					}
 
-					const group = await this.groupTestRepository.findOne({ where: { labTest: test } });
+					const group = await this.groupTestRepository.findOne({
+						where: { labTest: test },
+					});
 					await group?.softRemove();
 				}
 			} catch (e) {
@@ -1048,7 +1224,8 @@ export class MigrationProcessor {
 	async fixFluid(job: Job<any>): Promise<any> {
 		const { data } = job;
 		console.log(data);
-		const vital = await this.patientVitalRepository.createQueryBuilder('q')
+		const vital = await this.patientVitalRepository
+			.createQueryBuilder('q')
 			.select('q.*')
 			.where('q.patientId = :id', { id: data })
 			.andWhere('q.readingType = :type', { type: 'Fluid Chart' })
@@ -1059,10 +1236,13 @@ export class MigrationProcessor {
 			const patient = await this.patientRepository.findOne(vital.patient_id);
 
 			const fluids = await getConnection()
-				.getRepository(PatientFluidChart).find({ where: { patient } });
+				.getRepository(PatientFluidChart)
+				.find({ where: { patient } });
 
 			for (const item of fluids) {
-				const fluid = await getConnection().getRepository(PatientFluidChart).findOne(item.id);
+				const fluid = await getConnection()
+					.getRepository(PatientFluidChart)
+					.findOne(item.id);
 				if (fluid) {
 					console.log(fluid.id);
 
@@ -1076,19 +1256,27 @@ export class MigrationProcessor {
 
 	@Process('fix-tasks')
 	async fixTasks(job: Job<any>): Promise<any> {
-		const tasks = await this.admissionClinicalTask.createQueryBuilder('q').select('q.*')
+		const tasks = await this.admissionClinicalTask
+			.createQueryBuilder('q')
+			.select('q.*')
 			.withDeleted()
 			.getRawMany();
 
 		for (const task of tasks) {
 			if (task.deleted_at) {
-				const vitals = await this.patientVitalRepository.find({ where: { task } });
+				const vitals = await this.patientVitalRepository.find({
+					where: { task },
+				});
 				for (const item of vitals) {
-					const vital = await this.patientVitalRepository.findOne(item.id, { relations: ['fluidChart'] });
+					const vital = await this.patientVitalRepository.findOne(item.id, {
+						relations: ['fluidChart'],
+					});
 					vital.deletedBy = 'admin';
 					await vital.save();
 
-					const fluid = await getConnection().getRepository(PatientFluidChart).findOne(item.id);
+					const fluid = await getConnection()
+						.getRepository(PatientFluidChart)
+						.findOne(item.id);
 					if (fluid) {
 						fluid.deletedBy = 'admin';
 						await fluid.save();
@@ -1103,10 +1291,92 @@ export class MigrationProcessor {
 
 	@Process('fix-nicu-transactions')
 	async fixNicuTransactions(job: Job<any>): Promise<any> {
-		await getConnection().createQueryBuilder().update(Transaction)
+		await getConnection()
+			.createQueryBuilder()
+			.update(Transaction)
 			.set({ status: -1, is_admitted: true })
 			.where('nicu_id is not null')
 			.andWhere('status = :status', { status: 0 })
 			.execute();
+	}
+
+	@Process('fix-permissions')
+	async fixPermissions(job: Job<any>): Promise<any> {
+		const permissions = await getConnection()
+			.getRepository(Permission)
+			.find();
+		for (const item of permissions) {
+			if (item) {
+				const permission = await getConnection()
+					.getRepository(Permission)
+					.findOne(item.id);
+				if (permission) {
+					permission.slug = slugify(permission.name);
+					await permission.save();
+				}
+			}
+		}
+	}
+
+	@Process('fix-appointments')
+	async fixAppointments(job: Job<any>): Promise<any> {
+		const appointments = await getConnection()
+			.getRepository(Appointment)
+			.find();
+		for (const item of appointments) {
+			if (item) {
+				const appointment = await getConnection()
+					.getRepository(Appointment)
+					.findOne(item.id, { withDeleted: true });
+				if (appointment) {
+					appointment.is_queued =
+						appointment.canSeeDoctor === 1 ||
+						(appointment.canSeeDoctor === 0 && !appointment.is_scheduled);
+					await appointment.save();
+				}
+			}
+		}
+	}
+
+	@Process('fix-enrollments')
+	async fixEnrollments(job: Job<any>): Promise<any> {
+		const ancEnrollments = await getConnection()
+			.getRepository(AntenatalEnrollment)
+			.find({ relations: ['patient'] });
+		for (const item of ancEnrollments) {
+			if (item) {
+				const patient = await this.patientRepository.findOne(item.patient.id);
+				if (patient) {
+					patient.antenatal_id = item.id;
+					await patient.save();
+				}
+			}
+		}
+
+		const labourEnrollments = await getConnection()
+			.getRepository(LabourEnrollment)
+			.find({ relations: ['patient'] });
+		for (const item of labourEnrollments) {
+			if (item) {
+				const patient = await this.patientRepository.findOne(item.patient.id);
+				if (patient) {
+					patient.labour_id = item.id;
+					await patient.save();
+				}
+			}
+		}
+
+		const ivfEnrollments = await getConnection()
+			.getRepository(IvfEnrollment)
+			.find({ relations: ['wife'] });
+		for (const item of ivfEnrollments) {
+			if (item) {
+				const patient = await this.patientRepository.findOne(item.wife.id);
+				if (patient) {
+					patient.ivf_id = item.id;
+					await patient.save();
+				}
+			}
+		}
 	}
 }
