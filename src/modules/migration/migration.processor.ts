@@ -273,7 +273,7 @@ export class MigrationProcessor {
 			const connection = await mysqlConnect();
 
 			const [rows] = await connection.execute(
-				"SELECT * FROM `staff_directory` WHERE `username` NOT LIKE '%admin%'",
+				'SELECT * FROM `staff_directory` WHERE `username` NOT LIKE \'%admin%\'',
 			);
 			for (const item of rows) {
 				try {
