@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CafeteriaItemRepository } from './repositories/cafeteria.item.repository';
-import { Connection, Raw } from 'typeorm';
+import { Connection, getRepository, Raw } from 'typeorm';
 import { PaginationOptionsInterface } from '../../common/paginate';
 import { CafeteriaItemDto } from './dto/cafeteria.item.dto';
 import { CafeteriaItem } from './entities/cafeteria_item.entity';
@@ -56,6 +56,16 @@ export class CafeteriaService {
             totalPages: total,
             currentPage: options.page,
         };
+    }
+
+    async getItemsInGroups() {
+
+        const result = await getRepository(CafeteriaItem)
+                                .createQueryBuilder("cafeteria_items")
+                                .select("food_item_id")
+                                .groupBy("food_item_id")
+                                .getRawMany();
+        return result;
     }
 
     async createItem(itemDto: CafeteriaItemDto, username): Promise<CafeteriaItem> {
