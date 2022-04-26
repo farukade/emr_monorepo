@@ -24,6 +24,11 @@ export class CafeteriaController {
 		return this.inventoryService.getAllItems({ page, limit }, urlParams);
 	}
 
+	@Get('/items/groups')
+	getItemsInGroups() {
+		return this.inventoryService.getItemsInGroups();
+	}
+
 	@Post('/items')
 	@UsePipes(ValidationPipe)
 	createItem(

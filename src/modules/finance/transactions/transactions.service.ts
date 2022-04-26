@@ -10,7 +10,7 @@ import { QueueSystemRepository } from '../../frontdesk/queue-system/queue-system
 import { AppointmentRepository } from '../../frontdesk/appointment/appointment.repository';
 import { AppGateway } from '../../../app.gateway';
 import { Pagination } from '../../../common/paginate/paginate.interface';
-import { Brackets, getConnection } from 'typeorm';
+import { Brackets, getConnection, getRepository, Not } from 'typeorm';
 import {
 	createServiceCost,
 	getDepositBalance,
@@ -427,6 +427,86 @@ export class TransactionsService {
 		} catch (error) {
 			console.log(error);
 			return { success: false, message: error.message };
+		}
+	}
+
+	async getPaidTransForABillSource(urlParams) {
+		try {
+			const { bill_source } = urlParams;
+			const responseObj = {
+				bill_source,
+				fill_quantity: 0,
+				total_price: 0,
+				createdAt: new Date(),
+				total_transactions: 0,
+				status: 'paid',
+			};
+			const results = await getRepository(Transaction).find({
+				where: {
+					bill_source,
+					amount_paid: Not(0),
+				},
+			});
+			responseObj.total_transactions = results.length;
+			// let resArr = [];
+
+			results.forEach(result => {
+				// resArr.push(result.bill_source);
+
+				if (bill_source && bill_source === 'drugs') {
+					responseObj.fill_quantity += result.patientRequestItem.fill_quantity;
+					responseObj.total_price +=
+						result.patientRequestItem.drugBatch.unitPrice *
+						result.patientRequestItem.fill_quantity;
+				}
+				if (bill_source && bill_source === 'labs') {
+					responseObj.total_price += result.amount;
+				}
+				if (bill_source && bill_source === 'registration') {
+					responseObj.total_price += result.amount;
+				}
+				if (bill_source && bill_source === 'consultancy') {
+					responseObj.total_price += result.amount;
+				}
+				if (bill_source && bill_source === 'proceedure') {
+					responseObj.total_price += result.amount;
+				}
+				if (bill_source && bill_source === 'ward') {
+					responseObj.total_price += result.amount;
+				}
+				if (bill_source && bill_source === 'anc') {
+					responseObj.total_price += result.amount;
+				}
+				if (bill_source && bill_source === 'scans') {
+					responseObj.total_price += result.amount;
+				}
+				if (bill_source && bill_source === 'credit-deposit') {
+					responseObj.total_price += result.amount;
+				}
+				if (bill_source && bill_source === 'nursing-service') {
+					responseObj.total_price += result.amount;
+				}
+				if (bill_source && bill_source === 'debit') {
+					responseObj.total_price += result.amount;
+				}
+				if (bill_source && bill_source === 'credit') {
+					responseObj.total_price += result.amount;
+				}
+				if (bill_source && bill_source === 'cafeteria') {
+					responseObj.total_price += result.amount;
+				}
+
+				if (bill_source && bill_source === 'nicu-accommodation') {
+					responseObj.total_price += result.amount;
+				}
+			});
+			return responseObj;
+		} catch (error) {
+			console.log(error);
+			return {
+				success: false,
+				message: error.message,
+			};
 		}
 	}
 
