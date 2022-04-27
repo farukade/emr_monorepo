@@ -98,8 +98,6 @@ export class PatientNoteService {
 			query.andWhere('q.category = :category', { category });
 		}
 
-		console.log(query.getQueryAndParameters());
-
 		const page = options.page - 1;
 
 		const items = await query
