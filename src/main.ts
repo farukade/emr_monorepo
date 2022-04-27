@@ -5,6 +5,9 @@ import * as express from 'express';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { runInCluster } from './common/utils/runInCluster';
 
+// tslint:disable-next-line:no-var-requires
+require('events').EventEmitter.defaultMaxListeners = 50;
+
 async function bootstrap() {
     const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
@@ -23,9 +26,9 @@ async function bootstrap() {
     app.use('/uploads/docs', express.static(join(__dirname, '..', 'uploads/docs')));
     app.use('/public', express.static(join(__dirname, '..', 'public')));
 
-    await app.listen(process.env.PORT || 3002);
+    await app.listen(process.env.PORT || 3001);
 
-    console.info(`EMRAPP API running on 3002`);
+    console.info(`EMRAPP API running on 3001`);
 
 }
 
