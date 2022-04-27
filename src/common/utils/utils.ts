@@ -276,8 +276,8 @@ export const getOutstanding = async patient_id => {
 		.createQueryBuilder('q')
 		.select('q.amount as amount, q.bill_source as bill_source')
 		.where('q.patient_id = :patient_id', { patient_id })
-		.andWhere("q.bill_source != 'credit-deposit'")
-		.andWhere("q.bill_source != 'credit-transfer'")
+		.andWhere('q.bill_source != \'credit-deposit\'')
+		.andWhere('q.bill_source != \'credit-transfer\'')
 		.getRawMany();
 
 	return patient.credit_limit > 0
@@ -296,8 +296,8 @@ export const getBalance = async patient_id => {
 		.createQueryBuilder('q')
 		.select('q.amount as amount, q.bill_source as bill_source')
 		.where('q.patient_id = :patient_id', { patient_id })
-		.andWhere("q.bill_source != 'credit-deposit'")
-		.andWhere("q.bill_source != 'credit-transfer'")
+		.andWhere('q.bill_source != \'credit-deposit\'')
+		.andWhere('q.bill_source != \'credit-transfer\'')
 		.getRawMany();
 	// console.log(transactions);
 
