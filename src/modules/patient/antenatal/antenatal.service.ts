@@ -53,17 +53,12 @@ export class AntenatalService {
 		private departmentRepository: DepartmentRepository,
 	) {}
 
-	async getAntenatals(
-		options: PaginationOptionsInterface,
-		urlParams,
-	): Promise<Pagination> {
+	async getAntenatals(options: PaginationOptionsInterface, urlParams): Promise<Pagination> {
 		const { startDate, endDate, patient_id, status } = urlParams;
 
 		const page = options.page - 1;
 
-		const query = this.ancEnrollmentRepository
-			.createQueryBuilder('q')
-			.select('q.*');
+		const query = this.ancEnrollmentRepository.createQueryBuilder('q').select('q.*');
 
 		if (startDate && startDate !== '') {
 			const start = moment(startDate)
@@ -97,21 +92,14 @@ export class AntenatalService {
 
 		let result = [];
 		for (const antenatal of antenatals) {
-			antenatal.patient = await this.patientRepository.findOne(
-				antenatal.patient_id,
-				{
-					relations: ['nextOfKin', 'immunization', 'hmo'],
-				},
-			);
+			antenatal.patient = await this.patientRepository.findOne(antenatal.patient_id, {
+				relations: ['nextOfKin', 'immunization', 'hmo'],
+			});
 
 			antenatal.staff = await getStaff(antenatal.createdBy);
-			antenatal.ancpackage = antenatal.package_id
-				? await this.antenatalPackageRepository.findOne(antenatal.package_id)
-				: null;
+			antenatal.ancpackage = antenatal.package_id ? await this.antenatalPackageRepository.findOne(antenatal.package_id) : null;
 
-			antenatal.closedBy = await this.staffRepository.findOne(
-				antenatal.closed_by,
-			);
+			antenatal.closedBy = await this.staffRepository.findOne(antenatal.closed_by);
 
 			result = [...result, antenatal];
 		}
@@ -133,18 +121,7 @@ export class AntenatalService {
 
 	async saveEnrollment(createDto: EnrollmentDto, createdBy) {
 		try {
-			const {
-				patient_id,
-				bookingPeriod,
-				doctors,
-				lmp,
-				lmpSource,
-				edd,
-				father,
-				history,
-				previousPregnancy,
-				enrollment_package_id,
-			} = createDto;
+			const { patient_id, bookingPeriod, doctors, lmp, lmpSource, edd, father, history, previousPregnancy, enrollment_package_id } = createDto;
 
 			const requestCount = await getConnection()
 				.createQueryBuilder()
@@ -154,15 +131,11 @@ export class AntenatalService {
 				.getCount();
 
 			const nextId = `00000${requestCount + 1}`;
-			const code = `ANC${moment().format('YY')}/${moment().format(
-				'MM',
-			)}/${nextId.slice(-5)}`;
+			const code = `ANC${moment().format('YY')}/${moment().format('MM')}/${nextId.slice(-5)}`;
 
 			let ancpackage = null;
 			if (enrollment_package_id) {
-				ancpackage = await this.antenatalPackageRepository.findOne(
-					enrollment_package_id,
-				);
+				ancpackage = await this.antenatalPackageRepository.findOne(enrollment_package_id);
 			}
 
 			// find patient
@@ -254,10 +227,7 @@ export class AntenatalService {
 		}
 	}
 
-	async getAssessments(
-		id: number,
-		options: PaginationOptionsInterface,
-	): Promise<Pagination> {
+	async getAssessments(id: number, options: PaginationOptionsInterface): Promise<Pagination> {
 		const page = options.page - 1;
 
 		const query = this.antenatalAssessmentRepository
@@ -292,28 +262,13 @@ export class AntenatalService {
 		};
 	}
 
-	async saveAntenatalAssessment(
-		id: number,
-		params: AssessmentDto,
-		username: string,
-	) {
+	async saveAntenatalAssessment(id: number, params: AssessmentDto, username: string) {
 		try {
-			const {
-				comment,
-				measurement,
-				labRequest,
-				radiologyRequest,
-				pharmacyRequest,
-				nextAppointment,
-				appointment_id,
-			} = params;
+			const { comment, measurement, labRequest, radiologyRequest, pharmacyRequest, nextAppointment, appointment_id } = params;
 
-			const antenatalEnrolment = await this.ancEnrollmentRepository.findOne(
-				id,
-				{
-					relations: ['ancpackage', 'patient'],
-				},
-			);
+			const antenatalEnrolment = await this.ancEnrollmentRepository.findOne(id, {
+				relations: ['ancpackage', 'patient'],
+			});
 			const patient_id = antenatalEnrolment.patient.id;
 			const patient = await this.patientRepository.findOne(patient_id, {
 				relations: ['hmo'],
@@ -323,13 +278,7 @@ export class AntenatalService {
 				appointment_id && appointment_id !== ''
 					? await this.appointmentRepository.findOne({
 							where: { id: appointment_id },
-							relations: [
-								'patient',
-								'whomToSee',
-								'consultingRoom',
-								'transaction',
-								'department',
-							],
+							relations: ['patient', 'whomToSee', 'consultingRoom', 'transaction', 'department'],
 					  })
 					: null;
 
@@ -388,63 +337,30 @@ export class AntenatalService {
 
 			if (labRequest) {
 				const request = { ...labRequest, antenatal_id: id };
-				const lab = await PatientRequestHelper.handleLabRequest(
-					request,
-					patient,
-					username,
-				);
+				const lab = await PatientRequestHelper.handleLabRequest(request, patient, username);
 				if (lab.success) {
-					await RequestPaymentHelper.clinicalLabPayment(
-						lab.data,
-						patient,
-						username,
-						0,
-					);
+					await RequestPaymentHelper.clinicalLabPayment(lab.data, patient, username, 0);
 				}
 			}
 
 			if (radiologyRequest) {
 				const request = { ...radiologyRequest, antenatal_id: id };
-				const scan = await PatientRequestHelper.handleServiceRequest(
-					request,
-					patient,
-					username,
-					'scans',
-					'',
-				);
+				const scan = await PatientRequestHelper.handleServiceRequest(request, patient, username, 'scans', '');
 				if (scan.success) {
-					await RequestPaymentHelper.servicePayment(
-						scan.data,
-						patient,
-						username,
-						'scans',
-						0,
-					);
+					await RequestPaymentHelper.servicePayment(scan.data, patient, username, 'scans', 0);
 				}
 			}
 
 			if (pharmacyRequest) {
 				const request = { ...pharmacyRequest, antenatal_id: id };
-				await PatientRequestHelper.handlePharmacyRequest(
-					request,
-					patient,
-					username,
-				);
+				await PatientRequestHelper.handlePharmacyRequest(request, patient, username);
 			}
 
-			if (
-				nextAppointment &&
-				nextAppointment.datetime &&
-				nextAppointment.datetime !== ''
-			) {
-				const doctor = await this.staffRepository.findOne(
-					nextAppointment.doctor_id,
-				);
+			if (nextAppointment && nextAppointment.datetime && nextAppointment.datetime !== '') {
+				const doctor = await this.staffRepository.findOne(nextAppointment.doctor_id);
 
 				const department_id = appointment?.department?.id || null;
-				let department = department_id
-					? await this.departmentRepository.findOne(department_id)
-					: null;
+				let department = department_id ? await this.departmentRepository.findOne(department_id) : null;
 				if (!department) {
 					department = await this.departmentRepository.findOne({
 						where: { slug: 'antenatal' },
@@ -496,9 +412,7 @@ export class AntenatalService {
 			enrollment.lastChangedBy = username;
 			const rs = await enrollment.save();
 
-			const patient = await this.patientRepository.findOne(
-				enrollment.patient.id,
-			);
+			const patient = await this.patientRepository.findOne(enrollment.patient.id);
 			patient.antenatal_id = null;
 			await patient.save();
 

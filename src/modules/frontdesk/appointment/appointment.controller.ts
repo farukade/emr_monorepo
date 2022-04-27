@@ -1,14 +1,4 @@
-import {
-	Controller,
-	Get,
-	Post,
-	Body,
-	Query,
-	Param,
-	Request,
-	Patch,
-	UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, Param, Request, Patch, UseGuards } from '@nestjs/common';
 import { AppointmentService } from './appointment.service';
 import { AppointmentDto } from './dto/appointment.dto';
 import { Appointment } from './appointment.entity';
@@ -21,38 +11,20 @@ export class AppointmentController {
 	constructor(private appointmentService: AppointmentService) {}
 
 	@Get('')
-	listAppointments(
-		@Query() urlParams,
-		@Request() request,
-	): Promise<Pagination> {
-		const limit = request.query.hasOwnProperty('limit')
-			? parseInt(request.query.limit, 10)
-			: 10;
-		const page = request.query.hasOwnProperty('page')
-			? parseInt(request.query.page, 10)
-			: 1;
+	listAppointments(@Query() urlParams, @Request() request): Promise<Pagination> {
+		const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
+		const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
 		return this.appointmentService.listAppointments({ page, limit }, urlParams);
 	}
 
 	@Post('new')
 	createNewAppointment(@Request() req, @Body() appointmentDto: AppointmentDto) {
-		return this.appointmentService.saveNewAppointment(
-			appointmentDto,
-			req.user.username,
-		);
+		return this.appointmentService.saveNewAppointment(appointmentDto, req.user.username);
 	}
 
 	@Post('/:id/queue')
-	queueAppointment(
-		@Param('id') id: number,
-		@Request() req,
-		@Body() appointmentDto: AppointmentDto,
-	) {
-		return this.appointmentService.queueAppointment(
-			id,
-			appointmentDto,
-			req.user.username,
-		);
+	queueAppointment(@Param('id') id: number, @Request() req, @Body() appointmentDto: AppointmentDto) {
+		return this.appointmentService.queueAppointment(id, appointmentDto, req.user.username);
 	}
 
 	@Get('/patient/:patient_id')

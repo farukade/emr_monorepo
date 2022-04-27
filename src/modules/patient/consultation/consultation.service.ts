@@ -57,16 +57,11 @@ export class ConsultationService {
 		private departmentRepository: DepartmentRepository,
 	) {}
 
-	async getEncounters(
-		options: PaginationOptionsInterface,
-		urlParams,
-	): Promise<any> {
+	async getEncounters(options: PaginationOptionsInterface, urlParams): Promise<any> {
 		try {
 			const { startDate, endDate, patient_id } = urlParams;
 
-			const query = this.encounterRepository
-				.createQueryBuilder('e')
-				.select('e.*');
+			const query = this.encounterRepository.createQueryBuilder('e').select('e.*');
 
 			if (startDate && startDate !== '') {
 				const start = moment(startDate)
@@ -167,18 +162,12 @@ export class ConsultationService {
 		} catch (err) {
 			return {
 				success: false,
-				error: `${err.message ||
-					'problem fetching encounter at the moment please try again later'}`,
+				error: `${err.message || 'problem fetching encounter at the moment please try again later'}`,
 			};
 		}
 	}
 
-	async saveEncounter(
-		patientId: number,
-		param: EncounterDto,
-		urlParam,
-		username: string,
-	) {
+	async saveEncounter(patientId: number, param: EncounterDto, urlParam, username: string) {
 		const queryRunner = getConnection().createQueryRunner();
 		await queryRunner.startTransaction();
 
@@ -186,19 +175,17 @@ export class ConsultationService {
 			const { appointment_id } = urlParam;
 			const { investigations, nextAppointment } = param;
 
+			if (!param.diagnosis || (param.diagnosis && param.diagnosis.length === 0)) {
+				return { success: false, message: 'please add patient diagnosis' };
+			}
+
 			const patient = await this.patientRepository.findOne(patientId, {
 				relations: ['hmo'],
 			});
 
 			const appointment = await this.appointmentRepository.findOne({
 				where: { id: appointment_id },
-				relations: [
-					'patient',
-					'whomToSee',
-					'consultingRoom',
-					'transaction',
-					'department',
-				],
+				relations: ['patient', 'whomToSee', 'consultingRoom', 'transaction', 'department'],
 			});
 
 			const data = new Encounter();
@@ -271,10 +258,7 @@ export class ConsultationService {
 			// 6
 			let physicalExaminations = [];
 			for (const exam of param.physicalExamination) {
-				physicalExaminations = [
-					...physicalExaminations,
-					`${exam.label}: ${exam.value}`,
-				];
+				physicalExaminations = [...physicalExaminations, `${exam.label}: ${exam.value}`];
 			}
 
 			if (physicalExaminations.length > 0) {
@@ -301,10 +285,7 @@ export class ConsultationService {
 
 			// 5
 			for (const allergen of param.allergies) {
-				const generic =
-					allergen.generic_id && allergen.generic_id !== ''
-						? await this.drugGenericRepository.findOne(allergen.generic_id)
-						: null;
+				const generic = allergen.generic_id && allergen.generic_id !== '' ? await this.drugGenericRepository.findOne(allergen.generic_id) : null;
 				const patientAllergen = new PatientNote();
 				patientAllergen.category = allergen.category.value;
 				patientAllergen.allergy = allergen.allergen;
@@ -408,9 +389,7 @@ export class ConsultationService {
 
 			if (param.consumables) {
 				for (const item of param.consumables.items) {
-					const consumableItem = await this.storeInventoryRepository.findOne(
-						item.item.id,
-					);
+					const consumableItem = await this.storeInventoryRepository.findOne(item.item.id);
 					const consumable = new PatientConsumable();
 					consumable.quantity = item.quantity;
 					consumable.consumable = consumableItem;
@@ -422,115 +401,53 @@ export class ConsultationService {
 				}
 			}
 
-			if (
-				investigations.labRequest &&
-				investigations.labRequest.tests.length > 0
-			) {
-				const labRequest = await PatientRequestHelper.handleLabRequest(
-					investigations.labRequest,
-					patient,
-					username,
-					encounter,
-				);
+			if (investigations.labRequest && investigations.labRequest.tests.length > 0) {
+				const labRequest = await PatientRequestHelper.handleLabRequest(investigations.labRequest, patient, username, encounter);
 				console.log(labRequest);
 				if (labRequest.success && labRequest.data.length > 0) {
 					// save transaction
 					// tslint:disable-next-line:max-line-length
-					const payment = await RequestPaymentHelper.clinicalLabPayment(
-						labRequest.data,
-						patient,
-						username,
-						investigations.labRequest.pay_later,
-					);
+					const payment = await RequestPaymentHelper.clinicalLabPayment(labRequest.data, patient, username, investigations.labRequest.pay_later);
 					this.appGateway.server.emit('paypoint-queue', {
 						payment: payment.transactions,
 					});
 				}
 			}
 
-			if (
-				investigations.radiologyRequest &&
-				investigations.radiologyRequest.tests.length > 0
-			) {
-				const request = await PatientRequestHelper.handleServiceRequest(
-					investigations.radiologyRequest,
-					patient,
-					username,
-					'scans',
-					'encounter',
-					encounter,
-				);
+			if (investigations.radiologyRequest && investigations.radiologyRequest.tests.length > 0) {
+				const request = await PatientRequestHelper.handleServiceRequest(investigations.radiologyRequest, patient, username, 'scans', 'encounter', encounter);
 				console.log(request);
 				if (request.success && request.data.length > 0) {
 					// save transaction
-					const payment = await RequestPaymentHelper.servicePayment(
-						request.data,
-						patient,
-						username,
-						'scans',
-						investigations.radiologyRequest.pay_later,
-					);
+					const payment = await RequestPaymentHelper.servicePayment(request.data, patient, username, 'scans', investigations.radiologyRequest.pay_later);
 					this.appGateway.server.emit('paypoint-queue', {
 						payment: payment.transactions,
 					});
 				}
 			}
 
-			if (
-				investigations.procedureRequest &&
-				investigations.procedureRequest.tests.length > 0
-			) {
-				const procedure = await PatientRequestHelper.handleServiceRequest(
-					investigations.procedureRequest,
-					patient,
-					username,
-					'procedure',
-					'encounter',
-					encounter,
-				);
+			if (investigations.procedureRequest && investigations.procedureRequest.tests.length > 0) {
+				const procedure = await PatientRequestHelper.handleServiceRequest(investigations.procedureRequest, patient, username, 'procedure', 'encounter', encounter);
 				console.log(procedure);
 				if (procedure.success && procedure.data.length > 0) {
 					// save transaction
-					const payment = await RequestPaymentHelper.servicePayment(
-						procedure.data,
-						patient,
-						username,
-						'procedure',
-						investigations.procedureRequest.bill,
-					);
+					const payment = await RequestPaymentHelper.servicePayment(procedure.data, patient, username, 'procedure', investigations.procedureRequest.bill);
 					this.appGateway.server.emit('paypoint-queue', {
 						payment: payment.transactions,
 					});
 				}
 			}
 
-			if (
-				investigations.pharmacyRequest &&
-				investigations.pharmacyRequest.items.length > 0
-			) {
-				const regimen = await PatientRequestHelper.handlePharmacyRequest(
-					investigations.pharmacyRequest,
-					patient,
-					username,
-					'encounter',
-					encounter,
-				);
+			if (investigations.pharmacyRequest && investigations.pharmacyRequest.items.length > 0) {
+				const regimen = await PatientRequestHelper.handlePharmacyRequest(investigations.pharmacyRequest, patient, username, 'encounter', encounter);
 				console.log(regimen);
 			}
 
-			if (
-				nextAppointment &&
-				nextAppointment.datetime &&
-				nextAppointment.datetime !== ''
-			) {
-				const doctor = await this.staffRepository.findOne(
-					nextAppointment.doctor_id,
-				);
+			if (nextAppointment && nextAppointment.datetime && nextAppointment.datetime !== '') {
+				const doctor = await this.staffRepository.findOne(nextAppointment.doctor_id);
 
 				const department_id = appointment?.department?.id || null;
-				const department = department_id
-					? await this.departmentRepository.findOne(department_id)
-					: null;
+				const department = department_id ? await this.departmentRepository.findOne(department_id) : null;
 
 				const date = moment(nextAppointment.datetime);
 

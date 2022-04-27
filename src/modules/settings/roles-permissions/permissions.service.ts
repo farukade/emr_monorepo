@@ -15,50 +15,60 @@ export class PermissionsService {
 		private departmentRepository: DepartmentRepository,
 	) {}
 
-	async getAllPermissions(): Promise<Permission[]> {
-		return await this.permissionRepository.find();
-	}
+	async getAllPermissions(params): Promise<Permission[]> {
+		const { q } = params;
 
-	async getPermissionById(id: string): Promise<Permission> {
-		const found = this.permissionRepository.findOne(id);
+		const query = this.permissionRepository.createQueryBuilder('p').select('p.*');
 
-		if (!found) {
-			throw new NotFoundException(`Permission with ID '${id}' not found`);
+		if (q && q !== '') {
+			query.andWhere('LOWER(p.name) Like :name', { name: `%${q.toLowerCase()}%` });
 		}
 
-		return found;
+		const permissions = await query.orderBy('p.createdAt', 'DESC').getRawMany();
+
+		let result = [];
+		for (const item of permissions) {
+			if (item.category_id) {
+				item.category = await this.departmentRepository.findOne(item.category_id);
+			}
+
+			result = [...result, item];
+		}
+
+		return result;
 	}
 
-	async createPermission(
-		permissionDto: PermissionsDto,
-		username: string,
-	): Promise<Permission> {
-		const category = await this.departmentRepository.findOne(
-			permissionDto.department_id,
-		);
+	async createPermission(permissionDto: PermissionsDto, username: string): Promise<Permission> {
+		const { name } = permissionDto;
 
-		return this.permissionRepository.createPermission(
-			permissionDto,
-			category,
-			username,
-		);
+		const permission = await this.permissionRepository.findOne({ where: { slug: slugify(name) } });
+
+		if (permission) {
+			throw new NotFoundException(`Permission '${permission.name}' already exists`);
+		}
+
+		const category = await this.departmentRepository.findOne(permissionDto.department_id);
+
+		return this.permissionRepository.createPermission(permissionDto, category, username);
 	}
 
-	async updatePermission(
-		id: string,
-		permissionDto: PermissionsDto,
-		updatedBy: string,
-	): Promise<Permission> {
+	async updatePermission(id: string, permissionDto: PermissionsDto, updatedBy: string): Promise<Permission> {
 		const { name, department_id } = permissionDto;
 
 		const category = await this.departmentRepository.findOne(department_id);
 
-		const permission = await this.getPermissionById(id);
+		const permission = await this.permissionRepository.findOne(id);
+
+		if (!permission) {
+			throw new NotFoundException(`Permission '${permission.name}' not found!`);
+		}
+
 		permission.name = name;
 		permission.slug = slugify(name);
 		permission.category = category;
 		permission.lastChangedBy = updatedBy;
 		await permission.save();
+
 		return permission;
 	}
 

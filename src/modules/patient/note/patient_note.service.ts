@@ -15,6 +15,7 @@ import { NicuRepository } from '../nicu/nicu.repository';
 import { PatientAlertRepository } from '../repositories/patient_alert.repository';
 import * as moment from 'moment';
 import { EncounterRepository } from '../consultation/encounter.repository';
+import { Brackets } from 'typeorm';
 
 @Injectable()
 export class PatientNoteService {
@@ -44,22 +45,9 @@ export class PatientNoteService {
 	) {}
 
 	async getNotes(options: PaginationOptionsInterface, params): Promise<any> {
-		const {
-			patient_id,
-			type,
-			category,
-			admission_id,
-			visit,
-			ivf_id,
-			antenatal_id,
-			procedure_id,
-			labour_id,
-			nicu_id,
-		} = params;
+		const { patient_id, type, category, admission_id, visit, ivf_id, antenatal_id, procedure_id, labour_id, nicu_id } = params;
 
-		const query = this.patientNoteRepository
-			.createQueryBuilder('q')
-			.select('q.*');
+		const query = this.patientNoteRepository.createQueryBuilder('q').select('q.*');
 
 		if (patient_id && patient_id !== '') {
 			query.andWhere('q.patient_id = :patient_id', { patient_id });
@@ -94,12 +82,23 @@ export class PatientNoteService {
 		}
 
 		if (type && type !== '') {
-			query.andWhere('q.type = :type', { type });
+			const types = type.split('|');
+			if (types.length <= 1) {
+				query.andWhere('q.type = :type', { type });
+			} else {
+				query.andWhere(
+					new Brackets(qb => {
+						qb.where('q.type = :type1', { type1: types[0] }).orWhere('q.type = :type2', { type2: types[1] });
+					}),
+				);
+			}
 		}
 
 		if (category && category !== '') {
 			query.andWhere('q.category = :category', { category });
 		}
+
+		console.log(query.getQueryAndParameters());
 
 		const page = options.page - 1;
 
@@ -116,9 +115,7 @@ export class PatientNoteService {
 			const staff = await getStaff(item.createdBy);
 
 			if (item.drug_generic_id && item.drug_generic_id !== '') {
-				item.generic = await this.drugGenericRepository.findOne(
-					item.drug_generic_id,
-				);
+				item.generic = await this.drugGenericRepository.findOne(item.drug_generic_id);
 			}
 
 			notes = [...notes, { ...item, staff }];
@@ -134,22 +131,7 @@ export class PatientNoteService {
 	}
 
 	async saveNote(param: any, createdBy: string) {
-		const {
-			patient_id,
-			description,
-			type,
-			admission_id,
-			note_type,
-			specialty,
-			procedure_id,
-			ivf_id,
-			antenatal_id,
-			labour_id,
-			nicu_id,
-			encounter_id,
-			category,
-			history,
-		} = param;
+		const { patient_id, description, type, admission_id, note_type, specialty, procedure_id, ivf_id, antenatal_id, labour_id, nicu_id, encounter_id, category, history } = param;
 
 		const patient = await this.patientRepository.findOne(patient_id);
 
@@ -168,9 +150,7 @@ export class PatientNoteService {
 		}
 
 		if (procedure_id && procedure_id !== '') {
-			note.request = await this.patientRequestItemRepository.findOne(
-				procedure_id,
-			);
+			note.request = await this.patientRequestItemRepository.findOne(procedure_id);
 		}
 
 		if (ivf_id && ivf_id !== '') {

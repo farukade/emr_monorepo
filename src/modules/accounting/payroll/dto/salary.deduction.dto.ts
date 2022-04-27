@@ -1,5 +1,5 @@
 import { IsNotEmpty } from 'class-validator';
 
 export class SalaryDeductionDto {
-    items: DeductionInterfce[];
+	items: DeductionInterface[];
 }

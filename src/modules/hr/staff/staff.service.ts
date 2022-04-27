@@ -36,8 +36,7 @@ export class StaffService {
 		private specializationRepository: SpecializationRepository,
 		@InjectRepository(PatientRepository)
 		private patientRepository: PatientRepository,
-	) {
-	}
+	) {}
 
 	async getStaffs(options: PaginationOptionsInterface, params): Promise<Pagination> {
 		const { q, status } = params;
@@ -46,20 +45,23 @@ export class StaffService {
 		const page = options.page - 1;
 
 		if (q && q !== '') {
-			query.andWhere(new Brackets(qb => {
-				qb.where('LOWER(s.first_name) Like :first_name', { first_name: `%${q.toLowerCase()}%` })
-					.orWhere('LOWER(s.last_name) Like :last_name', { last_name: `%${q.toLowerCase()}%` })
-					.orWhere('LOWER(s.employee_number) Like :employee_number', { employee_number: `%${q.toLowerCase()}%` })
-					.orWhere('s.phone_number Like :phone_number', { phone_number: `%${q}%` })
-					.orWhere('CAST(s.id AS text) LIKE :id', { id: `%${q}%` });
-			}));
+			query.andWhere(
+				new Brackets(qb => {
+					qb.where('LOWER(s.first_name) Like :first_name', { first_name: `%${q.toLowerCase()}%` })
+						.orWhere('LOWER(s.last_name) Like :last_name', { last_name: `%${q.toLowerCase()}%` })
+						.orWhere('LOWER(s.employee_number) Like :employee_number', { employee_number: `%${q.toLowerCase()}%` })
+						.orWhere('s.phone_number Like :phone_number', { phone_number: `%${q}%` })
+						.orWhere('CAST(s.id AS text) LIKE :id', { id: `%${q}%` });
+				}),
+			);
 		}
 
 		if (status && status !== '') {
 			query.andWhere('s.isActive = :status', { status: status === 'enabled' });
 		}
 
-		const staffs = await query.offset(page * options.limit)
+		const staffs = await query
+			.offset(page * options.limit)
 			.limit(options.limit)
 			.orderBy('s.createdAt', 'DESC')
 			.getRawMany();
@@ -91,15 +93,18 @@ export class StaffService {
 	async findStaffs(options, param): Promise<StaffDetails[]> {
 		const { q, profession } = param;
 
-		const query = this.staffRepository.createQueryBuilder('s')
+		const query = this.staffRepository
+			.createQueryBuilder('s')
 			.select('s.*')
-			.andWhere(new Brackets(qb => {
-				qb.where('LOWER(s.first_name) Like :first_name', { first_name: `%${q.toLowerCase()}%` })
-					.orWhere('LOWER(s.last_name) Like :last_name', { last_name: `%${q.toLowerCase()}%` })
-					.orWhere('LOWER(s.employee_number) Like :employee_no', { employee_no: `%${q.toLowerCase()}%` })
-					.orWhere('s.phone_number Like :phone', { phone: `%${q}%` })
-					.orWhere('CAST(s.id AS text) LIKE :id', { id: `%${q}%` });
-			}));
+			.andWhere(
+				new Brackets(qb => {
+					qb.where('LOWER(s.first_name) Like :first_name', { first_name: `%${q.toLowerCase()}%` })
+						.orWhere('LOWER(s.last_name) Like :last_name', { last_name: `%${q.toLowerCase()}%` })
+						.orWhere('LOWER(s.employee_number) Like :employee_no', { employee_no: `%${q.toLowerCase()}%` })
+						.orWhere('s.phone_number Like :phone', { phone: `%${q}%` })
+						.orWhere('CAST(s.id AS text) LIKE :id', { id: `%${q}%` });
+				}),
+			);
 
 		if (profession && profession !== '') {
 			query.andWhere('s.profession = :profession', { profession });
@@ -134,7 +139,7 @@ export class StaffService {
 		return await this.staffRepository.saveDetails(staffDto, department, user, specialization, createdBy);
 	}
 
-	async updateStaffDetails(id: string, staffDto: StaffDto, username: string): Promise<any> {
+	async updateStaffDetails(id: number, staffDto: StaffDto, username: string): Promise<any> {
 		try {
 			// find role
 			const role = await this.roleRepository.findOne(staffDto.role_id);
@@ -209,6 +214,27 @@ export class StaffService {
 		}
 	}
 
+	async updateStaffSalary(id: number, staffDto: any, username: string): Promise<any> {
+		try {
+			const { annual_salary, monthly_salary } = staffDto;
+
+			const staff = await this.staffRepository.findOne(id, { relations: ['user', 'user.role'] });
+			if (!staff) {
+				throw new NotFoundException(`Staff with ID '${id}' not found`);
+			}
+
+			staff.annual_salary = annual_salary;
+			staff.monthly_salary = monthly_salary;
+			staff.lastChangedBy = username;
+			await staff.save();
+
+			return { success: true, staff };
+		} catch (err) {
+			console.log(err);
+			return { success: false, message: err.message };
+		}
+	}
+
 	async deleteStaff(id: number, username: string) {
 		try {
 			const staff = await this.staffRepository.findOne(id);
@@ -260,7 +286,8 @@ export class StaffService {
 			const room = await getRepository(ConsultingRoom).findOne(roomId);
 
 			// update staff detail
-			const staff = await this.staffRepository.createQueryBuilder()
+			const staff = await this.staffRepository
+				.createQueryBuilder()
 				.update(StaffDetails)
 				.set({ room })
 				.where('id = :id', { id: userId })

@@ -5,11 +5,7 @@ import { slugify } from '../../../common/utils/utils';
 
 @EntityRepository(Permission)
 export class PermissionRepository extends Repository<Permission> {
-	async createPermission(
-		permissionDto: PermissionsDto,
-		category,
-		username,
-	): Promise<Permission> {
+	async createPermission(permissionDto: PermissionsDto, category, username): Promise<Permission> {
 		const { name } = permissionDto;
 
 		const permission = new Permission();
