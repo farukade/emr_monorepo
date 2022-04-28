@@ -26,9 +26,9 @@ async function bootstrap() {
     app.use('/uploads/docs', express.static(join(__dirname, '..', 'uploads/docs')));
     app.use('/public', express.static(join(__dirname, '..', 'public')));
 
-    await app.listen(process.env.PORT || 3001);
+    await app.listen(process.env.PORT || 3002);
 
-    console.info(`EMRAPP API running on 3001`);
+    console.info(`EMRAPP API running on 3002`);
 
 }
 

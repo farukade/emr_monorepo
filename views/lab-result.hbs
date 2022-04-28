@@ -18,16 +18,15 @@
                         <div style="font-size: 14px; font-weight: 500; color: #7D7D7D; text-transform: capitalize;">{{ patient.other_names }} {{ patient.surname }}</div>
                     </div>
                     <div style="display: flex;">
-                        <div style="font-size: 14px; font-weight: 500; color: #111111; margin-right: 12px;">HOSPITAL
-                            NO:
-                        </div>
-                        <div style="font-size: 14px; font-weight: 500; color: #7D7D7D;">-</div>
+                        <div style="font-size: 14px; font-weight: 500; color: #111111; margin-right: 12px;">AGE:</div>
+                        <div style="font-size: 14px; font-weight: 500; color: #7D7D7D;">{{ age }}years</div>
                     </div>
-                    <div style="display: flex;">
-                        <div style="font-size: 14px; font-weight: 500; color: #111111; margin-right: 12px;">TEST
-                            REQUESTED:
-                        </div>
-                        <div style="font-size: 14px; font-weight: 500; color: #7D7D7D;">ROUTINE</div>
+                </td>
+                <td style="vertical-align: top">
+                    <div style="display: flex; align-content: space-between; width: 100%;">
+                        <div style="font-size: 14px; font-weight: 500; color: #111111; margin-right: 12px;">EMR ID:</div>
+                        <div style="font-size: 14px; font-weight: 500; color: #7D7D7D; text-transform: capitalize;
+">{{ patient_id }}</div>
                     </div>
                 </td>
                 <td style="vertical-align: top">
@@ -35,25 +34,43 @@
                         <div style="font-size: 14px; font-weight: 500; color: #111111; margin-right: 12px;">SEX:</div>
                         <div style="font-size: 14px; font-weight: 500; color: #7D7D7D;">{{ patient.gender }}</div>
                     </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <div style="color: #636363; font-size: 14px; padding: 0px;">
+        <table style="margin-top: 20px; width: 100%;">
+            <tr>
+                <td style="vertical-align: top">
                     <div style="display: flex;">
-                        <div style="font-size: 14px; font-weight: 500; color: #111111; margin-right: 12px;">LAB ID:
-                        </div>
+                        <div style="font-size: 14px; font-weight: 500; color: #111111; margin-right: 12px;">LAB ID:</div>
                         <div style="font-size: 14px; font-weight: 500; color: #7D7D7D;">{{ lab_id }}</div>
                     </div>
                     <div style="display: flex;">
-                        <div style="font-size: 14px; font-weight: 500; color: #111111; margin-right: 12px;">SPECIMEN:
-                        </div>
-                        <div style="font-size: 14px; font-weight: 500; color: #7D7D7D;">{{ specimen }}</div>
+                        <div style="font-size: 14px; font-weight: 500; color: #111111; margin-right: 12px;">DATE REQUESTED:</div>
+                        <div style="font-size: 14px; font-weight: 500; color: #7D7D7D;">{{ requested_date }}</div>
                     </div>
                 </td>
                 <td style="vertical-align: top">
                     <div style="display: flex;">
-                        <div style="font-size: 14px; font-weight: 500; color: #111111; margin-right: 12px;">AGE:</div>
-                        <div style="font-size: 14px; font-weight: 500; color: #7D7D7D;">{{ age }}years</div>
+                        <div style="font-size: 14px; font-weight: 500; color: #111111; margin-right: 12px;">SPECIMEN:</div>
+                        <div style="font-size: 14px; font-weight: 500; color: #7D7D7D;">{{ specimen }}</div>
                     </div>
                     <div style="display: flex;">
-                        <div style="font-size: 14px; font-weight: 500; color: #111111; margin-right: 12px;">DATE:</div>
-                        <div style="font-size: 14px; font-weight: 500; color: #7D7D7D;">{{ date }}</div>
+                        <div style="font-size: 14px; font-weight: 500; color: #111111; margin-right: 12px;
+">SPECIMEN RECEIVED:</div>
+                        <div style="font-size: 14px; font-weight: 500; color: #7D7D7D;">{{ received_at_date }}</div>
+                    </div>
+                </td>
+                <td style="vertical-align: top">
+                    <div style="display: flex;">
+                        <div style="font-size: 14px; font-weight: 500; color: #111111; margin-right: 12px;">TEST REQUESTED:</div>
+                        <div style="font-size: 14px; font-weight: 500; color: #7D7D7D;">ROUTINE</div>
+                    </div>
+                    <div style="display: flex;">
+                        <div style="font-size: 14px; font-weight: 500; color: #111111; margin-right: 12px;
+">DATE UPLOADED:</div>
+                        <div style="font-size: 14px; font-weight: 500; color: #7D7D7D;">{{ filled_at_date }}</div>
                     </div>
                 </td>
             </tr>
