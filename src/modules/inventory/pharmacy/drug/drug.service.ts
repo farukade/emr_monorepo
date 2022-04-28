@@ -176,4 +176,38 @@ export class DrugService {
             return { success: false, message: 'error could not update drug' };
         }
     }
+
+    async getDrugsNamesAmount(options: PaginationOptionsInterface) {
+        try {
+
+        const page = options.page;
+
+        const [batches, total] = await this.drugBatchRepository.findAndCount({
+            order: { name: 'ASC' },
+			take: options.limit,
+			skip: (page * options.limit)
+        });
+
+        let result = [];
+        (batches).forEach((batch) => {
+            if (batch.drug && batch.drug.generic) {
+                result.push({
+                    quantity: batch.quantity, 
+                    name: batch.drug.name,
+                    genericName: batch.drug.generic.name
+                });
+            }
+        });
+
+        return {
+            result,
+            lastPage: Math.ceil(total / options.limit),
+            itemsPerPage: options.limit,
+            totalPages: total,
+            currentPage: options.page,
+        };
+    } catch (error) {
+        console.log(error);
+    }
+    }
 }

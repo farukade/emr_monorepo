@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CafeteriaItemRepository } from './repositories/cafeteria.item.repository';
-import { Connection, Raw } from 'typeorm';
+import { Connection, getRepository, Raw } from 'typeorm';
 import { PaginationOptionsInterface } from '../../common/paginate';
 import { CafeteriaItemDto } from './dto/cafeteria.item.dto';
 import { CafeteriaItem } from './entities/cafeteria_item.entity';
@@ -224,10 +224,33 @@ export class CafeteriaService {
     async createFoodItem(itemDto: CafeteriaFoodItemDto, username): Promise<CafeteriaFoodItem> {
         const { name, description } = itemDto;
 
-        return await this.cafeteriaFoodItemRepository.save({
+        return await this.cafeteriaFoodItemRepository.save({ 
             name,
             description,
             createdBy: username,
         });
+    }
+
+    async getItemsInGroups() {
+
+        const query = await getRepository(CafeteriaItem)
+                                .createQueryBuilder("c")
+                                .select("c.food_item_id as food_item_id")
+                                .groupBy("food_item_id")
+                                .getRawMany();
+        
+        let results = []; 
+        console.log(query);
+        for (const item of query) {
+
+            const foodItem = await this.cafeteriaFoodItemRepository.findOne(item.food_item_id);
+            const items = await this.cafeteriaItemRepository.find({ where: { foodItem } });
+            const cafeteriaItem = items.length > 0 ? items[0] : []
+            const quantity = items.reduce((total, item) => total += item.quantity, 0)
+
+            results = [...results, { ...cafeteriaItem, quantity }]
+        }
+
+        return results;
     }
 }
