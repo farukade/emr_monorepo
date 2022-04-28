@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { join } from 'path';
 import * as express from 'express';
+import * as compression from 'compression';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { runInCluster } from './common/utils/runInCluster';
 
@@ -13,6 +14,8 @@ async function bootstrap() {
 
     app.setBaseViewsDir(join(__dirname, '..', 'views'));
     app.setViewEngine('hbs');
+
+    app.use(compression());
 
     const corsOption = {
         origin: '*',
