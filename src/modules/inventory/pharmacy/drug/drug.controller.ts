@@ -4,7 +4,7 @@ import { Pagination } from '../../../../common/paginate/paginate.interface';
 import { DrugDto } from '../../dto/drug.dto';
 import { DrugService } from './drug.service';
 
-// @UseGuards(AuthGuard('jwt')) 
+@UseGuards(AuthGuard('jwt')) 
 @Controller('inventory/drugs')
 export class DrugController {
     constructor(private drugService: DrugService) {
