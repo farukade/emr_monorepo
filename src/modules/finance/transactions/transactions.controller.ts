@@ -139,4 +139,11 @@ export class TransactionsController {
     ): Promise<any> {
         return this.transactionsService.printBill(urlParams);
     }
+
+	@Get('bill-source')
+	getPaidTransForABillSource(
+        @Query() urlParams
+        ) {
+		return this.transactionsService.getPaidTransForABillSource(urlParams);
+	}
 }
