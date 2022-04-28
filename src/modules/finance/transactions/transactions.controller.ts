@@ -1,17 +1,4 @@
-import {
-	Controller,
-	Get,
-	Query,
-	Post,
-	UsePipes,
-	ValidationPipe,
-	Body,
-	Patch,
-	Param,
-	Delete,
-	Request,
-	UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Query, Post, UsePipes, ValidationPipe, Body, Patch, Param, Delete, Request, UseGuards } from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
 import { TransactionDto } from './dto/transaction.dto';
 import { ProcessTransactionDto } from './dto/process-transaction.dto';
@@ -25,79 +12,46 @@ export class TransactionsController {
 
 	@Get('')
 	getTransactions(@Query() urlParams, @Request() request): Promise<Pagination> {
-		const limit = request.query.hasOwnProperty('limit')
-			? parseInt(request.query.limit, 10)
-			: 10;
-		const page = request.query.hasOwnProperty('page')
-			? parseInt(request.query.page, 10)
-			: 1;
+		const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
+		const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
 
 		return this.transactionsService.fetchList({ page, limit }, urlParams);
 	}
 
-	@Get('bill-source')
-	getPaidTransForABillSource(@Query() urlParams) {
-		return this.transactionsService.getPaidTransForABillSource(urlParams);
-	}
-
 	@Get('pending')
 	getPendingTransactions(@Query() urlParams, @Request() request): Promise<any> {
-		const limit = request.query.hasOwnProperty('limit')
-			? parseInt(request.query.limit, 10)
-			: 10;
-		const page = request.query.hasOwnProperty('page')
-			? parseInt(request.query.page, 10)
-			: 1;
+		const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
+		const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
 		return this.transactionsService.fetchPending({ page, limit }, urlParams);
+	}
+
+	@Get('bill-source')
+	getPaidTransForABillSource(@Query() urlParams): Promise<any> {
+		return this.transactionsService.getPaidTransactionsByBillSource(urlParams);
 	}
 
 	@Post('')
 	@UsePipes(ValidationPipe)
 	saveTransaction(@Body() transactionDto: any, @Request() req): Promise<any> {
-		return this.transactionsService.saveRequest(
-			transactionDto,
-			req.user.username,
-		);
+		return this.transactionsService.saveRequest(transactionDto, req.user.username);
 	}
 
 	@Post('/:id/process')
 	@UsePipes(ValidationPipe)
-	processTransaction(
-		@Param('id') id: number,
-		@Body() transactionDto: ProcessTransactionDto,
-		@Request() req,
-	): Promise<any> {
-		return this.transactionsService.processTransaction(
-			id,
-			transactionDto,
-			req.user.username,
-		);
+	processTransaction(@Param('id') id: number, @Body() transactionDto: ProcessTransactionDto, @Request() req): Promise<any> {
+		return this.transactionsService.processTransaction(id, transactionDto, req.user.username);
 	}
 
 	@Post('/:id/skip-to-queue')
 	@UsePipes(ValidationPipe)
-	skipPaymentToQueue(
-		@Param('id') id: number,
-		@Body() transactionDto: ProcessTransactionDto,
-		@Request() req,
-	): Promise<any> {
-		return this.transactionsService.skipPaymentToQueue(
-			id,
-			transactionDto,
-			req.user.username,
-		);
+	skipPaymentToQueue(@Param('id') id: number, @Body() transactionDto: ProcessTransactionDto, @Request() req): Promise<any> {
+		return this.transactionsService.skipPaymentToQueue(id, transactionDto, req.user.username);
 	}
 
 	@Post('/process-bulk')
 	@UsePipes(ValidationPipe)
-	processBulkTransaction(
-		@Body() transactionDto: ProcessTransactionDto,
-		@Request() req,
-	): Promise<any> {
-		return this.transactionsService.processBulkTransaction(
-			transactionDto,
-			req.user.username,
-		);
+	processBulkTransaction(@Body() transactionDto: ProcessTransactionDto, @Request() req): Promise<any> {
+		return this.transactionsService.processBulkTransaction(transactionDto, req.user.username);
 	}
 
 	@Post('/credit-account')
@@ -114,14 +68,8 @@ export class TransactionsController {
 
 	@Post('/process-credit')
 	@UsePipes(ValidationPipe)
-	processCredit(
-		@Body() transactionDto: ProcessTransactionDto,
-		@Request() req,
-	): Promise<any> {
-		return this.transactionsService.processCreditTransaction(
-			transactionDto,
-			req.user.username,
-		);
+	processCredit(@Body() transactionDto: ProcessTransactionDto, @Request() req): Promise<any> {
+		return this.transactionsService.processCreditTransaction(transactionDto, req.user.username);
 	}
 
 	@Patch('/:id/transfer')
@@ -138,16 +86,8 @@ export class TransactionsController {
 
 	@Patch('/:id/pay')
 	@UsePipes(ValidationPipe)
-	hmoCode(
-		@Param('id') id: string,
-		@Body() transactionDto: TransactionDto,
-		@Request() req,
-	): Promise<any> {
-		return this.transactionsService.payWithHmoCode(
-			id,
-			transactionDto,
-			req.user.username,
-		);
+	hmoCode(@Param('id') id: string, @Body() transactionDto: TransactionDto, @Request() req): Promise<any> {
+		return this.transactionsService.payWithHmoCode(id, transactionDto, req.user.username);
 	}
 
 	@Delete('/:id')

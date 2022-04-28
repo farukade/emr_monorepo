@@ -407,14 +407,7 @@ export const hasNumber = myString => {
 	return /\d/.test(myString);
 };
 
-export const postDebit = async (
-	data: TransactionCreditDto,
-	service: ServiceCost,
-	voucher: Voucher,
-	requestItem: PatientRequestItem,
-	appointment: Appointment,
-	hmo: HmoScheme,
-) => {
+export const postDebit = async (data: TransactionCreditDto, service: ServiceCost, voucher: Voucher, requestItem: PatientRequestItem, appointment: Appointment, hmo: HmoScheme) => {
 	// tslint:disable-next-line:max-line-length
 	const {
 		patient_id,
@@ -649,9 +642,7 @@ export const getSerialCode = async (type: string) => {
 
 export const createServiceCost = async (code: string, scheme: HmoScheme) => {
 	const connection = getConnection();
-	const service = await connection
-		.getRepository(Service)
-		.findOne({ where: { code } });
+	const service = await connection.getRepository(Service).findOne({ where: { code } });
 	if (service) {
 		const costItem = new ServiceCost();
 		costItem.code = code;

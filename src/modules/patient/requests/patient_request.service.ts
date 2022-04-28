@@ -9,7 +9,7 @@ import { PatientRepository } from '../repositories/patient.repository';
 import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
 import { AppGateway } from '../../../app.gateway';
 import { getConnection } from 'typeorm';
-import { formatPatientId, formatPID, generatePDF, getStaff, postDebit } from '../../../common/utils/utils';
+import { createServiceCost, formatPatientId, formatPID, generatePDF, getStaff, postDebit } from '../../../common/utils/utils';
 import { AdmissionsRepository } from '../admissions/repositories/admissions.repository';
 import * as path from 'path';
 import { Drug } from '../../inventory/entities/drug.entity';
@@ -29,6 +29,7 @@ import { IvfEnrollment } from '../ivf/entities/ivf_enrollment.entity';
 import { Encounter } from '../consultation/encouter.entity';
 import { Nicu } from '../nicu/entities/nicu.entity';
 import { NicuRepository } from '../nicu/nicu.repository';
+import { ServiceCostRepository } from '../../settings/services/repositories/service_cost.repository';
 
 @Injectable()
 export class PatientRequestService {
@@ -50,6 +51,8 @@ export class PatientRequestService {
 		private drugRepository: DrugRepository,
 		@InjectRepository(NicuRepository)
 		private nicuRepository: NicuRepository,
+		@InjectRepository(ServiceCostRepository)
+		private serviceCostRepository: ServiceCostRepository,
 	) {}
 
 	async listRequests(requestType: string, urlParams: any): Promise<any> {
@@ -677,7 +680,16 @@ export class PatientRequestService {
 					requestItem.drug = drug;
 					await requestItem.save();
 
-					const amount = batch.unitPrice * parseInt(reqItem.item.fill_quantity, 10);
+					let serviceCost = null;
+					if (patient.hmo.name !== 'Private') {
+						serviceCost = await this.serviceCostRepository.findOne({ where: { code: drug.code, hmo: patient.hmo } });
+						if (!serviceCost) {
+							serviceCost = await createServiceCost(drug.code, patient.hmo);
+						}
+					}
+
+					const drugPrice = patient.hmo.name !== 'Private' && serviceCost ? serviceCost.tariff : batch.unitPrice;
+					const amount = drugPrice * parseInt(reqItem.item.fill_quantity, 10);
 
 					const admission = await this.admissionRepository.findOne({
 						where: { patient, status: 0 },
@@ -711,7 +723,7 @@ export class PatientRequestService {
 						lastChangedBy: null,
 					};
 
-					const transaction = await postDebit(data, null, null, requestItem, null, patient.hmo);
+					const transaction = await postDebit(data, serviceCost, null, requestItem, null, patient.hmo);
 
 					const _requestItem = await this.patientRequestItemRepository.findOne(reqItem.item.id);
 					_requestItem.transaction = transaction;

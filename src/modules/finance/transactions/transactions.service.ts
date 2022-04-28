@@ -285,6 +285,32 @@ export class TransactionsService {
 		};
 	}
 
+	async getPaidTransactionsByBillSource(urlParams): Promise<any> {
+		try {
+			const { bill_source } = urlParams;
+
+			const transactions = await this.transactionsRepository.find({
+				where: { bill_source, status: 1 },
+			});
+
+			const fill_quantity = transactions.reduce((total, item) => total + item.patientRequestItem.fill_quantity, 0);
+			const total_price = transactions.reduce((total, item) => total + item.amount_paid, 0);
+
+			const transaction = {
+				bill_source,
+				fill_quantity,
+				total_price,
+				total_transactions: transactions.length,
+				status: 'paid',
+			};
+
+			return { success: true, transaction };
+		} catch (error) {
+			console.log(error);
+			return { success: false, message: error.message };
+		}
+	}
+
 	async saveRequest(params: any, username: string): Promise<any> {
 		try {
 			const { patient_id, items } = params;
@@ -374,88 +400,7 @@ export class TransactionsService {
 		}
 	}
 
-	async getPaidTransForABillSource(urlParams) {
-		try {
-			const { bill_source } = urlParams;
-			const responseObj = {
-				bill_source,
-				fill_quantity: 0,
-				total_price: 0,
-				createdAt: new Date(),
-				total_transactions: 0,
-				status: 'paid',
-			};
-			const results = await getRepository(Transaction).find({
-				where: {
-					bill_source,
-					amount_paid: Not(0),
-				},
-			});
-			responseObj.total_transactions = results.length;
-			// let resArr = [];
-
-			results.forEach(result => {
-				// resArr.push(result.bill_source);
-
-				if (bill_source && bill_source === 'drugs') {
-					responseObj.fill_quantity += result.patientRequestItem.fill_quantity;
-					responseObj.total_price +=
-						result.patientRequestItem.drugBatch.unitPrice *
-						result.patientRequestItem.fill_quantity;
-				}
-				if (bill_source && bill_source === 'labs') {
-					responseObj.total_price += result.amount;
-				}
-				if (bill_source && bill_source === 'registration') {
-					responseObj.total_price += result.amount;
-				}
-				if (bill_source && bill_source === 'consultancy') {
-					responseObj.total_price += result.amount;
-				}
-				if (bill_source && bill_source === 'proceedure') {
-					responseObj.total_price += result.amount;
-				}
-				if (bill_source && bill_source === 'ward') {
-					responseObj.total_price += result.amount;
-				}
-				if (bill_source && bill_source === 'anc') {
-					responseObj.total_price += result.amount;
-				}
-				if (bill_source && bill_source === 'scans') {
-					responseObj.total_price += result.amount;
-				}
-				if (bill_source && bill_source === 'credit-deposit') {
-					responseObj.total_price += result.amount;
-				}
-				if (bill_source && bill_source === 'nursing-service') {
-					responseObj.total_price += result.amount;
-				}
-				if (bill_source && bill_source === 'debit') {
-					responseObj.total_price += result.amount;
-				}
-				if (bill_source && bill_source === 'credit') {
-					responseObj.total_price += result.amount;
-				}
-				if (bill_source && bill_source === 'cafeteria') {
-					responseObj.total_price += result.amount;
-				}
-
-				if (bill_source && bill_source === 'nicu-accommodation') {
-					responseObj.total_price += result.amount;
-				}
-			});
-			return responseObj;
-		} catch (error) {
-			console.log(error);
-			return {
-				success: false,
-				message: error.message,
-			};
-		}
-	}
-
 	async processTransaction(id: number, transactionDto: ProcessTransactionDto, username): Promise<any> {
-
 		const queryRunner = getConnection().createQueryRunner();
 		await queryRunner.startTransaction();
 
@@ -1281,85 +1226,4 @@ export class TransactionsService {
 
 		return await getDepositBalance(patient.id, true);
 	}
-
-	async getPaidTransForABillSource(urlParams) {
-		try {
-			const { bill_source } = urlParams;
-			const responseObj = {
-				bill_source,
-				fill_quantity: 0,
-				total_price: 0,
-				createdAt: new Date(),
-				total_transactions: 0,
-				status: 'paid',
-			};
-			const results = await getRepository(Transaction).find({
-				where: {
-					bill_source,
-					amount_paid: Not(0),
-				},
-			});
-			responseObj.total_transactions = results.length;
-			// let resArr = [];
-
-			results.forEach(result => {
-				// resArr.push(result.bill_source);
-
-				if (bill_source && bill_source === 'drugs') {
-					responseObj.fill_quantity += result.patientRequestItem.fill_quantity;
-					responseObj.total_price +=
-						result.patientRequestItem.drugBatch.unitPrice *
-						result.patientRequestItem.fill_quantity;
-				}
-				if (bill_source && bill_source === 'labs') {
-					responseObj.total_price += result.amount;
-				}
-				if (bill_source && bill_source === 'registration') {
-					responseObj.total_price += result.amount;
-				}
-				if (bill_source && bill_source === 'consultancy') {
-					responseObj.total_price += result.amount;
-				}
-				if (bill_source && bill_source === 'proceedure') {
-					responseObj.total_price += result.amount;
-				}
-				if (bill_source && bill_source === 'ward') {
-					responseObj.total_price += result.amount;
-				}
-				if (bill_source && bill_source === 'anc') {
-					responseObj.total_price += result.amount;
-				}
-				if (bill_source && bill_source === 'scans') {
-					responseObj.total_price += result.amount;
-				}
-				if (bill_source && bill_source === 'credit-deposit') {
-					responseObj.total_price += result.amount;
-				}
-				if (bill_source && bill_source === 'nursing-service') {
-					responseObj.total_price += result.amount;
-				}
-				if (bill_source && bill_source === 'debit') {
-					responseObj.total_price += result.amount;
-				}
-				if (bill_source && bill_source === 'credit') {
-					responseObj.total_price += result.amount;
-				}
-				if (bill_source && bill_source === 'cafeteria') {
-					responseObj.total_price += result.amount;
-				}
-
-				if (bill_source && bill_source === 'nicu-accommodation') {
-					responseObj.total_price += result.amount;
-				}
-			});
-			return responseObj;
-		} catch (error) {
-			console.log(error);
-			return {
-				success: false,
-				message: error.message,
-			};
-		}
-	}
-
 }

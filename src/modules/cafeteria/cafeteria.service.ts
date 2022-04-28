@@ -19,248 +19,234 @@ import { Nicu } from '../patient/nicu/entities/nicu.entity';
 
 @Injectable()
 export class CafeteriaService {
-    constructor(
-        @InjectRepository(CafeteriaItemRepository)
-        private cafeteriaItemRepository: CafeteriaItemRepository,
-        @InjectRepository(CafeteriaFoodItemRepository)
-        private cafeteriaFoodItemRepository: CafeteriaFoodItemRepository,
-        private connection: Connection,
-    ) {
-    }
+	constructor(
+		@InjectRepository(CafeteriaItemRepository)
+		private cafeteriaItemRepository: CafeteriaItemRepository,
+		@InjectRepository(CafeteriaFoodItemRepository)
+		private cafeteriaFoodItemRepository: CafeteriaFoodItemRepository,
+		private connection: Connection,
+	) {}
 
-    async getAllItems(options: PaginationOptionsInterface, params): Promise<Pagination> {
-        const { q, approved } = params;
+	async getAllItems(options: PaginationOptionsInterface, params): Promise<Pagination> {
+		const { q, approved } = params;
 
-        const page = options.page - 1;
+		const page = options.page - 1;
 
-        let where = {};
+		let where = {};
 
-        if (approved && approved !== '') {
-            where = {...where, approved};
-        }
+		if (approved && approved !== '') {
+			where = { ...where, approved };
+		}
 
-        if (q && q !== '') {
-            where = { ...where, name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`) };
-        }
+		if (q && q !== '') {
+			where = { ...where, name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`) };
+		}
 
-        const [result, total] = await this.cafeteriaItemRepository.findAndCount({
-            where,
-            take: options.limit,
-            skip: (page * options.limit),
-        });
+		const [result, total] = await this.cafeteriaItemRepository.findAndCount({
+			where,
+			take: options.limit,
+			skip: page * options.limit,
+		});
 
-        return {
-            result,
-            lastPage: Math.ceil(total / options.limit),
-            itemsPerPage: options.limit,
-            totalPages: total,
-            currentPage: options.page,
-        };
-    }
+		return {
+			result,
+			lastPage: Math.ceil(total / options.limit),
+			itemsPerPage: options.limit,
+			totalPages: total,
+			currentPage: options.page,
+		};
+	}
 
-    async getItemsInGroups() {
+	async createItem(itemDto: CafeteriaItemDto, username): Promise<CafeteriaItem> {
+		const { item_id, price, quantity } = itemDto;
 
-        const result = await getRepository(CafeteriaItem)
-                                .createQueryBuilder("cafeteria_items")
-                                .select("food_item_id")
-                                .groupBy("food_item_id")
-                                .getRawMany();
-        return result;
-    }
+		const foodItem = await this.cafeteriaFoodItemRepository.findOne(item_id);
 
-    async createItem(itemDto: CafeteriaItemDto, username): Promise<CafeteriaItem> {
-        const { item_id, price, quantity } = itemDto;
+		return await this.cafeteriaItemRepository.save({
+			foodItem,
+			price,
+			quantity,
+			createdBy: username,
+		});
+	}
 
-        const foodItem = await this.cafeteriaFoodItemRepository.findOne(item_id);
+	async updateItem(id: number, itemDto: CafeteriaItemDto, username): Promise<CafeteriaItem> {
+		const { item_id, price, quantity } = itemDto;
 
-        return await this.cafeteriaItemRepository.save({
-            foodItem,
-            price,
-            quantity,
-            createdBy: username,
-        });
-    }
+		const foodItem = await this.cafeteriaFoodItemRepository.findOne(item_id);
 
-    async updateItem(id: number, itemDto: CafeteriaItemDto, username): Promise<CafeteriaItem> {
-        const { item_id, price, quantity } = itemDto;
+		const item = await this.cafeteriaItemRepository.findOne(id);
+		item.foodItem = foodItem;
+		item.price = price;
+		item.quantity = quantity;
+		item.lastChangedBy = username;
 
-        const foodItem = await this.cafeteriaFoodItemRepository.findOne(item_id);
+		return await item.save();
+	}
 
-        const item = await this.cafeteriaItemRepository.findOne(id);
-        item.foodItem = foodItem;
-        item.price = price;
-        item.quantity = quantity;
-        item.lastChangedBy = username;
+	async approveItem(id: number, params, username): Promise<CafeteriaItem> {
+		const { approved } = params;
 
-        return await item.save();
-    }
+		const inventory = await this.cafeteriaItemRepository.findOne(id);
+		inventory.approved = approved;
+		inventory.approved_by = username;
+		inventory.approved_at = moment().format('YYYY-MM-DD HH:mm:ss');
 
-    async approveItem(id: number, params, username): Promise<CafeteriaItem> {
-        const { approved } = params;
+		return await inventory.save();
+	}
 
-        const inventory = await this.cafeteriaItemRepository.findOne(id);
-        inventory.approved = approved;
-        inventory.approved_by = username;
-        inventory.approved_at = moment().format('YYYY-MM-DD HH:mm:ss');
+	async deleteItem(id: number, username): Promise<any> {
+		const item = await this.cafeteriaItemRepository.findOne(id);
 
-        return await inventory.save();
-    }
+		if (!item) {
+			throw new NotFoundException(`Inventory item with ID '${id}' not found`);
+		}
+		item.deletedBy = username;
+		await item.save();
 
-    async deleteItem(id: number, username): Promise<any> {
-        const item = await this.cafeteriaItemRepository.findOne(id);
+		return item.softRemove();
+	}
 
-        if (!item) {
-            throw new NotFoundException(`Inventory item with ID '${id}' not found`);
-        }
-        item.deletedBy = username;
-        await item.save();
+	async getShowcaseItems(): Promise<any> {
+		const query = await getRepository(CafeteriaItem)
+			.createQueryBuilder('c')
+			.select('c.food_item_id as food_item_id')
+			.groupBy('food_item_id')
+			.getRawMany();
 
-        return item.softRemove();
-    }
+		let results = [];
 
-    async saveSales(param: CafeteriaSalesDto, username: string): Promise<any> {
-        const { user_type, user_id, sub_total, vat, total_amount, amount_paid, change, payment_method, items, bill_later } = param;
-        try {
-            let emptyStock = [];
-            for (const sale of items) {
-                const stock = await this.cafeteriaItemRepository.findOne(sale.id);
-                if (sale.qty === '' || sale.qty === 0 || sale.qty > stock.quantity) {
-                    emptyStock = [...emptyStock, stock];
-                }
-            }
+		for (const item of query) {
+			const foodItem = await this.cafeteriaFoodItemRepository.findOne(item.food_item_id);
+			const items = await this.cafeteriaItemRepository.find({ where: { foodItem } });
+			const cafeteriaItem = items.length > 0 ? items[0] : [];
+			const quantity = items.reduce((total, food_item) => total + food_item.quantity, 0);
 
-            if (emptyStock.length > 0) {
-                return { success: false, message: `${emptyStock.map(s => `${s.name} has finished`).join(', ')}` };
-            }
+			results = [...results, { ...cafeteriaItem, quantity }];
+		}
 
-            let patient;
-            let staff_id = null;
-            let hmo = null;
-            if (user_type === 'staff') {
-                staff_id = user_id;
-            } else if (user_type === 'patient') {
-                patient = await this.connection.getRepository(Patient).findOne(user_id, { relations: ['hmo'] });
+		return results;
+	}
 
-                hmo = patient.hmo;
-            }
+	async saveSales(param: CafeteriaSalesDto, username: string): Promise<any> {
+		const { user_type, user_id, sub_total, vat, total_amount, amount_paid, change, payment_method, items, bill_later } = param;
+		try {
+			let emptyStock = [];
+			for (const sale of items) {
+				const stock = await this.cafeteriaItemRepository.findOne(sale.id);
+				if (sale.qty === '' || sale.qty === 0 || sale.qty > stock.quantity) {
+					emptyStock = [...emptyStock, stock];
+				}
+			}
 
-            let admission;
-            let nicu;
-            if (patient !== null) {
-               admission = await this.connection.getRepository(Admission).findOne({ where: { patient, status: 0 } });
+			if (emptyStock.length > 0) {
+				return { success: false, message: `${emptyStock.map(s => `${s.name} has finished`).join(', ')}` };
+			}
 
-               nicu = await this.connection.getRepository(Nicu).findOne({
-                   where: { patient, status: 0 },
-               });
-            }
+			let patient;
+			let staff_id = null;
+			let hmo = null;
+			if (user_type === 'staff') {
+				staff_id = user_id;
+			} else if (user_type === 'patient') {
+				patient = await this.connection.getRepository(Patient).findOne(user_id, { relations: ['hmo'] });
 
-            let data = [];
-            for (const sale of items) {
-                const parentItem = await this.cafeteriaItemRepository.findOne(sale.id);
-                data = [...data, {
-                    id: parentItem.id,
-                    name: parentItem.foodItem.name,
-                    price: parentItem.price,
-                    qty: sale.qty,
-                    amount: sale.amount,
-                }];
+				hmo = patient.hmo;
+			}
 
-                parentItem.quantity = parentItem.quantity - sale.qty;
-                await parentItem.save();
-            }
+			let admission;
+			let nicu;
+			if (patient !== null) {
+				admission = await this.connection.getRepository(Admission).findOne({ where: { patient, status: 0 } });
 
-            const item: TransactionCreditDto = {
-                patient_id: patient?.id || null,
-                username,
-                sub_total,
-                vat,
-                amount: total_amount * -1,
-                voucher_amount: 0,
-                amount_paid: 0,
-                change: 0,
-                description: null,
-                payment_method,
-                part_payment_expiry_date: null,
-                bill_source: 'cafeteria',
-                next_location: null,
-                status: 1,
-                hmo_approval_code: null,
-                transaction_details: data,
-                admission_id: admission?.id || null,
-                nicu_id: nicu?.id || null,
-                staff_id,
-                lastChangedBy: username,
-            };
+				nicu = await this.connection.getRepository(Nicu).findOne({
+					where: { patient, status: 0 },
+				});
+			}
 
-            const transaction = await postDebit(item, null, null, null, null, hmo);
+			let data = [];
+			for (const sale of items) {
+				const parentItem = await this.cafeteriaItemRepository.findOne(sale.id);
+				data = [
+					...data,
+					{
+						id: parentItem.id,
+						name: parentItem.foodItem.name,
+						price: parentItem.price,
+						qty: sale.qty,
+						amount: sale.amount,
+					},
+				];
 
-            if (bill_later !== 1) {
-                const credit = { ...item, amount_paid, change, payment_method };
-                await postCredit(credit, null, null, null, null, hmo);
-            }
+				parentItem.quantity = parentItem.quantity - sale.qty;
+				await parentItem.save();
+			}
 
-            return { success: true, transaction };
-        } catch (error) {
-            return { success: false, message: error.message };
-        }
-    }
+			const item: TransactionCreditDto = {
+				patient_id: patient?.id || null,
+				username,
+				sub_total,
+				vat,
+				amount: total_amount * -1,
+				voucher_amount: 0,
+				amount_paid: 0,
+				change: 0,
+				description: null,
+				payment_method,
+				part_payment_expiry_date: null,
+				bill_source: 'cafeteria',
+				next_location: null,
+				status: 1,
+				hmo_approval_code: null,
+				transaction_details: data,
+				admission_id: admission?.id || null,
+				nicu_id: nicu?.id || null,
+				staff_id,
+				lastChangedBy: username,
+			};
 
-    async getFoodItems(options: PaginationOptionsInterface, params): Promise<Pagination> {
-        const { q } = params;
+			const transaction = await postDebit(item, null, null, null, null, hmo);
 
-        const page = options.page - 1;
+			if (bill_later !== 1) {
+				const credit = { ...item, amount_paid, change, payment_method };
+				await postCredit(credit, null, null, null, null, hmo);
+			}
 
-        let where = {};
+			return { success: true, transaction };
+		} catch (error) {
+			return { success: false, message: error.message };
+		}
+	}
 
-        if (q && q !== '') {
-            where = { ...where, name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`) };
-        }
+	async getFoodItems(options: PaginationOptionsInterface, params): Promise<Pagination> {
+		const { q } = params;
 
-        const [result, total] = await this.cafeteriaFoodItemRepository.findAndCount({
-            where,
-            take: options.limit,
-            skip: (page * options.limit),
-        });
+		const page = options.page - 1;
 
-        return {
-            result,
-            lastPage: Math.ceil(total / options.limit),
-            itemsPerPage: options.limit,
-            totalPages: total,
-            currentPage: options.page,
-        };
-    }
+		let where = {};
 
-    async createFoodItem(itemDto: CafeteriaFoodItemDto, username): Promise<CafeteriaFoodItem> {
-        const { name, description } = itemDto;
+		if (q && q !== '') {
+			where = { ...where, name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`) };
+		}
 
-        return await this.cafeteriaFoodItemRepository.save({ 
-            name,
-            description,
-            createdBy: username,
-        });
-    }
+		const [result, total] = await this.cafeteriaFoodItemRepository.findAndCount({
+			where,
+			take: options.limit,
+			skip: page * options.limit,
+		});
 
-    async getItemsInGroups() {
+		return {
+			result,
+			lastPage: Math.ceil(total / options.limit),
+			itemsPerPage: options.limit,
+			totalPages: total,
+			currentPage: options.page,
+		};
+	}
 
-        const query = await getRepository(CafeteriaItem)
-                                .createQueryBuilder("c")
-                                .select("c.food_item_id as food_item_id")
-                                .groupBy("food_item_id")
-                                .getRawMany();
-        
-        let results = []; 
-        console.log(query);
-        for (const item of query) {
+	async createFoodItem(itemDto: CafeteriaFoodItemDto, username): Promise<CafeteriaFoodItem> {
+		const { name, description } = itemDto;
 
-            const foodItem = await this.cafeteriaFoodItemRepository.findOne(item.food_item_id);
-            const items = await this.cafeteriaItemRepository.find({ where: { foodItem } });
-            const cafeteriaItem = items.length > 0 ? items[0] : []
-            const quantity = items.reduce((total, item) => total += item.quantity, 0)
-
-            results = [...results, { ...cafeteriaItem, quantity }]
-        }
-
-        return results;
-    }
+		return await this.cafeteriaFoodItemRepository.save({ name, description, createdBy: username });
+	}
 }
