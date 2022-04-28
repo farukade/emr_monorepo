@@ -93,4 +93,9 @@ export class CafeteriaController {
 	): Promise<CafeteriaFoodItem> {
 		return this.inventoryService.createFoodItem(itemDto, req.user.username);
 	}
+
+	@Get('/items/groups')
+	getItemsInGroups() {
+		return this.inventoryService.getItemsInGroups();
+	}
 }

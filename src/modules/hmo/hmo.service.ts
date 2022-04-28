@@ -1,24 +1,24 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { HmoOwnerRepository } from './repositories/hmo.repository';
-import { Hmo } from './entities/hmo.entity';
-import { HmoDto } from './dto/hmo.dto';
-import { TransactionsRepository } from '../finance/transactions/transactions.repository';
+import {BadRequestException, Injectable, NotFoundException} from '@nestjs/common';
+import {InjectRepository} from '@nestjs/typeorm';
+import {HmoOwnerRepository} from './repositories/hmo.repository';
+import {Hmo} from './entities/hmo.entity';
+import {HmoDto} from './dto/hmo.dto';
+import {TransactionsRepository} from '../finance/transactions/transactions.repository';
 import * as moment from 'moment';
-import { getConnection, Like, Raw } from 'typeorm';
-import { PaginationOptionsInterface } from '../../common/paginate';
-import { Pagination } from '../../common/paginate/paginate.interface';
-import { PatientRepository } from '../patient/repositories/patient.repository';
-import { HmoSchemeDto } from './dto/hmo_scheme.dto';
-import { HmoSchemeRepository } from './repositories/hmo_scheme.repository';
-import { HmoTypeRepository } from './repositories/hmo_type.repository';
-import { HmoScheme } from './entities/hmo_scheme.entity';
-import { HmoType } from './entities/hmo_type.entity';
-import { ServiceCostRepository } from '../settings/services/repositories/service_cost.repository';
-import { PatientRequestItemRepository } from '../patient/repositories/patient_request_items.repository';
-import { MigrationService } from '../migration/migration.service';
-import { Patient } from '../patient/entities/patient.entity';
-import { ServiceCategoryRepository } from '../settings/services/repositories/service_category.repository';
+import {Brackets, getConnection, Like, Raw} from 'typeorm';
+import {PaginationOptionsInterface} from '../../common/paginate';
+import {Pagination} from '../../common/paginate/paginate.interface';
+import {PatientRepository} from '../patient/repositories/patient.repository';
+import {HmoSchemeDto} from './dto/hmo_scheme.dto';
+import {HmoSchemeRepository} from './repositories/hmo_scheme.repository';
+import {HmoTypeRepository} from './repositories/hmo_type.repository';
+import {HmoScheme} from './entities/hmo_scheme.entity';
+import {HmoType} from './entities/hmo_type.entity';
+import {ServiceCostRepository} from '../settings/services/repositories/service_cost.repository';
+import {PatientRequestItemRepository} from '../patient/repositories/patient_request_items.repository';
+import {MigrationService} from '../migration/migration.service';
+import {Patient} from '../patient/entities/patient.entity';
+import {ServiceCategoryRepository} from '../settings/services/repositories/service_category.repository';
 
 @Injectable()
 export class HmoService {
@@ -255,8 +255,17 @@ export class HmoService {
             query.andWhere('q.patient_id = :patient_id', { patient_id });
         }
 
-        if (status) {
-            query.andWhere('q.status = :status', { status });
+        if (status && status !== '') {
+            if (status === 1) {
+                query.andWhere('q.status = :status', { status: 1 });
+            } else {
+                query.andWhere(
+                    new Brackets(qb => {
+                        qb.where('q.status = :status', { status: 0 })
+                            .orWhere('q.status = :status', { status: -1 });
+                    }),
+                );
+            }
         }
 
         if (service_id && service_id !== '') {
@@ -291,11 +300,9 @@ export class HmoService {
         for (const item of items) {
             item.scheme = await this.hmoSchemeRepository.findOne(item.hmo_scheme_id);
 
-            const patient = await this.patientRepository.findOne(item.patient_id, {
+            item.patient = await this.patientRepository.findOne(item.patient_id, {
                 relations: ['nextOfKin', 'immunization', 'hmo'],
             });
-
-            item.patient = patient;
 
             if (item.service_cost_id) {
                 item.service = await this.serviceCostRepository.findOne(item.service_cost_id);

@@ -17,14 +17,7 @@ import { Brackets, getConnection, getRepository, Not, Raw } from 'typeorm';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import { PaginationOptionsInterface } from '../../../common/paginate';
-import {
-	callPatient,
-	getLastAppointment,
-	getOutstanding,
-	getStaff,
-	postCredit,
-	postDebit,
-} from '../../../common/utils/utils';
+import { callPatient, getLastAppointment, getOutstanding, getStaff, postCredit, postDebit } from '../../../common/utils/utils';
 import { ServiceCostRepository } from '../../settings/services/repositories/service_cost.repository';
 import { ServiceCost } from '../../settings/entities/service_cost.entity';
 import { StaffRepository } from '../../hr/staff/staff.repository';
@@ -60,26 +53,10 @@ export class AppointmentService {
 		private readonly appGateway: AppGateway,
 	) {}
 
-	async listAppointments(
-		options: PaginationOptionsInterface,
-		params,
-	): Promise<Pagination> {
-		const {
-			startDate,
-			endDate,
-			patient_id,
-			today,
-			doctor_id,
-			department_id,
-			canSeeDoctor,
-			status,
-			is_queue,
-			staff_id,
-		} = params;
+	async listAppointments(options: PaginationOptionsInterface, params): Promise<Pagination> {
+		const { startDate, endDate, patient_id, today, doctor_id, department_id, canSeeDoctor, status, is_queue, staff_id } = params;
 
-		const query = this.appointmentRepository
-			.createQueryBuilder('q')
-			.select('q.id');
+		const query = this.appointmentRepository.createQueryBuilder('q').select('q.id');
 
 		if (params.type && params.type !== '') {
 			query.where('q.appointmentType = :type', { type: params.type });
@@ -122,6 +99,10 @@ export class AppointmentService {
 			query.andWhere('q.doctor_id = :staff_id', { staff_id });
 		}
 
+		if (department_id && department_id !== '') {
+			query.andWhere('q.department_id = :department_id', { department_id });
+		}
+
 		if (status && status !== '') {
 			if (status === 'Pending') {
 				query.andWhere('q.status Like :status', { status: '%Pending%' });
@@ -146,13 +127,7 @@ export class AppointmentService {
 		for (const item of appointments) {
 			const appointment = await this.appointmentRepository.findOne({
 				where: { id: item.id },
-				relations: [
-					'patient',
-					'whomToSee',
-					'consultingRoom',
-					'transaction',
-					'department',
-				],
+				relations: ['patient', 'whomToSee', 'consultingRoom', 'transaction', 'department'],
 				withDeleted: true,
 			});
 
@@ -204,14 +179,7 @@ export class AppointmentService {
 
 		const appointments = await this.appointmentRepository.find({
 			where: { patient },
-			relations: [
-				'patient',
-				'whomToSee',
-				'consultingRoom',
-				'encounter',
-				'transaction',
-				'department',
-			],
+			relations: ['patient', 'whomToSee', 'consultingRoom', 'encounter', 'transaction', 'department'],
 		});
 
 		return appointments;
@@ -220,37 +188,17 @@ export class AppointmentService {
 	async getAppointment(id: number): Promise<Appointment> {
 		const appointment = await this.appointmentRepository.findOne({
 			where: { id },
-			relations: [
-				'patient',
-				'whomToSee',
-				'consultingRoom',
-				'encounter',
-				'transaction',
-				'department',
-			],
+			relations: ['patient', 'whomToSee', 'consultingRoom', 'encounter', 'transaction', 'department'],
 		});
 
 		return appointment;
 	}
 
-	async saveNewAppointment(
-		appointmentDto: AppointmentDto,
-		username: string,
-	): Promise<any> {
+	async saveNewAppointment(appointmentDto: AppointmentDto, username: string): Promise<any> {
 		try {
-			const {
-				patient_id,
-				doctor_id,
-				consulting_room_id,
-				sendToQueue,
-				department_id,
-				consultation_id,
-				service_id,
-			} = appointmentDto;
+			const { patient_id, doctor_id, consulting_room_id, sendToQueue, department_id, consultation_id, service_id } = appointmentDto;
 
-			const pushToQueue =
-				moment(appointmentDto.appointment_date).format('DDMMYYYY') ===
-					moment().format('DDMMYYYY') && sendToQueue;
+			const pushToQueue = moment(appointmentDto.appointment_date).format('DDMMYYYY') === moment().format('DDMMYYYY') && sendToQueue;
 
 			// find patient details
 			const patient = await this.patientRepository.findOne(patient_id, {
@@ -271,9 +219,7 @@ export class AppointmentService {
 			// find consulting room
 			let consultingRoom = null;
 			if (consulting_room_id) {
-				consultingRoom = await this.consultingRoomRepository.findOne(
-					consulting_room_id,
-				);
+				consultingRoom = await this.consultingRoomRepository.findOne(consulting_room_id);
 			}
 
 			// find service
@@ -301,41 +247,20 @@ export class AppointmentService {
 				});
 			}
 
-			const covered =
-				ancEnrollment?.ancpackage?.coverage?.consultancy?.find(
-					c => c.code === serviceCost?.code,
-				) || null;
+			const covered = ancEnrollment?.ancpackage?.coverage?.consultancy?.find(c => c.code === serviceCost?.code) || null;
 			const isCovered = covered && department.name === 'Antenatal';
 
 			// tslint:disable-next-line:max-line-length
-			const appointment = await this.appointmentRepository.saveAppointment(
-				appointmentDto,
-				patient,
-				consultingRoom,
-				doctor,
-				service,
-				serviceCost,
-				department,
-				username,
-			);
+			const appointment = await this.appointmentRepository.saveAppointment(appointmentDto, patient, consultingRoom, doctor, service, serviceCost, department, username);
 
 			// update patient appointment date
-			patient.last_appointment_date =
-				moment(appointmentDto.appointment_date).format('DDMMYYYY') !==
-				moment().format('DDMMYYYY')
-					? patient.last_appointment_date
-					: appointmentDto.appointment_date;
+			patient.last_appointment_date = moment(appointmentDto.appointment_date).format('DDMMYYYY') !== moment().format('DDMMYYYY') ? patient.last_appointment_date : appointmentDto.appointment_date;
 			await patient.save();
 
 			let queue;
 
 			// update appointment status
-			appointment.status =
-				consultation_id === 'initial'
-					? hmo.name === 'Private'
-						? 'Pending Paypoint Approval'
-						: 'Pending HMO Approval'
-					: 'Approved';
+			appointment.status = consultation_id === 'initial' ? (hmo.name === 'Private' ? 'Pending Paypoint Approval' : 'Pending HMO Approval') : 'Approved';
 
 			if (isCovered) {
 				appointment.status = 'Approved';
@@ -350,14 +275,7 @@ export class AppointmentService {
 			if (consultation_id === 'initial') {
 				// save payment
 				const amount = serviceCost?.tariff || 0;
-				const payment = await this.saveTransaction(
-					patient,
-					hmo,
-					service,
-					serviceCost,
-					username,
-					appointment,
-				);
+				const payment = await this.saveTransaction(patient, hmo, service, serviceCost, username, appointment);
 				await getConnection()
 					.createQueryBuilder()
 					.update(Appointment)
@@ -367,16 +285,8 @@ export class AppointmentService {
 
 				// send queue message
 				if (pushToQueue) {
-					const type = isCovered
-						? 'vitals'
-						: hmo.name === 'Private'
-						? 'paypoint'
-						: 'hmo';
-					queue = await this.queueSystemRepository.saveQueue(
-						appointment,
-						type,
-						patient,
-					);
+					const type = isCovered ? 'vitals' : hmo.name === 'Private' ? 'paypoint' : 'hmo';
+					queue = await this.queueSystemRepository.saveQueue(appointment, type, patient);
 					this.appGateway.server.emit('paypoint-queue', { queue, payment });
 
 					appointment.is_queued = true;
@@ -417,23 +327,12 @@ export class AppointmentService {
 					payment.next_location = null;
 					await payment.save();
 
-					await postCredit(
-						creditData,
-						payment.service,
-						null,
-						payment.patientRequestItem,
-						null,
-						hmo,
-					);
+					await postCredit(creditData, payment.service, null, payment.patientRequestItem, null, hmo);
 				}
 			} else {
 				// send queue message
 				if (pushToQueue) {
-					queue = await this.queueSystemRepository.saveQueue(
-						appointment,
-						'vitals',
-						patient,
-					);
+					queue = await this.queueSystemRepository.saveQueue(appointment, 'vitals', patient);
 					this.appGateway.server.emit('nursing-queue', { queue });
 
 					appointment.is_queued = true;
@@ -454,20 +353,9 @@ export class AppointmentService {
 		}
 	}
 
-	async queueAppointment(
-		id: number,
-		appointmentDto: AppointmentDto,
-		username: string,
-	): Promise<any> {
+	async queueAppointment(id: number, appointmentDto: AppointmentDto, username: string): Promise<any> {
 		try {
-			const {
-				patient_id,
-				doctor_id,
-				consulting_room_id,
-				department_id,
-				consultation_id,
-				service_id,
-			} = appointmentDto;
+			const { patient_id, doctor_id, consulting_room_id, department_id, consultation_id, service_id } = appointmentDto;
 
 			// find patient details
 			const patient = await this.patientRepository.findOne(patient_id, {
@@ -488,9 +376,7 @@ export class AppointmentService {
 			// find consulting room
 			let consultingRoom = null;
 			if (consulting_room_id) {
-				consultingRoom = await this.consultingRoomRepository.findOne(
-					consulting_room_id,
-				);
+				consultingRoom = await this.consultingRoomRepository.findOne(consulting_room_id);
 			}
 
 			// find service
@@ -518,10 +404,7 @@ export class AppointmentService {
 				});
 			}
 
-			const covered =
-				ancEnrollment?.ancpackage?.coverage?.consultancy?.find(
-					c => c.code === serviceCost?.code,
-				) || null;
+			const covered = ancEnrollment?.ancpackage?.coverage?.consultancy?.find(c => c.code === serviceCost?.code) || null;
 			const isCovered = covered && department.name === 'Antenatal';
 
 			const appointment = await this.appointmentRepository.findOne(id);
@@ -538,12 +421,7 @@ export class AppointmentService {
 			appointment.description = appointmentDto.description;
 			appointment.department = department;
 			appointment.lastChangedBy = username;
-			appointment.status =
-				consultation_id === 'initial'
-					? hmo.name === 'Private'
-						? 'Pending Paypoint Approval'
-						: 'Pending HMO Approval'
-					: 'Approved';
+			appointment.status = consultation_id === 'initial' ? (hmo.name === 'Private' ? 'Pending Paypoint Approval' : 'Pending HMO Approval') : 'Approved';
 			if (isCovered) {
 				appointment.status = 'Approved';
 				appointment.is_covered = true;
@@ -562,14 +440,7 @@ export class AppointmentService {
 			if (consultation_id === 'initial') {
 				// save payment
 				const amount = serviceCost?.tariff || 0;
-				payment = await this.saveTransaction(
-					patient,
-					hmo,
-					service,
-					serviceCost,
-					username,
-					appointment,
-				);
+				payment = await this.saveTransaction(patient, hmo, service, serviceCost, username, appointment);
 				await getConnection()
 					.createQueryBuilder()
 					.update(Appointment)
@@ -611,14 +482,7 @@ export class AppointmentService {
 					payment.next_location = null;
 					await payment.save();
 
-					await postCredit(
-						creditData,
-						payment.service,
-						null,
-						payment.patientRequestItem,
-						null,
-						hmo,
-					);
+					await postCredit(creditData, payment.service, null, payment.patientRequestItem, null, hmo);
 				}
 			}
 
@@ -645,11 +509,7 @@ export class AppointmentService {
 			const checkHmo = hmo.name === 'Private' ? 'paypoint' : 'hmo';
 			const checkCoverage = isCovered ? 'vitals' : checkHmo;
 			const type = consultation_id === 'initial' ? checkCoverage : 'vitals';
-			const queue = await this.queueSystemRepository.saveQueue(
-				appointment,
-				type,
-				patient,
-			);
+			const queue = await this.queueSystemRepository.saveQueue(appointment, type, patient);
 			if (consultation_id === 'initial') {
 				this.appGateway.server.emit('paypoint-queue', { queue, payment });
 			} else {
@@ -732,9 +592,7 @@ export class AppointmentService {
 		await appointment.save();
 
 		if (appointment.transaction) {
-			const transaction = await this.transactionsRepository.findOne(
-				appointment.transaction.id,
-			);
+			const transaction = await this.transactionsRepository.findOne(appointment.transaction.id);
 			transaction.deletedBy = username;
 			await transaction.save();
 			await transaction.softRemove();
@@ -745,10 +603,7 @@ export class AppointmentService {
 		return await appointment.softRemove();
 	}
 
-	async acceptAppointment(
-		{ appointmentId, action, doctor_id, consulting_room_id },
-		username: string,
-	) {
+	async acceptAppointment({ appointmentId, action, doctor_id, consulting_room_id }, username: string) {
 		try {
 			const doctor = await getRepository(StaffDetails).findOne(doctor_id);
 
@@ -759,9 +614,7 @@ export class AppointmentService {
 			}
 
 			if (consulting_room_id) {
-				const room = await this.consultingRoomRepository.findOne(
-					consulting_room_id,
-				);
+				const room = await this.consultingRoomRepository.findOne(consulting_room_id);
 				appointment.consultingRoom = room;
 
 				await callPatient(appointment, room);
@@ -794,14 +647,7 @@ export class AppointmentService {
 		}
 	}
 
-	private async saveTransaction(
-		patient: Patient,
-		hmo,
-		service: Service,
-		serviceCost: ServiceCost,
-		createdBy,
-		appointment,
-	) {
+	private async saveTransaction(patient: Patient, hmo, service: Service, serviceCost: ServiceCost, createdBy, appointment) {
 		const amount = serviceCost?.tariff || 0;
 
 		const data: TransactionCreditDto = {

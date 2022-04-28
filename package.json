@@ -11,7 +11,7 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/src/main",
+    "start:prod": "node dist/main",
     "lint": "tslint -p tsconfig.json -c tslint.json 'src/**/*{.ts,.tsx}'",
     "lint:fix": "tslint --fix -p tsconfig.json -c tslint.json 'src/**/*{.ts,.tsx}'",
     "test": "jest",
@@ -47,6 +47,7 @@
     "cache-manager-redis-store": "^2.0.0",
     "class-transformer": "^0.2.3",
     "class-validator": "^0.11.0",
+    "compression": "^1.7.4",
     "csv-parser": "^2.3.2",
     "csv-writer": "^1.6.0",
     "dotenv": "^8.2.0",
@@ -117,7 +118,7 @@
   "lint-staged": {
     "src/**/*.{ts,tsx}": [
       "yarn lint:fix",
-      "prettier --write"
+      "prettier --write --allow-empty"
     ]
   }
 }

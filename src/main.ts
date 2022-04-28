@@ -2,14 +2,20 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { join } from 'path';
 import * as express from 'express';
+import * as compression from 'compression';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { runInCluster } from './common/utils/runInCluster';
+
+// tslint:disable-next-line:no-var-requires
+require('events').EventEmitter.defaultMaxListeners = 50;
 
 async function bootstrap() {
     const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
     app.setBaseViewsDir(join(__dirname, '..', 'views'));
     app.setViewEngine('hbs');
+
+    app.use(compression());
 
     const corsOption = {
         origin: '*',
