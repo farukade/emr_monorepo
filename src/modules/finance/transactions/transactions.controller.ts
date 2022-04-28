@@ -22,6 +22,12 @@ export class TransactionsController {
         return this.transactionsService.fetchList({ page, limit }, urlParams);
     }
 
+    
+	@Get('bill-source')
+	getPaidTransForABillSource(@Query() urlParams) {
+		return this.transactionsService.getPaidTransForABillSource(urlParams);
+	}
+
     @Get('pending')
     getPendingTransactions(
         @Query() urlParams,
