@@ -58,6 +58,16 @@ export class CafeteriaService {
         };
     }
 
+    async getItemsInGroups() {
+
+        const result = await getRepository(CafeteriaItem)
+                                .createQueryBuilder("cafeteria_items")
+                                .select("food_item_id")
+                                .groupBy("food_item_id")
+                                .getRawMany();
+        return result;
+    }
+
     async createItem(itemDto: CafeteriaItemDto, username): Promise<CafeteriaItem> {
         const { item_id, price, quantity } = itemDto;
 
