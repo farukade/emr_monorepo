@@ -28,7 +28,7 @@ async function bootstrap() {
 
     await app.listen(process.env.PORT || 3001);
 
-    console.info(`EMRAPP API running on 3001`);
+    console.info(`EMRAPP API running on: ${await app.getUrl()}`);
 
 }
 

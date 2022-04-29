@@ -162,4 +162,12 @@ export class PatientRequestController {
     ) {
         return this.patientRequestService.requestNursingService(param, req.user.username);
     }
+
+    //Get monthly average request time for each request time
+    @Get('monthly-average')
+    getMonthlyAverageRequestTime(
+        @Query() urlParams
+    ) {
+        return this.patientRequestService.getMonthlyAverageRequestTime(urlParams)
+    }
 }
