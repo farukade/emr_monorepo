@@ -24,7 +24,6 @@ import { GroupRepository } from '../settings/lab/repositories/group.repository';
 import { GroupTest } from '../settings/entities/group_tests.entity';
 import * as moment from 'moment';
 import { StoreInventoryRepository } from '../inventory/store/store.repository';
-// @ts-ignore
 import * as startCase from 'lodash.startcase';
 import { CafeteriaInventoryRepository } from '../inventory/cafeteria/cafeteria.repository';
 import { RoomCategoryRepository } from '../settings/room/room.category.repository';
@@ -40,7 +39,6 @@ import { PatientNoteRepository } from '../patient/repositories/patient_note.repo
 import { EncounterRepository } from '../patient/consultation/encounter.repository';
 import { CareTeamRepository } from '../patient/care-team/team.repository';
 import { AppointmentRepository } from '../frontdesk/appointment/appointment.repository';
-import { Department } from '../settings/entities/department.entity';
 import { Service } from '../settings/entities/service.entity';
 import { AppGateway } from '../../app.gateway';
 import { NicuRepository } from '../patient/nicu/nicu.repository';
@@ -140,7 +138,7 @@ export class MigrationProcessor {
 	}
 
 	@OnQueueCompleted()
-	onComplete(job: Job, result: any) {
+	onComplete(job: Job) {
 		this.logger.debug(`Completed job ${job.id} of type ${job.name}`);
 	}
 
@@ -163,7 +161,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('diagnosis')
-	async migrateDiagnosis(job: Job<any>): Promise<any> {
+	async migrateDiagnosis(): Promise<any> {
 		this.logger.log('migrating diagnosis');
 
 		try {
@@ -205,7 +203,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('hmo')
-	async migrateHmo(job: Job<any>): Promise<any> {
+	async migrateHmo(): Promise<any> {
 		this.logger.log('migrating hmo');
 
 		try {
@@ -252,7 +250,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('staffs')
-	async migrateStaffs(job: Job<any>): Promise<any> {
+	async migrateStaffs(): Promise<any> {
 		this.logger.log('migrating staffs');
 		try {
 			const connection = await mysqlConnect();
@@ -323,7 +321,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('patients')
-	async migratePatients(job: Job<any>): Promise<any> {
+	async migratePatients(): Promise<any> {
 		this.logger.log('migrating patients');
 
 		try {
@@ -408,7 +406,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('services')
-	async migrateServices(job: Job<any>): Promise<any> {
+	async migrateServices(): Promise<any> {
 		this.logger.log('migrating services');
 
 		try {
@@ -478,7 +476,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('drugs')
-	async migrateDrugs(job: Job<any>): Promise<any> {
+	async migrateDrugs(): Promise<any> {
 		this.logger.log('migrating drugs');
 
 		try {
@@ -562,7 +560,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('lab')
-	async migrateLab(job: Job<any>): Promise<any> {
+	async migrateLab(): Promise<any> {
 		this.logger.log('migrating lab');
 
 		try {
@@ -630,7 +628,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('store')
-	async migrateStore(job: Job<any>): Promise<any> {
+	async migrateStore(): Promise<any> {
 		this.logger.log('migrating store');
 
 		try {
@@ -677,7 +675,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('rooms')
-	async migrateRoom(job: Job<any>): Promise<any> {
+	async migrateRoom(): Promise<any> {
 		this.logger.log('migrating rooms');
 
 		try {
@@ -705,7 +703,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('alert')
-	async migrateAlert(job: Job<any>): Promise<any> {
+	async migrateAlert(): Promise<any> {
 		this.logger.log('migrating patient alerts');
 
 		try {
@@ -735,7 +733,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('in-patients')
-	async migrateInPatients(job: Job<any>): Promise<any> {
+	async migrateInPatients(): Promise<any> {
 		this.logger.log('migrating in-patients');
 
 		try {
@@ -780,7 +778,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('observation')
-	async migrateObservation(job: Job<any>): Promise<any> {
+	async migrateObservation(): Promise<any> {
 		this.logger.log('migrating in-patient observation');
 
 		try {
@@ -815,7 +813,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('allergen')
-	async migrateAllergen(job: Job<any>): Promise<any> {
+	async migrateAllergen(): Promise<any> {
 		this.logger.log('migrating allergen');
 
 		try {
@@ -864,7 +862,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('care-team')
-	async migrateCareTeam(job: Job<any>): Promise<any> {
+	async migrateCareTeam(): Promise<any> {
 		this.logger.log('migrating care-team');
 
 		try {
@@ -908,7 +906,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('encounter')
-	async migrateEncounter(job: Job<any>): Promise<any> {
+	async migrateEncounter(): Promise<any> {
 		this.logger.log('migrating encounter');
 
 		try {
@@ -922,13 +920,13 @@ export class MigrationProcessor {
 
 				const doctor = await this.getStaffById(parseInt(item.consulted_by, 10));
 
-				const department = await getConnection()
-					.getRepository(Department)
-					.findOne({
-						where: { name: item.department_name },
-					});
+				// const department = await getConnection()
+				// 	.getRepository(Department)
+				// 	.findOne({
+				// 		where: { name: item.department_name },
+				// 	});
 
-				const createdBy = await this.getStaffById(parseInt(item.initiator_id, 10));
+				// const createdBy = await this.getStaffById(parseInt(item.initiator_id, 10));
 
 				const appointment = await this.appointmentRepository.save({});
 
@@ -952,7 +950,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('call')
-	async callPatient(job: Job<any>): Promise<any> {
+	async callPatient(): Promise<any> {
 		this.logger.log('calling patient');
 
 		try {
@@ -965,7 +963,7 @@ export class MigrationProcessor {
 
 	@Process('tariffs')
 	async updateCoverage(job: Job<any>): Promise<any> {
-		const { scheme, coverage } = job.data;
+		const { scheme } = job.data;
 
 		const privateHmo = await this.hmoSchemeRepository.findOne({
 			where: { name: 'Private' },
@@ -999,7 +997,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('fix-inpatients')
-	async fixInPatients(job: Job<any>): Promise<any> {
+	async fixInPatients(): Promise<any> {
 		const admissions = await this.admissionsRepository.createQueryBuilder('q').select('q.*').where('q.status = :status', { status: 0 }).getRawMany();
 
 		// const staff = await getStaff('admin');
@@ -1022,7 +1020,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('fix-nicu')
-	async fixNicu(job: Job<any>): Promise<any> {
+	async fixNicu(): Promise<any> {
 		const nicus = await this.nicuRepository.createQueryBuilder('q').select('q.*').where('q.status = :status', { status: 0 }).getRawMany();
 
 		// const staff = await getStaff('admin');
@@ -1047,7 +1045,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('fix-procedure')
-	async fixProcedure(job: Job<any>): Promise<any> {
+	async fixProcedure(): Promise<any> {
 		const items = await this.patientRequestItemRepository.find({
 			where: { scheduledDate: true },
 		});
@@ -1070,7 +1068,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('fix-deleted-labs')
-	async fixDelLabs(job: Job<any>): Promise<any> {
+	async fixDelLabs(): Promise<any> {
 		const labTests = await this.labTestRepository.find({
 			withDeleted: true,
 		});
@@ -1103,7 +1101,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('emit-socket')
-	async emitSocket(job: Job<any>): Promise<any> {
+	async emitSocket(): Promise<any> {
 		this.appGateway.server.emit('new-appointment', { appointment: 1 });
 	}
 
@@ -1138,7 +1136,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('fix-tasks')
-	async fixTasks(job: Job<any>): Promise<any> {
+	async fixTasks(): Promise<any> {
 		const tasks = await this.admissionClinicalTask.createQueryBuilder('q').select('q.*').withDeleted().getRawMany();
 
 		for (const task of tasks) {
@@ -1167,12 +1165,12 @@ export class MigrationProcessor {
 	}
 
 	@Process('fix-nicu-transactions')
-	async fixNicuTransactions(job: Job<any>): Promise<any> {
+	async fixNicuTransactions(): Promise<any> {
 		await getConnection().createQueryBuilder().update(Transaction).set({ status: -1, is_admitted: true }).where('nicu_id is not null').andWhere('status = :status', { status: 0 }).execute();
 	}
 
 	@Process('fix-permissions')
-	async fixPermissions(job: Job<any>): Promise<any> {
+	async fixPermissions(): Promise<any> {
 		const permissions = await getConnection().getRepository(Permission).find();
 		for (const item of permissions) {
 			if (item) {
@@ -1186,7 +1184,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('fix-appointments')
-	async fixAppointments(job: Job<any>): Promise<any> {
+	async fixAppointments(): Promise<any> {
 		const appointments = await getConnection().getRepository(Appointment).find();
 		for (const item of appointments) {
 			if (item) {
@@ -1200,7 +1198,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('fix-enrollments')
-	async fixEnrollments(job: Job<any>): Promise<any> {
+	async fixEnrollments(): Promise<any> {
 		const ancEnrollments = await getConnection()
 			.getRepository(AntenatalEnrollment)
 			.find({ relations: ['patient'] });
@@ -1242,7 +1240,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('test')
-	async test(job: Job<any>): Promise<any> {
+	async test(): Promise<any> {
 		console.log('test queue');
 	}
 }

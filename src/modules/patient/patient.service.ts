@@ -34,7 +34,6 @@ import { PatientNoteRepository } from './repositories/patient_note.repository';
 import { PatientNote } from './entities/patient_note.entity';
 import { StaffRepository } from '../hr/staff/staff.repository';
 import { TransactionCreditDto } from '../finance/transactions/dto/transaction-credit.dto';
-// @ts-ignore
 import * as startCase from 'lodash.startcase';
 import { AdmissionClinicalTask } from './admissions/entities/admission-clinical-task.entity';
 import { NicuRepository } from './nicu/nicu.repository';

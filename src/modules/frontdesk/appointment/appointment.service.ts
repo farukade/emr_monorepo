@@ -13,7 +13,7 @@ import { ServiceRepository } from '../../settings/services/repositories/service.
 import { Patient } from '../../patient/entities/patient.entity';
 import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
 import { AppGateway } from '../../../app.gateway';
-import { Brackets, getConnection, getRepository, Not, Raw } from 'typeorm';
+import { getConnection, getRepository } from 'typeorm';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import { PaginationOptionsInterface } from '../../../common/paginate';
@@ -54,7 +54,7 @@ export class AppointmentService {
 	) {}
 
 	async listAppointments(options: PaginationOptionsInterface, params): Promise<Pagination> {
-		const { startDate, endDate, patient_id, today, doctor_id, department_id, canSeeDoctor, status, is_queue, staff_id } = params;
+		const { startDate, endDate, patient_id, today, department_id, canSeeDoctor, status, is_queue, staff_id } = params;
 
 		const query = this.appointmentRepository.createQueryBuilder('q').select('q.id');
 
@@ -71,16 +71,12 @@ export class AppointmentService {
 		}
 
 		if (startDate && startDate !== '') {
-			const start = moment(startDate)
-				.startOf('day')
-				.toISOString();
+			const start = moment(startDate).startOf('day').toISOString();
 			query.andWhere(`q.appointment_date >= '${start}'`);
 		}
 
 		if (endDate && endDate !== '') {
-			const end = moment(endDate)
-				.endOf('day')
-				.toISOString();
+			const end = moment(endDate).endOf('day').toISOString();
 			query.andWhere(`q.appointment_date <= '${end}'`);
 		}
 
@@ -154,6 +150,7 @@ export class AppointmentService {
 			const outstanding = await getOutstanding(patientProfile.id);
 			const lastAppointment = await getLastAppointment(patientProfile.id);
 
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 			const { patient, ...others } = appointment;
 			const appt = {
 				...others,
@@ -247,10 +244,9 @@ export class AppointmentService {
 				});
 			}
 
-			const covered = ancEnrollment?.ancpackage?.coverage?.consultancy?.find(c => c.code === serviceCost?.code) || null;
+			const covered = ancEnrollment?.ancpackage?.coverage?.consultancy?.find((c) => c.code === serviceCost?.code) || null;
 			const isCovered = covered && department.name === 'Antenatal';
 
-			// tslint:disable-next-line:max-line-length
 			const appointment = await this.appointmentRepository.saveAppointment(appointmentDto, patient, consultingRoom, doctor, service, serviceCost, department, username);
 
 			// update patient appointment date
@@ -276,12 +272,7 @@ export class AppointmentService {
 				// save payment
 				const amount = serviceCost?.tariff || 0;
 				const payment = await this.saveTransaction(patient, hmo, service, serviceCost, username, appointment);
-				await getConnection()
-					.createQueryBuilder()
-					.update(Appointment)
-					.set({ transaction: payment })
-					.where('id = :id', { id: appointment.id })
-					.execute();
+				await getConnection().createQueryBuilder().update(Appointment).set({ transaction: payment }).where('id = :id', { id: appointment.id }).execute();
 
 				// send queue message
 				if (pushToQueue) {
@@ -404,7 +395,7 @@ export class AppointmentService {
 				});
 			}
 
-			const covered = ancEnrollment?.ancpackage?.coverage?.consultancy?.find(c => c.code === serviceCost?.code) || null;
+			const covered = ancEnrollment?.ancpackage?.coverage?.consultancy?.find((c) => c.code === serviceCost?.code) || null;
 			const isCovered = covered && department.name === 'Antenatal';
 
 			const appointment = await this.appointmentRepository.findOne(id);
@@ -441,12 +432,7 @@ export class AppointmentService {
 				// save payment
 				const amount = serviceCost?.tariff || 0;
 				payment = await this.saveTransaction(patient, hmo, service, serviceCost, username, appointment);
-				await getConnection()
-					.createQueryBuilder()
-					.update(Appointment)
-					.set({ transaction: payment })
-					.where('id = :id', { id: appointment.id })
-					.execute();
+				await getConnection().createQueryBuilder().update(Appointment).set({ transaction: payment }).where('id = :id', { id: appointment.id }).execute();
 
 				if (isCovered && payment) {
 					// credit paypoint
@@ -545,10 +531,11 @@ export class AppointmentService {
 			.getOne();
 	}
 
-	async checkAppointmentStatus(params) {
-		const { patient_id, service_id } = params;
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	async checkAppointmentStatus(param) {
+		// const { patient_id, service_id } = params;
 		// find service
-		const service = await this.serviceRepository.findOne(service_id);
+		// const service = await this.serviceRepository.findOne(service_id);
 		// let resGracePeriod;
 		// let resNoOfVisits;
 		// if (service.gracePeriod) {
@@ -676,35 +663,33 @@ export class AppointmentService {
 		return await postDebit(data, serviceCost, null, null, appointment, hmo);
 	}
 
-	private isWithinGracePeriod(lastVisit, gracePeriod) {
-		return lastVisit.isAfter(gracePeriod);
-	}
+	// private isWithinGracePeriod(lastVisit, gracePeriod) {
+	// 	return lastVisit.isAfter(gracePeriod);
+	// }
 
-	private async verifyGracePeriod(gracePeriodParams, patient_id, service_id) {
-		// find patient last appointment
-		const appointments = await this.appointmentRepository
-			.createQueryBuilder('appointment')
-			.where('appointment.patient_id = :patient_id', { patient_id })
-			.andWhere('appointment.service_cost_id = :service_id', { service_id })
-			.select(['appointment.createdAt as created_at'])
-			.orderBy('appointment.createdAt', 'DESC')
-			.limit(gracePeriodParams[0])
-			.getRawMany();
-		let result = true;
-		if (appointments.length) {
-			for (const appointment of appointments) {
-				const lastVisit = moment(appointments[0].created_at);
-				const gracePeriod = moment()
-					.subtract(gracePeriodParams[0], gracePeriodParams[1])
-					.startOf('day');
-				if (!this.isWithinGracePeriod(lastVisit, gracePeriod)) {
-					result = false;
-					return;
-				}
-			}
-		}
-		return result;
-	}
+	// private async verifyGracePeriod(gracePeriodParams, patient_id, service_id) {
+	// 	// find patient last appointment
+	// 	const appointments = await this.appointmentRepository
+	// 		.createQueryBuilder('appointment')
+	// 		.where('appointment.patient_id = :patient_id', { patient_id })
+	// 		.andWhere('appointment.service_cost_id = :service_id', { service_id })
+	// 		.select(['appointment.createdAt as created_at'])
+	// 		.orderBy('appointment.createdAt', 'DESC')
+	// 		.limit(gracePeriodParams[0])
+	// 		.getRawMany();
+	// 	let result = true;
+	// 	if (appointments.length) {
+	// 		for (const {} of appointments) {
+	// 			const lastVisit = moment(appointments[0].created_at);
+	// 			const gracePeriod = moment().subtract(gracePeriodParams[0], gracePeriodParams[1]).startOf('day');
+	// 			if (!this.isWithinGracePeriod(lastVisit, gracePeriod)) {
+	// 				result = false;
+	// 				return;
+	// 			}
+	// 		}
+	// 	}
+	// 	return result;
+	// }
 
 	private async verifyNoOfVisits(noOfVisits, patient_id, service_id) {
 		const appointments = await this.appointmentRepository

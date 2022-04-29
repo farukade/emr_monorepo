@@ -1,10 +1,11 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 import * as fs from 'fs';
 import * as path from 'path';
 import * as puppeteer from 'puppeteer';
 import * as hbs from 'handlebars';
 import * as utils from 'util';
 import { SmsHistory } from '../entities/sms.entity';
-import { Brackets, getConnection, Not } from 'typeorm';
+import { getConnection } from 'typeorm';
 import { User } from '../../modules/auth/entities/user.entity';
 import { StaffDetails } from '../../modules/hr/staff/entities/staff_details.entity';
 import { LogEntity } from '../../modules/logger/entities/logger.entity';
@@ -22,16 +23,12 @@ import { Nicu } from '../../modules/patient/nicu/entities/nicu.entity';
 import { Voucher } from '../../modules/finance/vouchers/voucher.entity';
 import { PatientRequestItem } from '../../modules/patient/entities/patient_request_items.entity';
 import * as numeral from 'numeral';
-// @ts-ignore
 import * as startCase from 'lodash.startcase';
 
-// tslint:disable-next-line:no-var-requires
 const mysql = require('mysql2/promise');
 
-// tslint:disable-next-line:no-var-requires
 const bluebird = require('bluebird');
 
-// tslint:disable-next-line:no-var-requires
 const Say = require('say').Say;
 const say = new Say();
 
@@ -45,8 +42,7 @@ const user = process.env.MYSQL_USER;
 const password = process.env.MYSQL_PASSWORD;
 const database = process.env.MYSQL_DATABASE;
 
-// tslint:disable-next-line:no-var-requires prefer-const
-let smsglobal = require('smsglobal')(apiKey, apiSecret);
+const smsglobal = require('smsglobal')(apiKey, apiSecret);
 
 export const mysqlConnect = async () => {
 	return await mysql.createConnection({
@@ -118,7 +114,6 @@ export const sendSMS = async (phone, message) => {
 		message,
 	};
 
-	// tslint:disable-next-line:only-arrow-functions
 	smsglobal.sms.send(payload, async function (error, response) {
 		if (response) {
 			console.log(JSON.stringify(response));
@@ -194,7 +189,7 @@ const formatPhone = (num) => {
 	}
 };
 
-export const formatPID = (id, l: number = 8) => {
+export const formatPID = (id: number, l = 8) => {
 	let zeros = '';
 	let len = 10;
 	while (len >= 0) {
@@ -224,7 +219,7 @@ export const formatPatientId = (patient) => {
 
 export const getStaff = async (username: string): Promise<StaffDetails> => {
 	const connection = getConnection();
-	// tslint:disable-next-line:no-shadowed-variable
+
 	const user = await connection.getRepository(User).findOne({ where: { username } });
 
 	return await connection.getRepository(StaffDetails).findOne({
@@ -255,7 +250,6 @@ export const getOutstanding = async (patient_id) => {
 
 export const getBalance = async (patient_id) => {
 	const connection = getConnection();
-	const patient = await connection.getRepository(Patient).findOne(patient_id);
 
 	const transactions = await connection
 		.getRepository(Transaction)
@@ -265,7 +259,6 @@ export const getBalance = async (patient_id) => {
 		.andWhere("q.bill_source != 'credit-deposit'")
 		.andWhere("q.bill_source != 'credit-transfer'")
 		.getRawMany();
-	// console.log(transactions);
 
 	return transactions.reduce((totalAmount, item) => {
 		return totalAmount + item.amount;
@@ -356,7 +349,6 @@ export const hasNumber = (myString) => {
 };
 
 export const postDebit = async (data: TransactionCreditDto, service: ServiceCost, voucher: Voucher, requestItem: PatientRequestItem, appointment: Appointment, hmo: HmoScheme) => {
-	// tslint:disable-next-line:max-line-length
 	const {
 		patient_id,
 		username,
@@ -474,7 +466,6 @@ export const postDebit = async (data: TransactionCreditDto, service: ServiceCost
 };
 
 export const postCredit = async (data: TransactionCreditDto, service, voucher, requestItem, appointment, hmo) => {
-	// tslint:disable-next-line:max-line-length
 	const {
 		patient_id,
 		username,

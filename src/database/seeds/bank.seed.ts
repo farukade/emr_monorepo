@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import fs = require('fs');
 import { Connection } from 'typeorm';
 import { Factory, Seeder } from 'typeorm-seeding';
@@ -8,7 +9,7 @@ export default class CreateBanks implements Seeder {
     const banks = JSON.parse(
       fs.readFileSync('src/database/seeds/dumbs/banks.json', 'utf8'),
     );
-    // tslint:disable-next-line:forin
+    
     for (const i in banks) {
       try {
         const s = banks[i];

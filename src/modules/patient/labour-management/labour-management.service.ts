@@ -21,29 +21,20 @@ export class LabourManagementService {
 		private ancEnrollmentRepository: AntenatalEnrollmentRepository,
 	) {}
 
-	async getLabours(
-		options: PaginationOptionsInterface,
-		urlParams,
-	): Promise<any> {
+	async getLabours(options: PaginationOptionsInterface, urlParams): Promise<any> {
 		const { startDate, endDate, patient_id } = urlParams;
 
 		const page = options.page - 1;
 
-		const query = this.labourEnrollmentRepository
-			.createQueryBuilder('q')
-			.select('q.*');
+		const query = this.labourEnrollmentRepository.createQueryBuilder('q').select('q.*');
 
 		if (startDate && startDate !== '') {
-			const start = moment(startDate)
-				.endOf('day')
-				.toISOString();
+			const start = moment(startDate).endOf('day').toISOString();
 			query.andWhere(`q.createdAt >= '${start}'`);
 		}
 
 		if (endDate && endDate !== '') {
-			const end = moment(endDate)
-				.endOf('day')
-				.toISOString();
+			const end = moment(endDate).endOf('day').toISOString();
 			query.andWhere(`q.createdAt <= '${end}'`);
 		}
 
@@ -66,9 +57,7 @@ export class LabourManagementService {
 			});
 
 			labour.staff = await getStaff(labour.createdBy);
-			labour.antenatal = labour.antenatal_id
-				? await this.ancEnrollmentRepository.findOne(labour.antenatal_id)
-				: null;
+			labour.antenatal = labour.antenatal_id ? await this.ancEnrollmentRepository.findOne(labour.antenatal_id) : null;
 
 			result = [...result, labour];
 		}
@@ -84,34 +73,16 @@ export class LabourManagementService {
 
 	async saveEnrollment(params: LabourEnrollmentDto, createdBy): Promise<any> {
 		try {
-			const {
-				patient_id,
-				antenatal_id,
-				father,
-				alive,
-				miscarriage,
-				present_pregnancies,
-				lmp,
-			} = params;
+			const { patient_id, antenatal_id, father, alive, miscarriage, present_pregnancies, lmp } = params;
 
-			const requestCount = await getConnection()
-				.createQueryBuilder()
-				.select('*')
-				.from(LabourEnrollment, 'q')
-				.withDeleted()
-				.getCount();
+			const requestCount = await getConnection().createQueryBuilder().select('*').from(LabourEnrollment, 'q').withDeleted().getCount();
 
 			const nextId = `00000${requestCount + 1}`;
-			const code = `LB${moment().format('YY')}/${moment().format(
-				'MM',
-			)}/${nextId.slice(-5)}`;
+			const code = `LB${moment().format('YY')}/${moment().format('MM')}/${nextId.slice(-5)}`;
 
 			const patient = await this.patientRepository.findOne(patient_id);
 
-			const antenatal =
-				antenatal_id && antenatal_id !== ''
-					? await this.ancEnrollmentRepository.findOne(antenatal_id)
-					: null;
+			const antenatal = antenatal_id && antenatal_id !== '' ? await this.ancEnrollmentRepository.findOne(antenatal_id) : null;
 
 			const enrollment = new LabourEnrollment();
 			enrollment.serial_code = code;
@@ -164,7 +135,6 @@ export class LabourManagementService {
 	//         //     if (labRequest.success) {
 	//         //         // save transaction
 	//         //         const payment = await RequestPaymentHelper.clinicalLabPayment(labRequest.data, enrollment.patient, createdBy);
-	//         //         // @ts-ignore
 	//         //         labRequest = { ...payment.labRequest };
 	//         //
 	//         //         this.appGateway.server.emit('paypoint-queue', { payment: payment.transactions });

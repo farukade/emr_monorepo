@@ -7,7 +7,7 @@ import * as compression from 'compression';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import 'reflect-metadata';
 
-// tslint:disable-next-line:no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 require('events').EventEmitter.defaultMaxListeners = 50;
 
 async function bootstrap() {

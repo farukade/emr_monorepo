@@ -9,14 +9,13 @@ import { PatientRepository } from '../repositories/patient.repository';
 import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
 import { AppGateway } from '../../../app.gateway';
 import { getConnection } from 'typeorm';
-import { createServiceCost, formatPatientId, formatPID, generatePDF, getStaff, postDebit } from '../../../common/utils/utils';
+import { createServiceCost, formatPatientId, generatePDF, getStaff, postDebit } from '../../../common/utils/utils';
 import { AdmissionsRepository } from '../admissions/repositories/admissions.repository';
 import * as path from 'path';
 import { Drug } from '../../inventory/entities/drug.entity';
 import { DrugBatch } from '../../inventory/entities/batches.entity';
 import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repository';
 import { DrugRepository } from '../../inventory/pharmacy/drug/drug.repository';
-import { Admission } from '../admissions/entities/admission.entity';
 import { AdmissionClinicalTask } from '../admissions/entities/admission-clinical-task.entity';
 import { TransactionCreditDto } from '../../finance/transactions/dto/transaction-credit.dto';
 import { PaginationOptionsInterface } from '../../../common/paginate';
@@ -27,7 +26,6 @@ import { PatientRequest } from '../entities/patient_requests.entity';
 import { AntenatalEnrollment } from '../antenatal/entities/antenatal-enrollment.entity';
 import { IvfEnrollment } from '../ivf/entities/ivf_enrollment.entity';
 import { Encounter } from '../consultation/encouter.entity';
-import { Nicu } from '../nicu/entities/nicu.entity';
 import { NicuRepository } from '../nicu/nicu.repository';
 import { ServiceCostRepository } from '../../settings/services/repositories/service_cost.repository';
 
@@ -69,16 +67,12 @@ export class PatientRequestService {
 			.where('q.requestType = :requestType', { requestType });
 
 		if (startDate && startDate !== '') {
-			const start = moment(startDate)
-				.startOf('day')
-				.format('YYYY-MM-DD HH:mm:ss');
+			const start = moment(startDate).startOf('day').format('YYYY-MM-DD HH:mm:ss');
 			query.andWhere(`q.createdAt >= '${start}'`);
 		}
 
 		if (endDate && endDate !== '') {
-			const end = moment(endDate)
-				.endOf('day')
-				.format('YYYY-MM-DD HH:mm:ss');
+			const end = moment(endDate).endOf('day').format('YYYY-MM-DD HH:mm:ss');
 			query.andWhere(`q.createdAt <= '${end}'`);
 		}
 
@@ -193,16 +187,12 @@ export class PatientRequestService {
 		}
 
 		if (startDate && startDate !== '') {
-			const start = moment(startDate)
-				.startOf('day')
-				.format('YYYY-MM-DD HH:mm:ss');
+			const start = moment(startDate).startOf('day').format('YYYY-MM-DD HH:mm:ss');
 			query.andWhere(`q.createdAt >= '${start}'`);
 		}
 
 		if (endDate && endDate !== '') {
-			const end = moment(endDate)
-				.endOf('day')
-				.format('YYYY-MM-DD HH:mm:ss');
+			const end = moment(endDate).endOf('day').format('YYYY-MM-DD HH:mm:ss');
 			query.andWhere(`q.createdAt <= '${end}'`);
 		}
 
@@ -297,8 +287,8 @@ export class PatientRequestService {
 					  })
 					: null;
 
-				const patientReq = allRequests.find(r => r.item?.substituted === 0);
-				const hasPaid = allRequests.find(r => r.item?.transaction?.status === 1);
+				const patientReq = allRequests.find((r) => r.item?.substituted === 0);
+				const hasPaid = allRequests.find((r) => r.item?.transaction?.status === 1);
 				result = [
 					...result,
 					{
@@ -330,28 +320,20 @@ export class PatientRequestService {
 	}
 
 	async listPatientRequests(requestType, patient_id, urlParams): Promise<any> {
-		const { startDate, endDate, filled, page, limit, today, item_id, type } = urlParams;
+		const { startDate, endDate, page, limit, today, item_id, type } = urlParams;
 
 		const queryLimit = limit ? parseInt(limit, 10) : 30;
 		const offset = (page ? parseInt(page, 10) : 1) - 1;
 
-		const query = this.patientRequestRepository
-			.createQueryBuilder('q')
-			.select('q.*')
-			.where('q.patient_id = :patient_id', { patient_id })
-			.andWhere('q.requestType = :requestType', { requestType });
+		const query = this.patientRequestRepository.createQueryBuilder('q').select('q.*').where('q.patient_id = :patient_id', { patient_id }).andWhere('q.requestType = :requestType', { requestType });
 
 		if (startDate && startDate !== '') {
-			const start = moment(startDate)
-				.startOf('day')
-				.format('YYYY-MM-DD HH:mm:ss');
+			const start = moment(startDate).startOf('day').format('YYYY-MM-DD HH:mm:ss');
 			query.andWhere(`q.createdAt >= '${start}'`);
 		}
 
 		if (endDate && endDate !== '') {
-			const end = moment(endDate)
-				.endOf('day')
-				.format('YYYY-MM-DD HH:mm:ss');
+			const end = moment(endDate).endOf('day').format('YYYY-MM-DD HH:mm:ss');
 			query.andWhere(`q.createdAt <= '${end}'`);
 		}
 
@@ -448,51 +430,45 @@ export class PatientRequestService {
 		switch (requestType) {
 			case 'labs':
 				// save request
-				let labRequest = await PatientRequestHelper.handleLabRequest(param, patient, createdBy);
+				const labRequest = await PatientRequestHelper.handleLabRequest(param, patient, createdBy);
 				if (labRequest.success) {
 					// save transaction
 					const payment = await RequestPaymentHelper.clinicalLabPayment(labRequest.data, patient, createdBy, param.pay_later);
-					// @ts-ignore
-					labRequest = { ...payment.labRequest };
+					res = { ...payment.labRequest };
 
 					this.appGateway.server.emit('paypoint-queue', {
 						payment: payment.transactions,
 					});
 				}
-				res = labRequest;
 				break;
 			case 'drugs':
 				res = await PatientRequestHelper.handlePharmacyRequest(param, patient, createdBy);
 				break;
 			case 'scans':
-				let request = await PatientRequestHelper.handleServiceRequest(param, patient, createdBy, requestType);
+				const request = await PatientRequestHelper.handleServiceRequest(param, patient, createdBy, requestType);
 				if (request.success) {
 					// save transaction
 					const payment = await RequestPaymentHelper.servicePayment(request.data, patient, createdBy, requestType, param.pay_later);
 
-					// @ts-ignore
-					request = { ...payment.request };
+					res = { ...payment.request };
 
 					this.appGateway.server.emit('paypoint-queue', {
 						payment: payment.transactions,
 					});
 				}
-				res = request;
 				break;
 			case 'procedure':
-				let procedure = await PatientRequestHelper.handleServiceRequest(param, patient, createdBy, requestType);
+				const procedure = await PatientRequestHelper.handleServiceRequest(param, patient, createdBy, requestType);
 				if (procedure.success) {
 					// save transaction
 					const payment = await RequestPaymentHelper.servicePayment(procedure.data, patient, createdBy, requestType, param.bill);
 
-					// @ts-ignore
-					procedure = { ...payment.request };
+					res = { ...payment.request };
 
 					this.appGateway.server.emit('paypoint-queue', {
 						payment: payment.transactions,
 					});
 				}
-				res = procedure;
 				break;
 
 			case 'vaccines':
@@ -509,12 +485,7 @@ export class PatientRequestService {
 		try {
 			const { dose_quantity, frequency, frequencyType, duration, request_id } = param;
 
-			const request = await getConnection()
-				.getRepository(PatientRequest)
-				.createQueryBuilder('r')
-				.select('r.*')
-				.where('r.id = :id', { id: request_id })
-				.getRawOne();
+			const request = await getConnection().getRepository(PatientRequest).createQueryBuilder('r').select('r.*').where('r.id = :id', { id: request_id }).getRawOne();
 
 			if (!request) {
 				return { success: false, message: 'no request found!' };
@@ -524,9 +495,7 @@ export class PatientRequestService {
 
 			let antenatal = null;
 			if (request.antenatal_id && request.antenatal_id !== '') {
-				antenatal = await getConnection()
-					.getRepository(AntenatalEnrollment)
-					.findOne(request.antenatal_id);
+				antenatal = await getConnection().getRepository(AntenatalEnrollment).findOne(request.antenatal_id);
 			}
 
 			let admission = null;
@@ -536,16 +505,12 @@ export class PatientRequestService {
 
 			let encounter = null;
 			if (request.encounter_id && request.encounter_id !== '') {
-				encounter = await getConnection()
-					.getRepository(Encounter)
-					.findOne(request.encounter_id);
+				encounter = await getConnection().getRepository(Encounter).findOne(request.encounter_id);
 			}
 
 			let ivf = null;
 			if (request.ivf_id && request.ivf_id !== '') {
-				ivf = await getConnection()
-					.getRepository(IvfEnrollment)
-					.findOne(request.ivf_id);
+				ivf = await getConnection().getRepository(IvfEnrollment).findOne(request.ivf_id);
 			}
 
 			const data = {
@@ -564,16 +529,8 @@ export class PatientRequestService {
 
 			const item = await this.patientRequestItemRepository.findOne(id);
 
-			const generic = param.generic
-				? await getConnection()
-						.getRepository(DrugGeneric)
-						.findOne(param.generic?.id)
-				: null;
-			const drug = param.drug
-				? await getConnection()
-						.getRepository(Drug)
-						.findOne(param.drug?.id)
-				: null;
+			const generic = param.generic ? await getConnection().getRepository(DrugGeneric).findOne(param.generic?.id) : null;
+			const drug = param.drug ? await getConnection().getRepository(Drug).findOne(param.drug?.id) : null;
 
 			const requestItem = {
 				request: regimen,
@@ -660,15 +617,11 @@ export class PatientRequestService {
 
 			if (fill) {
 				for (const reqItem of items) {
-					const batch = await getConnection()
-						.getRepository(DrugBatch)
-						.findOne(reqItem.item.drugBatch.id);
+					const batch = await getConnection().getRepository(DrugBatch).findOne(reqItem.item.drugBatch.id);
 					batch.quantity = batch.quantity - parseInt(reqItem.item.fill_quantity, 10);
 					await batch.save();
 
-					const drug = await getConnection()
-						.getRepository(Drug)
-						.findOne(reqItem.item.drug.id);
+					const drug = await getConnection().getRepository(Drug).findOne(reqItem.item.drug.id);
 					const requestItem = await this.patientRequestItemRepository.findOne(reqItem.item.id);
 
 					requestItem.drugBatch = batch;
@@ -733,9 +686,7 @@ export class PatientRequestService {
 				}
 			} else {
 				for (const reqItem of items) {
-					const batch = await getConnection()
-						.getRepository(DrugBatch)
-						.findOne(reqItem.item.drugBatch.id);
+					const batch = await getConnection().getRepository(DrugBatch).findOne(reqItem.item.drugBatch.id);
 					batch.quantity = batch.quantity + reqItem.item.fill_quantity;
 					await batch.save();
 
@@ -864,7 +815,6 @@ export class PatientRequestService {
 							where: { patient: reqItem.patient, status: 0 },
 						});
 
-						// @ts-ignore
 						const { vaccine } = reqItem.item;
 						if (vaccine) {
 							const newTask = new AdmissionClinicalTask();
@@ -947,7 +897,7 @@ export class PatientRequestService {
 			item.filled = 0;
 			item.filled_by = null;
 			item.filled_at = null;
-			item.parameters = item.parameters.map(p => ({
+			item.parameters = item.parameters.map((p) => ({
 				...p,
 				inference: '',
 				value: '',
@@ -1050,7 +1000,6 @@ export class PatientRequestService {
 
 	async deleteRequest(id: string, params, username: string) {
 		try {
-			const { type } = params;
 			const request = await this.patientRequestRepository.findOne(id, {
 				relations: ['item'],
 			});
@@ -1117,7 +1066,6 @@ export class PatientRequestService {
 				relations: ['hmo'],
 			});
 
-			// tslint:disable-next-line:prefer-const
 			let results;
 			const printGroup = parseInt(print_group, 10);
 			if (printGroup === 1) {
@@ -1171,7 +1119,7 @@ export class PatientRequestService {
 					break;
 				case 'lab':
 				default:
-					const specimen = [...results.map(r => r.item.labTest.specimens?.map(s => s.label))];
+					const specimen = [...results.map((r) => r.item.labTest.specimens?.map((s) => s.label))];
 
 					content = {
 						...data,

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Connection } from 'typeorm';
 import { Factory, Seeder } from 'typeorm-seeding';
 import { HmoType } from '../../modules/hmo/entities/hmo_type.entity';
@@ -11,7 +12,6 @@ export default class CreateHmoTypes implements Seeder {
             { name: 'PHIS' },
         ];
 
-        // tslint:disable-next-line:forin
         for (const i in types) {
             try {
                 const t = types[i];

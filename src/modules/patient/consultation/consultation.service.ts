@@ -14,7 +14,7 @@ import { AppGateway } from '../../../app.gateway';
 import { QueueSystemRepository } from '../../frontdesk/queue-system/queue-system.repository';
 import { PatientConsumable } from '../entities/patient_consumable.entity';
 import { AuthRepository } from '../../auth/auth.repository';
-import { Connection, getConnection, getRepository, Raw } from 'typeorm';
+import { Connection, getConnection, getRepository } from 'typeorm';
 import { getStaff } from '../../../common/utils/utils';
 import { PatientNoteRepository } from '../repositories/patient_note.repository';
 import { DrugGenericRepository } from '../../inventory/pharmacy/generic/generic.repository';
@@ -64,15 +64,11 @@ export class ConsultationService {
 			const query = this.encounterRepository.createQueryBuilder('e').select('e.*');
 
 			if (startDate && startDate !== '') {
-				const start = moment(startDate)
-					.endOf('day')
-					.toISOString();
+				const start = moment(startDate).endOf('day').toISOString();
 				query.where(`e.createdAt >= '${start}'`);
 			}
 			if (endDate && endDate !== '') {
-				const end = moment(endDate)
-					.endOf('day')
-					.toISOString();
+				const end = moment(endDate).endOf('day').toISOString();
 				query.andWhere(`e.createdAt <= '${end}'`);
 			}
 
@@ -117,11 +113,7 @@ export class ConsultationService {
 					.andWhere(`CAST(v.createdAt as DATE) = '%${date}%'`)
 					.getRawMany();
 
-				item.patient_notes = await this.patientNoteRepository
-					.createQueryBuilder('pn')
-					.select('pn.*')
-					.where('pn.encounter_id = :id', { id: item.id })
-					.getRawMany();
+				item.patient_notes = await this.patientNoteRepository.createQueryBuilder('pn').select('pn.*').where('pn.encounter_id = :id', { id: item.id }).getRawMany();
 
 				item.encounter_note = await this.patientNoteRepository
 					.createQueryBuilder('n')
@@ -143,11 +135,7 @@ export class ConsultationService {
 					relations: ['item'],
 				});
 
-				item.patient_consumables = await getRepository(PatientConsumable)
-					.createQueryBuilder('pc')
-					.select('pc.*')
-					.where('pc.encounter_id = :id', { id: item.id })
-					.getRawMany();
+				item.patient_consumables = await getRepository(PatientConsumable).createQueryBuilder('pc').select('pc.*').where('pc.encounter_id = :id', { id: item.id }).getRawMany();
 
 				result = [...result, item];
 			}
@@ -406,7 +394,6 @@ export class ConsultationService {
 				console.log(labRequest);
 				if (labRequest.success && labRequest.data.length > 0) {
 					// save transaction
-					// tslint:disable-next-line:max-line-length
 					const payment = await RequestPaymentHelper.clinicalLabPayment(labRequest.data, patient, username, investigations.labRequest.pay_later);
 					this.appGateway.server.emit('paypoint-queue', {
 						payment: payment.transactions,

@@ -1,5 +1,4 @@
-// tslint:disable-next-line:max-line-length
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UsePipes, ValidationPipe, UseInterceptors, UploadedFile, Res, UseGuards, Request, Put } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UsePipes, ValidationPipe, UseInterceptors, UploadedFile, UseGuards, Request, Put } from '@nestjs/common';
 import { PatientService } from './patient.service';
 import { Patient } from './entities/patient.entity';
 import { PatientDto } from './dto/patient.dto';
@@ -190,7 +189,7 @@ export class PatientController {
 
 	@UseGuards(AuthGuard('jwt'))
 	@Get(':id/summary')
-	getSummary(@Param('id') id: number, @Query() urlParams): Promise<Voucher[]> {
+	getSummary(@Param('id') id: number): Promise<Voucher[]> {
 		return this.patientService.getSummary(id);
 	}
 }
