@@ -32,19 +32,8 @@ import { LoggerRepository } from '../logger/logger.repository';
 				},
 			},
 		}),
-		BullModule.registerQueueAsync({
+		BullModule.registerQueue({
 			name: process.env.MAIL_QUEUE_NAME,
-			imports: [],
-			useFactory: async () => ({
-				name: process.env.MAIL_QUEUE_NAME,
-				defaultJobOptions: {
-					removeOnComplete: true,
-				},
-				redis: {
-					host: process.env.REDIS_HOST,
-					port: Number(process.env.REDIS_PORT),
-				},
-			}),
 		}),
 		TypeOrmModule.forFeature([LoggerRepository]),
 	],

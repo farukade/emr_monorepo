@@ -1,13 +1,13 @@
 export interface Result {
-    data: any;
+	data: any;
 
-    /**
-     * the last page
-     */
-    success: boolean;
+	/**
+	 * success status
+	 */
+	success: boolean;
 
-    /**
-     * the message if success is false
-     */
-    message: string;
+	/**
+	 * the message if success is false
+	 */
+	message: string;
 }

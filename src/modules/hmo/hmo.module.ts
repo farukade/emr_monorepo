@@ -12,27 +12,24 @@ import { HmoSchemeRepository } from './repositories/hmo_scheme.repository';
 import { HmoTypeRepository } from './repositories/hmo_type.repository';
 import { ServiceCostRepository } from '../settings/services/repositories/service_cost.repository';
 import { PatientRequestItemRepository } from '../patient/repositories/patient_request_items.repository';
-import { MigrationModule } from '../migration/migration.module';
 import { AppGateway } from '../../app.gateway';
 
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([
-            HmoOwnerRepository,
-            HmoSchemeRepository,
-            HmoTypeRepository,
-            ServiceRepository,
-            TransactionsRepository,
-            QueueSystemRepository,
-            PatientRepository,
-            ServiceCategoryRepository,
-            ServiceCostRepository,
-            PatientRequestItemRepository,
-        ]),
-        MigrationModule,
-    ],
-    controllers: [HmoController],
-    providers: [AppGateway, HmoService],
+	imports: [
+		TypeOrmModule.forFeature([
+			HmoOwnerRepository,
+			HmoSchemeRepository,
+			HmoTypeRepository,
+			ServiceRepository,
+			TransactionsRepository,
+			QueueSystemRepository,
+			PatientRepository,
+			ServiceCategoryRepository,
+			ServiceCostRepository,
+			PatientRequestItemRepository,
+		]),
+	],
+	controllers: [HmoController],
+	providers: [AppGateway, HmoService],
 })
-export class HmoModule {
-}
+export class HmoModule {}

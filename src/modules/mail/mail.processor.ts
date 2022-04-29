@@ -10,152 +10,170 @@ import { LogEntity } from '../logger/entities/logger.entity';
 
 @Processor(process.env.MAIL_QUEUE_NAME)
 export class MailProcessor {
-    private readonly logger = new Logger(this.constructor.name);
+	private readonly logger = new Logger(this.constructor.name);
 
-    constructor(
-        private readonly mailerService: MailerService,
-        @InjectRepository(LoggerRepository)
-        private loggerRepository: LoggerRepository,
-    ) {
-    }
+	constructor(
+		private readonly mailerService: MailerService,
+		@InjectRepository(LoggerRepository)
+		private loggerRepository: LoggerRepository,
+	) {}
 
-    @OnQueueActive()
-    onActive(job: Job) {
-        this.logger.debug(`Processing job ${job.id} of type ${job.name}. Data: ${JSON.stringify(job.data)}`);
-    }
+	@OnQueueActive()
+	onActive(job: Job) {
+		this.logger.debug(`Processing job ${job.id} of type ${job.name}. Data: ${JSON.stringify(job.data)}`);
+	}
 
-    @OnQueueCompleted()
-    onComplete(job: Job, result: any) {
-        this.logger.debug(`Completed job ${job.id} of type ${job.name}. Result: ${JSON.stringify(result)}`);
-    }
+	@OnQueueCompleted()
+	onComplete(job: Job, result: any) {
+		this.logger.debug(`Completed job ${job.id} of type ${job.name}. Result: ${JSON.stringify(result)}`);
+	}
 
-    @OnQueueFailed()
-    onError(job: Job<any>, error: any) {
-        this.logger.error(`Failed job ${job.id} of type ${job.name}: ${error.message}`, error.stack);
-    }
+	@OnQueueFailed()
+	onError(job: Job<any>, error: any) {
+		this.logger.error(`Failed job ${job.id} of type ${job.name}: ${error.message}`, error.stack);
+	}
 
-    @Process('registration')
-    async sendWelcomeEmail(job: Job<any>): Promise<any> {
-        const data = job.data;
+	@Process('send')
+	async sendEmail(job: Job<any>): Promise<any> {
+		const data = job.data;
 
-        this.logger.log(`Sending confirmation email to '${data.email}'`);
+		this.logger.log(`Sending email to '${data.to_email}'`);
 
-        try {
-            if (process.env.DEBUG === 'false') {
-                await sendSMS(data.phoneNumber, data.message);
-            }
-        } catch (error) {
-            console.log(error);
-            this.logger.error(`Failed to send sms to '${data.phoneNumber}'`, error.stack);
-        }
+		try {
+			return await this.mailerService.sendMail({
+				to: data.to_email,
+				from: `"${data.from_name}" <${data.from_email || 'noreply@dedahospital.com'}>`,
+				subject: data.subject,
+				template: 'mail',
+				context: {
+					message: data.message,
+					logo: `${process.env.ENDPOINT}/public/images/logo.png`,
+				},
+			});
+		} catch (error) {
+			console.log(error);
+			this.logger.error(`Failed to send email to '${data.email}'`, error.stack);
+		}
+	}
 
-        try {
-            await this.mailerService.sendMail({
-                to: data.email,
-                from: '"DEDA Hospital" <noreply@dedahospital.com>', // override default from
-                subject: 'Welcome to Deda Hospital',
-                template: 'registration',
-                context: {
-                    name: data.name,
-                    patientId: formatPID(data.id),
-                    date: moment(data.createdAt).format('DD-MMM-YYYY'),
-                },
-            });
+	@Process('registration')
+	async sendWelcomeEmail(job: Job<any>): Promise<any> {
+		const data = job.data;
 
-        } catch (error) {
-            console.log(error);
+		this.logger.log(`Sending confirmation email to '${data.email}'`);
 
-            const log = new LogEntity();
-            log.email = data.email;
-            log.type = 'email';
-            log.category = 'registration';
-            log.status = 'failed';
-            log.errorMessage = error.message;
-            log.data = data;
+		try {
+			if (process.env.DEBUG === 'false') {
+				await sendSMS(data.phoneNumber, data.message);
+			}
+		} catch (error) {
+			console.log(error);
+			this.logger.error(`Failed to send sms to '${data.phoneNumber}'`, error.stack);
+		}
 
-            await this.loggerRepository.save(log);
+		try {
+			await this.mailerService.sendMail({
+				to: data.email,
+				from: '"DEDA Hospital" <noreply@dedahospital.com>', // override default from
+				subject: 'Welcome to Deda Hospital',
+				template: 'registration',
+				context: {
+					name: data.name,
+					patientId: formatPID(data.id),
+					date: moment(data.createdAt).format('DD-MMM-YYYY'),
+				},
+			});
+		} catch (error) {
+			console.log(error);
 
-            this.logger.error(`Failed to send registration email to '${data.email}'`, error.stack);
-        }
-    }
+			const log = new LogEntity();
+			log.email = data.email;
+			log.type = 'email';
+			log.category = 'registration';
+			log.status = 'failed';
+			log.errorMessage = error.message;
+			log.data = data;
 
-    @Process('invoice')
-    async sendInvoiceEmail(job: Job<any>): Promise<any> {
-        const data = job.data;
+			await this.loggerRepository.save(log);
 
-        this.logger.log(`Sending invoice email to '${data.email}'`);
+			this.logger.error(`Failed to send registration email to '${data.email}'`, error.stack);
+		}
+	}
 
-        try {
-            return await this.mailerService.sendMail({
-                to: data.email,
-                from: '"DEDA Hospital" <noreply@dedahospital.com>', // override default from
-                subject: 'Deda Hospital Invoice',
-                template: 'invoice',
-                context: {
-                    name: data.name,
-                    total: data.total,
-                    address: data.address,
-                    invoiceNumber: data.invoiceNumber,
-                    email: data.email,
-                    date: moment(data.createdAt).format('DD-MMM-YYYY h:mm a'),
-                },
-            });
+	@Process('invoice')
+	async sendInvoiceEmail(job: Job<any>): Promise<any> {
+		const data = job.data;
 
-        } catch (error) {
-            console.log(error);
-            this.logger.error(`Failed to send registration email to '${data.email}'`, error.stack);
-        }
-    }
+		this.logger.log(`Sending invoice email to '${data.email}'`);
 
-    @Process('regimen')
-    async sendRegimenEmail(job: Job<any>): Promise<any> {
-        const data = job.data;
+		try {
+			return await this.mailerService.sendMail({
+				to: data.email,
+				from: '"DEDA Hospital" <noreply@dedahospital.com>', // override default from
+				subject: 'Deda Hospital Invoice',
+				template: 'invoice',
+				context: {
+					name: data.name,
+					total: data.total,
+					address: data.address,
+					invoiceNumber: data.invoiceNumber,
+					email: data.email,
+					date: moment(data.createdAt).format('DD-MMM-YYYY h:mm a'),
+				},
+			});
+		} catch (error) {
+			console.log(error);
+			this.logger.error(`Failed to send registration email to '${data.email}'`, error.stack);
+		}
+	}
 
-        this.logger.log(`Sending confirmation email to '${data.email}'`);
+	@Process('regimen')
+	async sendRegimenEmail(job: Job<any>): Promise<any> {
+		const data = job.data;
 
-        try {
-            return await this.mailerService.sendMail({
-                to: data.email,
-                from: '"DEDA Hospital" <noreply@dedahospital.com>', // override default from
-                subject: 'Drugs Purchase - Deda Pharmacy',
-                template: 'pharmacy',
-                context: {
-                    name: data.name,
-                    patientId: formatPID(data.id),
-                    date: moment(data.createdAt).format('DD-MMM-YYYY'),
-                    drugs: data.drugs,
-                },
-            });
+		this.logger.log(`Sending confirmation email to '${data.email}'`);
 
-        } catch (error) {
-            console.log(error);
-            this.logger.error(`Failed to send registration email to '${data.email}'`, error.stack);
-        }
-    }
+		try {
+			return await this.mailerService.sendMail({
+				to: data.email,
+				from: '"DEDA Hospital" <noreply@dedahospital.com>', // override default from
+				subject: 'Drugs Purchase - Deda Pharmacy',
+				template: 'pharmacy',
+				context: {
+					name: data.name,
+					patientId: formatPID(data.id),
+					date: moment(data.createdAt).format('DD-MMM-YYYY'),
+					drugs: data.drugs,
+				},
+			});
+		} catch (error) {
+			console.log(error);
+			this.logger.error(`Failed to send registration email to '${data.email}'`, error.stack);
+		}
+	}
 
-    @Process('discharge')
-    async sendDischargeEmail(job: Job<any>): Promise<any> {
-        const data = job.data;
+	@Process('discharge')
+	async sendDischargeEmail(job: Job<any>): Promise<any> {
+		const data = job.data;
 
-        this.logger.log(`Sending confirmation email to '${data.email}'`);
+		this.logger.log(`Sending confirmation email to '${data.email}'`);
 
-        try {
-            return await this.mailerService.sendMail({
-                to: data.email,
-                from: '"DEDA Hospital" <noreply@dedahospital.com>', // override default from
-                subject: 'Pay Later Bill - Deda Hospital',
-                template: 'discharge',
-                context: {
-                    name: data.name,
-                    patientId: formatPID(data.id),
-                    date: moment(data.createdAt).format('DD-MMM-YYYY'),
-                    services: data.services,
-                },
-            });
-
-        } catch (error) {
-            console.log(error);
-            this.logger.error(`Failed to send registration email to '${data.email}'`, error.stack);
-        }
-    }
+		try {
+			return await this.mailerService.sendMail({
+				to: data.email,
+				from: '"DEDA Hospital" <noreply@dedahospital.com>', // override default from
+				subject: 'Pay Later Bill - Deda Hospital',
+				template: 'discharge',
+				context: {
+					name: data.name,
+					patientId: formatPID(data.id),
+					date: moment(data.createdAt).format('DD-MMM-YYYY'),
+					services: data.services,
+				},
+			});
+		} catch (error) {
+			console.log(error);
+			this.logger.error(`Failed to send registration email to '${data.email}'`, error.stack);
+		}
+	}
 }

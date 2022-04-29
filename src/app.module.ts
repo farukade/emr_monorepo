@@ -2,7 +2,7 @@ import { CacheModule, MiddlewareConsumer, Module, NestModule } from '@nestjs/com
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
-import { appService } from './app.service';
+import { configService } from './config/config.service';
 import { HmoModule } from './modules/hmo/hmo.module';
 import { HRModule } from './modules/hr/hr.module';
 import { SettingsModule } from './modules/settings/settings.module';
@@ -26,49 +26,59 @@ import { ReportModule } from './modules/report/report.module';
 import { MigrationModule } from './modules/migration/migration.module';
 import * as redisStore from 'cache-manager-redis-store';
 import { RequestLoggerMiddleware } from './middleware/request-logger.middleware';
+import { AppService } from './app.service';
+import { BullModule } from '@nestjs/bull';
 
-fs.writeFileSync(
-    './ormconfig.json',
-    JSON.stringify(appService.getTypeOrmConfig(), null, 2),
-);
+fs.writeFileSync('./ormconfig.json', JSON.stringify(configService.getTypeOrmConfig(), null, 2));
 
 @Module({
-    imports: [
-        TypeOrmModule.forRoot(appService.getTypeOrmConfig()),
-        ScheduleModule.forRoot(),
-        CacheModule.registerAsync({
-            imports: [],
-            inject: [],
-            useFactory: async () => ({
-                store: redisStore,
-                host: process.env.REDIS_HOST,
-                port: process.env.REDIS_PORT,
-                ttl: 120,
-            }),
-        }),
-        AuthModule,
-        HmoModule,
-        HRModule,
-        PatientModule,
-        FinanceModule,
-        InventoryModule,
-        SettingsModule,
-        FrontdeskModule,
-        UtilityModule,
-        MailModule,
-        LoggerModule,
-        TasksModule,
-        CafeteriaModule,
-        ActivityModule,
-        AccountingModule,
-        ReportModule,
-        MigrationModule,
-    ],
-    controllers: [AppController],
-    providers: [AppGateway, JwtStrategy],
+	imports: [
+		TypeOrmModule.forRoot(configService.getTypeOrmConfig()),
+		ScheduleModule.forRoot(),
+		CacheModule.registerAsync({
+			imports: [],
+			inject: [],
+			useFactory: async () => ({
+				store: redisStore,
+				host: process.env.REDIS_HOST,
+				port: process.env.REDIS_PORT,
+				ttl: 120,
+			}),
+		}),
+		BullModule.forRootAsync({
+			useFactory: async () => ({
+				defaultJobOptions: {
+					removeOnComplete: true,
+				},
+				redis: {
+					host: process.env.REDIS_HOST,
+					port: Number(process.env.REDIS_PORT),
+				},
+			}),
+		}),
+		AuthModule,
+		HmoModule,
+		HRModule,
+		PatientModule,
+		FinanceModule,
+		InventoryModule,
+		SettingsModule,
+		FrontdeskModule,
+		UtilityModule,
+		MailModule,
+		LoggerModule,
+		TasksModule,
+		CafeteriaModule,
+		ActivityModule,
+		AccountingModule,
+		ReportModule,
+		MigrationModule,
+	],
+	controllers: [AppController],
+	providers: [AppService, AppGateway, JwtStrategy],
 })
 export class AppModule implements NestModule {
-    configure(consumer: MiddlewareConsumer): void {
-        consumer.apply(RequestLoggerMiddleware).forRoutes('*');
-    }
+	configure(consumer: MiddlewareConsumer): void {
+		consumer.apply(RequestLoggerMiddleware).forRoutes('*');
+	}
 }

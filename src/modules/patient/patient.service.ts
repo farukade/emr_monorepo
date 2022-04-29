@@ -93,8 +93,7 @@ export class PatientService {
 		private ancEnrollmentRepository: AntenatalEnrollmentRepository,
 		@InjectRepository(IvfEnrollmentRepository)
 		private ivfEnrollmentRepository: IvfEnrollmentRepository,
-	) {
-	}
+	) {}
 
 	async listAllPatients(options: PaginationOptionsInterface, params): Promise<Pagination> {
 		const { startDate, endDate, q, status } = params;
@@ -103,14 +102,16 @@ export class PatientService {
 		const page = options.page - 1;
 
 		if (q && q !== '') {
-			query.andWhere(new Brackets(qb => {
-				qb.where('LOWER(p.surname) Like :surname', { surname: `%${q.toLowerCase()}%` })
-					.orWhere('LOWER(p.other_names) Like :other_names', { other_names: `%${q.toLowerCase()}%` })
-					.orWhere('LOWER(p.email) Like :email', { email: `%${q.toLowerCase()}%` })
-					.orWhere('p.phone_number Like :phone', { phone: `%${q}%` })
-					.orWhere('p.legacy_patient_id Like :legacy_patient_id', { legacy_patient_id: `%${q}%` })
-					.orWhere('CAST(p.id AS text) Like :id', { id: `%${q}%` });
-			}));
+			query.andWhere(
+				new Brackets((qb) => {
+					qb.where('LOWER(p.surname) Like :surname', { surname: `%${q.toLowerCase()}%` })
+						.orWhere('LOWER(p.other_names) Like :other_names', { other_names: `%${q.toLowerCase()}%` })
+						.orWhere('LOWER(p.email) Like :email', { email: `%${q.toLowerCase()}%` })
+						.orWhere('p.phone_number Like :phone', { phone: `%${q}%` })
+						.orWhere('p.legacy_patient_id Like :legacy_patient_id', { legacy_patient_id: `%${q}%` })
+						.orWhere('CAST(p.id AS text) Like :id', { id: `%${q}%` });
+				}),
+			);
 		}
 
 		if (startDate && startDate !== '') {
@@ -126,7 +127,8 @@ export class PatientService {
 			query.andWhere('p.is_active = :status', { status: status === '1' });
 		}
 
-		const patients = await query.offset(page * options.limit)
+		const patients = await query
+			.offset(page * options.limit)
 			.limit(options.limit)
 			.orderBy('p.createdAt', 'DESC')
 			.getRawMany();
@@ -170,16 +172,19 @@ export class PatientService {
 	async findPatient(options, param): Promise<Patient[]> {
 		const { q, gender, is_opd } = param;
 
-		const query = this.patientRepository.createQueryBuilder('p')
+		const query = this.patientRepository
+			.createQueryBuilder('p')
 			.select('p.*')
-			.andWhere(new Brackets(qb => {
-				qb.where('LOWER(p.surname) Like :surname', { surname: `%${q.toLowerCase()}%` })
-					.orWhere('LOWER(p.other_names) Like :other_names', { other_names: `%${q.toLowerCase()}%` })
-					// .orWhere('LOWER(p.email) Like :email', { email: `%${q.toLowerCase()}%` })
-					.orWhere('p.legacy_patient_id Like :legacy_id', { legacy_id: `%${q}%` })
-					// .orWhere('p.phone_number Like :phone', { phone: `%${q}%` })
-					.orWhere('CAST(p.id AS text) LIKE :id', { id: `%${q}%` });
-			}));
+			.andWhere(
+				new Brackets((qb) => {
+					qb.where('LOWER(p.surname) Like :surname', { surname: `%${q.toLowerCase()}%` })
+						.orWhere('LOWER(p.other_names) Like :other_names', { other_names: `%${q.toLowerCase()}%` })
+						// .orWhere('LOWER(p.email) Like :email', { email: `%${q.toLowerCase()}%` })
+						.orWhere('p.legacy_patient_id Like :legacy_id', { legacy_id: `%${q}%` })
+						// .orWhere('p.phone_number Like :phone', { phone: `%${q}%` })
+						.orWhere('CAST(p.id AS text) LIKE :id', { id: `%${q}%` });
+				}),
+			);
 
 		if (is_opd && is_opd !== '') {
 			query.andWhere('p.is_out_patient = :is_opd', { is_opd: parseInt(is_opd, 10) === 1 });
@@ -233,7 +238,7 @@ export class PatientService {
 			// });
 
 			// if (!nok) {
-			const	nok = await this.patientNOKRepository.saveNOK(patientDto);
+			const nok = await this.patientNOKRepository.saveNOK(patientDto);
 			// }
 
 			let staff;
@@ -255,7 +260,9 @@ export class PatientService {
 			const patient = await this.patientRepository.savePatient(patientDto, nok, hmo, createdBy, staff);
 
 			const splits = patient.other_names.split(' ');
-			const message = `Dear ${patient.surname} ${splits.length > 0 ? splits[0] : patient.other_names}, welcome to the DEDA Family. Your ID/Folder number is ${formatPID(patient.id)}. Kindly save the number and provide it at all your appointment visits. Thank you.`;
+			const message = `Dear ${patient.surname} ${splits.length > 0 ? splits[0] : patient.other_names}, welcome to the DEDA Family. Your ID/Folder number is ${formatPID(
+				patient.id,
+			)}. Kindly save the number and provide it at all your appointment visits. Thank you.`;
 
 			const data: TransactionCreditDto = {
 				patient_id: patient.id,
@@ -294,6 +301,7 @@ export class PatientService {
 					createdAt: patient.createdAt,
 					message,
 				};
+
 				await this.mailService.sendMail(mail, 'registration');
 			} catch (e) {
 				console.log(e);
@@ -305,7 +313,6 @@ export class PatientService {
 			const pat = { ...patient, outstanding, balance, staff };
 
 			return { success: true, patient: pat };
-
 		} catch (err) {
 			await queryRunner.rollbackTransaction();
 			await queryRunner.release();
@@ -619,8 +626,7 @@ export class PatientService {
 	async getVouchers(id, urlParams): Promise<Voucher[]> {
 		const { startDate, endDate, status } = urlParams;
 
-		const query = this.voucherRepository.createQueryBuilder('v')
-			.where('v.patient_id = :id', { id });
+		const query = this.voucherRepository.createQueryBuilder('v').where('v.patient_id = :id', { id });
 		if (startDate && startDate !== '') {
 			const start = moment(startDate).endOf('day').toISOString();
 			query.andWhere(`q.createdAt >= '${start}'`);
@@ -639,17 +645,16 @@ export class PatientService {
 	async getTransactions(options: PaginationOptionsInterface, id, params): Promise<any> {
 		const { startDate, endDate, q, status, service_id } = params;
 
-		const query = this.transactionsRepository.createQueryBuilder('t').select('t.*')
-			.where('t.patient_id = :id', { id });
+		const query = this.transactionsRepository.createQueryBuilder('t').select('t.*').where('t.patient_id = :id', { id });
 
 		const page = options.page - 1;
 
 		if (q && q !== '') {
-			query.andWhere(new Brackets(qb => {
-				qb
-					.orWhere('LOWER(t.description) Like :description', { description: `%${q.toLowerCase()}%` })
-					.orWhere('t.transaction_details Like :details', { details: `%${q}%` });
-			}));
+			query.andWhere(
+				new Brackets((qb) => {
+					qb.orWhere('LOWER(t.description) Like :description', { description: `%${q.toLowerCase()}%` }).orWhere('t.transaction_details Like :details', { details: `%${q}%` });
+				}),
+			);
 		}
 
 		if (startDate && startDate !== '') {
@@ -682,7 +687,8 @@ export class PatientService {
 			}
 		}
 
-		const transactions = await query.offset(page * options.limit)
+		const transactions = await query
+			.offset(page * options.limit)
 			.limit(options.limit)
 			.orderBy('t.createdAt', 'DESC')
 			.getRawMany();
@@ -744,8 +750,7 @@ export class PatientService {
 	async getDocuments(options: PaginationOptionsInterface, id, params): Promise<any> {
 		const { startDate, endDate, documentType } = params;
 
-		const query = this.patientDocumentRepository.createQueryBuilder('d').select('d.*')
-			.where('d.patient_id = :id', { id });
+		const query = this.patientDocumentRepository.createQueryBuilder('d').select('d.*').where('d.patient_id = :id', { id });
 
 		const page = options.page - 1;
 
@@ -763,7 +768,8 @@ export class PatientService {
 			query.andWhere('d.document_type = :document_type', { document_type: documentType });
 		}
 
-		const documents = await query.offset(page * options.limit)
+		const documents = await query
+			.offset(page * options.limit)
 			.limit(options.limit)
 			.orderBy('d.createdAt', 'DESC')
 			.getRawMany();
@@ -787,9 +793,7 @@ export class PatientService {
 	async getVitals(id, urlParams): Promise<PatientVital[]> {
 		const { startDate, endDate } = urlParams;
 
-		const query = this.patientVitalRepository.createQueryBuilder('q')
-			.innerJoin(Patient, 'patient', 'q.patient = patient.id')
-			.where('q.patient = :id', { id });
+		const query = this.patientVitalRepository.createQueryBuilder('q').innerJoin(Patient, 'patient', 'q.patient = patient.id').where('q.patient = :id', { id });
 		if (startDate && startDate !== '') {
 			const start = moment(startDate).endOf('day').toISOString();
 			query.andWhere(`q.createdAt >= '${start}'`);
@@ -820,7 +824,7 @@ export class PatientService {
 
 			const nicu = await this.nicuRepository.findOne({ where: { patient, status: 0 } });
 
-			const ivf = null ; // await this.ivfEnrollmentRepository.findOne({ where: { patient, status: 0 } });
+			const ivf = null; // await this.ivfEnrollmentRepository.findOne({ where: { patient, status: 0 } });
 
 			const antenatal = await this.ancEnrollmentRepository.findOne({ where: { patient, status: 0 } });
 
@@ -869,9 +873,7 @@ export class PatientService {
 	async getDiagnoses(id, urlParams: any): Promise<PatientNote[]> {
 		const { startDate, endDate, status, admission_id, nicu_id } = urlParams;
 
-		const query = this.patientNoteRepository.createQueryBuilder('q')
-			.where('q.patient_id = :id', { id })
-			.andWhere('q.type = :type', { type: 'diagnosis' });
+		const query = this.patientNoteRepository.createQueryBuilder('q').where('q.patient_id = :id', { id }).andWhere('q.type = :type', { type: 'diagnosis' });
 
 		if (startDate && startDate !== '') {
 			const start = moment(startDate).endOf('day').toISOString();
@@ -901,7 +903,8 @@ export class PatientService {
 	async getAlerts(id: number, params): Promise<PatientAlert[]> {
 		const { category } = params;
 
-		const query = this.patientAlertRepository.createQueryBuilder('q')
+		const query = this.patientAlertRepository
+			.createQueryBuilder('q')
 			.innerJoin(Patient, 'patient', 'q.patient = patient.id')
 			.where('q.patient = :id', { id })
 			.andWhere('q.closed = :closed', { closed: false });
@@ -998,7 +1001,8 @@ export class PatientService {
 		try {
 			const patient = await this.patientRepository.findOne(id);
 
-			const result = await this.patientVitalRepository.createQueryBuilder('v')
+			const result = await this.patientVitalRepository
+				.createQueryBuilder('v')
 				.select(['v.patientId', 'DATE(v.createdAt) AS created_at'])
 				.groupBy('CAST(v.createdAt AS DATE)')
 				.addGroupBy('v.patientId')
@@ -1014,10 +1018,11 @@ export class PatientService {
 				const date: string = moment(item.created_at).format('YYYY-MM-DD');
 
 				item.data = await this.patientVitalRepository.find({
-					where: { patient, createdAt: Raw(alias => `CAST(${alias} AS DATE) = '${date}'`) },
+					where: { patient, createdAt: Raw((alias) => `CAST(${alias} AS DATE) = '${date}'`) },
 				});
 
-				const diagnoses = await this.patientNoteRepository.createQueryBuilder('d')
+				const diagnoses = await this.patientNoteRepository
+					.createQueryBuilder('d')
 					.select('d.*')
 					.where('d.patient_id = :id', { id })
 					.andWhere('d.type = :type', { type: 'diagnosis' })
