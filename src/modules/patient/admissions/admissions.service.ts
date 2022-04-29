@@ -62,27 +62,18 @@ export class AdmissionsService {
 		private admissionRoomRepository: AdmissionRoomRepository,
 	) {}
 
-	async getAdmissions(
-		options: PaginationOptionsInterface,
-		params,
-	): Promise<Pagination> {
+	async getAdmissions(options: PaginationOptionsInterface, params): Promise<Pagination> {
 		const { startDate, endDate, patient_id, status } = params;
 
-		const query = this.admissionRepository
-			.createQueryBuilder('q')
-			.select('q.*');
+		const query = this.admissionRepository.createQueryBuilder('q').select('q.*');
 
 		if (startDate && startDate !== '') {
-			const start = moment(startDate)
-				.endOf('day')
-				.toISOString();
+			const start = moment(startDate).endOf('day').toISOString();
 			query.andWhere(`q.createdAt >= '${start}'`);
 		}
 
 		if (endDate && endDate !== '') {
-			const end = moment(endDate)
-				.endOf('day')
-				.toISOString();
+			const end = moment(endDate).endOf('day').toISOString();
 			query.andWhere(`q.createdAt <= '${end}'`);
 		}
 
@@ -111,9 +102,7 @@ export class AdmissionsService {
 					relations: ['nextOfKin', 'immunization', 'hmo'],
 				});
 
-				const admission = patient.admission_id
-					? await this.admissionRepository.findOne(patient.admission_id)
-					: null;
+				const admission = patient.admission_id ? await this.admissionRepository.findOne(patient.admission_id) : null;
 
 				item.patient = { ...patient, admission };
 			}
@@ -125,9 +114,7 @@ export class AdmissionsService {
 			}
 
 			item.admitted_by = await getStaff(item.createdBy);
-			item.dischargedBy = item.discharged_by
-				? await this.staffRepository.findOne(item.discharged_by)
-				: null;
+			item.dischargedBy = item.discharged_by ? await this.staffRepository.findOne(item.discharged_by) : null;
 
 			result = [...result, item];
 		}
@@ -141,11 +128,7 @@ export class AdmissionsService {
 		};
 	}
 
-	async saveAdmission(
-		id: string,
-		createDto: CreateAdmissionDto,
-		username: string,
-	): Promise<any> {
+	async saveAdmission(id: string, createDto: CreateAdmissionDto, username: string): Promise<any> {
 		try {
 			const { health_state, reason, nicu } = createDto;
 
@@ -153,7 +136,22 @@ export class AdmissionsService {
 				relations: ['nextOfKin', 'immunization', 'hmo'],
 			});
 
-			let admission: Nicu | Admission;
+			let check: Admission | Nicu;
+			if (nicu) {
+				// check nicu
+				check = await this.nicuRepository.findOne({ where: { patient, status: 0 } });
+				if (check) {
+					return { success: false, message: 'Error, patient already admitted to NICU' };
+				}
+			} else {
+				// check admission
+				check = await this.admissionRepository.findOne({ where: { patient, status: 0 } });
+				if (check) {
+					return { success: false, message: 'Error, patient already admitted' };
+				}
+			}
+
+			let admission: Admission | Nicu;
 
 			const data = {
 				patient,
@@ -185,7 +183,6 @@ export class AdmissionsService {
 					.where('patient_id = :id', { id: patient.id })
 					.andWhere('status = :status', { status: 0 })
 					.execute();
-				// tslint:disable-next-line:no-empty
 			} catch (e) {}
 
 			return { success: true, patient };
@@ -194,11 +191,7 @@ export class AdmissionsService {
 		}
 	}
 
-	async startDischarge(
-		id: number,
-		params: any,
-		username: string,
-	): Promise<any> {
+	async startDischarge(id: number, params: any, username: string): Promise<any> {
 		try {
 			const { note } = params;
 
@@ -227,11 +220,7 @@ export class AdmissionsService {
 		}
 	}
 
-	async completeDischarge(
-		id: number,
-		params: any,
-		username: string,
-	): Promise<any> {
+	async completeDischarge(id: number, params: any, username: string): Promise<any> {
 		try {
 			const { note } = params;
 
@@ -273,9 +262,7 @@ export class AdmissionsService {
 				}
 			}
 
-			const patient = await this.patientRepository.findOne(
-				admission.patient.id,
-			);
+			const patient = await this.patientRepository.findOne(admission.patient.id);
 			patient.admission_id = null;
 			await patient.save();
 
@@ -316,9 +303,7 @@ export class AdmissionsService {
 					};
 				}
 
-				const previousRoom = await this.roomRepository.findOne(
-					admission.room.id,
-				);
+				const previousRoom = await this.roomRepository.findOne(admission.room.id);
 				previousRoom.status = 'Not Occupied';
 				previousRoom.admission_id = null;
 				await previousRoom.save();
@@ -396,9 +381,7 @@ export class AdmissionsService {
 
 		const page = options.page - 1;
 
-		const query = this.clinicalTaskRepository
-			.createQueryBuilder('q')
-			.select('q.*');
+		const query = this.clinicalTaskRepository.createQueryBuilder('q').select('q.*');
 
 		if (patient_id && patient_id !== '') {
 			query.andWhere('q.patient_id = :patient_id', { patient_id });
@@ -494,9 +477,7 @@ export class AdmissionsService {
 			vital.deletedBy = username;
 			await vital.save();
 
-			const fluid = await getConnection()
-				.getRepository(PatientFluidChart)
-				.findOne(item.id);
+			const fluid = await getConnection().getRepository(PatientFluidChart).findOne(item.id);
 			if (fluid) {
 				fluid.deletedBy = username;
 				await fluid.save();
@@ -509,11 +490,7 @@ export class AdmissionsService {
 		return result.softRemove();
 	}
 
-	async saveClinicalTasks(
-		patientId: number,
-		params: any,
-		username: string,
-	): Promise<any> {
+	async saveClinicalTasks(patientId: number, params: any, username: string): Promise<any> {
 		try {
 			const { tasks, prescription } = params;
 
@@ -533,11 +510,7 @@ export class AdmissionsService {
 
 			let request;
 			if (prescription.items && prescription.items.length > 0) {
-				request = await PatientRequestHelper.handlePharmacyRequest(
-					prescription,
-					patient,
-					username,
-				);
+				request = await PatientRequestHelper.handlePharmacyRequest(prescription, patient, username);
 			}
 
 			let results = [];
@@ -550,8 +523,7 @@ export class AdmissionsService {
 					newTask.taskType = 'regimen';
 					newTask.dose = task?.dose?.toString() || '';
 					newTask.drug = task.drug;
-					newTask.request =
-						request?.data && request?.data.length > 0 ? request.data[0] : null;
+					newTask.request = request?.data && request?.data.length > 0 ? request.data[0] : null;
 					newTask.frequency = task.frequency;
 					newTask.taskCount = task.taskNumber;
 				} else if (task.title === 'Fluid Chart') {
@@ -568,14 +540,8 @@ export class AdmissionsService {
 
 				newTask.interval = task.interval;
 				newTask.intervalType = task.intervalType;
-				newTask.startTime =
-					task.startTime === ''
-						? moment().format('YYYY-MM-DD HH:mm:ss')
-						: moment(task.startTime).format('YYYY-MM-DD HH:mm:ss');
-				newTask.nextTime =
-					task.startTime === ''
-						? moment().format('YYYY-MM-DD HH:mm:ss')
-						: moment(task.startTime).format('YYYY-MM-DD HH:mm:ss');
+				newTask.startTime = task.startTime === '' ? moment().format('YYYY-MM-DD HH:mm:ss') : moment(task.startTime).format('YYYY-MM-DD HH:mm:ss');
+				newTask.nextTime = task.startTime === '' ? moment().format('YYYY-MM-DD HH:mm:ss') : moment(task.startTime).format('YYYY-MM-DD HH:mm:ss');
 				newTask.patient = patient;
 				newTask.admission = admission;
 				newTask.nicu = nicu;
@@ -593,17 +559,11 @@ export class AdmissionsService {
 		}
 	}
 
-	async getWardRounds(
-		options: PaginationOptionsInterface,
-		params: any,
-	): Promise<any> {
+	async getWardRounds(options: PaginationOptionsInterface, params: any): Promise<any> {
 		try {
 			const { type, item_id } = params;
 
-			const query = this.patientNoteRepository
-				.createQueryBuilder('q')
-				.select('q.*')
-				.where('q.visit = :visit', { visit: 'soap' });
+			const query = this.patientNoteRepository.createQueryBuilder('q').select('q.*').where('q.visit = :visit', { visit: 'soap' });
 
 			if (type && type === 'admission') {
 				query.andWhere('q.admission_id = :id', { id: item_id });
@@ -641,30 +601,18 @@ export class AdmissionsService {
 		} catch (err) {
 			return {
 				success: false,
-				error: `${err.message ||
-					'problem fetching soap at the moment please try again later'}`,
+				error: `${err.message || 'problem fetching soap at the moment please try again later'}`,
 			};
 		}
 	}
 
 	async saveSoap(param: SoapDto, createdBy: string) {
 		try {
-			const {
-				patient_id,
-				complaints,
-				treatmentPlan,
-				physicalExaminationSummary,
-				item_id,
-				type,
-			} = param;
+			const { patient_id, complaints, treatmentPlan, physicalExaminationSummary, item_id, type } = param;
 
-			const admission =
-				type === 'admission'
-					? await this.admissionRepository.findOne(item_id)
-					: null;
+			const admission = type === 'admission' ? await this.admissionRepository.findOne(item_id) : null;
 
-			const nicu =
-				type === 'nicu' ? await this.nicuRepository.findOne(item_id) : null;
+			const nicu = type === 'nicu' ? await this.nicuRepository.findOne(item_id) : null;
 
 			const patient = await this.patientRepository.findOne(patient_id);
 

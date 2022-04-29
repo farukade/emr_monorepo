@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import fs = require('fs');
 import { Connection } from 'typeorm';
 import { Factory, Seeder } from 'typeorm-seeding';
@@ -10,7 +11,6 @@ export default class CreateStates implements Seeder {
       fs.readFileSync('src/database/seeds/dumbs/states.json', 'utf8'),
     );
 
-    // tslint:disable-next-line:forin
     for (const i in states) {
       try {
           const s = states[i];

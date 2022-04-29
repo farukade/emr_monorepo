@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Connection } from 'typeorm';
 import { Factory, Seeder } from 'typeorm-seeding';
 import { Role } from '../../modules/settings/entities/role.entity';
@@ -25,7 +26,7 @@ export default class CreateRole implements Seeder {
             { name: 'IVF', slug: 'ivf' },
             { name: 'Phlebotomist', slug: 'phlebotomist' },
         ];
-        // tslint:disable-next-line:forin
+        
         for (const i in roles) {
             try {
                 const s = roles[i];

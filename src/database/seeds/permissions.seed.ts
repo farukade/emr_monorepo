@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import fs = require('fs');
 import { Connection } from 'typeorm';
 import { Factory, Seeder } from 'typeorm-seeding';
@@ -9,7 +10,7 @@ export default class CreatePermissions implements Seeder {
         const permissions = JSON.parse(
             fs.readFileSync('src/database/seeds/dumbs/permissions.json', 'utf8'),
         );
-        // tslint:disable-next-line:forin
+        
         for (const i in permissions) {
             try {
                 const s = permissions[i];

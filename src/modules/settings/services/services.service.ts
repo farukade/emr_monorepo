@@ -20,7 +20,7 @@ import { RoomCategoryRepository } from '../room/room.category.repository';
 import * as path from 'path';
 import * as moment from 'moment';
 
-// tslint:disable-next-line:no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const Excel = require('exceljs');
 
 @Injectable()
@@ -42,8 +42,7 @@ export class ServicesService {
 		private drugRepository: DrugRepository,
 		@InjectRepository(RoomCategoryRepository)
 		private roomCategoryRepository: RoomCategoryRepository,
-	) {
-	}
+	) {}
 
 	async getAllServices(options: PaginationOptionsInterface, params): Promise<Pagination> {
 		const { q, hmo_id, category_id } = params;
@@ -55,7 +54,7 @@ export class ServicesService {
 		let where = {};
 
 		if (q && q !== '') {
-			where = { ...where, name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`) };
+			where = { ...where, name: Raw((alias) => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`) };
 		}
 
 		if (category_id && category_id !== '') {
@@ -68,7 +67,7 @@ export class ServicesService {
 			relations: ['category'],
 			order: { name: 'ASC' },
 			take: options.limit,
-			skip: (page * options.limit),
+			skip: page * options.limit,
 		});
 
 		let rs = [];
@@ -102,7 +101,7 @@ export class ServicesService {
 		let where = {};
 
 		if (q && q !== '') {
-			where = { ...where, name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`) };
+			where = { ...where, name: Raw((alias) => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`) };
 		}
 
 		const [query, total] = await this.serviceRepository.findAndCount({
@@ -110,7 +109,7 @@ export class ServicesService {
 			relations: ['category'],
 			order: { name: 'ASC' },
 			take: options.limit,
-			skip: (page * options.limit),
+			skip: page * options.limit,
 		});
 
 		if (!nsc || (nsc && nsc === '')) {
@@ -160,7 +159,7 @@ export class ServicesService {
 				result = [...result, { ...item, serviceCost }];
 			}
 
-			const services: ServicesInterface[] = result.map(s => ({
+			const services: ServicesInterface[] = result.map((s) => ({
 				id: s.id,
 				code: s.code,
 				name: s.name,
@@ -177,7 +176,7 @@ export class ServicesService {
 				{ header: 'Tariff', key: 'tariff', width: 20 },
 			];
 
-			services.forEach((data, index) => {
+			services.forEach((data) => {
 				worksheet.addRow({ ...data });
 			});
 
@@ -204,7 +203,7 @@ export class ServicesService {
 			const worksheet = workbook.getWorksheet(1);
 
 			let items = [];
-			worksheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
+			worksheet.eachRow({ includeEmpty: true }, (row) => {
 				items = [...items, { ...row.values }];
 			});
 
@@ -256,7 +255,7 @@ export class ServicesService {
 			code = `${alphaCode.toLocaleUpperCase()}${formatPID(index, lastService.code.length - 2)}`;
 		} else {
 			const names = category.name.split(' ');
-			alphaCode = names.length > 1 ? names.map(n => n.substring(0, 1)).join('') : category.name.substring(0, 2);
+			alphaCode = names.length > 1 ? names.map((n) => n.substring(0, 1)).join('') : category.name.substring(0, 2);
 			code = `${alphaCode.toLocaleUpperCase()}${formatPID(1)}`;
 		}
 

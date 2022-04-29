@@ -1,10 +1,11 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 import * as fs from 'fs';
 import * as path from 'path';
 import * as puppeteer from 'puppeteer';
 import * as hbs from 'handlebars';
 import * as utils from 'util';
 import { SmsHistory } from '../entities/sms.entity';
-import { Brackets, getConnection, Not } from 'typeorm';
+import { getConnection } from 'typeorm';
 import { User } from '../../modules/auth/entities/user.entity';
 import { StaffDetails } from '../../modules/hr/staff/entities/staff_details.entity';
 import { LogEntity } from '../../modules/logger/entities/logger.entity';
@@ -22,18 +23,16 @@ import { Nicu } from '../../modules/patient/nicu/entities/nicu.entity';
 import { Voucher } from '../../modules/finance/vouchers/voucher.entity';
 import { PatientRequestItem } from '../../modules/patient/entities/patient_request_items.entity';
 import * as numeral from 'numeral';
-// @ts-ignore
 import * as startCase from 'lodash.startcase';
 
-// tslint:disable-next-line:no-var-requires
 const mysql = require('mysql2/promise');
 
-// tslint:disable-next-line:no-var-requires
 const bluebird = require('bluebird');
 
-// tslint:disable-next-line:no-var-requires
 const Say = require('say').Say;
 const say = new Say();
+
+require('dotenv').config();
 
 const apiKey = process.env.API_KEY;
 const apiSecret = process.env.API_SECRET;
@@ -43,8 +42,7 @@ const user = process.env.MYSQL_USER;
 const password = process.env.MYSQL_PASSWORD;
 const database = process.env.MYSQL_DATABASE;
 
-// tslint:disable-next-line:no-var-requires prefer-const
-let smsglobal = require('smsglobal')(apiKey, apiSecret);
+const smsglobal = require('smsglobal')(apiKey, apiSecret);
 
 export const mysqlConnect = async () => {
 	return await mysql.createConnection({
@@ -57,7 +55,7 @@ export const mysqlConnect = async () => {
 	});
 };
 
-export const slugify = text => {
+export const slugify = (text) => {
 	return text
 		.toString()
 		.toLowerCase()
@@ -69,15 +67,11 @@ export const slugify = text => {
 };
 
 export const updateImmutable = (list, payload) => {
-	const data = list.find(d => d.id === payload.id);
+	const data = list.find((d) => d.id === payload.id);
 	if (data) {
-		const index = list.findIndex(d => d.id === payload.id);
+		const index = list.findIndex((d) => d.id === payload.id);
 
-		return [
-			...list.slice(0, index),
-			{ ...data, ...payload },
-			...list.slice(index + 1),
-		];
+		return [...list.slice(0, index), { ...data, ...payload }, ...list.slice(index + 1)];
 	}
 
 	return list;
@@ -100,44 +94,17 @@ export const generatePDF = async (template: string, data) => {
 	await browser.close();
 };
 
-export const sentenceCase = text => {
+export const sentenceCase = (text) => {
 	return text
 		.toLowerCase()
 		.split(' ')
-		.map(word => {
+		.map((word) => {
 			return word.replace(word[0], word[0].toUpperCase());
 		})
 		.join(' ');
 };
 
-export const alphabets = [
-	'A',
-	'B',
-	'C',
-	'D',
-	'E',
-	'F',
-	'G',
-	'H',
-	'I',
-	'J',
-	'K',
-	'L',
-	'M',
-	'N',
-	'O',
-	'P',
-	'Q',
-	'R',
-	'S',
-	'T',
-	'U',
-	'V',
-	'W',
-	'X',
-	'Y',
-	'Z',
-];
+export const alphabets = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
 
 export const sendSMS = async (phone, message) => {
 	const formatedPhone = formatPhone(phone);
@@ -147,8 +114,7 @@ export const sendSMS = async (phone, message) => {
 		message,
 	};
 
-	// tslint:disable-next-line:only-arrow-functions
-	smsglobal.sms.send(payload, async function(error, response) {
+	smsglobal.sms.send(payload, async function (error, response) {
 		if (response) {
 			console.log(JSON.stringify(response));
 			if (response.statusCode === 200) {
@@ -211,7 +177,7 @@ const saveHistory = async (phone, data, status) => {
 	}
 };
 
-const formatPhone = num => {
+const formatPhone = (num) => {
 	if (num[0] === '+') {
 		return num;
 	} else {
@@ -223,7 +189,7 @@ const formatPhone = num => {
 	}
 };
 
-export const formatPID = (id, l: number = 8) => {
+export const formatPID = (id: number, l = 8) => {
 	let zeros = '';
 	let len = 10;
 	while (len >= 0) {
@@ -234,7 +200,7 @@ export const formatPID = (id, l: number = 8) => {
 	return `${zeros}${String(id)}`.slice(0 - l);
 };
 
-export const formatPatientId = patient => {
+export const formatPatientId = (patient) => {
 	if (!patient) {
 		return '';
 	}
@@ -246,20 +212,15 @@ export const formatPatientId = patient => {
 		len--;
 	}
 
-	const legacyId =
-		patient.legacy_patient_id && patient.legacy_patient_id !== ''
-			? ` [${patient.legacy_patient_id}]`
-			: '';
+	const legacyId = patient.legacy_patient_id && patient.legacy_patient_id !== '' ? ` [${patient.legacy_patient_id}]` : '';
 
 	return `${formattedId}${legacyId}`;
 };
 
 export const getStaff = async (username: string): Promise<StaffDetails> => {
 	const connection = getConnection();
-	// tslint:disable-next-line:no-shadowed-variable
-	const user = await connection
-		.getRepository(User)
-		.findOne({ where: { username } });
+
+	const user = await connection.getRepository(User).findOne({ where: { username } });
 
 	return await connection.getRepository(StaffDetails).findOne({
 		where: { user },
@@ -267,7 +228,7 @@ export const getStaff = async (username: string): Promise<StaffDetails> => {
 	});
 };
 
-export const getOutstanding = async patient_id => {
+export const getOutstanding = async (patient_id) => {
 	const connection = getConnection();
 	const patient = await connection.getRepository(Patient).findOne(patient_id);
 
@@ -276,8 +237,8 @@ export const getOutstanding = async patient_id => {
 		.createQueryBuilder('q')
 		.select('q.amount as amount, q.bill_source as bill_source')
 		.where('q.patient_id = :patient_id', { patient_id })
-		.andWhere('q.bill_source != \'credit-deposit\'')
-		.andWhere('q.bill_source != \'credit-transfer\'')
+		.andWhere("q.bill_source != 'credit-deposit'")
+		.andWhere("q.bill_source != 'credit-transfer'")
 		.getRawMany();
 
 	return patient.credit_limit > 0
@@ -287,29 +248,24 @@ export const getOutstanding = async patient_id => {
 		  }, 0);
 };
 
-export const getBalance = async patient_id => {
+export const getBalance = async (patient_id) => {
 	const connection = getConnection();
-	const patient = await connection.getRepository(Patient).findOne(patient_id);
 
 	const transactions = await connection
 		.getRepository(Transaction)
 		.createQueryBuilder('q')
 		.select('q.amount as amount, q.bill_source as bill_source')
 		.where('q.patient_id = :patient_id', { patient_id })
-		.andWhere('q.bill_source != \'credit-deposit\'')
-		.andWhere('q.bill_source != \'credit-transfer\'')
+		.andWhere("q.bill_source != 'credit-deposit'")
+		.andWhere("q.bill_source != 'credit-transfer'")
 		.getRawMany();
-	// console.log(transactions);
 
 	return transactions.reduce((totalAmount, item) => {
 		return totalAmount + item.amount;
 	}, 0);
 };
 
-export const getDepositBalance = async (
-	user_id: number,
-	isPatient: boolean,
-) => {
+export const getDepositBalance = async (user_id: number, isPatient: boolean) => {
 	const connection = getConnection();
 
 	let deposits = [];
@@ -332,7 +288,7 @@ export const getDepositBalance = async (
 	}, 0);
 };
 
-export const getLastAppointment = async patient_id => {
+export const getLastAppointment = async (patient_id) => {
 	const connection = getConnection();
 	const patient = await connection.getRepository(Patient).findOne(patient_id);
 
@@ -342,33 +298,20 @@ export const getLastAppointment = async patient_id => {
 	});
 };
 
-export const fixAmount = amount => {
+export const fixAmount = (amount) => {
 	const price = amount.split(',').join('');
 	return amount === '' ? 0 : price;
 };
 
-const parsePID = pid => {
-	const numbers = [
-		'Zero',
-		'One',
-		'Two',
-		'Three',
-		'Four',
-		'Five',
-		'Six',
-		'Seven',
-		'Eight',
-		'Nine',
-	];
-	return [...pid.toString()].map(p => numbers[p]).join(' ');
+const parsePID = (pid) => {
+	const numbers = ['Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+	return [...pid.toString()].map((p) => numbers[p]).join(' ');
 };
 
-export const callPatient1 = async pid => {
+export const callPatient1 = async (pid) => {
 	try {
-		const text = `Patient ${parsePID(
-			pid,
-		)}, please proceed to consulting Room 3`;
-		say.speak(text, null, 1.0, err => {
+		const text = `Patient ${parsePID(pid)}, please proceed to consulting Room 3`;
+		say.speak(text, null, 1.0, (err) => {
 			if (err) {
 				console.error(err);
 				return;
@@ -385,10 +328,8 @@ export const callPatient1 = async pid => {
 export const callPatient = async (appointment: Appointment, room) => {
 	try {
 		if (process.env.DEBUG === 'false') {
-			const text = `Patient ${parsePID(
-				appointment.patient.id,
-			)}, please proceed to consulting ${room.name}`;
-			say.speak(text, null, 1.0, err => {
+			const text = `Patient ${parsePID(appointment.patient.id)}, please proceed to consulting ${room.name}`;
+			say.speak(text, null, 1.0, (err) => {
 				if (err) {
 					console.error(err);
 					return;
@@ -403,19 +344,11 @@ export const callPatient = async (appointment: Appointment, room) => {
 	}
 };
 
-export const hasNumber = myString => {
+export const hasNumber = (myString) => {
 	return /\d/.test(myString);
 };
 
-export const postDebit = async (
-	data: TransactionCreditDto,
-	service: ServiceCost,
-	voucher: Voucher,
-	requestItem: PatientRequestItem,
-	appointment: Appointment,
-	hmo: HmoScheme,
-) => {
-	// tslint:disable-next-line:max-line-length
+export const postDebit = async (data: TransactionCreditDto, service: ServiceCost, voucher: Voucher, requestItem: PatientRequestItem, appointment: Appointment, hmo: HmoScheme) => {
 	const {
 		patient_id,
 		username,
@@ -441,18 +374,10 @@ export const postDebit = async (
 
 	const connection = getConnection();
 
-	const patient = patient_id
-		? await connection.getRepository(Patient).findOne(patient_id)
-		: null;
-	const admission = admission_id
-		? await connection.getRepository(Admission).findOne(admission_id)
-		: null;
-	const nicu = nicu_id
-		? await connection.getRepository(Nicu).findOne(nicu_id)
-		: null;
-	const staff = staff_id
-		? await connection.getRepository(StaffDetails).findOne(staff_id)
-		: null;
+	const patient = patient_id ? await connection.getRepository(Patient).findOne(patient_id) : null;
+	const admission = admission_id ? await connection.getRepository(Admission).findOne(admission_id) : null;
+	const nicu = nicu_id ? await connection.getRepository(Nicu).findOne(nicu_id) : null;
+	const staff = staff_id ? await connection.getRepository(StaffDetails).findOne(staff_id) : null;
 
 	const staffHmo = await connection.getRepository(HmoScheme).findOne(5);
 	const isStaffHmo = staffHmo && hmo && staffHmo.id === hmo.id;
@@ -460,9 +385,7 @@ export const postDebit = async (
 	let difference = 0;
 	let paypoint: Transaction;
 	if (hmo.coverageType !== 'full') {
-		const privateHmo = await connection
-			.getRepository(HmoScheme)
-			.findOne({ where: { name: 'Private' } });
+		const privateHmo = await connection.getRepository(HmoScheme).findOne({ where: { name: 'Private' } });
 		const privateCost = await connection.getRepository(ServiceCost).findOne({
 			where: { code: service.code, hmo: privateHmo },
 		});
@@ -515,11 +438,7 @@ export const postDebit = async (
 	transaction.amount_paid = amount_paid;
 	transaction.change = change;
 	transaction.description = description;
-	transaction.payment_type = isStaffHmo
-		? 'self'
-		: hmo.name !== 'Private'
-		? 'HMO'
-		: 'self';
+	transaction.payment_type = isStaffHmo ? 'self' : hmo.name !== 'Private' ? 'HMO' : 'self';
 	transaction.payment_method = payment_method;
 	transaction.transaction_type = 'debit';
 	transaction.part_payment_expiry_date = part_payment_expiry_date;
@@ -546,15 +465,7 @@ export const postDebit = async (
 	return paypoint;
 };
 
-export const postCredit = async (
-	data: TransactionCreditDto,
-	service,
-	voucher,
-	requestItem,
-	appointment,
-	hmo,
-) => {
-	// tslint:disable-next-line:max-line-length
+export const postCredit = async (data: TransactionCreditDto, service, voucher, requestItem, appointment, hmo) => {
 	const {
 		patient_id,
 		username,
@@ -580,18 +491,10 @@ export const postCredit = async (
 
 	const connection = getConnection();
 
-	const patient = patient_id
-		? await connection.getRepository(Patient).findOne(patient_id)
-		: null;
-	const admission = admission_id
-		? await connection.getRepository(Admission).findOne(admission_id)
-		: null;
-	const nicu = nicu_id
-		? await connection.getRepository(Nicu).findOne(nicu_id)
-		: null;
-	const staff = staff_id
-		? await connection.getRepository(StaffDetails).findOne(staff_id)
-		: null;
+	const patient = patient_id ? await connection.getRepository(Patient).findOne(patient_id) : null;
+	const admission = admission_id ? await connection.getRepository(Admission).findOne(admission_id) : null;
+	const nicu = nicu_id ? await connection.getRepository(Nicu).findOne(nicu_id) : null;
+	const staff = staff_id ? await connection.getRepository(StaffDetails).findOne(staff_id) : null;
 
 	const isStaffHmo = await connection.getRepository(HmoScheme).findOne(hmo.id);
 
@@ -607,11 +510,7 @@ export const postCredit = async (
 	transaction.amount_paid = amount_paid;
 	transaction.change = change;
 	transaction.description = description;
-	transaction.payment_type = isStaffHmo
-		? 'self'
-		: hmo.name !== 'Private'
-		? 'HMO'
-		: 'self';
+	transaction.payment_type = isStaffHmo ? 'self' : hmo.name !== 'Private' ? 'HMO' : 'self';
 	transaction.payment_method = payment_method;
 	transaction.transaction_type = 'credit';
 	transaction.part_payment_expiry_date = part_payment_expiry_date;
@@ -649,9 +548,7 @@ export const getSerialCode = async (type: string) => {
 
 export const createServiceCost = async (code: string, scheme: HmoScheme) => {
 	const connection = getConnection();
-	const service = await connection
-		.getRepository(Service)
-		.findOne({ where: { code } });
+	const service = await connection.getRepository(Service).findOne({ where: { code } });
 	if (service) {
 		const costItem = new ServiceCost();
 		costItem.code = code;
@@ -664,40 +561,27 @@ export const createServiceCost = async (code: string, scheme: HmoScheme) => {
 	return null;
 };
 
-export const formatCurrency = (amount, abs = false) =>
-	`₦${numeral(abs ? Math.abs(amount) : amount).format('0,0.00')}`;
+export const formatCurrency = (amount, abs = false) => `₦${numeral(abs ? Math.abs(amount) : amount).format('0,0.00')}`;
 
-export const parseSource = source =>
-	source === 'ward' ? 'Room' : startCase(source);
+export const parseSource = (source) => (source === 'ward' ? 'Room' : startCase(source));
 
-export const parseDescription = item => {
+export const parseDescription = (item) => {
 	if (!item) {
 		return '--';
 	}
 
-	if (
-		item.bill_source === 'ward' ||
-		item.bill_source === 'nicu-accommodation'
-	) {
+	if (item.bill_source === 'ward' || item.bill_source === 'nicu-accommodation') {
 		return `: ${item.description}`;
 	}
 
 	if (item.bill_source === 'drugs') {
 		const reqItem = item.patientRequestItem;
 
-		return ` : ${reqItem.fill_quantity} ${reqItem.drug.unitOfMeasure} of ${
-			reqItem.drugGeneric.name
-		} (${reqItem.drug.name}) at ${formatCurrency(
-			reqItem.drugBatch.unitPrice,
-		)} each`;
+		return ` : ${reqItem.fill_quantity} ${reqItem.drug.unitOfMeasure} of ${reqItem.drugGeneric.name} (${reqItem.drug.name}) at ${formatCurrency(reqItem.drugBatch.unitPrice)} each`;
 	}
 
 	if (
-		(item.bill_source === 'consultancy' ||
-			item.bill_source === 'labs' ||
-			item.bill_source === 'scans' ||
-			item.bill_source === 'procedure' ||
-			item.bill_source === 'nursing-service') &&
+		(item.bill_source === 'consultancy' || item.bill_source === 'labs' || item.bill_source === 'scans' || item.bill_source === 'procedure' || item.bill_source === 'nursing-service') &&
 		item.service?.item?.name
 	) {
 		return `: ${item.service?.item?.name}`;

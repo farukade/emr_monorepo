@@ -6,7 +6,7 @@ import { StaffDetails } from './entities/staff_details.entity';
 import { RoleRepository } from '../../settings/roles-permissions/role.repository';
 import { DepartmentRepository } from '../../settings/departments/department.repository';
 import * as bcrypt from 'bcrypt';
-import { Brackets, getRepository, Like, Raw } from 'typeorm';
+import { Brackets, getRepository, Raw } from 'typeorm';
 import { Specialization } from '../../settings/entities/specialization.entity';
 import { ConsultingRoom } from '../../settings/entities/consulting-room.entity';
 import { Pagination } from '../../../common/paginate/paginate.interface';
@@ -16,7 +16,6 @@ import { AppointmentRepository } from '../../frontdesk/appointment/appointment.r
 import * as moment from 'moment';
 import { SpecializationRepository } from '../../settings/specialization/specialization.repository';
 import { PatientRepository } from '../../patient/repositories/patient.repository';
-// @ts-ignore
 import * as startCase from 'lodash.startcase';
 
 @Injectable()
@@ -46,7 +45,7 @@ export class StaffService {
 
 		if (q && q !== '') {
 			query.andWhere(
-				new Brackets(qb => {
+				new Brackets((qb) => {
 					qb.where('LOWER(s.first_name) Like :first_name', { first_name: `%${q.toLowerCase()}%` })
 						.orWhere('LOWER(s.last_name) Like :last_name', { last_name: `%${q.toLowerCase()}%` })
 						.orWhere('LOWER(s.employee_number) Like :employee_number', { employee_number: `%${q.toLowerCase()}%` })
@@ -97,7 +96,7 @@ export class StaffService {
 			.createQueryBuilder('s')
 			.select('s.*')
 			.andWhere(
-				new Brackets(qb => {
+				new Brackets((qb) => {
 					qb.where('LOWER(s.first_name) Like :first_name', { first_name: `%${q.toLowerCase()}%` })
 						.orWhere('LOWER(s.last_name) Like :last_name', { last_name: `%${q.toLowerCase()}%` })
 						.orWhere('LOWER(s.employee_number) Like :employee_no', { employee_no: `%${q.toLowerCase()}%` })
@@ -286,12 +285,7 @@ export class StaffService {
 			const room = await getRepository(ConsultingRoom).findOne(roomId);
 
 			// update staff detail
-			const staff = await this.staffRepository
-				.createQueryBuilder()
-				.update(StaffDetails)
-				.set({ room })
-				.where('id = :id', { id: userId })
-				.execute();
+			await this.staffRepository.createQueryBuilder().update(StaffDetails).set({ room }).where('id = :id', { id: userId }).execute();
 
 			return { success: true, room };
 		} catch (e) {
@@ -308,7 +302,7 @@ export class StaffService {
 			const appointment = await this.appointmentRepository.findOne({
 				where: {
 					whomToSee: staff,
-					appointment_date: Raw(alias => `DATE(${alias}) = '${moment().format('YYYY-MM-DD')}'`),
+					appointment_date: Raw((alias) => `DATE(${alias}) = '${moment().format('YYYY-MM-DD')}'`),
 					doctorStatus: 1,
 					status: 'Approved',
 				},

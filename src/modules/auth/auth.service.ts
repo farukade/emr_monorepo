@@ -59,10 +59,7 @@ export class AuthService {
 		const user = await this.getUserByUsername(loginUserDto.username);
 
 		if (user) {
-			const isSame = await this.compareHash(
-				loginUserDto.password,
-				user.password,
-			);
+			const isSame = await this.compareHash(loginUserDto.password, user.password);
 			if (isSame) {
 				if (loginUserDto.bypass === 1) {
 					// logout previous user
@@ -88,18 +85,14 @@ export class AuthService {
 					relations: ['department', 'room', 'specialization'],
 				});
 				if (staff && !staff.isActive) {
-					// tslint:disable-next-line:no-shadowed-variable
-					const error = 'This account is disabled. Please Contact ICT.';
-					throw new BadRequestException(error);
+					throw new BadRequestException('This account is disabled. Please Contact ICT.');
 				}
 
 				const newUser = JSON.parse(JSON.stringify(user));
 				newUser.token = token;
 				newUser.expires_in = expires_in;
 				newUser.details = staff;
-				newUser.permissions = await this.setPermissions(
-					newUser.role.permissions,
-				);
+				newUser.permissions = await this.setPermissions(newUser.role.permissions);
 				delete newUser.role.permissions;
 				delete newUser.password;
 				return newUser;
@@ -134,9 +127,7 @@ export class AuthService {
 				relations: ['department', 'room', 'specialization'],
 			});
 			if (staff && !staff.isActive) {
-				// tslint:disable-next-line:no-shadowed-variable
-				const error = 'This account is disabled. Please Contact ICT.';
-				throw new BadRequestException(error);
+				throw new BadRequestException('This account is disabled. Please Contact ICT.');
 			}
 
 			const newUser = JSON.parse(JSON.stringify(user));
@@ -205,14 +196,11 @@ export class AuthService {
 		return bcrypt.hash(password, this.saltRounds);
 	}
 
-	async compareHash(
-		password: string | undefined,
-		hash: string | undefined,
-	): Promise<boolean> {
+	async compareHash(password: string | undefined, hash: string | undefined): Promise<boolean> {
 		return await bcrypt.compare(password, hash);
 	}
 
-	async validateUser(signedUser): Promise<boolean> {
+	async validateUser(signedUser: any): Promise<boolean> {
 		if (signedUser && signedUser.username) {
 			return Boolean(this.getUserByUsername(signedUser.username));
 		}

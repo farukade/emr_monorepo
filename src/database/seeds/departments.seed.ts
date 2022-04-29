@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import fs = require('fs');
 import { Connection } from 'typeorm';
 import { Factory, Seeder } from 'typeorm-seeding';
@@ -9,7 +10,6 @@ export default class CreateDepartments implements Seeder {
     const departments = JSON.parse(
       fs.readFileSync('src/database/seeds/dumbs/departments.json', 'utf8'),
     );
-    // tslint:disable-next-line:forin
     for (const i in departments) {
       try {
         const s = departments[i];

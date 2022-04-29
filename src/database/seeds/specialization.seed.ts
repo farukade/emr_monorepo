@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import fs = require('fs');
 import { Connection } from 'typeorm';
 import { Factory, Seeder } from 'typeorm-seeding';
@@ -8,7 +9,7 @@ export default class CreateSpecialization implements Seeder {
         const specializations = JSON.parse(
             fs.readFileSync('src/database/seeds/dumbs/specializations.json', 'utf8'),
         );
-        // tslint:disable-next-line:forin
+        
         for (const i in specializations) {
             try {
                 const s = specializations[i];

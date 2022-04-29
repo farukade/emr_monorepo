@@ -2,7 +2,6 @@ import { EntityRepository, Repository } from 'typeorm';
 import { StaffDetails } from './entities/staff_details.entity';
 import { Department } from '../../settings/entities/department.entity';
 import { User } from '../../auth/entities/user.entity';
-// @ts-ignore
 import * as startCase from 'lodash.startcase';
 import { StaffDto } from './dto/staff.dto';
 

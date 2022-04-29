@@ -135,8 +135,8 @@ export class MigrationController {
 		return this.migrationService.queueMigration('fix-enrollments');
 	}
 
-	@Get('/socket')
-	emitSocket(): Promise<any> {
-		return this.migrationService.queueMigration('emit-socket');
+	@Get('/test')
+	test(): Promise<any> {
+		return this.migrationService.queueMigration('test');
 	}
 }

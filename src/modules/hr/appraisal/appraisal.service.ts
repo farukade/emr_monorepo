@@ -39,12 +39,7 @@ export class AppraisalService {
 
 	async save(createAppraisalDto: CreateAppriasalDto) {
 		console.log(createAppraisalDto);
-		const {
-			staffId,
-			lineManagerId,
-			indicators,
-			departmentId,
-		} = createAppraisalDto;
+		const { staffId, lineManagerId, indicators, departmentId } = createAppraisalDto;
 		// find staff
 		const staff = await this.staffRepository.findOne(staffId);
 		// check if staff appraisal already exists
@@ -74,14 +69,10 @@ export class AppraisalService {
 		}
 	}
 
-	async savePerformancePeriod(
-		createAppraisalPeriodDto: CreateAppriasalPeriodDto,
-	) {
+	async savePerformancePeriod(createAppraisalPeriodDto: CreateAppriasalPeriodDto) {
 		try {
 			// console.log(createAppraisalPeriodDto);
-			const performancePeriod = await this.performanceAppraisalPeriodRepository.save(
-				createAppraisalPeriodDto,
-			);
+			const performancePeriod = await this.performanceAppraisalPeriodRepository.save(createAppraisalPeriodDto);
 			return { success: true, performancePeriod };
 		} catch (error) {
 			return { success: false, message: error.message };
@@ -93,19 +84,14 @@ export class AppraisalService {
 		return periods;
 	}
 
-	async updatePerformancePeriod(
-		createAppriasalPeriodDto: CreateAppriasalPeriodDto,
-	) {
+	async updatePerformancePeriod(createAppriasalPeriodDto: CreateAppriasalPeriodDto) {
 		try {
 			if (!createAppriasalPeriodDto.id) {
 				throw new NotFoundException(`Internal server error. No ID was sent.`);
 			}
 
-			const performancePeriod = await this.performanceAppraisalPeriodRepository.findOne(
-				createAppriasalPeriodDto.id,
-			);
-			performancePeriod.performancePeriod =
-				createAppriasalPeriodDto.performancePeriod;
+			const performancePeriod = await this.performanceAppraisalPeriodRepository.findOne(createAppriasalPeriodDto.id);
+			performancePeriod.performancePeriod = createAppriasalPeriodDto.performancePeriod;
 			performancePeriod.startDate = createAppriasalPeriodDto.startDate;
 			performancePeriod.endDate = createAppriasalPeriodDto.endDate;
 			await performancePeriod.save();
@@ -116,9 +102,7 @@ export class AppraisalService {
 	}
 
 	async updatePerformancePeriodStatus(id) {
-		const performancePeriod = await this.performanceAppraisalPeriodRepository.findOne(
-			id,
-		);
+		const performancePeriod = await this.performanceAppraisalPeriodRepository.findOne(id);
 		performancePeriod.isActive = !performancePeriod.isActive;
 		await performancePeriod.save();
 		return { success: true };
@@ -145,9 +129,7 @@ export class AppraisalService {
 				where: { staff },
 			});
 			// find performance period
-			const performancePeriod = await this.performanceAppraisalPeriodRepository.findOne(
-				periodId,
-			);
+			const performancePeriod = await this.performanceAppraisalPeriodRepository.findOne(periodId);
 			// find indicator reports
 			const indicators = await this.performanceIndicatorReportRepository.find({
 				where: { period: performancePeriod, appraisal },
@@ -214,19 +196,13 @@ export class AppraisalService {
 		try {
 			const { appraisalId, employeeComment, indicators } = param;
 			// find active performance period
-			const performancePeriod = await this.performanceAppraisalPeriodRepository.findOne(
-				{ where: { isActive: true } },
-			);
+			const performancePeriod = await this.performanceAppraisalPeriodRepository.findOne({ where: { isActive: true } });
 			// find appraisal info
-			const appraisal = await this.performanceAppraisalRepository.findOne(
-				appraisalId,
-			);
+			const appraisal = await this.performanceAppraisalRepository.findOne(appraisalId);
 
 			for (const item of indicators) {
 				// find indicator object
-				const indicator = await this.performanceIndicatorRepository.findOne(
-					item.indicatorId,
-				);
+				const indicator = await this.performanceIndicatorRepository.findOne(item.indicatorId);
 				// save new indicator report;
 				const report = new PerformanceIndicatorReport();
 				report.selfAssessment = item.weight;
@@ -252,19 +228,13 @@ export class AppraisalService {
 		try {
 			const { appraisalId, lineManagerComment, indicators } = param;
 			// find active performance period
-			const performancePeriod = await this.performanceAppraisalPeriodRepository.findOne(
-				{ where: { isActive: true } },
-			);
+			const performancePeriod = await this.performanceAppraisalPeriodRepository.findOne({ where: { isActive: true } });
 			// find appraisal info
-			const appraisal = await this.performanceAppraisalRepository.findOne(
-				appraisalId,
-			);
+			const appraisal = await this.performanceAppraisalRepository.findOne(appraisalId);
 
 			for (const item of indicators) {
 				// find indicator object
-				const indicator = await this.performanceIndicatorRepository.findOne(
-					item.indicatorId,
-				);
+				const indicator = await this.performanceIndicatorRepository.findOne(item.indicatorId);
 				// find indicator reports
 				const report = await this.performanceIndicatorReportRepository.findOne({
 					where: { indicator },
@@ -287,13 +257,9 @@ export class AppraisalService {
 
 	async saveRecommendation(appraisalId, param) {
 		try {
-			const appraisal = await this.performanceAppraisalRepository.findOne(
-				appraisalId,
-			);
+			const appraisal = await this.performanceAppraisalRepository.findOne(appraisalId);
 			// find active performance period
-			const performancePeriod = await this.performanceAppraisalPeriodRepository.findOne(
-				{ where: { isActive: true } },
-			);
+			const performancePeriod = await this.performanceAppraisalPeriodRepository.findOne({ where: { isActive: true } });
 			// save comment
 			const comment = await this.performanceCommentRepository.findOne({
 				where: { period: performancePeriod, appraisal },
@@ -308,12 +274,7 @@ export class AppraisalService {
 	}
 
 	async updateAppraisal(id, updateAppraisalDto: UpdateAppraisalDto) {
-		const {
-			staffId,
-			lineManagerId,
-			indicators,
-			departmentId,
-		} = updateAppraisalDto;
+		const { staffId, lineManagerId, indicators, departmentId } = updateAppraisalDto;
 		// find staff
 		const staff = await this.staffRepository.findOne(staffId);
 		// find line manager
@@ -322,10 +283,7 @@ export class AppraisalService {
 			// find appraisal
 			const appraisal = await this.performanceAppraisalRepository.findOne(id);
 			// find department
-			const department = await this.departmentRepository.findOne(
-				staff.department.id,
-				{ relations: ['staff'] },
-			);
+			const department = await this.departmentRepository.findOne(staff.department.id, { relations: ['staff'] });
 			// save appraisal details
 			appraisal.staff = staff;
 			appraisal.lineManager = department.staff;
@@ -333,9 +291,7 @@ export class AppraisalService {
 			await appraisal.save();
 			// save indicator score
 			for (const item of indicators) {
-				const indicator = await this.performanceIndicatorRepository.findOne(
-					item.id,
-				);
+				const indicator = await this.performanceIndicatorRepository.findOne(item.id);
 				indicator.keyFocus = item.keyFocus;
 				indicator.objective = item.objective;
 				indicator.kpis = item.kpis;
@@ -402,10 +358,7 @@ export class AppraisalService {
 		});
 		if (!appraisal) {
 			// find department
-			const department = await this.departmentRepository.findOne(
-				staff.department.id,
-				{ relations: ['staff'] },
-			);
+			const department = await this.departmentRepository.findOne(staff.department.id, { relations: ['staff'] });
 			// save appraisal details
 			appraisal = new PerformanceAppraisal();
 			appraisal.staff = staff;
@@ -421,7 +374,7 @@ export class AppraisalService {
 			// read uploaded file
 			fs.createReadStream(file.path)
 				.pipe(csv())
-				.on('data', row => {
+				.on('data', (row) => {
 					const data = {
 						keyFocus: row['KEY FOCUS'],
 						objective: row.OBJECTIVE,
@@ -433,12 +386,7 @@ export class AppraisalService {
 				})
 				.on('end', async () => {
 					// delete previous indicators
-					await getConnection()
-						.createQueryBuilder()
-						.delete()
-						.from('performance_indicators')
-						.where('"appraisalId" = :id', { id: appraisal.id })
-						.execute();
+					await getConnection().createQueryBuilder().delete().from('performance_indicators').where('"appraisalId" = :id', { id: appraisal.id }).execute();
 
 					const data = [];
 					let index = -1;

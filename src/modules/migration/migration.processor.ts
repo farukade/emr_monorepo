@@ -1,18 +1,6 @@
-import {
-	OnQueueActive,
-	OnQueueCompleted,
-	OnQueueFailed,
-	Process,
-	Processor,
-} from '@nestjs/bull';
+import { OnQueueActive, OnQueueCompleted, OnQueueFailed, Process, Processor } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
-import {
-	callPatient1,
-	formatPID,
-	hasNumber,
-	mysqlConnect,
-	slugify,
-} from '../../common/utils/utils';
+import { callPatient1, formatPID, hasNumber, mysqlConnect, slugify } from '../../common/utils/utils';
 import { Job } from 'bull';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DiagnosisRepository } from '../settings/diagnosis/diagnosis.repository';
@@ -36,7 +24,6 @@ import { GroupRepository } from '../settings/lab/repositories/group.repository';
 import { GroupTest } from '../settings/entities/group_tests.entity';
 import * as moment from 'moment';
 import { StoreInventoryRepository } from '../inventory/store/store.repository';
-// @ts-ignore
 import * as startCase from 'lodash.startcase';
 import { CafeteriaInventoryRepository } from '../inventory/cafeteria/cafeteria.repository';
 import { RoomCategoryRepository } from '../settings/room/room.category.repository';
@@ -52,7 +39,6 @@ import { PatientNoteRepository } from '../patient/repositories/patient_note.repo
 import { EncounterRepository } from '../patient/consultation/encounter.repository';
 import { CareTeamRepository } from '../patient/care-team/team.repository';
 import { AppointmentRepository } from '../frontdesk/appointment/appointment.repository';
-import { Department } from '../settings/entities/department.entity';
 import { Service } from '../settings/entities/service.entity';
 import { AppGateway } from '../../app.gateway';
 import { NicuRepository } from '../patient/nicu/nicu.repository';
@@ -152,16 +138,13 @@ export class MigrationProcessor {
 	}
 
 	@OnQueueCompleted()
-	onComplete(job: Job, result: any) {
+	onComplete(job: Job) {
 		this.logger.debug(`Completed job ${job.id} of type ${job.name}`);
 	}
 
 	@OnQueueFailed()
 	onError(job: Job<any>, error: any) {
-		this.logger.error(
-			`Failed job ${job.id} of type ${job.name}: ${error.message}`,
-			error.stack,
-		);
+		this.logger.error(`Failed job ${job.id} of type ${job.name}: ${error.message}`, error.stack);
 	}
 
 	async getStaffById(id): Promise<any> {
@@ -178,7 +161,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('diagnosis')
-	async migrateDiagnosis(job: Job<any>): Promise<any> {
+	async migrateDiagnosis(): Promise<any> {
 		this.logger.log('migrating diagnosis');
 
 		try {
@@ -220,7 +203,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('hmo')
-	async migrateHmo(job: Job<any>): Promise<any> {
+	async migrateHmo(): Promise<any> {
 		this.logger.log('migrating hmo');
 
 		try {
@@ -267,23 +250,18 @@ export class MigrationProcessor {
 	}
 
 	@Process('staffs')
-	async migrateStaffs(job: Job<any>): Promise<any> {
+	async migrateStaffs(): Promise<any> {
 		this.logger.log('migrating staffs');
 		try {
 			const connection = await mysqlConnect();
 
-			const [rows] = await connection.execute(
-				'SELECT * FROM `staff_directory` WHERE `username` NOT LIKE \'%admin%\'',
-			);
+			const [rows] = await connection.execute("SELECT * FROM `staff_directory` WHERE `username` NOT LIKE '%admin%'");
 			for (const item of rows) {
 				try {
 					let name = item.profession;
 					if (item.profession === 'Pharmacist') {
 						name = 'Pharmacy';
-					} else if (
-						item.profession === 'Lab Scientist' ||
-						item.profession === 'Lab Technician'
-					) {
+					} else if (item.profession === 'Lab Scientist' || item.profession === 'Lab Technician') {
 						name = 'Laboratory';
 					} else if (item.profession === 'Medical Records') {
 						name = 'Records';
@@ -343,7 +321,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('patients')
-	async migratePatients(job: Job<any>): Promise<any> {
+	async migratePatients(): Promise<any> {
 		this.logger.log('migrating patients');
 
 		try {
@@ -371,9 +349,7 @@ export class MigrationProcessor {
 						});
 					}
 
-					const creator = await this.getStaffById(
-						parseInt(item.registered_By, 10),
-					);
+					const creator = await this.getStaffById(parseInt(item.registered_By, 10));
 
 					const patient = {
 						old_id: item.patient_ID,
@@ -381,9 +357,7 @@ export class MigrationProcessor {
 						legacy_patient_id: item.legacy_patient_id,
 						surname: item.lname,
 						other_names: `${item.fname} ${item.mname}`,
-						date_of_birth: moment(item.date_of_birth, 'YYYY-MM-DD').format(
-							'YYYY-MM-DD',
-						),
+						date_of_birth: moment(item.date_of_birth, 'YYYY-MM-DD').format('YYYY-MM-DD'),
 						occupation: item.occupation,
 						address: item.address,
 						email: item?.email?.toLocaleLowerCase() || null,
@@ -400,24 +374,18 @@ export class MigrationProcessor {
 					};
 
 					let deleted_at = null;
-					if (
-						item.deactivated_on &&
-						item.deactivated_on !== '' &&
-						item.active === 0
-					) {
-						deleted_at = moment(item.deactivated_on).format(
-							'YYYY-MM-DD HH:mm:ss',
-						);
+					if (item.deactivated_on && item.deactivated_on !== '' && item.active === 0) {
+						deleted_at = moment(item.deactivated_on).format('YYYY-MM-DD HH:mm:ss');
 					}
 
 					let staff = null;
 					if (hmo && hmo.name === 'STAFF') {
 						staff = await this.staffRepository.findOne({
 							where: {
-								first_name: Raw(alias => `LOWER(${alias}) = :first`, {
+								first_name: Raw((alias) => `LOWER(${alias}) = :first`, {
 									first: item.fname?.toLocaleLowerCase() || '',
 								}),
-								last_name: Raw(alias => `LOWER(${alias}) = :last`, {
+								last_name: Raw((alias) => `LOWER(${alias}) = :last`, {
 									last: item.lname?.toLocaleLowerCase() || '',
 								}),
 							},
@@ -438,7 +406,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('services')
-	async migrateServices(job: Job<any>): Promise<any> {
+	async migrateServices(): Promise<any> {
 		this.logger.log('migrating services');
 
 		try {
@@ -454,9 +422,7 @@ export class MigrationProcessor {
 				});
 			}
 
-			[rows] = await connection.execute(
-				'SELECT * FROM `insurance_billable_items`',
-			);
+			[rows] = await connection.execute('SELECT * FROM `insurance_billable_items`');
 			for (const item of rows) {
 				await this.serviceRepository.save({
 					name: item.item_description,
@@ -499,12 +465,7 @@ export class MigrationProcessor {
 				});
 
 				if (!rs) {
-					await getConnection()
-						.createQueryBuilder()
-						.delete()
-						.from(Service)
-						.where('id = :id', { id: item.id })
-						.execute();
+					await getConnection().createQueryBuilder().delete().from(Service).where('id = :id', { id: item.id }).execute();
 				}
 			}
 			return true;
@@ -515,15 +476,13 @@ export class MigrationProcessor {
 	}
 
 	@Process('drugs')
-	async migrateDrugs(job: Job<any>): Promise<any> {
+	async migrateDrugs(): Promise<any> {
 		this.logger.log('migrating drugs');
 
 		try {
 			const connection = await mysqlConnect();
 
-			let [rows] = await connection.execute(
-				'SELECT * FROM `drug_manufacturers`',
-			);
+			let [rows] = await connection.execute('SELECT * FROM `drug_manufacturers`');
 			for (const item of rows) {
 				await this.manufacturerRepository.save({ name: item.name });
 			}
@@ -547,9 +506,7 @@ export class MigrationProcessor {
 					category,
 					form: item.form,
 					weight: item.weight,
-					lowStockLevel: item.low_stock_level
-						? parseInt(item.low_stock_level, 10)
-						: 0,
+					lowStockLevel: item.low_stock_level ? parseInt(item.low_stock_level, 10) : 0,
 				});
 			}
 
@@ -575,17 +532,13 @@ export class MigrationProcessor {
 				});
 			}
 
-			[rows] = await connection.execute(
-				'SELECT drug_batch.*, drugs.name as drug_name FROM `drug_batch` left join drugs on drugs.id=drug_batch.drug_id',
-			);
+			[rows] = await connection.execute('SELECT drug_batch.*, drugs.name as drug_name FROM `drug_batch` left join drugs on drugs.id=drug_batch.drug_id');
 			for (const item of rows) {
 				const drug = await this.drugRepository.findOne({
 					where: { old_id: item.drug_id },
 				});
 
-				const expirationDate = moment(item.expiration_date).isValid()
-					? moment(item.expiration_date).format('YYYY-MM-DD')
-					: null;
+				const expirationDate = moment(item.expiration_date).isValid() ? moment(item.expiration_date).format('YYYY-MM-DD') : null;
 
 				await this.drugBatchRepository.save({
 					old_id: item.id,
@@ -607,15 +560,13 @@ export class MigrationProcessor {
 	}
 
 	@Process('lab')
-	async migrateLab(job: Job<any>): Promise<any> {
+	async migrateLab(): Promise<any> {
 		this.logger.log('migrating lab');
 
 		try {
 			const connection = await mysqlConnect();
 
-			let [rows] = await connection.execute(
-				'SELECT * FROM `labtests_config_category`',
-			);
+			let [rows] = await connection.execute('SELECT * FROM `labtests_config_category`');
 			for (const item of rows) {
 				await this.labTestCategoryRepository.save({ name: item.name });
 			}
@@ -677,7 +628,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('store')
-	async migrateStore(job: Job<any>): Promise<any> {
+	async migrateStore(): Promise<any> {
 		this.logger.log('migrating store');
 
 		try {
@@ -689,12 +640,8 @@ export class MigrationProcessor {
 				count++;
 
 				const code = `ST${formatPID(count, 8)}`;
-				const name = hasNumber(item.name)
-					? item.name
-					: startCase(item.name.toLocaleLowerCase());
-				const unit = hasNumber(item.name)
-					? item.unit_of_measure
-					: startCase(item.unit_of_measure.toLocaleLowerCase());
+				const name = hasNumber(item.name) ? item.name : startCase(item.name.toLocaleLowerCase());
+				const unit = hasNumber(item.name) ? item.unit_of_measure : startCase(item.unit_of_measure.toLocaleLowerCase());
 
 				await this.storeInventoryRepository.save({
 					name,
@@ -709,9 +656,7 @@ export class MigrationProcessor {
 				count++;
 
 				const code = `CA${formatPID(count, 8)}`;
-				const name = hasNumber(item.name)
-					? item.name
-					: startCase(item.name.toLocaleLowerCase());
+				const name = hasNumber(item.name) ? item.name : startCase(item.name.toLocaleLowerCase());
 				const unit = item.unit_of_measure;
 
 				await this.cafeteriaInventoryRepository.save({
@@ -730,7 +675,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('rooms')
-	async migrateRoom(job: Job<any>): Promise<any> {
+	async migrateRoom(): Promise<any> {
 		this.logger.log('migrating rooms');
 
 		try {
@@ -758,7 +703,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('alert')
-	async migrateAlert(job: Job<any>): Promise<any> {
+	async migrateAlert(): Promise<any> {
 		this.logger.log('migrating patient alerts');
 
 		try {
@@ -788,48 +733,34 @@ export class MigrationProcessor {
 	}
 
 	@Process('in-patients')
-	async migrateInPatients(job: Job<any>): Promise<any> {
+	async migrateInPatients(): Promise<any> {
 		this.logger.log('migrating in-patients');
 
 		try {
 			const connection = await mysqlConnect();
 
-			const [rows] = await connection.execute(
-				'SELECT in_patient.*, health_state.state as health_state FROM `in_patient` left join health_state on health_state.id = in_patient.health_state_id',
-			);
+			const [rows] = await connection.execute('SELECT in_patient.*, health_state.state as health_state FROM `in_patient` left join health_state on health_state.id = in_patient.health_state_id');
 			for (const item of rows) {
 				const patient = await this.patientRepository.findOne({
 					where: { old_id: item.patient_id },
 				});
 
-				const createdBy = await this.getStaffById(
-					parseInt(item.admitted_by, 10),
-				);
+				const createdBy = await this.getStaffById(parseInt(item.admitted_by, 10));
 
-				const startDischargedBy = await this.getStaffById(
-					parseInt(item.discharged_by, 10),
-				);
+				const startDischargedBy = await this.getStaffById(parseInt(item.discharged_by, 10));
 
-				const dischargedBy = await this.getStaffById(
-					parseInt(item.discharged_by_full, 10),
-				);
+				const dischargedBy = await this.getStaffById(parseInt(item.discharged_by_full, 10));
 
 				await this.admissionsRepository.save({
 					patient,
 					health_state: item.health_state,
-					room_assigned_at: item.bed_assign_date
-						? moment(item.bed_assign_date).format('YYYY-MM-DD HH:mm:ss')
-						: null,
+					room_assigned_at: item.bed_assign_date ? moment(item.bed_assign_date).format('YYYY-MM-DD HH:mm:ss') : null,
 					reason: item.reason,
 					status: item.status === 'Discharged' ? 1 : 0,
 					start_discharge: item.status === 'Discharging',
-					start_discharge_date: item.date_discharged
-						? moment(item.date_discharged).format('YYYY-MM-DD HH:mm:ss')
-						: null,
+					start_discharge_date: item.date_discharged ? moment(item.date_discharged).format('YYYY-MM-DD HH:mm:ss') : null,
 					start_discharge_by: startDischargedBy?.user?.username || null,
-					date_discharged: item.date_discharged_full
-						? moment(item.date_discharged_full).format('YYYY-MM-DD HH:mm:ss')
-						: null,
+					date_discharged: item.date_discharged_full ? moment(item.date_discharged_full).format('YYYY-MM-DD HH:mm:ss') : null,
 					dischargedBy,
 					discharge_note: item.discharge_note,
 					createdAt: moment(item.date_admitted).format('YYYY-MM-DD HH:mm:ss'),
@@ -847,7 +778,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('observation')
-	async migrateObservation(job: Job<any>): Promise<any> {
+	async migrateObservation(): Promise<any> {
 		this.logger.log('migrating in-patient observation');
 
 		try {
@@ -882,7 +813,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('allergen')
-	async migrateAllergen(job: Job<any>): Promise<any> {
+	async migrateAllergen(): Promise<any> {
 		this.logger.log('migrating allergen');
 
 		try {
@@ -898,9 +829,7 @@ export class MigrationProcessor {
 
 				const createdBy = await this.getStaffById(parseInt(item.noted_by, 10));
 
-				const generic = item.generic_id
-					? await this.drugGenericRepository.findOne(item.generic_id)
-					: null;
+				const generic = item.generic_id ? await this.drugGenericRepository.findOne(item.generic_id) : null;
 
 				const encounter = item.encounter_id
 					? await this.encounterRepository.findOne({
@@ -933,27 +862,19 @@ export class MigrationProcessor {
 	}
 
 	@Process('care-team')
-	async migrateCareTeam(job: Job<any>): Promise<any> {
+	async migrateCareTeam(): Promise<any> {
 		this.logger.log('migrating care-team');
 
 		try {
 			const connection = await mysqlConnect();
 
-			const [rows] = await connection.execute(
-				'SELECT * FROM `patient_care_member`',
-			);
+			const [rows] = await connection.execute('SELECT * FROM `patient_care_member`');
 			for (const item of rows) {
-				const member = await this.getStaffById(
-					parseInt(item.care_member_id, 10),
-				);
+				const member = await this.getStaffById(parseInt(item.care_member_id, 10));
 
-				const primaryMember = await this.getStaffById(
-					parseInt(item.primary_care_id, 10),
-				);
+				const primaryMember = await this.getStaffById(parseInt(item.primary_care_id, 10));
 
-				const createdBy = await this.getStaffById(
-					parseInt(item.created_by, 10),
-				);
+				const createdBy = await this.getStaffById(parseInt(item.created_by, 10));
 
 				const admission = await this.admissionsRepository.findOne({
 					where: { old_id: item.in_patient_id },
@@ -985,15 +906,13 @@ export class MigrationProcessor {
 	}
 
 	@Process('encounter')
-	async migrateEncounter(job: Job<any>): Promise<any> {
+	async migrateEncounter(): Promise<any> {
 		this.logger.log('migrating encounter');
 
 		try {
 			const connection = await mysqlConnect();
 
-			const [rows] = await connection.execute(
-				'SELECT encounter.*, departments.name as department_name FROM `encounter` join departments on departments.id=encounter.department_id',
-			);
+			const [rows] = await connection.execute('SELECT encounter.*, departments.name as department_name FROM `encounter` join departments on departments.id=encounter.department_id');
 			for (const item of rows) {
 				const patient = await this.patientRepository.findOne({
 					where: { old_id: item.patient_id },
@@ -1001,15 +920,13 @@ export class MigrationProcessor {
 
 				const doctor = await this.getStaffById(parseInt(item.consulted_by, 10));
 
-				const department = await getConnection()
-					.getRepository(Department)
-					.findOne({
-						where: { name: item.department_name },
-					});
+				// const department = await getConnection()
+				// 	.getRepository(Department)
+				// 	.findOne({
+				// 		where: { name: item.department_name },
+				// 	});
 
-				const createdBy = await this.getStaffById(
-					parseInt(item.initiator_id, 10),
-				);
+				// const createdBy = await this.getStaffById(parseInt(item.initiator_id, 10));
 
 				const appointment = await this.appointmentRepository.save({});
 
@@ -1033,7 +950,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('call')
-	async callPatient(job: Job<any>): Promise<any> {
+	async callPatient(): Promise<any> {
 		this.logger.log('calling patient');
 
 		try {
@@ -1046,7 +963,7 @@ export class MigrationProcessor {
 
 	@Process('tariffs')
 	async updateCoverage(job: Job<any>): Promise<any> {
-		const { scheme, coverage } = job.data;
+		const { scheme } = job.data;
 
 		const privateHmo = await this.hmoSchemeRepository.findOne({
 			where: { name: 'Private' },
@@ -1062,9 +979,7 @@ export class MigrationProcessor {
 		});
 
 		for (const cost of privateServiceCosts) {
-			const service = await this.serviceRepository.findOne(
-				cost?.item?.id || '',
-			);
+			const service = await this.serviceRepository.findOne(cost?.item?.id || '');
 			if (service) {
 				const serviceCost = await this.serviceCostRepository.findOne({
 					where: { hmo: scheme, code: service.code },
@@ -1082,68 +997,43 @@ export class MigrationProcessor {
 	}
 
 	@Process('fix-inpatients')
-	async fixInPatients(job: Job<any>): Promise<any> {
-		const admissions = await this.admissionsRepository
-			.createQueryBuilder('q')
-			.select('q.*')
-			.where('q.status = :status', { status: 0 })
-			.getRawMany();
+	async fixInPatients(): Promise<any> {
+		const admissions = await this.admissionsRepository.createQueryBuilder('q').select('q.*').where('q.status = :status', { status: 0 }).getRawMany();
 
 		// const staff = await getStaff('admin');
 
 		for (const item of admissions) {
 			// console.log(item);
 			const patient = await this.patientRepository.findOne(item.patient_id);
-			console.log(
-				`${item.id} --- patient: ${patient?.admission_id}[${patient?.id}]`,
-			);
+			console.log(`${item.id} --- patient: ${patient?.admission_id}[${patient?.id}]`);
 			patient.admission_id = item.id;
 			await patient.save();
 		}
 
-		const patients = await this.patientRepository
-			.createQueryBuilder('q')
-			.select('q.*')
-			.where('q.admission_id is not null')
-			.getRawMany();
+		const patients = await this.patientRepository.createQueryBuilder('q').select('q.*').where('q.admission_id is not null').getRawMany();
 
 		for (const item of patients) {
 			// console.log(item);
-			const admission = await this.admissionsRepository.findOne(
-				item.admission_id,
-				{ relations: ['patient'] },
-			);
-			console.log(
-				`${item.id} --- admission: ${admission?.status} - ${admission?.id}[${admission?.patient?.id}]`,
-			);
+			const admission = await this.admissionsRepository.findOne(item.admission_id, { relations: ['patient'] });
+			console.log(`${item.id} --- admission: ${admission?.status} - ${admission?.id}[${admission?.patient?.id}]`);
 		}
 	}
 
 	@Process('fix-nicu')
-	async fixNicu(job: Job<any>): Promise<any> {
-		const nicus = await this.nicuRepository
-			.createQueryBuilder('q')
-			.select('q.*')
-			.where('q.status = :status', { status: 0 })
-			.getRawMany();
+	async fixNicu(): Promise<any> {
+		const nicus = await this.nicuRepository.createQueryBuilder('q').select('q.*').where('q.status = :status', { status: 0 }).getRawMany();
 
 		// const staff = await getStaff('admin');
 
 		for (const item of nicus) {
 			// console.log(item);
 			const patient = await this.patientRepository.findOne(item.patient_id);
-			console.log(
-				`${item.id} --- patient: ${patient?.nicu_id}[${patient?.id}]`,
-			);
+			console.log(`${item.id} --- patient: ${patient?.nicu_id}[${patient?.id}]`);
 			patient.nicu_id = item.id;
 			// await patient.save();
 		}
 
-		const patients = await this.patientRepository
-			.createQueryBuilder('q')
-			.select('q.*')
-			.where('q.nicu_id is not null')
-			.getRawMany();
+		const patients = await this.patientRepository.createQueryBuilder('q').select('q.*').where('q.nicu_id is not null').getRawMany();
 
 		for (const item of patients) {
 			// console.log(item);
@@ -1155,21 +1045,16 @@ export class MigrationProcessor {
 	}
 
 	@Process('fix-procedure')
-	async fixProcedure(job: Job<any>): Promise<any> {
+	async fixProcedure(): Promise<any> {
 		const items = await this.patientRequestItemRepository.find({
 			where: { scheduledDate: true },
 		});
 
 		for (const item of items) {
 			try {
-				const request = await this.patientRequestItemRepository.findOne(
-					item.id,
-				);
+				const request = await this.patientRequestItemRepository.findOne(item.id);
 				if (request) {
-					const startDate = moment(
-						request.scheduledStartDate,
-						'DD/MM/YYYY h:mm A',
-					);
+					const startDate = moment(request.scheduledStartDate, 'DD/MM/YYYY h:mm A');
 					const endDate = moment(request.scheduledEndDate, 'DD/MM/YYYY h:mm A');
 
 					request.scheduledStartDate = startDate.format('YYYY-MM-DD HH:mm:ss');
@@ -1183,7 +1068,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('fix-deleted-labs')
-	async fixDelLabs(job: Job<any>): Promise<any> {
+	async fixDelLabs(): Promise<any> {
 		const labTests = await this.labTestRepository.find({
 			withDeleted: true,
 		});
@@ -1216,7 +1101,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('emit-socket')
-	async emitSocket(job: Job<any>): Promise<any> {
+	async emitSocket(): Promise<any> {
 		this.appGateway.server.emit('new-appointment', { appointment: 1 });
 	}
 
@@ -1235,14 +1120,10 @@ export class MigrationProcessor {
 			console.log(vital);
 			const patient = await this.patientRepository.findOne(vital.patient_id);
 
-			const fluids = await getConnection()
-				.getRepository(PatientFluidChart)
-				.find({ where: { patient } });
+			const fluids = await getConnection().getRepository(PatientFluidChart).find({ where: { patient } });
 
 			for (const item of fluids) {
-				const fluid = await getConnection()
-					.getRepository(PatientFluidChart)
-					.findOne(item.id);
+				const fluid = await getConnection().getRepository(PatientFluidChart).findOne(item.id);
 				if (fluid) {
 					console.log(fluid.id);
 
@@ -1255,12 +1136,8 @@ export class MigrationProcessor {
 	}
 
 	@Process('fix-tasks')
-	async fixTasks(job: Job<any>): Promise<any> {
-		const tasks = await this.admissionClinicalTask
-			.createQueryBuilder('q')
-			.select('q.*')
-			.withDeleted()
-			.getRawMany();
+	async fixTasks(): Promise<any> {
+		const tasks = await this.admissionClinicalTask.createQueryBuilder('q').select('q.*').withDeleted().getRawMany();
 
 		for (const task of tasks) {
 			if (task.deleted_at) {
@@ -1274,9 +1151,7 @@ export class MigrationProcessor {
 					vital.deletedBy = 'admin';
 					await vital.save();
 
-					const fluid = await getConnection()
-						.getRepository(PatientFluidChart)
-						.findOne(item.id);
+					const fluid = await getConnection().getRepository(PatientFluidChart).findOne(item.id);
 					if (fluid) {
 						fluid.deletedBy = 'admin';
 						await fluid.save();
@@ -1290,26 +1165,16 @@ export class MigrationProcessor {
 	}
 
 	@Process('fix-nicu-transactions')
-	async fixNicuTransactions(job: Job<any>): Promise<any> {
-		await getConnection()
-			.createQueryBuilder()
-			.update(Transaction)
-			.set({ status: -1, is_admitted: true })
-			.where('nicu_id is not null')
-			.andWhere('status = :status', { status: 0 })
-			.execute();
+	async fixNicuTransactions(): Promise<any> {
+		await getConnection().createQueryBuilder().update(Transaction).set({ status: -1, is_admitted: true }).where('nicu_id is not null').andWhere('status = :status', { status: 0 }).execute();
 	}
 
 	@Process('fix-permissions')
-	async fixPermissions(job: Job<any>): Promise<any> {
-		const permissions = await getConnection()
-			.getRepository(Permission)
-			.find();
+	async fixPermissions(): Promise<any> {
+		const permissions = await getConnection().getRepository(Permission).find();
 		for (const item of permissions) {
 			if (item) {
-				const permission = await getConnection()
-					.getRepository(Permission)
-					.findOne(item.id);
+				const permission = await getConnection().getRepository(Permission).findOne(item.id);
 				if (permission) {
 					permission.slug = slugify(permission.name);
 					await permission.save();
@@ -1319,19 +1184,13 @@ export class MigrationProcessor {
 	}
 
 	@Process('fix-appointments')
-	async fixAppointments(job: Job<any>): Promise<any> {
-		const appointments = await getConnection()
-			.getRepository(Appointment)
-			.find();
+	async fixAppointments(): Promise<any> {
+		const appointments = await getConnection().getRepository(Appointment).find();
 		for (const item of appointments) {
 			if (item) {
-				const appointment = await getConnection()
-					.getRepository(Appointment)
-					.findOne(item.id, { withDeleted: true });
+				const appointment = await getConnection().getRepository(Appointment).findOne(item.id, { withDeleted: true });
 				if (appointment) {
-					appointment.is_queued =
-						appointment.canSeeDoctor === 1 ||
-						(appointment.canSeeDoctor === 0 && !appointment.is_scheduled);
+					appointment.is_queued = appointment.canSeeDoctor === 1 || (appointment.canSeeDoctor === 0 && !appointment.is_scheduled);
 					await appointment.save();
 				}
 			}
@@ -1339,7 +1198,7 @@ export class MigrationProcessor {
 	}
 
 	@Process('fix-enrollments')
-	async fixEnrollments(job: Job<any>): Promise<any> {
+	async fixEnrollments(): Promise<any> {
 		const ancEnrollments = await getConnection()
 			.getRepository(AntenatalEnrollment)
 			.find({ relations: ['patient'] });
@@ -1378,5 +1237,10 @@ export class MigrationProcessor {
 				}
 			}
 		}
+	}
+
+	@Process('test')
+	async test(): Promise<any> {
+		console.log('test queue');
 	}
 }

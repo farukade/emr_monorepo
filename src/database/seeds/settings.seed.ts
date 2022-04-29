@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Connection } from 'typeorm';
 import { Factory, Seeder } from 'typeorm-seeding';
 import { Settings } from '../../modules/settings/entities/settings.entity';
@@ -8,7 +9,7 @@ export default class CreateSettings implements Seeder {
         const list = [
             { name: 'Part Payment Duration', value: '7' },
         ];
-        // tslint:disable-next-line:forin
+        
         for (const i in list) {
             try {
                 const s = list[i];
