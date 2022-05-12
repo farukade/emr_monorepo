@@ -37,12 +37,3 @@ lerna-debug.log*
 !.vscode/launch.json
 !.vscode/extensions.json
 
-# Test
-src/database/migration/1652267682043-IvfEmbryoAssessment.ts
-src/database/migration/1652267709713-IvfEmbryologyEntity.ts
-src/database/migration/1652267733874-IvfTreatmentEntity.ts
-src/database/migration/1652267752776-IvfSpermPreparationEntity.ts
-src/database/migration/1652267767438-IvfICSIEntity.ts
-src/database/migration/1652267785249-IvfEmbryoTransfer.ts
-src/database/migration/1652267807776-IvfEmbryoTransferRecord.ts
-src/modules/patient/ivf/embryology/
