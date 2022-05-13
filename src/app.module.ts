@@ -29,6 +29,7 @@ import { RequestLoggerMiddleware } from './middleware/request-logger.middleware'
 import { AppService } from './app.service';
 import { BullModule } from '@nestjs/bull';
 import { IvfEmbryologyModule } from './modules/patient/ivf/embryology/embryology.module';
+import { EmbFreezingModule } from './modules/patient/ivf/freezing/freezing.module';
 
 fs.writeFileSync('./ormconfig.json', JSON.stringify(configService.getTypeOrmConfig(), null, 2));
 
@@ -74,7 +75,8 @@ fs.writeFileSync('./ormconfig.json', JSON.stringify(configService.getTypeOrmConf
 		AccountingModule,
 		ReportModule,
 		MigrationModule,
-		IvfEmbryologyModule
+		IvfEmbryologyModule,
+		EmbFreezingModule
 	],
 	controllers: [AppController],
 	providers: [AppService, AppGateway, JwtStrategy],
