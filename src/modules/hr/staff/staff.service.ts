@@ -324,4 +324,46 @@ export class StaffService {
 	async getHash(password: string | undefined): Promise<string> {
 		return bcrypt.hash(password, 10);
 	}
+
+	async getStaff(urlParams) {
+		try {
+			const { staffid } = urlParams;
+
+			const staff = await this.staffRepository.findOne(staffid, {
+				relations: ['transactions'],
+			});
+
+			const { transactions, ...restStaff } = staff;
+
+			let returnArr = [];
+
+			const transactionsArr = staff.transactions;
+
+			for (const transaction of transactionsArr) {
+				let currentObj = {
+					billSource: transaction.bill_source,
+					description: transaction.description,
+					amount: transaction.amount,
+					amountPaid: transaction.amount_paid,
+					status: transaction.status,
+					type: transaction.transaction_type,
+					details: transaction.transaction_details,
+					dateTime: transaction.updated_at,
+				};
+
+				returnArr.push(currentObj);
+			}
+
+			return {
+				success: true,
+				staffDetails: restStaff,
+				transactions: returnArr,
+			};
+		} catch (error) {
+			return {
+				success: false,
+				message: error.message || 'error occured',
+			};
+		}
+	}
 }

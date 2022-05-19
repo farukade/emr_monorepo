@@ -8,7 +8,7 @@ import { PatientRequestItemRepository } from '../repositories/patient_request_it
 import { PatientRepository } from '../repositories/patient.repository';
 import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
 import { AppGateway } from '../../../app.gateway';
-import { getConnection } from 'typeorm';
+import { getConnection, getRepository, LessThan, MoreThan } from 'typeorm';
 import { createServiceCost, formatPatientId, generatePDF, getStaff, postDebit } from '../../../common/utils/utils';
 import { AdmissionsRepository } from '../admissions/repositories/admissions.repository';
 import * as path from 'path';
@@ -1159,6 +1159,57 @@ export class PatientRequestService {
 		} catch (error) {
 			console.log(error);
 			return { success: false, message: error.message };
+		}
+	}
+
+	async getMonthlyAverageRequestTime(options) {
+		try {
+			const { request_type } = options;
+
+			const date = new Date()
+			const firstDay = `${date.getFullYear()}-${date.getMonth() + 1}-01T00:00:00`
+
+			const monthsRequests = await this.patientRequestItemRepository.find({
+				where: {
+					createdAt: MoreThan(firstDay.toString()), 
+					approved: MoreThan(0)
+				}, 
+				relations: ['request']
+			});
+			let requestArr = [];
+
+			monthsRequests.forEach((monthsRequest) => {
+				if (monthsRequest.request.requestType == request_type) {
+					requestArr.push(monthsRequest);
+				}
+			});
+
+			let timeArr = [];
+
+			requestArr.forEach((request) => {
+				const dateOne = moment(request.createdAt);
+				const dateTwo = moment(request.approvedAt);
+
+				let timeDifference = dateTwo.diff(dateOne, 'hours');
+				timeArr.push(timeDifference);
+			});
+
+			const total = timeArr.reduce((a, b) => a + b, 0);
+			const average = total / timeArr.length;
+
+			return {
+				success: true,
+				requestType: options.request_type,
+				averageTime: average, 
+				fetchTime: new Date()
+			};
+			
+		} catch (error) {
+			console.log(error);
+			return { 
+				success: false, 
+				message: error.message 
+			};
 		}
 	}
 }

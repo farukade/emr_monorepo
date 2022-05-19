@@ -32,9 +32,9 @@ async function bootstrap() {
 
 	app.use('/public', express.static(join(__dirname, '..', 'public')));
 
-	await app.listen(process.env.PORT || 3002);
-
-	console.info(`EMRAPP API running on 3002`);
+	await app.listen(process.env.PORT || 3001);
+	
+    console.info(`EMRAPP API running on: ${await app.getUrl()}`);
 }
 
 bootstrap();

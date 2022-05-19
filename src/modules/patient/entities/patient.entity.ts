@@ -1,12 +1,5 @@
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
-import {
-	Entity,
-	Column,
-	OneToOne,
-	JoinColumn,
-	OneToMany,
-	ManyToOne,
-} from 'typeorm';
+import { Entity, Column, OneToOne, JoinColumn, OneToMany, ManyToOne } from 'typeorm';
 import { PatientNOK } from './patient-next-of-kin.entity';
 import { Appointment } from '../../frontdesk/appointment/appointment.entity';
 import { Transaction } from '../../finance/transactions/transaction.entity';
@@ -14,6 +7,7 @@ import { Immunization } from '../immunization/entities/immunization.entity';
 import { Nicu } from '../nicu/entities/nicu.entity';
 import { HmoScheme } from '../../hmo/entities/hmo_scheme.entity';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
+import { IvfEmbryologyEntity } from '../ivf/embryology/embryology.entity';
 
 @Entity({ name: 'patients' })
 export class Patient extends CustomBaseEntity {
@@ -62,14 +56,14 @@ export class Patient extends CustomBaseEntity {
 	@Column({ type: 'varchar', nullable: true })
 	referredBy: string;
 
-	@ManyToOne(type => PatientNOK, { nullable: true })
+	@ManyToOne((type) => PatientNOK, { nullable: true })
 	@JoinColumn({ name: 'next_of_kin_id' })
 	nextOfKin: PatientNOK;
 
 	@Column({ nullable: true })
 	last_appointment_date: string;
 
-	@ManyToOne(type => HmoScheme, { nullable: true, eager: true })
+	@ManyToOne((type) => HmoScheme, { nullable: true, eager: true })
 	@JoinColumn({ name: 'hmo_scheme_id' })
 	hmo: HmoScheme;
 
@@ -107,22 +101,13 @@ export class Patient extends CustomBaseEntity {
 	@Column({ default: false })
 	is_out_patient: boolean;
 
-	@OneToMany(
-		type => Appointment,
-		appointment => appointment.patient,
-	)
+	@OneToMany((type) => Appointment, (appointment) => appointment.patient)
 	appointments: Appointment[];
 
-	@OneToMany(
-		type => Transaction,
-		transaction => transaction.patient,
-	)
+	@OneToMany((type) => Transaction, (transaction) => transaction.patient)
 	transactions: Transaction[];
 
-	@OneToMany(
-		type => Immunization,
-		immunization => immunization.patient,
-	)
+	@OneToMany((type) => Immunization, (immunization) => immunization.patient)
 	immunization: Immunization[];
 
 	@Column({ type: 'boolean', default: true })
@@ -130,4 +115,7 @@ export class Patient extends CustomBaseEntity {
 
 	@Column({ nullable: true })
 	enrollee_id: string;
+
+	@OneToMany((type) => IvfEmbryologyEntity, (embryology) => embryology.patient)
+	embryology: IvfEmbryologyEntity;
 }

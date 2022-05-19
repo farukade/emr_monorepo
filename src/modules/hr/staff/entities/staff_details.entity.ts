@@ -123,7 +123,7 @@ export class StaffDetails extends CustomBaseEntity {
     immunizations: Immunization;
 
     @OneToMany(type => Transaction, transaction => transaction.staff)
-    transactions: Transaction;
+    transactions: Transaction[];
 
     @Column({ type: 'boolean', default: true })
     isActive: boolean;

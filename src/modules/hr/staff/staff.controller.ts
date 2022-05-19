@@ -64,4 +64,9 @@ export class StaffController {
 	deleteStaff(@Param('id') id: number, @Request() req) {
 		return this.staffService.deleteStaff(id, req.user.username);
 	}
+
+	@Get('transactions')
+	getStaff(@Query() urlParams) {
+		return this.staffService.getStaff(urlParams);
+	}
 }
