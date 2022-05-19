@@ -2,7 +2,7 @@ import { CacheModule, MiddlewareConsumer, Module, NestModule } from '@nestjs/com
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
-import { configService } from './config/config.service';
+import { configService } from './config.service';
 import { HmoModule } from './modules/hmo/hmo.module';
 import { HRModule } from './modules/hr/hr.module';
 import { SettingsModule } from './modules/settings/settings.module';

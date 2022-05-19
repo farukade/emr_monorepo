@@ -1,5 +1,5 @@
 import * as jwt from 'jsonwebtoken';
-import { configService } from '../../config/config.service';
+import { configService } from '../../config.service';
 
 export class JWTHelper {
 	/**

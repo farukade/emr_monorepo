@@ -1,6 +1,6 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { join } from 'path';
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 require('dotenv').config();
 
 class ConfigService {
@@ -39,7 +39,7 @@ class ConfigService {
 			password: this.getValue('POSTGRES_PASSWORD'),
 			database: this.getValue('POSTGRES_DATABASE'),
 
-			entities: [join(__dirname, '..', '/**/*.entity.{js,ts}')],
+			entities: [__dirname + '/**/*.entity{.ts,.js}'],
 
 			migrationsTableName: 'migration',
 
@@ -54,9 +54,9 @@ class ConfigService {
 			synchronize: false,
 			migrationsRun: false,
 			uuidExtension: 'pgcrypto',
-			// factories: ['dist/database/factories/*.factory{.ts,.js}'],
-			// seeds: ['dist/database/seeds/*.seed{.ts,.js}'],
-		};
+			factories: ['dist/database/factories/*.factory{.ts,.js}'],
+			seeds: ['dist/database/seeds/*.seed{.ts,.js}'],
+		} as TypeOrmModuleOptions;
 	}
 }
 
