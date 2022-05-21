@@ -7,46 +7,38 @@ import { Department } from '../../../settings/entities/department.entity';
 
 @Entity({ name: 'salary_payments' })
 export class SalaryPayment extends CustomBaseEntity {
-	@ManyToOne(() => StaffDetails)
-	@JoinColumn({ name: 'staff_id' })
-	staff: StaffDetails;
+  @ManyToOne(() => StaffDetails)
+  @JoinColumn({ name: 'staff_id' })
+  staff: StaffDetails;
 
-	@Column({ type: 'varchar' })
-	staff_name: string;
+  @Column({ type: 'varchar' })
+  staff_name: string;
 
-	@ManyToOne(() => Department, { nullable: true })
-	@JoinColumn({ name: 'department_id' })
-	department: Department;
+  @ManyToOne(() => Department, { nullable: true })
+  @JoinColumn({ name: 'department_id' })
+  department: Department;
 
-	@Column({ type: 'varchar', length: 20 })
-	payment_month: string;
+  @Column({ type: 'varchar', length: 20 })
+  payment_month: string;
 
-	@Column({ type: 'float4', nullable: true })
-	total_allowance: number;
+  @Column({ type: 'float4', nullable: true })
+  total_allowance: number;
 
-	@Column({ type: 'float4', nullable: true })
-	total_deduction: number;
+  @Column({ type: 'float4', nullable: true })
+  total_deduction: number;
 
-	@Column({ type: 'float4', nullable: true })
-	amount_paid: number;
+  @Column({ type: 'float4', nullable: true })
+  amount_paid: number;
 
-	@Column({ type: 'varchar', nullable: true })
-	comment: string;
+  @Column({ type: 'varchar', nullable: true })
+  comment: string;
 
-	@Column({ type: 'smallint', default: 0 })
-	status: number;
+  @Column({ type: 'smallint', default: 0 })
+  status: number;
 
-	@OneToMany(
-		() => SalaryPaymentAllowance,
-		allowances => allowances.payment,
-		{ eager: true, onDelete: 'CASCADE' },
-	)
-	allowances: SalaryPaymentAllowance[];
+  @OneToMany(() => SalaryPaymentAllowance, (allowances) => allowances.payment, { eager: true, onDelete: 'CASCADE' })
+  allowances: SalaryPaymentAllowance[];
 
-	@OneToMany(
-		() => SalaryPaymentDeduction,
-		deductions => deductions.payment,
-		{ eager: true, onDelete: 'CASCADE' },
-	)
-	deductions: SalaryPaymentDeduction[];
+  @OneToMany(() => SalaryPaymentDeduction, (deductions) => deductions.payment, { eager: true, onDelete: 'CASCADE' })
+  deductions: SalaryPaymentDeduction[];
 }

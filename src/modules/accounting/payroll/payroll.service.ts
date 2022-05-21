@@ -18,231 +18,236 @@ import { Pagination } from '../../../common/paginate/paginate.interface';
 
 @Injectable()
 export class PayrollService {
-	constructor(
-		@InjectRepository(SalaryAllowanceRepository)
-		private salaryAllowanceRepository: SalaryAllowanceRepository,
-		@InjectRepository(SalaryDeductionRepository)
-		private salaryDeductionRepository: SalaryDeductionRepository,
-		@InjectRepository(SalaryPaymentRepository)
-		private salaryPaymentRepository: SalaryPaymentRepository,
-		@InjectRepository(SalaryPaymentAllowanceRepository)
-		private salaryPaymentAllowanceRepository: SalaryPaymentAllowanceRepository,
-		@InjectRepository(SalaryPaymentDeductionRepository)
-		private salaryPaymentDeductionRepository: SalaryPaymentDeductionRepository,
-		@InjectRepository(StaffRepository)
-		private staffRepository: StaffRepository,
-		@InjectRepository(DepartmentRepository)
-		private departmentRepository: DepartmentRepository,
-	) {}
+  constructor(
+    @InjectRepository(SalaryAllowanceRepository)
+    private salaryAllowanceRepository: SalaryAllowanceRepository,
+    @InjectRepository(SalaryDeductionRepository)
+    private salaryDeductionRepository: SalaryDeductionRepository,
+    @InjectRepository(SalaryPaymentRepository)
+    private salaryPaymentRepository: SalaryPaymentRepository,
+    @InjectRepository(SalaryPaymentAllowanceRepository)
+    private salaryPaymentAllowanceRepository: SalaryPaymentAllowanceRepository,
+    @InjectRepository(SalaryPaymentDeductionRepository)
+    private salaryPaymentDeductionRepository: SalaryPaymentDeductionRepository,
+    @InjectRepository(StaffRepository)
+    private staffRepository: StaffRepository,
+    @InjectRepository(DepartmentRepository)
+    private departmentRepository: DepartmentRepository,
+  ) {}
 
-	async listPayroll(options: PaginationOptionsInterface, params): Promise<Pagination> {
-		try {
-			const { department_id, period, status } = params;
+  async listPayroll(options: PaginationOptionsInterface, params): Promise<Pagination> {
+    try {
+      const { department_id, period, status, staff_id } = params;
 
-			const page = options.page - 1;
+      const page = options.page - 1;
 
-			const query = this.salaryPaymentRepository
-				.createQueryBuilder('p')
-				.select('p.*')
-				.where('p.payment_month = :period', { period });
+      const query = this.salaryPaymentRepository.createQueryBuilder('p').select('p.*');
 
-			if (department_id && department_id !== '') {
-				query.andWhere('p.department_id = :department_id', { department_id });
-			}
+      if (period && period !== '') {
+        query.andWhere('p.payment_month = :period', { period });
+      }
 
-			if (status && status !== '') {
-				query.andWhere('p.status = :status', { status });
-			}
+      if (staff_id && staff_id !== '') {
+        query.andWhere('p.staff_id = :staff_id', { staff_id });
+      }
 
-			const rs = await query
-				.offset(page * options.limit)
-				.limit(options.limit)
-				.orderBy('p.createdAt', 'DESC')
-				.getRawMany();
+      if (department_id && department_id !== '') {
+        query.andWhere('p.department_id = :department_id', { department_id });
+      }
 
-			const total = await query.getCount();
+      if (status && status !== '') {
+        query.andWhere('p.status = :status', { status });
+      }
 
-			let results = [];
-			for (const item of rs) {
-				item.staff = await this.staffRepository.findOne(item.staff_id);
-				item.department = await this.departmentRepository.findOne(item.department_id);
+      const rs = await query
+        .offset(page * options.limit)
+        .limit(options.limit)
+        .orderBy('p.createdAt', 'DESC')
+        .getRawMany();
 
-				results = [...results, item];
-			}
+      const total = await query.getCount();
 
-			return {
-				result: results,
-				lastPage: Math.ceil(total / options.limit),
-				itemsPerPage: options.limit,
-				totalPages: total,
-				currentPage: options.page,
-			};
-		} catch (e) {
-			console.log(e);
-			throw e;
-		}
-	}
+      let results = [];
+      for (const item of rs) {
+        item.staff = await this.staffRepository.findOne(item.staff_id);
+        item.department = await this.departmentRepository.findOne(item.department_id);
 
-	async listStaffPayroll(params: any): Promise<SalaryPayment[]> {
-		const { staffId } = params;
-		const staff = await this.staffRepository.findOne(staffId);
+        results = [...results, item];
+      }
 
-		return await this.salaryPaymentRepository.find({ where: { staff, status: 1 } });
-	}
+      return {
+        result: results,
+        lastPage: Math.ceil(total / options.limit),
+        itemsPerPage: options.limit,
+        totalPages: total,
+        currentPage: options.page,
+      };
+    } catch (e) {
+      console.log(e);
+      throw e;
+    }
+  }
 
-	async updateSalaryAllowance(salaryAllowanceDto: SalaryAllowanceDto): Promise<any> {
-		const { items } = salaryAllowanceDto;
-		// clear salary allowance table
-		// await getConnection().getRepository(SalaryAllowance).clear();
-		await this.salaryAllowanceRepository.clear();
-		// save items
-		try {
-			const result = await this.salaryAllowanceRepository.save(items);
-			return { success: true, result };
-		} catch (err) {
-			return { success: false, message: err.mesage };
-		}
-	}
+  async listStaffPayroll(params: any): Promise<SalaryPayment[]> {
+    const { staffId } = params;
+    const staff = await this.staffRepository.findOne(staffId);
 
-	async updateSalaryDeduction(salaryDeductionDto: SalaryDeductionDto): Promise<any> {
-		const { items } = salaryDeductionDto;
-		// clear salary allowance table
-		// await getConnection().getRepository(SalaryDeduction).clear();
-		await this.salaryDeductionRepository.clear();
-		// save items
-		try {
-			const result = await this.salaryDeductionRepository.save(items);
-			return { success: true, result };
-		} catch (err) {
-			return { success: false, message: err.mesage };
-		}
-	}
+    return await this.salaryPaymentRepository.find({ where: { staff, status: 1 } });
+  }
 
-	async generatePayroll(generatePayrollDto: GeneratePayrollDto): Promise<SalaryPayment[]> {
-		try {
-			const { payment_month } = generatePayrollDto;
+  async updateSalaryAllowance(salaryAllowanceDto: SalaryAllowanceDto): Promise<any> {
+    const { items } = salaryAllowanceDto;
+    // clear salary allowance table
+    // await getConnection().getRepository(SalaryAllowance).clear();
+    await this.salaryAllowanceRepository.clear();
+    // save items
+    try {
+      const result = await this.salaryAllowanceRepository.save(items);
+      return { success: true, result };
+    } catch (err) {
+      return { success: false, message: err.mesage };
+    }
+  }
 
-			// check if payroll exists for the given period
-			let payroll = await this.salaryPaymentRepository.find({
-				where: { payment_month },
-				relations: ['allowances', 'deductions', 'staff', 'department'],
-			});
+  async updateSalaryDeduction(salaryDeductionDto: SalaryDeductionDto): Promise<any> {
+    const { items } = salaryDeductionDto;
+    // clear salary allowance table
+    // await getConnection().getRepository(SalaryDeduction).clear();
+    await this.salaryDeductionRepository.clear();
+    // save items
+    try {
+      const result = await this.salaryDeductionRepository.save(items);
+      return { success: true, result };
+    } catch (err) {
+      return { success: false, message: err.mesage };
+    }
+  }
 
-			if (!payroll.length) {
-				// fetch all staffs
-				const staffs = await this.staffRepository.find({ relations: ['department'] });
+  async generatePayroll(generatePayrollDto: GeneratePayrollDto): Promise<SalaryPayment[]> {
+    try {
+      const { payment_month } = generatePayrollDto;
 
-				const payrollData = [];
-				for (const staff of staffs) {
-					const monthly_salary = staff.monthly_salary || '0';
-					if (!staff.monthly_salary) {
-						staff.monthly_salary = '0';
-						await staff.save();
-					}
+      // check if payroll exists for the given period
+      let payroll = await this.salaryPaymentRepository.find({
+        where: { payment_month },
+        relations: ['allowances', 'deductions', 'staff', 'department'],
+      });
 
-					const salary_amount = monthly_salary.replace(',', '');
+      if (!payroll.length) {
+        // fetch all staffs
+        const staffs = await this.staffRepository.find({ relations: ['department'] });
 
-					// get default deductions
-					const deductions = await this.salaryDeductionRepository.find();
-					let totalDeductions = 0;
-					if (deductions.length) {
-						// calculate deductions
-						for (const deduction of deductions) {
-							totalDeductions += (parseFloat(salary_amount) * deduction.value) / 100;
-						}
-					}
+        const payrollData = [];
+        for (const staff of staffs) {
+          const monthly_salary = staff.monthly_salary || '0';
+          if (!staff.monthly_salary) {
+            staff.monthly_salary = '0';
+            await staff.save();
+          }
 
-					if (staff.department) {
-						payrollData.push({
-							staff_name: `${staff.first_name} ${staff.last_name}`,
-							staff,
-							department: staff.department,
-							total_allowance: salary_amount,
-							total_deduction: totalDeductions,
-							amount_paid: parseFloat(salary_amount) - totalDeductions,
-							payment_month,
-						});
-					}
-				}
+          const salary_amount = monthly_salary.replace(',', '');
 
-				payroll = await this.salaryPaymentRepository.save(payrollData);
-			}
+          // get default deductions
+          const deductions = await this.salaryDeductionRepository.find();
+          let totalDeductions = 0;
+          if (deductions.length) {
+            // calculate deductions
+            for (const deduction of deductions) {
+              totalDeductions += (parseFloat(salary_amount) * deduction.value) / 100;
+            }
+          }
 
-			return payroll;
-		} catch (e) {
-			console.log(e);
-			throw e;
-		}
-	}
+          if (staff.department) {
+            payrollData.push({
+              staff_name: `${staff.first_name} ${staff.last_name}`,
+              staff,
+              department: staff.department,
+              total_allowance: salary_amount,
+              total_deduction: totalDeductions,
+              amount_paid: parseFloat(salary_amount) - totalDeductions,
+              payment_month,
+            });
+          }
+        }
 
-	async makePayments(makePaymentDto: MakePaymentDto) {
-		const { staffIds, payment_month } = makePaymentDto;
+        payroll = await this.salaryPaymentRepository.save(payrollData);
+      }
 
-		if (staffIds.length) {
-			for (const id of staffIds) {
-				const staff = await this.staffRepository.findOne(id);
-				const payroll = await this.salaryPaymentRepository.findOne({ where: { staff, payment_month, status: 0 } });
-				if (payroll) {
-					payroll.status = 1;
-					payroll.save();
-				}
-			}
-			return { success: true };
-		} else {
-			throw { success: false, message: 'Please select at least one staff' };
-		}
-	}
+      return payroll;
+    } catch (e) {
+      console.log(e);
+      throw e;
+    }
+  }
 
-	async updatePayslip(updatePayslipDto: UpdatePayslipDto) {
-		const { payslip_id, allowances, deductions, comment } = updatePayslipDto;
+  async makePayments(makePaymentDto: MakePaymentDto) {
+    const { staffIds, payment_month } = makePaymentDto;
 
-		try {
-			const payslip = await this.salaryPaymentRepository.findOne(payslip_id);
-			payslip.comment = comment;
-			await payslip.save();
+    if (staffIds.length) {
+      for (const id of staffIds) {
+        const staff = await this.staffRepository.findOne(id);
+        const payroll = await this.salaryPaymentRepository.findOne({ where: { staff, payment_month, status: 0 } });
+        if (payroll) {
+          payroll.status = 1;
+          payroll.save();
+        }
+      }
+      return { success: true };
+    } else {
+      throw { success: false, message: 'Please select at least one staff' };
+    }
+  }
 
-			if (allowances) {
-				await this.savePayslipAllowances(allowances, payslip);
-			}
+  async updatePayslip(updatePayslipDto: UpdatePayslipDto) {
+    const { payslip_id, allowances, deductions, comment } = updatePayslipDto;
 
-			if (deductions) {
-				await this.savePayslipDeductions(deductions, payslip);
-			}
-			return { successs: true };
-		} catch (err) {
-			return { success: false, message: err.message };
-		}
-	}
+    try {
+      const payslip = await this.salaryPaymentRepository.findOne(payslip_id);
+      payslip.comment = comment;
+      await payslip.save();
 
-	async savePayslipAllowances(allowances, payslip) {
-		await this.salaryPaymentAllowanceRepository
-			.createQueryBuilder()
-			.delete()
-			.where('salary_payment_id = :id', { id: payslip.id })
-			.execute();
+      if (allowances) {
+        await this.savePayslipAllowances(allowances, payslip);
+      }
 
-		for (const allowance of allowances) {
-			await this.salaryPaymentAllowanceRepository.save({
-				label: allowance.label,
-				value: allowance.value,
-				payment: payslip,
-			});
-		}
-	}
+      if (deductions) {
+        await this.savePayslipDeductions(deductions, payslip);
+      }
+      return { successs: true };
+    } catch (err) {
+      return { success: false, message: err.message };
+    }
+  }
 
-	async savePayslipDeductions(deductions, payslip) {
-		await this.salaryPaymentDeductionRepository
-			.createQueryBuilder()
-			.delete()
-			.where('salary_payment_id = :id', { id: payslip.id })
-			.execute();
+  async savePayslipAllowances(allowances, payslip) {
+    await this.salaryPaymentAllowanceRepository
+      .createQueryBuilder()
+      .delete()
+      .where('salary_payment_id = :id', { id: payslip.id })
+      .execute();
 
-		for (const deduction of deductions) {
-			await this.salaryPaymentDeductionRepository.save({
-				label: deduction.label,
-				value: deduction.value,
-				payment: payslip,
-			});
-		}
-	}
+    for (const allowance of allowances) {
+      await this.salaryPaymentAllowanceRepository.save({
+        label: allowance.label,
+        value: allowance.value,
+        payment: payslip,
+      });
+    }
+  }
+
+  async savePayslipDeductions(deductions, payslip) {
+    await this.salaryPaymentDeductionRepository
+      .createQueryBuilder()
+      .delete()
+      .where('salary_payment_id = :id', { id: payslip.id })
+      .execute();
+
+    for (const deduction of deductions) {
+      await this.salaryPaymentDeductionRepository.save({
+        label: deduction.label,
+        value: deduction.value,
+        payment: payslip,
+      });
+    }
+  }
 }

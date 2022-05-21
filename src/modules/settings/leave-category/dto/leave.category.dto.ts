@@ -4,6 +4,5 @@ export class LeaveCategoryDto {
   @IsNotEmpty()
   name: string;
 
-  @IsNotEmpty()
   duration: number;
 }

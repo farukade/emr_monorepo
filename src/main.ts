@@ -11,30 +11,34 @@ import 'reflect-metadata';
 require('events').EventEmitter.defaultMaxListeners = 50;
 
 async function bootstrap() {
-	const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-	const config = new DocumentBuilder().setTitle('EMR Backend API').setDescription('EMR Backend API').setVersion('1.0').build();
-	const document = SwaggerModule.createDocument(app, config);
-	SwaggerModule.setup('docs', app, document);
+  const config = new DocumentBuilder()
+    .setTitle('EMR Backend API')
+    .setDescription('EMR Backend API')
+    .setVersion('1.0')
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('docs', app, document);
 
-	app.setBaseViewsDir(join(__dirname, '..', 'views'));
-	app.setViewEngine('hbs');
+  app.setBaseViewsDir(join(__dirname, '..', 'views'));
+  app.setViewEngine('hbs');
 
-	app.use(compression());
+  app.use(compression());
 
-	const corsOption = {
-		origin: '*',
-		methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-		preflightContinue: false,
-		optionsSuccessStatus: 200,
-	};
-	app.enableCors(corsOption);
+  const corsOption = {
+    origin: '*',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    preflightContinue: false,
+    optionsSuccessStatus: 200,
+  };
+  app.enableCors(corsOption);
 
-	app.use('/public', express.static(join(__dirname, '..', 'public')));
+  app.use('/public', express.static(join(__dirname, '..', 'public')));
 
-	await app.listen(process.env.PORT || 3001);
-	
-    console.info(`EMRAPP API running on: ${await app.getUrl()}`);
+  await app.listen(process.env.PORT || 3001);
+
+  console.info(`EMRAPP API running on: ${await app.getUrl()}`);
 }
 
 bootstrap();
