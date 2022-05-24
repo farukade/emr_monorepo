@@ -1187,14 +1187,14 @@ export class TransactionsService {
         filepath,
         results,
         patient_id: formatPID(patient_id),
-        logo: `${process.env.ENDPOINT}/public/images/logo.png`,
+        logo: `${process.env.ENDPOINT}/images/logo.png`,
       };
 
       await generatePDF('pending-bill', data);
 
       return {
         success: true,
-        url: `${process.env.ENDPOINT}/public/documents/${filename}`,
+        url: `${process.env.ENDPOINT}/documents/${filename}`,
       };
     } catch (error) {
       console.log(error);

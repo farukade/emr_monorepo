@@ -13,131 +13,132 @@ import { slugify } from '../../../common/utils/utils';
 
 @Injectable()
 export class HousekeepingService {
-    constructor(
-        @InjectRepository(RosterRepository)
-        private rosterRepository: RosterRepository,
-        @InjectRepository(DepartmentRepository)
-        private departmentRepository: DepartmentRepository,
-        @InjectRepository(StaffRepository)
-        private staffRepository: StaffRepository,
-    ) {}
+  constructor(
+    @InjectRepository(RosterRepository)
+    private rosterRepository: RosterRepository,
+    @InjectRepository(DepartmentRepository)
+    private departmentRepository: DepartmentRepository,
+    @InjectRepository(StaffRepository)
+    private staffRepository: StaffRepository,
+  ) {}
 
-    async listRoster(params): Promise<Roster[]> {
-        const { department_id, period, staff_id } = params;
+  async listRoster(params): Promise<Roster[]> {
+    const { department_id, period, staff_id } = params;
 
-        const query = this.rosterRepository.createQueryBuilder('r')
-          .leftJoin(Department, 'dept', 'r.department_id = dept.id')
-          .innerJoin(StaffDetails, 'staff', 'r.staff_id = staff.id')
-          .select(['period, r.id, schedule'])
-          .addSelect('dept.name as deptName, staff.first_name, staff.last_name')
-          .where('r.period = :period', { period });
+    const query = this.rosterRepository
+      .createQueryBuilder('r')
+      .leftJoin(Department, 'dept', 'r.department_id = dept.id')
+      .innerJoin(StaffDetails, 'staff', 'r.staff_id = staff.id')
+      .select(['period, r.id, schedule'])
+      .addSelect('dept.name as deptName, staff.first_name, staff.last_name')
+      .where('r.period = :period', { period });
 
-        if (department_id !== '') {
-            query.andWhere('r.department_id = :department_id', { department_id });
-        }
-
-        if (staff_id && staff_id !== '') {
-            query.andWhere('r.staff = :staff_id', { staff_id });
-        }
-
-        return await query.getRawMany();
+    if (department_id !== '') {
+      query.andWhere('r.department_id = :department_id', { department_id });
     }
 
-    async downloadEmptyRoster(query): Promise<any> {
-        try {
-            const { department_id, period } = query;
+    if (staff_id && staff_id !== '') {
+      query.andWhere('r.staff = :staff_id', { staff_id });
+    }
 
-            const department = await this.departmentRepository.findOne(department_id);
+    return await query.getRawMany();
+  }
 
-            const month = moment().format('MM');
-            const year = moment().format('yyyy');
-            const filename = `${slugify(department.name)}-${month}.${year}.roster.csv`;
-            const filepath = path.resolve(__dirname, `../../../../public/documents/${filename}`);
-            const noOfDays = moment(period, 'YYYY-MM').daysInMonth();
+  async downloadEmptyRoster(query): Promise<any> {
+    try {
+      const { department_id, period } = query;
 
-            const createCsvWriter = require('csv-writer').createObjectCsvWriter;
-            const csvWriter = createCsvWriter({
-                path: filepath,
-                header: [
-                    {id: 'sn', title: 'S/N'},
-                    {id: 'staff_id', title: 'Staff ID'},
-                    {id: 'name', title: 'NAME'},
-                ],
+      const department = await this.departmentRepository.findOne(department_id);
+
+      const month = moment().format('MM');
+      const year = moment().format('yyyy');
+      const filename = `${slugify(department.name)}-${month}.${year}.roster.csv`;
+      const filepath = path.resolve(__dirname, `../../../../public/documents/${filename}`);
+      const noOfDays = moment(period, 'YYYY-MM').daysInMonth();
+
+      const createCsvWriter = require('csv-writer').createObjectCsvWriter;
+      const csvWriter = createCsvWriter({
+        path: filepath,
+        header: [
+          { id: 'sn', title: 'S/N' },
+          { id: 'staff_id', title: 'Staff ID' },
+          { id: 'name', title: 'NAME' },
+        ],
+      });
+
+      for (let index = 1; index <= noOfDays; index++) {
+        csvWriter.csvStringifier.header.push({ id: `day${index}`, title: `Day${index}` });
+      }
+
+      // find staffs
+      const staffs = await this.staffRepository.find({ where: { department } });
+      if (staffs.length > 0) {
+        let sn = 1;
+        for (const staff of staffs) {
+          const data = [{ sn, staff_id: staff.id, name: `${staff.first_name} ${staff.last_name}` }];
+          await csvWriter.writeRecords(data);
+          sn++;
+        }
+
+        const url = `${process.env.ENDPOINT}/documents/${filename}`;
+
+        return { success: true, url };
+      }
+
+      return { success: false, message: 'no staff(s) found' };
+    } catch (err) {
+      return { success: false, message: err.message };
+    }
+  }
+
+  async doUploadRoster(file: any, uploadRosterDto: UploadRosterDto) {
+    const { period, department_id } = uploadRosterDto;
+
+    const department = await this.departmentRepository.findOne(department_id);
+
+    const noOfDays = moment(period, 'YYYY-MM').daysInMonth();
+
+    const csv = require('csv-parser');
+    const fs = require('fs');
+    const content = [];
+
+    try {
+      fs.createReadStream(file.path)
+        .pipe(csv())
+        .on('data', (row) => {
+          const data = {
+            staff_id: row['Staff ID'],
+            schedule: [],
+          };
+          for (let index = 1; index <= noOfDays; index++) {
+            data.schedule.push({
+              date: index,
+              duty: row[`Day${index}`],
             });
-
-            for (let index = 1; index <= noOfDays; index++) {
-                csvWriter.csvStringifier.header.push({id: `day${index}`, title: `Day${index}`});
+          }
+          content.push(data);
+        })
+        .on('end', async () => {
+          for (const item of content) {
+            const staff = await this.staffRepository.findOne(item.staff_id);
+            const checkRoster = await this.rosterRepository.findOne({ staff, department, period });
+            if (checkRoster) {
+              checkRoster.schedule = item.schedule;
+              await checkRoster.save();
+            } else {
+              const data = {
+                staff,
+                department,
+                period,
+                schedule: item.schedule,
+              };
+              await this.rosterRepository.save(data);
             }
-
-            // find staffs
-            const staffs = await this.staffRepository.find({ where: { department } });
-            if (staffs.length > 0) {
-                let sn = 1;
-                for (const staff of staffs) {
-                    const data = [{ sn, staff_id: staff.id, name: `${staff.first_name} ${staff.last_name}` }];
-                    await csvWriter.writeRecords(data);
-                    sn++;
-                }
-
-                const url = `${process.env.ENDPOINT}/public/documents/${filename}`;
-
-                return { success: true, url };
-            }
-
-            return {success: false, message: 'no staff(s) found'};
-        } catch (err) {
-            return {success: false, message: err.message};
-        }
+          }
+        });
+      return { success: true };
+    } catch (err) {
+      return { success: false, message: err.message };
     }
-
-    async doUploadRoster(file: any, uploadRosterDto: UploadRosterDto) {
-        const { period, department_id } = uploadRosterDto;
-
-        const department = await this.departmentRepository.findOne(department_id);
-
-        const noOfDays = moment(period, 'YYYY-MM').daysInMonth();
-
-        const csv = require('csv-parser');
-        const fs = require('fs');
-        const content = [];
-
-        try {
-            fs.createReadStream(file.path)
-            .pipe(csv())
-            .on('data', (row) => {
-                const data = {
-                    staff_id: row['Staff ID'],
-                    schedule: [],
-                };
-                for (let index = 1; index <= noOfDays; index++) {
-                    data.schedule.push({
-                        date: index,
-                        duty: row[`Day${index}`],
-                    });
-                }
-                content.push(data);
-            })
-            .on('end', async () => {
-                for (const item of content) {
-                    const staff = await this.staffRepository.findOne(item.staff_id);
-                    const checkRoster = await this.rosterRepository.findOne({ staff, department, period });
-                    if (checkRoster) {
-                        checkRoster.schedule = item.schedule;
-                        await checkRoster.save();
-                    } else {
-                        const data = {
-                            staff,
-                            department,
-                            period,
-                            schedule: item.schedule,
-                        };
-                        await this.rosterRepository.save(data);
-                    }
-                }
-            });
-            return {success: true};
-        } catch (err) {
-            return {success: false, message: err.message};
-        }
-    }
+  }
 }
