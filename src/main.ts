@@ -37,6 +37,7 @@ async function bootstrap() {
   app.use('/documents', express.static(join(__dirname, '..', 'public/documents')));
   app.use('/downloads', express.static(join(__dirname, '..', 'public/downloads')));
   app.use('/images', express.static(join(__dirname, '..', 'public/images')));
+  app.use('/outputs', express.static(join(__dirname, '..', 'public/outputs')));
 
   await app.listen(process.env.PORT || 3001);
 

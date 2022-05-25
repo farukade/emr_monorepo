@@ -53,9 +53,10 @@ export class HousekeepingService {
       const month = moment().format('MM');
       const year = moment().format('yyyy');
       const filename = `${slugify(department.name)}-${month}.${year}.roster.csv`;
-      const filepath = path.resolve(__dirname, `../../../../public/documents/${filename}`);
+      const filepath = path.resolve(__dirname, `../../../../public/downloads/${filename}`);
       const noOfDays = moment(period, 'YYYY-MM').daysInMonth();
 
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const createCsvWriter = require('csv-writer').createObjectCsvWriter;
       const csvWriter = createCsvWriter({
         path: filepath,
@@ -80,7 +81,7 @@ export class HousekeepingService {
           sn++;
         }
 
-        const url = `${process.env.ENDPOINT}/documents/${filename}`;
+        const url = `${process.env.ENDPOINT}/downloads/${filename}`;
 
         return { success: true, url };
       }
@@ -91,14 +92,16 @@ export class HousekeepingService {
     }
   }
 
-  async doUploadRoster(file: any, uploadRosterDto: UploadRosterDto) {
+  async doUploadRoster(file: any, uploadRosterDto: UploadRosterDto, username: string) {
     const { period, department_id } = uploadRosterDto;
 
     const department = await this.departmentRepository.findOne(department_id);
 
     const noOfDays = moment(period, 'YYYY-MM').daysInMonth();
 
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const csv = require('csv-parser');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const fs = require('fs');
     const content = [];
 
@@ -124,6 +127,7 @@ export class HousekeepingService {
             const checkRoster = await this.rosterRepository.findOne({ staff, department, period });
             if (checkRoster) {
               checkRoster.schedule = item.schedule;
+              checkRoster.lastChangedBy = username;
               await checkRoster.save();
             } else {
               const data = {
@@ -131,6 +135,7 @@ export class HousekeepingService {
                 department,
                 period,
                 schedule: item.schedule,
+                createdBy: username,
               };
               await this.rosterRepository.save(data);
             }

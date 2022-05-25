@@ -1169,7 +1169,7 @@ export class TransactionsService {
 
       const date = new Date();
       const filename = `bill-${date.getTime()}.pdf`;
-      const filepath = path.resolve(__dirname, `../../../../public/documents/${filename}`);
+      const filepath = path.resolve(__dirname, `../../../../public/outputs/${filename}`);
       const dob = moment(patient.date_of_birth, 'YYYY-MM-DD HH:mm:ss').format('YYYY-MM-DD');
 
       const results = transactions.map((t) => {
@@ -1194,7 +1194,7 @@ export class TransactionsService {
 
       return {
         success: true,
-        url: `${process.env.ENDPOINT}/documents/${filename}`,
+        url: `${process.env.ENDPOINT}/outputs/${filename}`,
       };
     } catch (error) {
       console.log(error);

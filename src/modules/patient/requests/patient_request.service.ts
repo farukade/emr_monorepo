@@ -1114,7 +1114,7 @@ export class PatientRequestService {
 
       const date = new Date();
       const filename = `${type}-${date.getTime()}.pdf`;
-      const filepath = path.resolve(__dirname, `../../../../public/documents/${filename}`);
+      const filepath = path.resolve(__dirname, `../../../../public/outputs/${filename}`);
 
       const dob = moment(patient.date_of_birth, 'YYYY-MM-DD HH:mm:ss').format('YYYY-MM-DD');
 
@@ -1164,7 +1164,7 @@ export class PatientRequestService {
 
       return {
         success: true,
-        file: `${process.env.ENDPOINT}/documents/${filename}`,
+        file: `${process.env.ENDPOINT}/outputs/${filename}`,
       };
     } catch (error) {
       console.log(error);
