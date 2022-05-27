@@ -1252,6 +1252,8 @@ export class TransactionsService {
     const query = this.transactionsRepository
       .createQueryBuilder('q')
       .leftJoinAndSelect('q.patient', 'patient')
+      .leftJoinAndSelect('q.patientRequestItem', 'patient_requests')
+      .leftJoinAndSelect('patient_requests.drugGeneric', 'drug_generic')
       .where('q.bill_source = :bill_source', { bill_source: 'drugs' });
 
     if (startDate && startDate !== '' && endDate && endDate !== '' && endDate === startDate) {
@@ -1272,9 +1274,13 @@ export class TransactionsService {
 
     //query if search term contains alphabets
     if (chars && chars !== '') {
-      query
-        .andWhere('patient.surname iLike :surname', { surname: `%${chars}%` })
-        .andWhere('patient.other_names iLike :other_names', { other_names: `%${chars}%` });
+      query.andWhere(
+        new Brackets((qb) => {
+          qb.where('patient.surname iLike :surname', { surname: `%${chars}%` })
+            .orWhere('patient.other_names iLike :other_names', { other_names: `%${chars}%` })
+            .orWhere('drug_generic.name iLike :name', { name: `%${chars}%` });
+        }),
+      )
     }
 
     //query if search term contains digits
