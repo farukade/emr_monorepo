@@ -10,7 +10,7 @@ import { QueueSystemRepository } from '../../frontdesk/queue-system/queue-system
 import { AppointmentRepository } from '../../frontdesk/appointment/appointment.repository';
 import { AppGateway } from '../../../app.gateway';
 import { Pagination } from '../../../common/paginate/paginate.interface';
-import { Brackets, getConnection } from 'typeorm';
+import { Brackets, getConnection, getRepository, Like } from 'typeorm';
 import {
   createServiceCost,
   getDepositBalance,
@@ -41,6 +41,7 @@ import { PatientRequestItem } from '../../patient/entities/patient_request_items
 import { AdmissionsRepository } from '../../patient/admissions/repositories/admissions.repository';
 import * as path from 'path';
 import { ServiceCategoryRepository } from '../../settings/services/repositories/service_category.repository';
+import { DrugTransactionSearchDto } from './dto/search-drugs.dto';
 
 @Injectable()
 export class TransactionsService {
@@ -1233,5 +1234,65 @@ export class TransactionsService {
       .save({ patient, amount: Math.abs(amount), transaction: rs });
 
     return await getDepositBalance(patient.id, true);
+  }
+
+  async searchDrugRecords(data: DrugTransactionSearchDto) {
+    const { term, startDate, endDate } = data;
+    const page = parseInt(data.page) - 1;
+    const limit = parseInt(data.limit);
+    const offset = page * limit;
+    console.log(startDate, endDate);
+
+    //separate digits from alphabets
+
+    let nums = term.match(/(\d+)/g);
+
+    let chars = term.replace(/[^a-z]+/gi, '');
+
+    const query = this.transactionsRepository
+      .createQueryBuilder('q')
+      .leftJoinAndSelect('q.patient', 'patient')
+      .where('q.bill_source = :bill_source', { bill_source: 'drugs' });
+
+    if (startDate && startDate !== '' && endDate && endDate !== '' && endDate === startDate) {
+      query.andWhere(`DATE(q.createdAt) = '${startDate}'`);
+      console.log(startDate, endDate, 1);
+    } else {
+      if (startDate && startDate !== '') {
+        const start = moment(startDate).startOf('day').toISOString();
+        query.andWhere(`q.createdAt >= '${start}'`);
+        console.log(startDate, endDate, 2);
+      }
+      if (endDate && endDate !== '') {
+        const end = moment(endDate).endOf('day').toISOString();
+        query.andWhere(`q.createdAt <= '${end}'`);
+        console.log(startDate, endDate, 3);
+      }
+    }
+
+    //query if search term contains alphabets
+    if (chars && chars !== '') {
+      query
+        .andWhere('patient.surname iLike :surname', { surname: `%${chars}%` })
+        .andWhere('patient.other_names iLike :other_names', { other_names: `%${chars}%` });
+    }
+
+    //query if search term contains digits
+    if (nums) {
+      let digits = parseInt(nums[0]);
+
+      query.andWhere('patient.id = :id', { id: digits }).andWhere('q.amount = :amount', { amount: digits });
+    }
+
+    const total = await query.getCount();
+
+    const results = await query.orderBy('q.updated_at', 'DESC').take(limit).skip(offset).getMany();
+    return {
+      results,
+      lastPage: Math.ceil(total / limit),
+      itemsPerPage: limit,
+      totalItems: total,
+      currentPage: data.page,
+    };
   }
 }
