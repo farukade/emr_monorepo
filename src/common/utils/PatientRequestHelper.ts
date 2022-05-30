@@ -369,7 +369,7 @@ export class PatientRequestHelper {
 			admission_id,
 			procedure_id,
 			nicu_id,
-			opp
+			procedure_type
 		} = param;
 
 		try {
@@ -442,15 +442,7 @@ export class PatientRequestHelper {
 						request,
 						service,
 						createdBy,
-					};
-
-					if (opp) {
-						requestItem.can_schedule = false;
-						requestItem.scheduledDate = true;
-						requestItem.scheduledStartDate = new Date();
-						requestItem.scheduledEndDate = new Date();
-					} else {
-						requestItem.can_schedule = true;
+						can_schedule: procedure_type === 'schedule',
 					};
 
 					const rs = await this.saveItem(requestItem);
