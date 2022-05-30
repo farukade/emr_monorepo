@@ -369,6 +369,7 @@ export class PatientRequestHelper {
 			admission_id,
 			procedure_id,
 			nicu_id,
+			procedure_type
 		} = param;
 
 		try {
@@ -402,7 +403,7 @@ export class PatientRequestHelper {
 				nicu = await getConnection()
 					.getRepository(Nicu)
 					.findOne(nicu_id);
-			}
+			};
 
 			let result = [];
 			for (const item of tests) {
@@ -435,16 +436,19 @@ export class PatientRequestHelper {
 					if (!service) {
 						service = await createServiceCost(item.code, hmo);
 					}
-
-					const requestItem = {
+					
+					//checking if param contains out patient procedure and out patient procedure is true
+					const requestItem: any = {
 						request,
 						service,
 						createdBy,
+						can_schedule: procedure_type === 'schedule',
 					};
+
 					const rs = await this.saveItem(requestItem);
 
 					const requestItems = [rs.generatedMaps[0]];
-
+					
 					let items = [];
 					if (diagnosis) {
 						for (const reqItem of requestItems) {

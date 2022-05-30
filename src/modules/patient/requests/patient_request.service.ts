@@ -436,6 +436,8 @@ export class PatientRequestService {
     const patient = await this.patientRepository.findOne(patient_id, {
       relations: ['hmo'],
     });
+    console.log(param);
+
     switch (requestType) {
       case 'labs':
         // save request
