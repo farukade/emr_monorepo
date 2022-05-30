@@ -157,6 +157,6 @@ export class PatientRequestItem extends CustomBaseEntity {
   @JoinColumn({ name: 'transaction_id' })
   transaction: Transaction;
 
-  @Column({ default: false })
+  @Column({ default: true })
   can_schedule: boolean;
 }
