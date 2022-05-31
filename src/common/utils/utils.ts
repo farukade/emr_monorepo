@@ -24,6 +24,7 @@ import { Voucher } from '../../modules/finance/vouchers/voucher.entity';
 import { PatientRequestItem } from '../../modules/patient/entities/patient_request_items.entity';
 import * as numeral from 'numeral';
 import * as startCase from 'lodash.startcase';
+import { S3Client } from '@aws-sdk/client-s3';
 
 const mysql = require('mysql2/promise');
 
@@ -44,15 +45,19 @@ const database = process.env.MYSQL_DATABASE;
 
 const smsglobal = require('smsglobal')(apiKey, apiSecret);
 
+const region = process.env.SPACES_REGION;
+
+export const s3Client = new S3Client({
+  endpoint: `https://${region}.digitaloceanspaces.com`,
+  region,
+  credentials: {
+    accessKeyId: process.env.SPACES_ACCESS_KEY,
+    secretAccessKey: process.env.SPACES_SECRET_KEY,
+  },
+});
+
 export const mysqlConnect = async () => {
-  return await mysql.createConnection({
-    host,
-    port: 3306,
-    user,
-    password,
-    database,
-    Promise: bluebird,
-  });
+  return await mysql.createConnection({ host, port: 3306, user, password, database, Promise: bluebird });
 };
 
 export const slugify = (text) => {

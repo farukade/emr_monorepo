@@ -29,6 +29,8 @@
     "prepare": "husky install"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.100.0",
+    "@aws-sdk/s3-request-presigner": "^3.100.0",
     "@nestjs-modules/mailer": "^1.6.1",
     "@nestjs/bull": "^0.5.4",
     "@nestjs/common": "^8.0.0",

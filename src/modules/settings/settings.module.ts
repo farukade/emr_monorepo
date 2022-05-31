@@ -15,26 +15,26 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { SettingsRepository } from './settings.repository';
 import { SettingsController } from './settings.controller';
 import { SettingsService } from './settings.service';
-import { MailModule } from '../mail/mail.module';
+import { QueueModule } from '../queue/queue.module';
 
 @Module({
-	imports: [
-		TypeOrmModule.forFeature([SettingsRepository]),
-		ConsultingRoomModule,
-		RolesPermissionsModule,
-		ServicesModule,
-		RoomsModule,
-		LabModule,
-		DepartmentModule,
-		LeaveCategoryModule,
-		SpecializationModule,
-		DiagnosisModule,
-		AntenatalPackageModule,
-		NicuAccommodationModule,
-		PaymentMethodModule,
-		MailModule,
-	],
-	controllers: [SettingsController],
-	providers: [SettingsService],
+  imports: [
+    TypeOrmModule.forFeature([SettingsRepository]),
+    ConsultingRoomModule,
+    RolesPermissionsModule,
+    ServicesModule,
+    RoomsModule,
+    LabModule,
+    DepartmentModule,
+    LeaveCategoryModule,
+    SpecializationModule,
+    DiagnosisModule,
+    AntenatalPackageModule,
+    NicuAccommodationModule,
+    PaymentMethodModule,
+    QueueModule,
+  ],
+  controllers: [SettingsController],
+  providers: [SettingsService],
 })
 export class SettingsModule {}

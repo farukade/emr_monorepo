@@ -32,7 +32,6 @@ import { PatientConsumableModule } from './consumable/patient-consumable.module'
 import { PatientFluidChartModule } from './fluid-chart/patient_fluid_chart.module';
 import { PatientNoteModule } from './note/patient_note.module';
 import { PatientAlertRepository } from './repositories/patient_alert.repository';
-import { MailModule } from '../mail/mail.module';
 import { HmoSchemeRepository } from '../hmo/repositories/hmo_scheme.repository';
 import { LabTestRepository } from '../settings/lab/repositories/lab.test.repository';
 import { ServiceCategoryRepository } from '../settings/services/repositories/service_category.repository';
@@ -43,54 +42,54 @@ import { NicuRepository } from './nicu/nicu.repository';
 import { LabourEnrollmentRepository } from './labour-management/repositories/labour-enrollment.repository';
 import { ExcuseDutyModule } from './excuse-duty/excuse-duty.module';
 import { AntenatalEnrollmentRepository } from './antenatal/enrollment.repository';
+import { QueueModule } from '../queue/queue.module';
 
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([
-            PatientRepository,
-            ImmunizationRepository,
-            PatientDocumentRepository,
-            PatientNOKRepository,
-            PatientVitalRepository,
-            PatientAntenatalRepository,
-            PatientRequestItemRepository,
-            HmoSchemeRepository,
-            ServiceRepository,
-            ServiceCategoryRepository,
-            VoucherRepository,
-            IvfEnrollmentRepository,
-            StaffRepository,
-            AppointmentRepository,
-            TransactionsRepository,
-            AdmissionClinicalTaskRepository,
-            AdmissionsRepository,
-            LabTestRepository,
-            PatientConsumableRepository,
-            PatientAlertRepository,
-            ServiceCostRepository,
-            PatientNoteRepository,
-            NicuRepository,
-            LabourEnrollmentRepository,
-            AntenatalEnrollmentRepository,
-        ]),
-        AntenatalModule,
-        AdmissionsModule,
-        ConsultationModule,
-        LabourManagementModule,
-        ImmunizationModule,
-        NicuModule,
-        PatientRequestModule,
-        IvfModule,
-        PatientAllergenModule,
-        PatientConsumableModule,
-        PatientNoteModule,
-        PatientFluidChartModule,
-        MailModule,
-        CareTeamModule,
-        ExcuseDutyModule,
-    ],
-    controllers: [PatientController],
-    providers: [AppGateway, PatientService],
+  imports: [
+    TypeOrmModule.forFeature([
+      PatientRepository,
+      ImmunizationRepository,
+      PatientDocumentRepository,
+      PatientNOKRepository,
+      PatientVitalRepository,
+      PatientAntenatalRepository,
+      PatientRequestItemRepository,
+      HmoSchemeRepository,
+      ServiceRepository,
+      ServiceCategoryRepository,
+      VoucherRepository,
+      IvfEnrollmentRepository,
+      StaffRepository,
+      AppointmentRepository,
+      TransactionsRepository,
+      AdmissionClinicalTaskRepository,
+      AdmissionsRepository,
+      LabTestRepository,
+      PatientConsumableRepository,
+      PatientAlertRepository,
+      ServiceCostRepository,
+      PatientNoteRepository,
+      NicuRepository,
+      LabourEnrollmentRepository,
+      AntenatalEnrollmentRepository,
+    ]),
+    AntenatalModule,
+    AdmissionsModule,
+    ConsultationModule,
+    LabourManagementModule,
+    ImmunizationModule,
+    NicuModule,
+    PatientRequestModule,
+    IvfModule,
+    PatientAllergenModule,
+    PatientConsumableModule,
+    PatientNoteModule,
+    PatientFluidChartModule,
+    QueueModule,
+    CareTeamModule,
+    ExcuseDutyModule,
+  ],
+  controllers: [PatientController],
+  providers: [AppGateway, PatientService],
 })
-export class PatientModule {
-}
+export class PatientModule {}

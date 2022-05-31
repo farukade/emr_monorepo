@@ -1,15 +1,20 @@
-import { MailerService } from '@nestjs-modules/mailer';
 import { OnQueueActive, OnQueueCompleted, OnQueueFailed, Process, Processor } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
-import * as moment from 'moment';
-import { formatPID, sendSMS } from '../../common/utils/utils';
+import { MailerService } from '@nestjs-modules/mailer';
 import { Job } from 'bull';
+import { formatPID, s3Client, sendSMS, slugify } from '../../common/utils/utils';
+import * as moment from 'moment';
+import { LogEntity } from '../logger/entities/logger.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LoggerRepository } from '../logger/logger.repository';
-import { LogEntity } from '../logger/entities/logger.entity';
+import * as path from 'path';
+import * as fs from 'fs';
+import { PutObjectCommand } from '@aws-sdk/client-s3';
+import { getConnection } from 'typeorm';
+import { PatientDocument } from '../patient/entities/patient_documents.entity';
 
-@Processor(process.env.MAIL_QUEUE_NAME)
-export class MailProcessor {
+@Processor(process.env.QUEUE_NAME)
+export class QueueProcessor {
   private readonly logger = new Logger(this.constructor.name);
 
   constructor(
@@ -20,12 +25,12 @@ export class MailProcessor {
 
   @OnQueueActive()
   onActive(job: Job) {
-    this.logger.debug(`Processing job ${job.id} of type ${job.name}. Data: ${JSON.stringify(job.data)}`);
+    this.logger.debug(`Processing job ${job.id} of type ${job.name}`);
   }
 
   @OnQueueCompleted()
-  onComplete(job: Job, result: any) {
-    this.logger.debug(`Completed job ${job.id} of type ${job.name}. Result: ${JSON.stringify(result)}`);
+  onComplete(job: Job) {
+    this.logger.debug(`Completed job ${job.id} of type ${job.name}`);
   }
 
   @OnQueueFailed()
@@ -174,6 +179,32 @@ export class MailProcessor {
     } catch (error) {
       console.log(error);
       this.logger.error(`Failed to send registration email to '${data.email}'`, error.stack);
+    }
+  }
+
+  @Process('upload-document')
+  async uploadDocument(job: Job<any>): Promise<any> {
+    try {
+      const data = job.data;
+      const filepath = path.resolve(__dirname, `../../../public/documents/${data.name}`);
+      const file_type = slugify(data.type);
+      const spaceKey = `${data.patient_id}/${file_type}/${data.name}`;
+
+      const params = {
+        Bucket: 'deda-docs',
+        Key: spaceKey,
+        Body: fs.createReadStream(filepath),
+        ACL: 'private',
+      };
+
+      await s3Client.send(new PutObjectCommand(params));
+
+      const document = await getConnection().getRepository(PatientDocument).findOne(data.id);
+      document.cloud_uri = spaceKey;
+      await document.save();
+    } catch (error) {
+      console.log(error);
+      this.logger.error('Failed to upload document', error.stack);
     }
   }
 }

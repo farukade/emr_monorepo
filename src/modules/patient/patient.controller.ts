@@ -177,17 +177,20 @@ export class PatientController {
       storage: diskStorage({
         destination: './public/documents',
         filename: (req, file, cb) => {
-          const randomName = Array(32)
-            .fill(null)
-            .map(() => Math.round(Math.random() * 16).toString(16))
-            .join('');
-          return cb(null, `${randomName}${extname(file.originalname)}`);
+          const randomName = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+          return cb(null, `doc-${randomName}${extname(file.originalname)}`);
         },
       }),
     }),
   )
   uploadDocument(@Param('id') id: string, @Body() param, @UploadedFile() file, @Request() req): Promise<any> {
     return this.patientService.doUploadDocument(id, param, file.filename, req.user.username);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get(':patient_id/documents/:id')
+  downloadDocument(@Param('id') id: string): Promise<any> {
+    return this.patientService.downloadDocument(+id);
   }
 
   @UseGuards(AuthGuard('jwt'))

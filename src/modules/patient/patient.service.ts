@@ -24,6 +24,7 @@ import {
   getOutstanding,
   getStaff,
   postDebit,
+  s3Client,
 } from '../../common/utils/utils';
 import { AdmissionClinicalTaskRepository } from './admissions/repositories/admission-clinical-tasks.repository';
 import { AdmissionsRepository } from './admissions/repositories/admissions.repository';
@@ -32,7 +33,6 @@ import { Pagination } from '../../common/paginate/paginate.interface';
 import { PaginationOptionsInterface } from '../../common/paginate';
 import { ImmunizationRepository } from './immunization/repositories/immunization.repository';
 import { PatientRequestItemRepository } from './repositories/patient_request_items.repository';
-import { MailService } from '../mail/mail.service';
 import { PatientAlert } from './entities/patient_alert.entity';
 import { PatientAlertRepository } from './repositories/patient_alert.repository';
 import { HmoSchemeRepository } from '../hmo/repositories/hmo_scheme.repository';
@@ -50,11 +50,14 @@ import { LabourEnrollmentRepository } from './labour-management/repositories/lab
 import { PatientFluidChart } from './entities/patient_fluid_chart.entity';
 import { AntenatalEnrollmentRepository } from './antenatal/enrollment.repository';
 import { IvfEnrollmentRepository } from './ivf/ivf_enrollment.repository';
+import { QueueService } from '../queue/queue.service';
+import { GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 @Injectable()
 export class PatientService {
   constructor(
-    private mailService: MailService,
+    private queueService: QueueService,
     @InjectRepository(PatientRepository)
     private patientRepository: PatientRepository,
     @InjectRepository(PatientNOKRepository)
@@ -316,7 +319,7 @@ export class PatientService {
           message,
         };
 
-        await this.mailService.sendMail(mail, 'registration');
+        await this.queueService.queueJob('registration', mail);
       } catch (e) {
         console.log(e);
       }
@@ -965,6 +968,9 @@ export class PatientService {
       doc.createdBy = createdBy;
       const rs = await doc.save();
 
+      const data = { id: rs.id, name: fileName, type: param.document_type, patient_id: patient.id };
+      await this.queueService.queueJob('upload-document', data);
+
       if (param.document_type === 'scans') {
         requestItem.filled = 1;
         requestItem.filled_by = createdBy;
@@ -977,6 +983,38 @@ export class PatientService {
       }
 
       return { success: true, document: rs };
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  }
+
+  async downloadDocument(id: number) {
+    try {
+      const document = await this.patientDocumentRepository.findOne(id, { relations: ['patient'] });
+      if (!document) {
+        return { success: false, message: 'document not found' };
+      }
+
+      if (document.cloud_uri && document.cloud_uri !== '') {
+        const params = {
+          Bucket: 'deda-docs',
+          Key: document.cloud_uri,
+        };
+
+        let url;
+        try {
+          url = await getSignedUrl(s3Client, new GetObjectCommand(params), { expiresIn: 15 * 60 });
+        } catch (err) {
+          console.log(err);
+          url = `${process.env.ENDPOINT}/documents/${document.document_name}`;
+        }
+
+        return { success: true, url };
+      }
+
+      const url = `${process.env.ENDPOINT}/documents/${document.document_name}`;
+
+      return { success: true, url };
     } catch (error) {
       return { success: false, message: error.message };
     }

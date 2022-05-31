@@ -5,17 +5,19 @@ import { PatientRequestItem } from './patient_request_items.entity';
 
 @Entity({ name: 'patient_documents' })
 export class PatientDocument extends CustomBaseEntity {
+  @Column()
+  document_type: string;
 
-    @Column()
-    document_type: string;
+  @Column()
+  document_name: string;
 
-    @Column()
-    document_name: string;
+  @ManyToOne((type) => Patient)
+  @JoinColumn({ name: 'patient_id' })
+  patient: Patient;
 
-    @ManyToOne(type => Patient)
-    @JoinColumn({ name: 'patient_id' })
-    patient: Patient;
+  @OneToOne((type) => PatientRequestItem, (item) => item.document)
+  item: PatientRequestItem;
 
-    @OneToOne(type => PatientRequestItem, item => item.document)
-    item: PatientRequestItem;
+  @Column({ nullable: true })
+  cloud_uri: string;
 }

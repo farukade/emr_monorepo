@@ -4,65 +4,65 @@ import { SettingsRepository } from './settings.repository';
 import { Settings } from './entities/settings.entity';
 import { SettingsDto } from './dto/settings.dto';
 import { getStaff, slugify } from '../../common/utils/utils';
-import { MailService } from '../mail/mail.service';
+import { QueueService } from '../queue/queue.service';
 
 @Injectable()
 export class SettingsService {
-	constructor(
-		private mailService: MailService,
-		@InjectRepository(SettingsRepository)
-		private settingsRepository: SettingsRepository,
-	) {}
+  constructor(
+    private queueService: QueueService,
+    @InjectRepository(SettingsRepository)
+    private settingsRepository: SettingsRepository,
+  ) {}
 
-	async getSettings(): Promise<Settings[]> {
-		return await this.settingsRepository.find();
-	}
+  async getSettings(): Promise<Settings[]> {
+    return await this.settingsRepository.find();
+  }
 
-	async saveSetting(createDto: SettingsDto, createdBy): Promise<Settings> {
-		const { name, value } = createDto;
+  async saveSetting(createDto: SettingsDto, createdBy): Promise<Settings> {
+    const { name, value } = createDto;
 
-		const setting = new Settings();
-		setting.name = name;
-		setting.slug = slugify(name);
-		setting.value = value;
-		setting.createdBy = createdBy;
+    const setting = new Settings();
+    setting.name = name;
+    setting.slug = slugify(name);
+    setting.value = value;
+    setting.createdBy = createdBy;
 
-		return await this.settingsRepository.save(setting);
-	}
+    return await this.settingsRepository.save(setting);
+  }
 
-	async updateSetting(id, updateDto: SettingsDto, updatedBy) {
-		const { name, value } = updateDto;
+  async updateSetting(id, updateDto: SettingsDto, updatedBy) {
+    const { name, value } = updateDto;
 
-		const setting = await this.settingsRepository.findOne(id);
-		setting.name = name;
-		setting.slug = slugify(name);
-		setting.value = value;
-		setting.lastChangedBy = updatedBy;
-		await setting.save();
+    const setting = await this.settingsRepository.findOne(id);
+    setting.name = name;
+    setting.slug = slugify(name);
+    setting.value = value;
+    setting.lastChangedBy = updatedBy;
+    await setting.save();
 
-		return setting;
-	}
+    return setting;
+  }
 
-	async sendMail(params, sender) {
-		const { email, subject, message } = params;
+  async sendMail(params, sender) {
+    const { email, subject, message } = params;
 
-		try {
-			const staff = await getStaff(sender);
+    try {
+      const staff = await getStaff(sender);
 
-			const mail = {
-				from_name: `${staff.first_name} ${staff.last_name}`,
-				from_email: staff?.email || '',
-				to_email: email,
-				subject,
-				message,
-			};
+      const mail = {
+        from_name: `${staff.first_name} ${staff.last_name}`,
+        from_email: staff?.email || '',
+        to_email: email,
+        subject,
+        message,
+      };
 
-			await this.mailService.sendMail(mail, 'send');
+      await this.queueService.queueJob('send', mail);
 
-			return { scheduled: true };
-		} catch (error) {
-			console.log(error);
-			throw new BadRequestException(`Failed to send email to '${email}'`);
-		}
-	}
+      return { scheduled: true };
+    } catch (error) {
+      console.log(error);
+      throw new BadRequestException(`Failed to send email to '${email}'`);
+    }
+  }
 }
