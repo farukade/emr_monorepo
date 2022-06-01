@@ -751,7 +751,7 @@ export class AppointmentService {
 
   async filterConsultations(data) {
     try {
-      const { clinic, month, year } = data;
+      const { clinic, month, year, doctor_id } = data;
 
       const page = parseInt(data.page) - 1;
       const limit = parseInt(data.limit);
@@ -763,16 +763,25 @@ export class AppointmentService {
       const query = this.appointmentRepository
         .createQueryBuilder('q')
         .leftJoinAndSelect('q.department', 'department')
-        .where('department.name iLike :name', { name: `%${clinic}%` })
-        .andWhere('q.status = :status', { status: 'Completed' });
+		.leftJoinAndSelect('q.whomToSee', 'doctor')
+		.where('q.status = :status', { status: 'Completed' });
 
+	  if (clinic && clinic !== "") {
+		  query.andWhere('department.name iLike :name', { name: `%${clinic}%` });
+	  };
+        
       if (month && year && month !== '' && year !== '') {
         startDate = `${year}-${month}-01 00:00:00`;
         endDate = `${year}-${month}-31 23:59:59`;
         query
           .andWhere('q.appointment_date > :startDate', { startDate })
           .andWhere('q.appointment_date < :endDate', { endDate });
-      }
+      };
+
+	  if (doctor_id && doctor_id !== "") {
+		  query
+		  	.andWhere('doctor.id = :doctor_id', { doctor_id})
+	  };
 
       const total = await query.getCount();
 
