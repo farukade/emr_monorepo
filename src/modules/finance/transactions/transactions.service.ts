@@ -1319,11 +1319,11 @@ export class TransactionsService {
       const results = await query.orderBy('q.updated_at', 'DESC').take(limit).skip(offset).getMany();
       return {
         success: true,
-        results,
+        result: results,
         lastPage: Math.ceil(total / limit),
         itemsPerPage: limit,
         totalItems: total,
-        currentPage: data.page,
+        currentPage: parseInt(data.page)
       };
     } catch (error) {
       return { success: false, message: error.message || 'could not get records' };
