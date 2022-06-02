@@ -24,6 +24,7 @@ import {
   parseSource,
   parseDescription,
   formatPatientId,
+  parseDescriptionB,
 } from '../../../common/utils/utils';
 import { Settings } from '../../settings/entities/settings.entity';
 import { ServiceCostRepository } from '../../settings/services/repositories/service_cost.repository';
@@ -1100,7 +1101,7 @@ export class TransactionsService {
 
   async printBill(params: any): Promise<any> {
     try {
-      const { start_date, end_date, patient_id, service_id, status } = params;
+      const { start_date, end_date, patient_id, service_id, status, transId } = params;
 
       const query = this.transactionsRepository
         .createQueryBuilder('q')
@@ -1150,17 +1151,28 @@ export class TransactionsService {
         }
       }
 
-      const transactions = await query.orderBy('q.createdAt', 'DESC').getRawMany();
-      for (const transaction of transactions) {
-        if (transaction.service_cost_id) {
-          transaction.service = await this.serviceCostRepository.findOne(transaction.service_cost_id);
-        }
+      let transArr = [];
+      let transIdArr = [];
 
-        if (transaction.patient_request_item_id) {
-          transaction.patientRequestItem = await this.patientRequestItemRepository.findOne(
-            transaction.patient_request_item_id,
-            { relations: ['request'] },
-          );
+      if (transId && transId !== '') {
+        transIdArr = transId.split('-');
+      }
+
+      const transactions = await query.orderBy('q.createdAt', 'DESC').getRawMany();
+
+      for (const transaction of transactions) {
+        if (transIdArr.includes(transaction.id.toString())) {
+          if (transaction.service_cost_id) {
+            transaction.service = await this.serviceCostRepository.findOne(transaction.service_cost_id);
+          }
+
+          if (transaction.patient_request_item_id) {
+            transaction.patientRequestItem = await this.patientRequestItemRepository.findOne(
+              transaction.patient_request_item_id,
+              { relations: ['request'] },
+            );
+          }
+          transArr.push(transaction);
         }
       }
 
@@ -1173,14 +1185,17 @@ export class TransactionsService {
       const filepath = path.resolve(__dirname, `../../../../public/outputs/${filename}`);
       const dob = moment(patient.date_of_birth, 'YYYY-MM-DD HH:mm:ss').format('YYYY-MM-DD');
 
-      const results = transactions.map((t) => {
+      const results = transArr.map((t) => {
         return {
           date: moment(t.createdAt).format('DD-MMMM-YYYY h:mm A'),
           source: parseSource(t.bill_source),
-          description: parseDescription(t),
+          description: parseDescriptionB(t),
           amount: formatCurrency(t.amount, true),
+          rawAmount: t.amount,
         };
       });
+
+      let total = results.reduce((a, b) => a - b.rawAmount, 0);
 
       const data = {
         patient,
@@ -1189,6 +1204,8 @@ export class TransactionsService {
         results,
         patient_id: formatPID(patient_id),
         logo: `${process.env.ENDPOINT}/images/logo.png`,
+        totalAmount: formatCurrency(total, true),
+        displayDate: moment().format('DD-MMMM-YYYY h:mm A'),
       };
 
       await generatePDF('pending-bill', data);
@@ -1280,7 +1297,7 @@ export class TransactionsService {
             .orWhere('patient.other_names iLike :other_names', { other_names: `%${chars}%` })
             .orWhere('drug_generic.name iLike :name', { name: `%${chars}%` });
         }),
-      )
+      );
     }
 
     //query if search term contains digits
