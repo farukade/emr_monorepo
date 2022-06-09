@@ -113,8 +113,8 @@ export class TransactionsController {
     return this.transactionsService.printBill(urlParams);
   }
 
-  @Get('drugs')
-  getDrugsRecords(@Query() urlParams) {
-    return this.transactionsService.searchDrugRecords(urlParams);
+  @Get('search')
+  getRecords(@Query() urlParams) {
+    return this.transactionsService.searchRecords(urlParams);
   }
 }
