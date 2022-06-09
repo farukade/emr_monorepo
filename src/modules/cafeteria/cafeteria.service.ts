@@ -189,8 +189,10 @@ export class CafeteriaService {
         const quantity = parseInt(item.qty, 10);
         for (let i = 0; i < quantity; i++) {
           const singleItem = await this.cafeteriaItemRepository.findOne({ where: { foodItem, quantity: MoreThan(0) } });
-          singleItem.quantity = singleItem.quantity - 1;
-          await singleItem.save();
+          if(singleItem){
+            singleItem.quantity = singleItem.quantity - 1;
+            await singleItem.save();
+          }
         }
       }
 
