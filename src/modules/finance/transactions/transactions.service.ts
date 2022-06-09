@@ -1238,17 +1238,19 @@ export class TransactionsService {
 
   async searchRecords(data: TransactionSearchDto) {
     try {
-      const { term, startDate, endDate, bill_source } = data;
+      const { term, startDate, endDate, bill_source, filter } = data;
       const page = parseInt(data.page) - 1;
       const limit = parseInt(data.limit);
       const offset = page * limit;
-      console.log(startDate, endDate);
 
       //separate digits from alphabets
+      let nums;
+      let chars;
+      if (term && term !== "") {
+        nums = term.match(/(\d+)/g);
+        chars = term.replace(/[^a-z]+/gi, '');
+      };
 
-      let nums = term.match(/(\d+)/g);
-
-      let chars = term.replace(/[^a-z]+/gi, '');
 
       const query = this.transactionsRepository
         .createQueryBuilder('q')
@@ -1263,11 +1265,27 @@ export class TransactionsService {
           query.leftJoinAndSelect('patient_requests.labTest', 'lab_test');
           break;
 
+      //if bill source is "cafeteria" and contains filter
+        case 'cafeteria':
+          query.leftJoinAndSelect('q.staff', 'staff');
+        break;
+
         default:
           return { success: false, message: 'please enter a valid bill source' };
-      }
+      };
 
       query.where('q.bill_source = :bill_source', { bill_source });
+
+      //might include filter for cafeteria transactions only;
+      switch (filter) {
+        case 'patient':
+          query.andWhere('q.patient IS NOT NULL');
+          break;
+
+        case 'staff':
+          query.andWhere('q.staff IS NOT NULL');
+          break;
+      };
 
       if (startDate && startDate !== '' && endDate && endDate !== '' && endDate === startDate) {
         query.andWhere(`DATE(q.createdAt) = '${startDate}'`);
@@ -1283,7 +1301,7 @@ export class TransactionsService {
           query.andWhere(`q.createdAt <= '${end}'`);
           console.log(startDate, endDate, 3);
         }
-      }
+      };
 
       //query if search term contains alphabets
       if (chars && chars !== '') {

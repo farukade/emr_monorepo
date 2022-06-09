@@ -18,4 +18,7 @@ export class TransactionSearchDto {
 
     @ApiProperty()
     bill_source: string;
+
+    @ApiProperty()
+    filter: string;
 }
