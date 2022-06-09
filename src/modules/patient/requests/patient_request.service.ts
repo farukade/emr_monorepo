@@ -8,8 +8,15 @@ import { PatientRequestItemRepository } from '../repositories/patient_request_it
 import { PatientRepository } from '../repositories/patient.repository';
 import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
 import { AppGateway } from '../../../app.gateway';
-import { getConnection, getRepository, LessThan, MoreThan } from 'typeorm';
-import { createServiceCost, formatPatientId, generatePDF, getStaff, postDebit } from '../../../common/utils/utils';
+import { getConnection, MoreThan } from 'typeorm';
+import {
+  createServiceCost,
+  formatPatientId,
+  generatePDF,
+  getStaff,
+  postDebit,
+  staffname,
+} from '../../../common/utils/utils';
 import { AdmissionsRepository } from '../admissions/repositories/admissions.repository';
 import * as path from 'path';
 import { Drug } from '../../inventory/entities/drug.entity';
@@ -1121,6 +1128,8 @@ export class PatientRequestService {
 
       const rs = results[0];
 
+      const approvedBy = await getStaff(rs.item.approvedBy);
+
       const data = {
         patient,
         requested_date: moment(request.createdAt, 'YYYY-MM-DD HH:mm:ss').format('DD-MMM-YYYY'),
@@ -1136,6 +1145,7 @@ export class PatientRequestService {
         filled_at_time: moment(rs.item.filled_at, 'YYYY-MM-DD HH:mm:ss').format('h:mm A'),
         approved_at_date: moment(rs.item.approvedAt, 'YYYY-MM-DD HH:mm:ss').format('DD-MMM-YYYY'),
         approved_at_time: moment(rs.item.approvedAt, 'YYYY-MM-DD HH:mm:ss').format('h:mm A'),
+        approved_by: staffname(approvedBy),
       };
 
       let content;
