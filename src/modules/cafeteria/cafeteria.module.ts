@@ -9,6 +9,7 @@ import { PatientRepository } from '../patient/repositories/patient.repository';
 import { AdmissionsRepository } from '../patient/admissions/repositories/admissions.repository';
 import { NicuRepository } from '../patient/nicu/nicu.repository';
 import { PaymentMethodRepository } from '../settings/payment-methods/pm.repository';
+import { HmoSchemeRepository } from '../hmo/repositories/hmo_scheme.repository';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { PaymentMethodRepository } from '../settings/payment-methods/pm.reposito
       AdmissionsRepository,
       NicuRepository,
       PaymentMethodRepository,
+      HmoSchemeRepository
     ]),
   ],
   providers: [CafeteriaService],
