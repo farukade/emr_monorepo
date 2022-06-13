@@ -66,4 +66,9 @@ export class AppointmentController {
 	repeatPrompt(@Param('id') id: number) {
 		return this.appointmentService.repeatPrompt(id);
 	}
+
+	@Get('filter')
+	filterConsultations(@Query() params) {
+		return this.appointmentService.filterConsultations(params);
+	}
 }

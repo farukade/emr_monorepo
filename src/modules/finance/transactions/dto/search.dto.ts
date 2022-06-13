@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 
-export class DrugTransactionSearchDto {
+export class TransactionSearchDto {
     @ApiProperty()
     startDate?: string;
 
@@ -15,4 +15,10 @@ export class DrugTransactionSearchDto {
 
     @ApiProperty()
     term: string;
+
+    @ApiProperty()
+    bill_source: string;
+
+    @ApiProperty()
+    filter: string;
 }

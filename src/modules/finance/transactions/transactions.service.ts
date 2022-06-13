@@ -42,7 +42,7 @@ import { PatientRequestItem } from '../../patient/entities/patient_request_items
 import { AdmissionsRepository } from '../../patient/admissions/repositories/admissions.repository';
 import * as path from 'path';
 import { ServiceCategoryRepository } from '../../settings/services/repositories/service_category.repository';
-import { DrugTransactionSearchDto } from './dto/search-drugs.dto';
+import { TransactionSearchDto } from './dto/search.dto';
 
 @Injectable()
 export class TransactionsService {
@@ -1253,41 +1253,57 @@ export class TransactionsService {
     return await getDepositBalance(patient.id, true);
   }
 
-  async searchDrugRecords(data: DrugTransactionSearchDto) {
-    const { term, startDate, endDate } = data;
-    const page = parseInt(data.page) - 1;
-    const limit = parseInt(data.limit);
-    const offset = page * limit;
-    console.log(startDate, endDate);
+  async searchRecords(data: TransactionSearchDto) {
+    try {
+      const { term, startDate, endDate, bill_source, filter } = data;
+      const page = parseInt(data.page) - 1;
+      const limit = parseInt(data.limit);
+      const offset = page * limit;
 
-    //separate digits from alphabets
+      //separate digits from alphabets
+      let nums;
+      let chars;
+      if (term && term !== "") {
+        nums = term.match(/(\d+)/g);
+        chars = term.replace(/[^a-z]+/gi, '');
+      };
 
-    let nums = term.match(/(\d+)/g);
 
-    let chars = term.replace(/[^a-z]+/gi, '');
+      const query = this.transactionsRepository
+        .createQueryBuilder('q')
+        .leftJoinAndSelect('q.patient', 'patient')
+        .leftJoinAndSelect('q.patientRequestItem', 'patient_requests');
+      switch (bill_source) {
+        case 'drugs':
+          query.leftJoinAndSelect('patient_requests.drugGeneric', 'drug_generic');
+          break;
 
-    const query = this.transactionsRepository
-      .createQueryBuilder('q')
-      .leftJoinAndSelect('q.patient', 'patient')
-      .leftJoinAndSelect('q.patientRequestItem', 'patient_requests')
-      .leftJoinAndSelect('patient_requests.drugGeneric', 'drug_generic')
-      .where('q.bill_source = :bill_source', { bill_source: 'drugs' });
+        case 'labs':
+          query.leftJoinAndSelect('patient_requests.labTest', 'lab_test');
+          break;
 
-    if (startDate && startDate !== '' && endDate && endDate !== '' && endDate === startDate) {
-      query.andWhere(`DATE(q.createdAt) = '${startDate}'`);
-      console.log(startDate, endDate, 1);
-    } else {
-      if (startDate && startDate !== '') {
-        const start = moment(startDate).startOf('day').toISOString();
-        query.andWhere(`q.createdAt >= '${start}'`);
-        console.log(startDate, endDate, 2);
-      }
-      if (endDate && endDate !== '') {
-        const end = moment(endDate).endOf('day').toISOString();
-        query.andWhere(`q.createdAt <= '${end}'`);
-        console.log(startDate, endDate, 3);
-      }
-    }
+      //if bill source is "cafeteria" and contains filter
+        case 'cafeteria':
+          query.leftJoinAndSelect('q.staff', 'staff');
+        break;
+
+        default:
+          return { success: false, message: 'please enter a valid bill source' };
+      };
+
+      query.where('q.bill_source = :bill_source', { bill_source });
+
+      //might include filter for cafeteria transactions only;
+      switch (filter) {
+        case 'patient':
+          query.andWhere('q.patient IS NOT NULL');
+          break;
+
+        case 'staff':
+          query.andWhere('q.staff IS NOT NULL');
+          break;
+      };
+
 
     //query if search term contains alphabets
     if (chars && chars !== '') {
@@ -1300,22 +1316,65 @@ export class TransactionsService {
       );
     }
 
-    //query if search term contains digits
-    if (nums) {
-      let digits = parseInt(nums[0]);
+      if (startDate && startDate !== '' && endDate && endDate !== '' && endDate === startDate) {
+        query.andWhere(`DATE(q.createdAt) = '${startDate}'`);
+        console.log(startDate, endDate, 1);
+      } else {
+        if (startDate && startDate !== '') {
+          const start = moment(startDate).startOf('day').toISOString();
+          query.andWhere(`q.createdAt >= '${start}'`);
+          console.log(startDate, endDate, 2);
+        }
+        if (endDate && endDate !== '') {
+          const end = moment(endDate).endOf('day').toISOString();
+          query.andWhere(`q.createdAt <= '${end}'`);
+          console.log(startDate, endDate, 3);
+        }
+      };
 
-      query.andWhere('patient.id = :id', { id: digits }).andWhere('q.amount = :amount', { amount: digits });
+
+      //query if search term contains alphabets
+      if (chars && chars !== '') {
+        query.andWhere(
+          new Brackets((qb) => {
+            qb.where('patient.surname iLike :surname', { surname: `%${chars}%` }).orWhere(
+              'patient.other_names iLike :other_names',
+              { other_names: `%${chars}%` },
+            );
+
+            switch (bill_source) {
+              case 'drugs':
+                qb.orWhere('drug_generic.name iLike :name', { name: `%${chars}%` });
+                break;
+
+              case 'labs':
+                qb.orWhere('lab_test.name iLike :name', { name: `%${chars}%` });
+                break;
+            }
+          }),
+        );
+      }
+
+      //query if search term contains digits
+      if (nums) {
+        let digits = parseInt(nums[0]);
+
+        query.andWhere('patient.id = :id', { id: digits }).andWhere('q.amount = :amount', { amount: digits });
+      }
+
+      const total = await query.getCount();
+
+      const results = await query.orderBy('q.updated_at', 'DESC').take(limit).skip(offset).getMany();
+      return {
+        success: true,
+        result: results,
+        lastPage: Math.ceil(total / limit),
+        itemsPerPage: limit,
+        totalItems: total,
+        currentPage: parseInt(data.page)
+      };
+    } catch (error) {
+      return { success: false, message: error.message || 'could not get records' };
     }
-
-    const total = await query.getCount();
-
-    const results = await query.orderBy('q.updated_at', 'DESC').take(limit).skip(offset).getMany();
-    return {
-      results,
-      lastPage: Math.ceil(total / limit),
-      itemsPerPage: limit,
-      totalItems: total,
-      currentPage: data.page,
-    };
   }
 }

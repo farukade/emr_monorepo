@@ -635,6 +635,7 @@ export const parseDescription = (item) => {
   return '--';
 };
 
+
 export const parseDescriptionB = (item) => {
   if (!item) {
     return '--';
@@ -665,3 +666,6 @@ export const parseDescriptionB = (item) => {
 
   return '--';
 };
+
+export const staffname = (user) => (user ? `${startCase(user?.first_name)} ${startCase(user?.last_name)}` : '--');
+

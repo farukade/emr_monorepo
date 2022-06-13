@@ -20,6 +20,8 @@ import { PatientRepository } from '../patient/repositories/patient.repository';
 import { AdmissionsRepository } from '../patient/admissions/repositories/admissions.repository';
 import { NicuRepository } from '../patient/nicu/nicu.repository';
 import { PaymentMethodRepository } from '../settings/payment-methods/pm.repository';
+import { HmoSchemeRepository } from '../hmo/repositories/hmo_scheme.repository';
+import { Transaction } from '../finance/transactions/transaction.entity';
 
 @Injectable()
 export class CafeteriaService {
@@ -38,6 +40,8 @@ export class CafeteriaService {
     private nicuRepository: NicuRepository,
     @InjectRepository(PaymentMethodRepository)
     private paymentMethodRepository: PaymentMethodRepository,
+    @InjectRepository(HmoSchemeRepository)
+    private hmoSchemeRepository: HmoSchemeRepository,
   ) {}
 
   async getAllItems(options: PaginationOptionsInterface, params): Promise<Pagination> {
@@ -146,6 +150,8 @@ export class CafeteriaService {
     try {
       const { cartItems, customer, patient_id, staff_id, staff_total, total, payment_method, paid } = param;
 
+      const hasPaid: boolean = Number(paid) >= (Number(staff_total) || Number(total));
+      const paidPart: boolean = hasPaid ? false : Number(paid) > 0;
       let emptyStock = [];
       for (const sale of cartItems) {
         const stock = await this.cafeteriaItemRepository.findOne(sale.id);
@@ -164,8 +170,10 @@ export class CafeteriaService {
       }
 
       let staff = null;
+      let staffHmo = null;
       if (customer === 'staff' && staff_id) {
         staff = await this.staffRepository.findOne(staff_id);
+        staffHmo = await this.hmoSchemeRepository.findOne(5);
       }
 
       let admission;
@@ -180,9 +188,11 @@ export class CafeteriaService {
         const foodItem = await this.cafeteriaFoodItemRepository.findOne(item.id);
         const quantity = parseInt(item.qty, 10);
         for (let i = 0; i < quantity; i++) {
-          const singleItem = await this.cafeteriaItemRepository.findOne({ where: { foodItem, quantity: MoreThan(1) } });
-          singleItem.quantity = singleItem.quantity - 1;
-          await singleItem.save();
+          const singleItem = await this.cafeteriaItemRepository.findOne({ where: { foodItem, quantity: MoreThan(0) } });
+          if(singleItem){
+            singleItem.quantity = singleItem.quantity - 1;
+            await singleItem.save();
+          }
         }
       }
 
@@ -191,43 +201,81 @@ export class CafeteriaService {
       const totalAmount = customer === 'staff' ? staff_total : total;
       const balance = Number(paid) - Number(totalAmount);
 
-      // const item: TransactionCreditDto = {
-      //   patient_id: patient?.id || null,
-      //   username,
-      //   sub_total: 0,
-      //   vat: 0,
-      //   amount: totalAmount * -1,
-      //   voucher_amount: 0,
-      //   amount_paid: 0,
-      //   change: 0,
-      //   description: null,
-      //   payment_method: null,
-      //   part_payment_expiry_date: null,
-      //   bill_source: 'cafeteria',
-      //   next_location: null,
-      //   status: customer === 'staff' || admission?.id ? -1 : 1,
-      //   hmo_approval_code: null,
-      //   transaction_details: cartItems,
-      //   admission_id: admission?.id || null,
-      //   nicu_id: nicu?.id || null,
-      //   staff_id: customer === 'staff' ? staff?.id : null,
-      //   lastChangedBy: username,
-      // };
-      //
-      // if (balance < 0) {
-      //   const amount_unpaid = balance * -1;
-      // }
-      //
-      // const transaction = await postDebit(item, null, null, null, null, patient?.hmo);
-      //
-      // if (Number(paid) > 0 && balance >= 0) {
-      //   const credit = { ...item, amount_paid: paid, change: balance, payment_method: method.name };
-      //   await postCredit(credit, null, null, null, null, patient?.hmo);
-      // }
-      //
-      // return { success: true, transaction };
-      return { success: false, message: 'Error, could not make sales' };
+      let times: number;
+      let remains: number;
+      let firstPay: number;
+      switch (customer) {
+        case 'staff':
+          if (hasPaid) {
+            times = 1;
+          } else if (paidPart) {
+            times = 2;
+            firstPay = Number(paid);
+            remains = Number(totalAmount) - Number(paid);
+          } else {
+            times = 1;
+          }
+          break;
+        case 'customer':
+          if (hasPaid) {
+            times = 1;
+          } else if (paidPart) {
+            times = 2;
+            firstPay = Number(paid);
+            remains = Number(totalAmount) - Number(paid);
+          } else {
+            times = 1;
+          }
+          break;
+        default:
+          times = 1;
+          break;
+      }
+
+      const hmo = customer === 'patient' ? patient.hmo : staffHmo;
+
+      console.log('firstpay: ' + firstPay + ', \n' + 'secondpay: ' + remains);
+
+      let transactionArr = [];
+      for (let i = 0; i < times; i++) {
+        const item: TransactionCreditDto = {
+          patient_id: patient?.id || null,
+          username,
+          sub_total: 0,
+          vat: 0,
+          amount: paidPart ? (i == 0 ? firstPay * -1 : remains * -1) : Number(totalAmount) * -1,
+          voucher_amount: 0,
+          amount_paid: paidPart ? (i == 0 ? Number(paid) : 0) : Number(paid),
+          change: paidPart ? 0 : Number(totalAmount) - Number(paid),
+          description: null,
+          payment_method: null,
+          part_payment_expiry_date: null,
+          bill_source: 'cafeteria',
+          next_location: null,
+          status: paid ? (i == 0 ? 1 : -1) : -1,
+          hmo_approval_code: null,
+          transaction_details: cartItems,
+          admission_id: admission?.id || null,
+          nicu_id: nicu?.id || null,
+          staff_id: customer === 'staff' ? staff?.id : null,
+          lastChangedBy: username,
+        };
+
+        let transaction = await postDebit(item, null, null, null, null, await hmo);
+        transactionArr = [transaction, ...transactionArr];
+        console.log('debit');
+
+        if (Number(paid) > 0 && i < 1) {
+          const credit = { ...item, amount_paid: paid, change: balance, payment_method: method.name };
+          await postCredit(credit, null, null, null, null, await hmo);
+          console.log('credit');
+        }
+      }
+
+      return { success: true, transaction: transactionArr };
+      // return { success: false, message: 'Error, could not make sales' };
     } catch (error) {
+      console.log(error);
       return { success: false, message: error.message };
     }
   }
