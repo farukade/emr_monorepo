@@ -19,7 +19,6 @@ import { LoggerModule } from './modules/logger/logger.module';
 import { TasksModule } from './modules/scheduler/cron.module';
 import { CafeteriaModule } from './modules/cafeteria/cafeteria.module';
 import { ActivityModule } from './modules/activity/activity.module';
-
 import fs = require('fs');
 import { AccountingModule } from './modules/accounting/accounting.module';
 import { ReportModule } from './modules/report/report.module';
@@ -30,6 +29,7 @@ import { AppService } from './app.service';
 import { BullModule } from '@nestjs/bull';
 import { IvfEmbryologyModule } from './modules/patient/ivf/embryology/embryology.module';
 import { EmbFreezingModule } from './modules/patient/ivf/freezing/freezing.module';
+import { AttendanceModule } from './modules/attendance/attendance.module';
 
 fs.writeFileSync('./ormconfig.json', JSON.stringify(configService.getTypeOrmConfig(), null, 2));
 
@@ -77,6 +77,7 @@ fs.writeFileSync('./ormconfig.json', JSON.stringify(configService.getTypeOrmConf
     MigrationModule,
     IvfEmbryologyModule,
     EmbFreezingModule,
+    AttendanceModule
   ],
   controllers: [AppController],
   providers: [AppService, AppGateway, JwtStrategy],
