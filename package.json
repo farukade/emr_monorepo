@@ -118,8 +118,6 @@
     "testEnvironment": "node"
   },
   "lint-staged": {
-    "src/**/*.{ts,tsx}": [
-      "prettier --write --allow-empty"
-    ]
+    "src/**/*.{ts,tsx}": []
   }
 }

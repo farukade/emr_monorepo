@@ -4,8 +4,8 @@ import { AttendanceRepository } from "./attendance.repository";
 import * as ZKLib from 'zklib-js';
 import { config } from 'dotenv';
 import { Attendance } from "./entities/attendance.entity";
-import { AttendanceDto } from "./dto/attendance.dto";
 import { DeviceUserDto } from "./dto/user.dto";
+import { Brackets } from "typeorm";
 config();
 const port = process.env.BIO_PORT;
 const ip = process.env.BIO_IP;
@@ -21,21 +21,41 @@ export class AttendanceService {
     // this will filter attendance already on emr either by date or staff or (staff & date);
     async emrFilter(params) {
         try {
-            const { date, page, limit, staff_id } = params;
+            const { date, page, limit, term } = params;
             const offset = (parseInt(page) - 1) * parseInt(limit);
             const query = this.attendanceRepository
-                .createQueryBuilder('q');
+                .createQueryBuilder('q')
+                .leftJoinAndSelect('q.staff', 'staff')
+                .leftJoinAndSelect('staff.department', 'department');
 
-            if (date && !staff_id) {
-                query.where(`Date(q.date) = :date`, { date });
-            } else if (staff_id && !date) {
-                query.where('q.staff_id = :staff_id', { staff_id });
+            //separate digits from alphabets
+            let nums;
+            let chars;
+            if (term && term !== "") {
+                nums = term.match(/(\d+)/g);
+                chars = term.replace(/[^a-z]+/gi, '');
             };
 
-            if (date && staff_id) {
-                query.where(`Date(q.date) = :date`, { date })
-                    .andWhere('q.staff_id = :staff_id', { staff_id });
+            if (date) {
+                query.andWhere(`Date(q.date) = :date`, { date });
             };
+
+            if (nums) {
+                let digits = parseInt(nums[0]);
+                query.andWhere('staff.id = :id', { id: digits });
+            };
+
+            if (chars && chars !== '') {
+                console.log(chars);
+                query.andWhere(
+                    new Brackets((qb) => {
+                        qb.where('staff.first_name iLike :first_name', { first_name: `%${chars}%` })
+                            .orWhere('staff.other_names iLike :other_names', { other_names: `%${chars}%` })
+                            .orWhere('staff.last_name iLike :last_name', { last_name: `%${chars}%` })
+                            .orWhere('department.name iLike :name', { name: `%${chars}%` })
+                    }),
+                );
+            }
 
             query.orderBy('q.updated_at', 'DESC')
                 .take(limit)
@@ -127,12 +147,12 @@ export class AttendanceService {
             // Create socket to machine
             await zkInstance.createSocket();
             console.log(await zkInstance.getInfo());
-            if (!data.deviceId || !data.name || !data.password || !data.staffId) {
+            if (!data.name || !data.password || !data.staffId) {
                 await zkInstance.disconnect();
                 return { success: false, message: "please provide all parameters" };
             }
 
-            const user = await zkInstance.setUser(data.deviceId, data.staffId, data.name, data.password, 0, 0);
+            const user = await zkInstance.setUser(data.staffId, `${data.staffId}`, data.name, data.password, 0, 0);
             await zkInstance.disconnect();
             return { success: true, message: "user creation success", user };
 

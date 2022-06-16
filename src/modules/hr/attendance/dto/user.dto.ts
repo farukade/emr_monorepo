@@ -8,8 +8,5 @@ export class DeviceUserDto {
     password: string;
 
     @ApiProperty()
-    deviceId: number;
-
-    @ApiProperty()
     staffId: number;
 }

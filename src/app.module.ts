@@ -29,7 +29,6 @@ import { AppService } from './app.service';
 import { BullModule } from '@nestjs/bull';
 import { IvfEmbryologyModule } from './modules/patient/ivf/embryology/embryology.module';
 import { EmbFreezingModule } from './modules/patient/ivf/freezing/freezing.module';
-import { AttendanceModule } from './modules/attendance/attendance.module';
 
 fs.writeFileSync('./ormconfig.json', JSON.stringify(configService.getTypeOrmConfig(), null, 2));
 
@@ -76,8 +75,7 @@ fs.writeFileSync('./ormconfig.json', JSON.stringify(configService.getTypeOrmConf
     ReportModule,
     MigrationModule,
     IvfEmbryologyModule,
-    EmbFreezingModule,
-    AttendanceModule
+    EmbFreezingModule
   ],
   controllers: [AppController],
   providers: [AppService, AppGateway, JwtStrategy],
