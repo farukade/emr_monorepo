@@ -276,6 +276,7 @@ export class TasksService {
                         message: "attendance saved to database",
                         rs
                     });
+					await zkInstance.disconnect();
                     return;
                 })
                 .catch(error => {

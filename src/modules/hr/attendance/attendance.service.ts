@@ -197,7 +197,7 @@ export class AttendanceService {
             });
             if (logs) {
                 await zkInstance.disconnect();
-                return { success: false, logs };
+                return { success: true, logs };
             };
             await zkInstance.disconnect();
             return { success: false, message: "no logs found" };
