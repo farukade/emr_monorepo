@@ -69,7 +69,8 @@
     "smsglobal": "^1.2.4",
     "swagger-ui-express": "^4.3.0",
     "typeorm": "^0.2.30",
-    "typeorm-seeding": "^1.6.1"
+    "typeorm-seeding": "^1.6.1",
+    "zklib-js": "^1.3.5"
   },
   "devDependencies": {
     "@nestjs/cli": "^8.0.0",
@@ -117,8 +118,6 @@
     "testEnvironment": "node"
   },
   "lint-staged": {
-    "src/**/*.{ts,tsx}": [
-      "prettier --write --allow-empty"
-    ]
+    "src/**/*.{ts,tsx}": []
   }
 }

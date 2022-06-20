@@ -19,7 +19,6 @@ import { LoggerModule } from './modules/logger/logger.module';
 import { TasksModule } from './modules/scheduler/cron.module';
 import { CafeteriaModule } from './modules/cafeteria/cafeteria.module';
 import { ActivityModule } from './modules/activity/activity.module';
-
 import fs = require('fs');
 import { AccountingModule } from './modules/accounting/accounting.module';
 import { ReportModule } from './modules/report/report.module';
@@ -76,7 +75,7 @@ fs.writeFileSync('./ormconfig.json', JSON.stringify(configService.getTypeOrmConf
     ReportModule,
     MigrationModule,
     IvfEmbryologyModule,
-    EmbFreezingModule,
+    EmbFreezingModule
   ],
   controllers: [AppController],
   providers: [AppService, AppGateway, JwtStrategy],
