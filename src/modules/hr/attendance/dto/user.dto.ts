@@ -1,12 +1,12 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty } from '@nestjs/swagger';
 
 export class DeviceUserDto {
-	@ApiProperty()
-	name: string;
+  @ApiProperty()
+  name: string;
 
-    @ApiProperty()
-    password: string;
+  @ApiProperty()
+  password: string;
 
-    @ApiProperty()
-    staffId: number;
+  @ApiProperty()
+  staffId: number;
 }

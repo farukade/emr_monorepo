@@ -1,8 +1,7 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from "@nestjs/common";
-import { AuthGuard } from "@nestjs/passport";
-import { AttendanceService } from "./attendance.service";
-import { DeviceUserDto } from "./dto/user.dto";
-
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { AttendanceService } from './attendance.service';
+import { DeviceUserDto } from './dto/user.dto';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('attendance')
@@ -10,11 +9,9 @@ export class AttendanceController {
   constructor(private attendanceService: AttendanceService) {}
 
   @Get()
-  getAttendance(
-    @Query() urlParams
-  ) {
+  getAttendance(@Query() urlParams) {
     return this.attendanceService.emrFilter(urlParams);
-  };
+  }
 
   @Get('get')
   saveAttendance() {
@@ -22,9 +19,7 @@ export class AttendanceController {
   }
 
   @Post('create-user')
-  createUser(
-    @Body() data: DeviceUserDto
-  ) {
+  createUser(@Body() data: DeviceUserDto) {
     return this.attendanceService.createUser(data);
   }
 
@@ -37,5 +32,4 @@ export class AttendanceController {
   getLiveLogs() {
     return this.attendanceService.getLiveLogs();
   }
-};
-
+}

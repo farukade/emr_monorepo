@@ -957,21 +957,27 @@ export class PatientService {
 
   async doUploadDocument(id, param, fileName, createdBy) {
     try {
+      const { document_type } = param;
+
+      if (!document_type || (document_type && document_type === '')) {
+        return { success: false, message: 'select docutment type' };
+      }
+
       const patient = await this.patientRepository.findOne(id);
 
       const requestItem = await this.patientRequestItemRepository.findOne(param.id);
 
       const doc = new PatientDocument();
       doc.patient = patient;
-      doc.document_type = param.document_type;
+      doc.document_type = document_type;
       doc.document_name = fileName;
       doc.createdBy = createdBy;
       const rs = await doc.save();
 
-      const data = { id: rs.id, name: fileName, type: param.document_type, patient_id: patient.id };
+      const data = { id: rs.id, name: fileName, type: document_type, patient_id: patient.id };
       await this.queueService.queueJob('upload-document', data);
 
-      if (param.document_type === 'scans') {
+      if (document_type === 'scans') {
         requestItem.filled = 1;
         requestItem.filled_by = createdBy;
         requestItem.filled_at = moment().format('YYYY-MM-DD HH:mm:ss');

@@ -1263,11 +1263,10 @@ export class TransactionsService {
       //separate digits from alphabets
       let nums;
       let chars;
-      if (term && term !== "") {
+      if (term && term !== '') {
         nums = term.match(/(\d+)/g);
         chars = term.replace(/[^a-z]+/gi, '');
-      };
-
+      }
 
       const query = this.transactionsRepository
         .createQueryBuilder('q')
@@ -1282,14 +1281,14 @@ export class TransactionsService {
           query.leftJoinAndSelect('patient_requests.labTest', 'lab_test');
           break;
 
-      //if bill source is "cafeteria" and contains filter
+        //if bill source is "cafeteria" and contains filter
         case 'cafeteria':
           query.leftJoinAndSelect('q.staff', 'staff');
-        break;
+          break;
 
         default:
           return { success: false, message: 'please enter a valid bill source' };
-      };
+      }
 
       query.where('q.bill_source = :bill_source', { bill_source });
 
@@ -1302,7 +1301,18 @@ export class TransactionsService {
         case 'staff':
           query.andWhere('q.staff IS NOT NULL');
           break;
-      };
+      }
+
+      //query if search term contains alphabets
+      if (chars && chars !== '') {
+        query.andWhere(
+          new Brackets((qb) => {
+            qb.where('patient.surname iLike :surname', { surname: `%${chars}%` })
+              .orWhere('patient.other_names iLike :other_names', { other_names: `%${chars}%` })
+              .orWhere('drug_generic.name iLike :name', { name: `%${chars}%` });
+          }),
+        );
+      }
 
 
     //query if search term contains alphabets
@@ -1330,7 +1340,7 @@ export class TransactionsService {
           query.andWhere(`q.createdAt <= '${end}'`);
           console.log(startDate, endDate, 3);
         }
-      };
+      }
 
 
       //query if search term contains alphabets
@@ -1371,7 +1381,7 @@ export class TransactionsService {
         lastPage: Math.ceil(total / limit),
         itemsPerPage: limit,
         totalItems: total,
-        currentPage: parseInt(data.page)
+        currentPage: parseInt(data.page),
       };
     } catch (error) {
       return { success: false, message: error.message || 'could not get records' };

@@ -4,10 +4,7 @@ import { AttendanceRepository } from '../hr/attendance/attendance.repository';
 import { TasksService } from './cron.service';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([
-        AttendanceRepository
-    ])],
-    providers: [TasksService],
+  imports: [TypeOrmModule.forFeature([AttendanceRepository])],
+  providers: [TasksService],
 })
-export class TasksModule {
-}
+export class TasksModule {}
