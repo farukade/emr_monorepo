@@ -95,7 +95,7 @@ export const generatePDF = async (template: string, data) => {
   const page = await browser.newPage();
   await page.setContent(content);
   await page.emulateMediaType('screen');
-  await page.pdf({ path: data.filepath, format: 'a4' });
+  await page.pdf({ path: data.filepath, format: 'a4', preferCSSPageSize: true });
   await browser.close();
 };
 
@@ -630,6 +630,37 @@ export const parseDescription = (item) => {
     item.service?.item?.name
   ) {
     return `: ${item.service?.item?.name}`;
+  }
+
+  return '--';
+};
+
+export const parseDescriptionB = (item) => {
+  if (!item) {
+    return '--';
+  }
+
+  if (item.bill_source === 'ward' || item.bill_source === 'nicu-accommodation') {
+    return ` ${item.description}`;
+  }
+
+  if (item.bill_source === 'drugs') {
+    const reqItem = item.patientRequestItem;
+
+    return `  ${reqItem.fill_quantity} ${reqItem.drug.unitOfMeasure} of ${reqItem.drugGeneric.name} (${
+      reqItem.drug.name
+    }) at ${formatCurrency(reqItem.drugBatch.unitPrice)} each`;
+  }
+
+  if (
+    (item.bill_source === 'consultancy' ||
+      item.bill_source === 'labs' ||
+      item.bill_source === 'scans' ||
+      item.bill_source === 'procedure' ||
+      item.bill_source === 'nursing-service') &&
+    item.service?.item?.name
+  ) {
+    return ` ${item.service?.item?.name}`;
   }
 
   return '--';
