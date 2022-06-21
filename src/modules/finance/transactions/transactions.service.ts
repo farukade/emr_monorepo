@@ -43,6 +43,7 @@ import { AdmissionsRepository } from '../../patient/admissions/repositories/admi
 import * as path from 'path';
 import { ServiceCategoryRepository } from '../../settings/services/repositories/service_category.repository';
 import { TransactionSearchDto } from './dto/search.dto';
+import { StaffRepository } from 'src/modules/hr/staff/staff.repository';
 
 @Injectable()
 export class TransactionsService {
@@ -70,6 +71,8 @@ export class TransactionsService {
     @InjectRepository(ServiceCategoryRepository)
     private serviceCategoryRepository: ServiceCategoryRepository,
     private readonly appGateway: AppGateway,
+    @InjectRepository(StaffRepository)
+    private staffRepository: StaffRepository,
   ) {}
 
   async fetchList(options: PaginationOptionsInterface, params): Promise<Pagination> {
@@ -175,6 +178,10 @@ export class TransactionsService {
       transaction.appointment = await this.appointmentRepository.findOne({
         where: { transaction: transaction.id },
       });
+
+      if (transaction.staff_id) {
+        transaction.dedastaff = await this.staffRepository.findOne(transaction.staff_id);
+      }
     }
 
     return {

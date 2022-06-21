@@ -11,7 +11,6 @@ import { Nicu } from '../nicu/entities/nicu.entity';
 
 @Entity({ name: 'patient_requests' })
 export class PatientRequest extends CustomBaseEntity {
-
     @Column({ nullable: true, name: 'group_code' })
     code: string;
 

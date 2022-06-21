@@ -955,7 +955,7 @@ export class PatientService {
     return await alertItem.save();
   }
 
-  async doUploadDocument(id, param, fileName, createdBy) {
+  async doUploadDocument(id: number, param, fileName: string, createdBy: string) {
     try {
       const { document_type } = param;
 

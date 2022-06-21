@@ -12,7 +12,6 @@ import { Nicu } from '../../patient/nicu/entities/nicu.entity';
 
 @Entity({ name: 'transactions' })
 export class Transaction extends CustomBaseEntity {
-
     @ManyToOne(() => Patient, patient => patient.transactions, { nullable: true })
     @JoinColumn({ name: 'patient_id' })
     patient: Patient;

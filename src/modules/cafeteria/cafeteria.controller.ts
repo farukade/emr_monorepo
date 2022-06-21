@@ -20,64 +20,59 @@ import { AuthGuard } from '@nestjs/passport';
 import { Pagination } from '../../common/paginate/paginate.interface';
 import { CafeteriaFoodItem } from './entities/food_item.entity';
 import { CafeteriaFoodItemDto } from './dto/cafeteria-food-item.dto';
+import { OrderDto } from './dto/order.dto';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('cafeteria')
 export class CafeteriaController {
-  constructor(private inventoryService: CafeteriaService) {}
+  constructor(private cafeteriaService: CafeteriaService) {}
 
   @Get('/items')
   getAllItems(@Query() urlParams, @Request() request): Promise<Pagination> {
     const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 10;
     const page = request.query.hasOwnProperty('page') ? request.query.page : 1;
-    return this.inventoryService.getAllItems({ page, limit }, urlParams);
+    return this.cafeteriaService.getAllItems({ page, limit }, urlParams);
   }
 
   @Post('/items')
   @UsePipes(ValidationPipe)
   createItem(@Body() itemDto: CafeteriaItemDto, @Request() req): Promise<CafeteriaItem> {
-    return this.inventoryService.createItem(itemDto, req.user.username);
+    return this.cafeteriaService.createItem(itemDto, req.user.username);
   }
 
   @Put('/items/:id')
   @UsePipes(ValidationPipe)
   updateItem(@Param('id') id: number, @Body() itemDto: CafeteriaItemDto, @Request() req): Promise<CafeteriaItem> {
-    return this.inventoryService.updateItem(id, itemDto, req.user.username);
+    return this.cafeteriaService.updateItem(id, itemDto, req.user.username);
   }
 
   @Put('/approve/:id')
   @UsePipes(ValidationPipe)
   approveItem(@Param('id') id: number, @Body() params, @Request() req): Promise<CafeteriaItem> {
-    return this.inventoryService.approveItem(id, params, req.user.username);
+    return this.cafeteriaService.approveItem(id, params, req.user.username);
   }
 
   @Delete('/items/:id')
   deleteSubCategory(@Param('id') id: number, @Request() req): Promise<any> {
-    return this.inventoryService.deleteItem(id, req.user.username);
+    return this.cafeteriaService.deleteItem(id, req.user.username);
   }
 
   @Get('/showcase-items')
   getShowcaseItems() {
-    return this.inventoryService.getShowcaseItems();
-  }
-
-  @Post('/sale')
-  @UsePipes(ValidationPipe)
-  postSales(@Request() req, @Body() param: CafeteriaSalesDto): Promise<any> {
-    return this.inventoryService.saveSales(param, req.user.username);
+    return this.cafeteriaService.getShowcaseItems();
   }
 
   @Get('/food-items')
   getAllFoodItems(@Query() urlParams, @Request() request): Promise<Pagination> {
     const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 10;
     const page = request.query.hasOwnProperty('page') ? request.query.page : 1;
-    return this.inventoryService.getFoodItems({ page, limit }, urlParams);
+    return this.cafeteriaService.getFoodItems({ page, limit }, urlParams);
   }
 
   @Post('/food-items')
   @UsePipes(ValidationPipe)
   createFoodItem(@Body() itemDto: CafeteriaFoodItemDto, @Request() req): Promise<CafeteriaFoodItem> {
-    return this.inventoryService.createFoodItem(itemDto, req.user.username);
+    return this.cafeteriaService.createFoodItem(itemDto, req.user.username);
   }
 
   @Put('/food-items/:id')
@@ -87,6 +82,37 @@ export class CafeteriaController {
     @Body() itemDto: CafeteriaFoodItemDto,
     @Request() req,
   ): Promise<CafeteriaFoodItem> {
-    return this.inventoryService.updateFoodItem(id, itemDto, req.user.username);
+    return this.cafeteriaService.updateFoodItem(id, itemDto, req.user.username);
+  }
+
+  @Post('/take-order')
+  @UsePipes(ValidationPipe)
+  takeOrder(@Request() req, @Body() param: OrderDto): Promise<any> {
+    return this.cafeteriaService.takeOrder(param, req.user.username);
+  }
+
+  @Get('/orders')
+  getOrders(@Query() urlParams, @Request() request): Promise<Pagination> {
+    const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 10;
+    const page = request.query.hasOwnProperty('page') ? request.query.page : 1;
+    return this.cafeteriaService.getOrders({ page, limit }, urlParams);
+  }
+
+  @Post('/orders/:id/cancel')
+  @UsePipes(ValidationPipe)
+  cancelOrder(@Request() req, @Param('id') id: string): Promise<any> {
+    return this.cafeteriaService.cancelOrder(+id, req.user.username);
+  }
+
+  @Post('/orders/:id/ready')
+  @UsePipes(ValidationPipe)
+  readyOrder(@Request() req, @Param('id') id: string): Promise<any> {
+    return this.cafeteriaService.readyOrder(+id, req.user.username);
+  }
+
+  @Post('/orders/sale')
+  @UsePipes(ValidationPipe)
+  postSales(@Request() req, @Body() param: CafeteriaSalesDto): Promise<any> {
+    return this.cafeteriaService.saveSales(param, req.user.username);
   }
 }

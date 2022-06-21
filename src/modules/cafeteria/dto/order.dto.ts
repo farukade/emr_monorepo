@@ -1,7 +1,7 @@
 import { IsNotEmpty } from 'class-validator';
 import { CartDto } from './cart.dto';
 
-export class CafeteriaSalesDto {
+export class OrderDto {
   @IsNotEmpty()
   customer: string;
 
@@ -9,14 +9,7 @@ export class CafeteriaSalesDto {
 
   patient_id: string;
 
-  balance: number;
+  amount: string;
 
   cartItems: CartDto[];
-
-  @IsNotEmpty()
-  paid: number;
-
-  payment_method: string;
-
-  total: number;
 }

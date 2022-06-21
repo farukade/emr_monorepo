@@ -423,7 +423,7 @@ export const postDebit = async (
 
   let difference = 0;
   let paypoint: Transaction;
-  if (hmo.coverageType !== 'full') {
+  if (hmo && hmo.coverageType !== 'full') {
     const privateHmo = await connection.getRepository(HmoScheme).findOne({ where: { name: 'Private' } });
     const privateCost = await connection.getRepository(ServiceCost).findOne({
       where: { code: service.code, hmo: privateHmo },
@@ -465,6 +465,13 @@ export const postDebit = async (
     }
   }
 
+  let hmo_name: string;
+  if (hmo) {
+    hmo_name = hmo.name !== 'Private' ? 'HMO' : 'self';
+  } else {
+    hmo_name = 'self';
+  }
+
   const transaction = new Transaction();
   transaction.patient = patient;
   transaction.staff = staff;
@@ -477,7 +484,7 @@ export const postDebit = async (
   transaction.amount_paid = amount_paid;
   transaction.change = change;
   transaction.description = description;
-  transaction.payment_type = isStaffHmo ? 'self' : hmo.name !== 'Private' ? 'HMO' : 'self';
+  transaction.payment_type = isStaffHmo ? 'self' : hmo_name;
   transaction.payment_method = payment_method;
   transaction.transaction_type = 'debit';
   transaction.part_payment_expiry_date = part_payment_expiry_date;
@@ -535,7 +542,14 @@ export const postCredit = async (data: TransactionCreditDto, service, voucher, r
   const nicu = nicu_id ? await connection.getRepository(Nicu).findOne(nicu_id) : null;
   const staff = staff_id ? await connection.getRepository(StaffDetails).findOne(staff_id) : null;
 
-  const isStaffHmo = await connection.getRepository(HmoScheme).findOne(hmo.id);
+  const isStaffHmo = hmo ? await connection.getRepository(HmoScheme).findOne(hmo.id) : null;
+
+  let hmo_name: string;
+  if (hmo) {
+    hmo_name = hmo.name !== 'Private' ? 'HMO' : 'self';
+  } else {
+    hmo_name = 'self';
+  }
 
   const transaction = new Transaction();
   transaction.patient = patient;
@@ -549,7 +563,7 @@ export const postCredit = async (data: TransactionCreditDto, service, voucher, r
   transaction.amount_paid = amount_paid;
   transaction.change = change;
   transaction.description = description;
-  transaction.payment_type = isStaffHmo ? 'self' : hmo.name !== 'Private' ? 'HMO' : 'self';
+  transaction.payment_type = isStaffHmo ? 'self' : hmo_name;
   transaction.payment_method = payment_method;
   transaction.transaction_type = 'credit';
   transaction.part_payment_expiry_date = part_payment_expiry_date;
@@ -667,3 +681,9 @@ export const parseDescriptionB = (item) => {
 };
 
 export const staffname = (user) => (user ? `${startCase(user?.first_name)} ${startCase(user?.last_name)}` : '--');
+
+export const patientname = (user, pid = false) => {
+  const patientId = pid ? `(${formatPatientId(user)})` : '';
+
+  return user ? `${user.other_names} ${user.surname} ${patientId}` : '--';
+};
