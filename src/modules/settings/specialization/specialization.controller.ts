@@ -7,30 +7,27 @@ import { AuthGuard } from '@nestjs/passport';
 @UseGuards(AuthGuard('jwt'))
 @Controller('specializations')
 export class SpecializationController {
-    constructor(private specializationService: SpecializationService) {}
+  constructor(private specializationService: SpecializationService) {}
 
-    @Get()
-    getSpecialization(): Promise<Specialization[]> {
-        return this.specializationService.getSpecializations();
-    }
+  @Get()
+  getSpecialization(): Promise<Specialization[]> {
+    return this.specializationService.getSpecializations();
+  }
 
-    @Post()
-    @UsePipes(ValidationPipe)
-    createSpecialization(@Body() specializationDto: SpecializationDto): Promise<Specialization> {
-        return this.specializationService.createSpecialization(specializationDto);
-    }
+  @Post()
+  @UsePipes(ValidationPipe)
+  createSpecialization(@Body() specializationDto: SpecializationDto): Promise<Specialization> {
+    return this.specializationService.createSpecialization(specializationDto);
+  }
 
-    @Patch('/:id/update')
-    @UsePipes(ValidationPipe)
-    updateSpecialization(
-        @Param('id') id: string,
-        @Body() specializationDto: SpecializationDto,
-    ): Promise<Specialization> {
-        return this.specializationService.updateSpecialization(id, specializationDto);
-    }
+  @Patch('/:id/update')
+  @UsePipes(ValidationPipe)
+  updateSpecialization(@Param('id') id: string, @Body() specializationDto: SpecializationDto): Promise<Specialization> {
+    return this.specializationService.updateSpecialization(id, specializationDto);
+  }
 
-    @Delete('/:id')
-    deleteSpecialization(@Param('id') id: number): Promise<any> {
-        return this.specializationService.deleteSpecialization(id);
-    }
+  @Delete('/:id')
+  deleteSpecialization(@Param('id') id: number): Promise<any> {
+    return this.specializationService.deleteSpecialization(id);
+  }
 }

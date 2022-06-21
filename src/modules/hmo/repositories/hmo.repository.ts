@@ -4,18 +4,17 @@ import { Hmo } from '../entities/hmo.entity';
 
 @EntityRepository(Hmo)
 export class HmoOwnerRepository extends Repository<Hmo> {
+  async saveHmo(hmoDto: HmoDto, username: string): Promise<Hmo> {
+    const { name, address, phoneNumber, email } = hmoDto;
 
-    async saveHmo(hmoDto: HmoDto, username: string): Promise<Hmo> {
-        const { name, address, phoneNumber, email } = hmoDto;
+    const hmo = new Hmo();
+    hmo.name = name;
+    hmo.address = address;
+    hmo.phoneNumber = phoneNumber;
+    hmo.email = email;
+    hmo.createdBy = username;
+    await hmo.save();
 
-        const hmo = new Hmo();
-        hmo.name = name;
-        hmo.address = address;
-        hmo.phoneNumber = phoneNumber;
-        hmo.email = email;
-        hmo.createdBy = username;
-        await hmo.save();
-
-        return hmo;
-    }
+    return hmo;
+  }
 }

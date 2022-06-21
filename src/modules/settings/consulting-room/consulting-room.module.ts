@@ -5,8 +5,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConsultingRoomRepository } from './consulting-room.repository';
 
 @Module({
-	imports: [TypeOrmModule.forFeature([ConsultingRoomRepository])],
-	controllers: [ConsultingRoomController],
-	providers: [ConsultingRoomService],
+  imports: [TypeOrmModule.forFeature([ConsultingRoomRepository])],
+  controllers: [ConsultingRoomController],
+  providers: [ConsultingRoomService],
 })
 export class ConsultingRoomModule {}

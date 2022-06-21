@@ -4,11 +4,10 @@ import { LoggerService } from './logger.service';
 
 @Controller('logs')
 export class LoggerController {
-    constructor(private loggerService: LoggerService) {
-    }
+  constructor(private loggerService: LoggerService) {}
 
-    @Get('')
-    getFailedLogs(): Promise<LogEntity[]> {
-        return this.loggerService.getFailedLogs();
-    }
+  @Get('')
+  getFailedLogs(): Promise<LogEntity[]> {
+    return this.loggerService.getFailedLogs();
+  }
 }

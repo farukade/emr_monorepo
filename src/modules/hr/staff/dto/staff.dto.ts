@@ -1,77 +1,77 @@
 import { IsNotEmpty } from 'class-validator';
 
 export class StaffDto {
-    @IsNotEmpty()
-    first_name: string;
+  @IsNotEmpty()
+  first_name: string;
 
-    @IsNotEmpty()
-    last_name: string;
+  @IsNotEmpty()
+  last_name: string;
 
-    other_names: string;
+  other_names: string;
 
-    profile_pic: string;
+  profile_pic: string;
 
-    address: string;
+  address: string;
 
-    phone_number: string;
+  phone_number: string;
 
-    nationality: string;
+  nationality: string;
 
-    state_of_origin: string;
+  state_of_origin: string;
 
-    lga: string;
+  lga: string;
 
-    avatar: string;
+  avatar: string;
 
-    bank_name: string;
+  bank_name: string;
 
-    account_number: string;
+  account_number: string;
 
-    pension_mngr: string;
+  pension_mngr: string;
 
-    gender: string;
+  gender: string;
 
-    marital_status: string;
+  marital_status: string;
 
-    number_of_children: string;
+  number_of_children: string;
 
-    religion: string;
+  religion: string;
 
-    date_of_birth: string;
+  date_of_birth: string;
 
-    next_of_kin: string;
+  next_of_kin: string;
 
-    next_of_kin_dob: string;
+  next_of_kin_dob: string;
 
-    next_of_kin_address: string;
+  next_of_kin_address: string;
 
-    next_of_kin_relationship: string;
+  next_of_kin_relationship: string;
 
-    next_of_kin_contact_no: string;
+  next_of_kin_contact_no: string;
 
-    job_title: string;
+  job_title: string;
 
-    contract_type: string;
+  contract_type: string;
 
-    employment_start_date: string;
+  employment_start_date: string;
 
-    department_id: string;
+  department_id: string;
 
-    role_id: string;
+  role_id: string;
 
-    username: string;
+  username: string;
 
-    employee_number: string;
+  employee_number: string;
 
-    email: string;
+  email: string;
 
-    annual_salary: string;
+  annual_salary: string;
 
-    monthly_salary: string;
+  monthly_salary: string;
 
-    is_consultant: boolean;
+  is_consultant: boolean;
 
-    specialization_id: string;
+  specialization_id: string;
 
-    profession: string;
+  profession: string;
 }

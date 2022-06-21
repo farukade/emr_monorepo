@@ -15,23 +15,22 @@ import { PatientAlertRepository } from '../repositories/patient_alert.repository
 import { EncounterRepository } from '../consultation/encounter.repository';
 
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([
-            PatientNoteRepository,
-            PatientRepository,
-            AdmissionsRepository,
-            PatientRequestItemRepository,
-            IvfEnrollmentRepository,
-            AntenatalEnrollmentRepository,
-            DrugGenericRepository,
-            LabourEnrollmentRepository,
-            NicuRepository,
-            PatientAlertRepository,
-            EncounterRepository,
-        ]),
-    ],
-    controllers: [PatientNoteController],
-    providers: [PatientNoteService],
+  imports: [
+    TypeOrmModule.forFeature([
+      PatientNoteRepository,
+      PatientRepository,
+      AdmissionsRepository,
+      PatientRequestItemRepository,
+      IvfEnrollmentRepository,
+      AntenatalEnrollmentRepository,
+      DrugGenericRepository,
+      LabourEnrollmentRepository,
+      NicuRepository,
+      PatientAlertRepository,
+      EncounterRepository,
+    ]),
+  ],
+  controllers: [PatientNoteController],
+  providers: [PatientNoteService],
 })
-export class PatientNoteModule {
-}
+export class PatientNoteModule {}

@@ -18,15 +18,16 @@ import { PatientRepository } from '../patient/repositories/patient.repository';
 import { AdmissionsRepository } from '../patient/admissions/repositories/admissions.repository';
 import { NicuRepository } from '../patient/nicu/nicu.repository';
 import { PaymentMethodRepository } from '../settings/payment-methods/pm.repository';
-import { HmoSchemeRepository } from '../hmo/repositories/hmo_scheme.repository';
 import { OrderDto } from './dto/order.dto';
 import { CafeteriaOrder } from './entities/order.entity';
 import { OrderRepository } from './repositories/order.repository';
 import { TransactionsRepository } from '../finance/transactions/transactions.repository';
+import { AppGateway } from '../../app.gateway';
 
 @Injectable()
 export class CafeteriaService {
   constructor(
+    private readonly appGateway: AppGateway,
     @InjectRepository(CafeteriaItemRepository)
     private cafeteriaItemRepository: CafeteriaItemRepository,
     @InjectRepository(CafeteriaFoodItemRepository)
@@ -41,8 +42,6 @@ export class CafeteriaService {
     private nicuRepository: NicuRepository,
     @InjectRepository(PaymentMethodRepository)
     private paymentMethodRepository: PaymentMethodRepository,
-    @InjectRepository(HmoSchemeRepository)
-    private hmoSchemeRepository: HmoSchemeRepository,
     @InjectRepository(OrderRepository)
     private orderRepository: OrderRepository,
     @InjectRepository(TransactionsRepository)

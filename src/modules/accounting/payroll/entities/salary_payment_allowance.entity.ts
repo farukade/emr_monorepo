@@ -4,16 +4,13 @@ import { SalaryPayment } from './salary_payment.entity';
 
 @Entity({ name: 'salary_payment_allowances' })
 export class SalaryPaymentAllowance extends CustomBaseEntity {
-	@ManyToOne(
-		type => SalaryPayment,
-		payment => payment.allowances,
-	)
-	@JoinColumn({ name: 'salary_payment_id' })
-	payment!: SalaryPayment;
+  @ManyToOne(() => SalaryPayment, (payment) => payment.allowances)
+  @JoinColumn({ name: 'salary_payment_id' })
+  payment!: SalaryPayment;
 
-	@Column({ type: 'varchar', length: 50 })
-	label: string;
+  @Column({ type: 'varchar', length: 50 })
+  label: string;
 
-	@Column({ type: 'varchar', length: 20 })
-	value: number;
+  @Column({ type: 'varchar', length: 20 })
+  value: number;
 }

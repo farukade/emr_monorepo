@@ -8,14 +8,8 @@ import { BanksRepository } from '../../common/repositories/banks.repository';
 import { PaymentMethodRepository } from '../settings/payment-methods/pm.repository';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([
-        BanksRepository,
-        CountryRepository,
-        StateRepository,
-        PaymentMethodRepository,
-    ])],
-    providers: [UtilityService],
-    controllers: [UtilityController],
+  imports: [TypeOrmModule.forFeature([BanksRepository, CountryRepository, StateRepository, PaymentMethodRepository])],
+  providers: [UtilityService],
+  controllers: [UtilityController],
 })
-export class UtilityModule {
-}
+export class UtilityModule {}

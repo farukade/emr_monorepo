@@ -5,13 +5,8 @@ import { InventoryActivityService } from './activity.service';
 import { InventoryActivityController } from './activity.controller';
 
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([
-            InventoryActivityRepository,
-        ]),
-    ],
-    providers: [InventoryActivityService],
-    controllers: [InventoryActivityController],
+  imports: [TypeOrmModule.forFeature([InventoryActivityRepository])],
+  providers: [InventoryActivityService],
+  controllers: [InventoryActivityController],
 })
-export class InventoryActivityModule {
-}
+export class InventoryActivityModule {}

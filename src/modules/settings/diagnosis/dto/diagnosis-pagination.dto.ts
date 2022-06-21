@@ -1,14 +1,13 @@
 import { Diagnosis } from '../../entities/diagnosis.entity';
 
 export class DiagnosisPaginationDto {
-		total: number;
+  total: number;
 
-		data: Diagnosis[];
+  data: Diagnosis[];
 
-		size: number;
+  size: number;
 
-		lastPage: number;
+  lastPage: number;
 
-		page: any;
-
+  page: any;
 }

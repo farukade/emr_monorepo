@@ -5,22 +5,22 @@ import { Drug } from './drug.entity';
 
 @Entity({ name: 'drug_generics' })
 export class DrugGeneric extends CustomBaseEntity {
-    @Column({ type: 'varchar', length: 300 })
-    name: string;
+  @Column({ type: 'varchar', length: 300 })
+  name: string;
 
-    @ManyToOne(type => DrugCategory, { nullable: true })
-    @JoinColumn({ name: 'category_id' })
-    category: DrugCategory;
+  @ManyToOne((type) => DrugCategory, { nullable: true })
+  @JoinColumn({ name: 'category_id' })
+  category: DrugCategory;
 
-    @Column({ type: 'varchar', nullable: true })
-    form: string;
+  @Column({ type: 'varchar', nullable: true })
+  form: string;
 
-    @Column({ type: 'varchar', nullable: true })
-    weight: string;
+  @Column({ type: 'varchar', nullable: true })
+  weight: string;
 
-    @Column({ default: 0, name: 'low_stock_level' })
-    lowStockLevel: number;
+  @Column({ default: 0, name: 'low_stock_level' })
+  lowStockLevel: number;
 
-    @OneToMany(type => Drug, item => item.generic)
-    drugs: Drug[];
+  @OneToMany((type) => Drug, (item) => item.generic)
+  drugs: Drug[];
 }

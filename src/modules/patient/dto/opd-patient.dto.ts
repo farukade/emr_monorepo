@@ -1,22 +1,21 @@
 import { IsNotEmpty, IsEmail } from 'class-validator';
 
 export class OpdPatientDto {
+  @IsNotEmpty()
+  surname: string;
 
-    @IsNotEmpty()
-    surname: string;
+  @IsNotEmpty()
+  other_names: string;
 
-    @IsNotEmpty()
-    other_names: string;
+  @IsNotEmpty()
+  date_of_birth: string;
 
-    @IsNotEmpty()
-    date_of_birth: string;
+  address: string;
 
-    address: string;
+  @IsEmail()
+  email: string;
 
-    @IsEmail()
-    email: string;
+  phone_number: string;
 
-    phone_number: string;
-
-    gender: string;
+  gender: string;
 }

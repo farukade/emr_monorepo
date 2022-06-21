@@ -10,16 +10,17 @@ import { NicuAccommodationRepository } from '../../settings/nicu-accommodation/a
 import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([
-        NicuRepository,
-        PatientRepository,
-        StaffRepository,
-        AdmissionsRepository,
-        NicuAccommodationRepository,
-        TransactionsRepository,
-    ])],
-    controllers: [NicuController],
-    providers: [NicuService],
+  imports: [
+    TypeOrmModule.forFeature([
+      NicuRepository,
+      PatientRepository,
+      StaffRepository,
+      AdmissionsRepository,
+      NicuAccommodationRepository,
+      TransactionsRepository,
+    ]),
+  ],
+  controllers: [NicuController],
+  providers: [NicuService],
 })
-export class NicuModule {
-}
+export class NicuModule {}

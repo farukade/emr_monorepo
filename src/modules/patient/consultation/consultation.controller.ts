@@ -6,18 +6,18 @@ import { AuthGuard } from '@nestjs/passport';
 @UseGuards(AuthGuard('jwt'))
 @Controller('consultation')
 export class ConsultationController {
-	constructor(private consultationService: ConsultationService) {}
+  constructor(private consultationService: ConsultationService) {}
 
-	@Get('/encounters')
-	getEnrollments(@Query() urlParams, @Request() request) {
-		const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 10;
-		const page = request.query.hasOwnProperty('page') ? request.query.page : 1;
-		return this.consultationService.getEncounters({ page, limit }, urlParams);
-	}
+  @Get('/encounters')
+  getEnrollments(@Query() urlParams, @Request() request) {
+    const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 10;
+    const page = request.query.hasOwnProperty('page') ? request.query.page : 1;
+    return this.consultationService.getEncounters({ page, limit }, urlParams);
+  }
 
-	@Post(':patient_id/save')
-	@UsePipes(ValidationPipe)
-	saveEncounter(@Param('patient_id') patientId: number, @Body() param: EncounterDto, @Query() urlParams, @Request() req) {
-		return this.consultationService.saveEncounter(patientId, param, urlParams, req.user.username);
-	}
+  @Post(':patient_id/save')
+  @UsePipes(ValidationPipe)
+  saveEncounter(@Param('patient_id') patientId: number, @Body() param: EncounterDto, @Query() urlParams, @Request() req) {
+    return this.consultationService.saveEncounter(patientId, param, urlParams, req.user.username);
+  }
 }

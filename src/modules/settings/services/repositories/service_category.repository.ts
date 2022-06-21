@@ -5,13 +5,12 @@ import { slugify } from '../../../../common/utils/utils';
 
 @EntityRepository(ServiceCategory)
 export class ServiceCategoryRepository extends Repository<ServiceCategory> {
-
-    async createCategory(serviceCategoryDto: ServiceCategoryDto): Promise<ServiceCategory> {
-        const { name }  = serviceCategoryDto;
-        const category  = new ServiceCategory();
-        category.name   = name;
-        category.slug   = slugify(name);
-        await category.save();
-        return category;
-    }
+  async createCategory(serviceCategoryDto: ServiceCategoryDto): Promise<ServiceCategory> {
+    const { name } = serviceCategoryDto;
+    const category = new ServiceCategory();
+    category.name = name;
+    category.slug = slugify(name);
+    await category.save();
+    return category;
+  }
 }

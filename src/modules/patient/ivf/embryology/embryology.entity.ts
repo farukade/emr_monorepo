@@ -9,30 +9,30 @@ import { IvfTreatmentEntity } from './entities/treatment.entity';
 
 @Entity({ name: 'ivf_embryology' })
 export class IvfEmbryologyEntity extends CustomBaseEntity {
-	@ManyToOne((type) => Patient, (patient) => patient.embryology)
-	@JoinColumn({ name: 'patient_id' })
-	patient: Patient;
+  @ManyToOne((type) => Patient, (patient) => patient.embryology)
+  @JoinColumn({ name: 'patient_id' })
+  patient: Patient;
 
-	@OneToOne(() => IvfEmbryoAssessment, { eager: true })
-	@JoinColumn({ name: 'ivf_embryo_assessment_id' })
-	embryoAssessment: IvfEmbryoAssessment;
+  @OneToOne(() => IvfEmbryoAssessment, { eager: true })
+  @JoinColumn({ name: 'ivf_embryo_assessment_id' })
+  embryoAssessment: IvfEmbryoAssessment;
 
-	@OneToOne(() => IvfEmbryoTransfer, { eager: true })
-	@JoinColumn({ name: 'ivf_embryo_transfer_id' })
-	embryoTransfer: IvfEmbryoTransfer;
+  @OneToOne(() => IvfEmbryoTransfer, { eager: true })
+  @JoinColumn({ name: 'ivf_embryo_transfer_id' })
+  embryoTransfer: IvfEmbryoTransfer;
 
-	@OneToOne(() => IvfICSIEntity, { eager: true })
-	@JoinColumn({ name: 'ivf_icsi_id' })
-	icsi: IvfICSIEntity;
+  @OneToOne(() => IvfICSIEntity, { eager: true })
+  @JoinColumn({ name: 'ivf_icsi_id' })
+  icsi: IvfICSIEntity;
 
-	@OneToOne(() => IvfSpermPreparationEntity, { eager: true })
-	@JoinColumn({ name: 'ivf_sperm_preparation_id' })
-	spermPreparation: IvfSpermPreparationEntity;
+  @OneToOne(() => IvfSpermPreparationEntity, { eager: true })
+  @JoinColumn({ name: 'ivf_sperm_preparation_id' })
+  spermPreparation: IvfSpermPreparationEntity;
 
-	@OneToOne(() => IvfTreatmentEntity, { eager: true })
-	@JoinColumn({ name: 'ivf_treatment_id' })
-	ivfTreatment: IvfTreatmentEntity;
+  @OneToOne(() => IvfTreatmentEntity, { eager: true })
+  @JoinColumn({ name: 'ivf_treatment_id' })
+  ivfTreatment: IvfTreatmentEntity;
 
-	@Column({ nullable: true, default: false })
-	isSubmitted: boolean;
+  @Column({ nullable: true, default: false })
+  isSubmitted: boolean;
 }

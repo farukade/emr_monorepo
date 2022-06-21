@@ -9,7 +9,8 @@ import {
   UsePipes,
   ValidationPipe,
   UseGuards,
-  Request, Put,
+  Request,
+  Put,
 } from '@nestjs/common';
 import { CreateRoleDto } from './dto/role.dto';
 import { Role } from '../entities/role.entity';
@@ -28,20 +29,13 @@ export class RolesController {
 
   @Post()
   @UsePipes(ValidationPipe)
-  createRole(
-    @Body() createRoleDto: CreateRoleDto,
-    @Request() req,
-  ): Promise<Role> {
+  createRole(@Body() createRoleDto: CreateRoleDto, @Request() req): Promise<Role> {
     return this.roleService.createRole(createRoleDto, req.user.username);
   }
 
   @Put('/:id')
   @UsePipes(ValidationPipe)
-  updateRole(
-    @Param('id') id: string,
-    @Body() createRoleDto: CreateRoleDto,
-    @Request() req,
-  ): Promise<Role> {
+  updateRole(@Param('id') id: string, @Body() createRoleDto: CreateRoleDto, @Request() req): Promise<Role> {
     return this.roleService.updateRole(id, createRoleDto, req.user.username);
   }
 

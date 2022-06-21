@@ -20,25 +20,26 @@ import { LabourEnrollmentRepository } from '../labour-management/repositories/la
 import { AdmissionRoomRepository } from './repositories/admission-room.repository';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([
-        AuthRepository,
-        AdmissionsRepository,
-        AdmissionClinicalTaskRepository,
-        PatientRepository,
-        StaffRepository,
-        RoomRepository,
-        PatientVitalRepository,
-        NicuRepository,
-        PatientNoteRepository,
-        ServiceCostRepository,
-        TransactionsRepository,
-        HmoSchemeRepository,
-        NicuAccommodationRepository,
-        LabourEnrollmentRepository,
-        AdmissionRoomRepository,
-    ])],
-    controllers: [AdmissionsController],
-    providers: [AppGateway, AdmissionsService],
+  imports: [
+    TypeOrmModule.forFeature([
+      AuthRepository,
+      AdmissionsRepository,
+      AdmissionClinicalTaskRepository,
+      PatientRepository,
+      StaffRepository,
+      RoomRepository,
+      PatientVitalRepository,
+      NicuRepository,
+      PatientNoteRepository,
+      ServiceCostRepository,
+      TransactionsRepository,
+      HmoSchemeRepository,
+      NicuAccommodationRepository,
+      LabourEnrollmentRepository,
+      AdmissionRoomRepository,
+    ]),
+  ],
+  controllers: [AdmissionsController],
+  providers: [AppGateway, AdmissionsService],
 })
-export class AdmissionsModule {
-}
+export class AdmissionsModule {}

@@ -9,65 +9,65 @@ import { LabourEnrollment } from '../../labour-management/entities/labour_enroll
 
 @Entity({ name: 'clinical_tasks' })
 export class AdmissionClinicalTask extends CustomBaseEntity {
-    @Column()
-    task: string;
+  @Column()
+  task: string;
 
-    @Column()
-    title: string;
+  @Column()
+  title: string;
 
-    @Column({ default: 'vitals' })
-    taskType: string;
+  @Column({ default: 'vitals' })
+  taskType: string;
 
-    @Column({ nullable: true })
-    interval: number;
+  @Column({ nullable: true })
+  interval: number;
 
-    @Column({ nullable: true })
-    intervalType: string;
+  @Column({ nullable: true })
+  intervalType: string;
 
-    @Column({ type: 'jsonb', nullable: true})
-    drug: any;
+  @Column({ type: 'jsonb', nullable: true })
+  drug: any;
 
-    @Column({ nullable: true })
-    dose: string;
+  @Column({ nullable: true })
+  dose: string;
 
-    @Column({ nullable: true })
-    frequency: string;
+  @Column({ nullable: true })
+  frequency: string;
 
-    @Column({ type: 'int', default: 0 })
-    taskCount: number;
+  @Column({ type: 'int', default: 0 })
+  taskCount: number;
 
-    @Column({ nullable: true })
-    startTime: string;
+  @Column({ nullable: true })
+  startTime: string;
 
-    @Column({ nullable: true })
-    nextTime: string;
+  @Column({ nullable: true })
+  nextTime: string;
 
-    @Column({ type: 'int', default: 0 })
-    tasksCompleted: number;
+  @Column({ type: 'int', default: 0 })
+  tasksCompleted: number;
 
-    @Column({ default: false })
-    completed: boolean;
+  @Column({ default: false })
+  completed: boolean;
 
-    @ManyToOne(() => Admission, { nullable: true })
-    @JoinColumn({ name: 'admission_id' })
-    admission: Admission;
+  @ManyToOne(() => Admission, { nullable: true })
+  @JoinColumn({ name: 'admission_id' })
+  admission: Admission;
 
-    @ManyToOne(() => Nicu, { nullable: true })
-    @JoinColumn({ name: 'nicu_id' })
-    nicu: Nicu;
+  @ManyToOne(() => Nicu, { nullable: true })
+  @JoinColumn({ name: 'nicu_id' })
+  nicu: Nicu;
 
-    @ManyToOne(() => LabourEnrollment, { nullable: true })
-    @JoinColumn({ name: 'labour_id' })
-    labour: LabourEnrollment;
+  @ManyToOne(() => LabourEnrollment, { nullable: true })
+  @JoinColumn({ name: 'labour_id' })
+  labour: LabourEnrollment;
 
-    @ManyToOne(() => Patient)
-    @JoinColumn({ name: 'patient_id' })
-    patient: Patient;
+  @ManyToOne(() => Patient)
+  @JoinColumn({ name: 'patient_id' })
+  patient: Patient;
 
-    @OneToMany(type => PatientVital, vital => vital.task)
-    vitals: PatientVital;
+  @OneToMany((type) => PatientVital, (vital) => vital.task)
+  vitals: PatientVital;
 
-    @ManyToOne(type => PatientRequest, r => r.task, { nullable: true })
-    @JoinColumn({ name: 'request_id' })
-    request: PatientRequest;
+  @ManyToOne((type) => PatientRequest, (r) => r.task, { nullable: true })
+  @JoinColumn({ name: 'request_id' })
+  request: PatientRequest;
 }

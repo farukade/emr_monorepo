@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PerformanceAppraisal } from './entities/performance_appraisal.entity';
@@ -322,7 +323,6 @@ export class AppraisalService {
   }
 
   async downloadAppraisalSample() {
-    const fs = require('fs');
     const createCsvWriter = require('csv-writer').createObjectCsvWriter;
     const csvWriter = createCsvWriter({
       path: 'sample-performance-appraisal.csv',

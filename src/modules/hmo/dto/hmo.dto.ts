@@ -1,14 +1,12 @@
 import { IsNotEmpty } from 'class-validator';
 
 export class HmoDto {
+  @IsNotEmpty()
+  name: string;
 
-    @IsNotEmpty()
-    name: string;
+  address: string;
 
-    address: string;
+  phoneNumber: string;
 
-    phoneNumber: string;
-
-    email: any;
-
+  email: any;
 }

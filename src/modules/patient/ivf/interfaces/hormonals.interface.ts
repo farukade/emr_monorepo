@@ -1,6 +1,6 @@
 export class IHormonals {
-	fsh: string;
-	lh: string;
-	prol: string;
-	amh: string;
+  fsh: string;
+  lh: string;
+  prol: string;
+  amh: string;
 }

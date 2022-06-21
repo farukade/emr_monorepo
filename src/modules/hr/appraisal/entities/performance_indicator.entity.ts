@@ -5,28 +5,25 @@ import { Department } from '../../../settings/entities/department.entity';
 
 @Entity({ name: 'performance_indicators' })
 export class PerformanceIndicator extends CustomBaseEntity {
-	@Column()
-	keyFocus: string;
+  @Column()
+  keyFocus: string;
 
-	@Column()
-	objective: string;
+  @Column()
+  objective: string;
 
-	@Column('simple-array')
-	kpis: string[];
+  @Column('simple-array')
+  kpis: string[];
 
-	@Column({ type: 'boolean', default: false })
-	isSettingsObject: boolean;
+  @Column({ type: 'boolean', default: false })
+  isSettingsObject: boolean;
 
-	@Column()
-	weight: string;
+  @Column()
+  weight: string;
 
-	@ManyToOne(
-		type => PerformanceAppraisal,
-		appraisal => appraisal.indicators,
-	)
-	appraisal: PerformanceAppraisal;
+  @ManyToOne((type) => PerformanceAppraisal, (appraisal) => appraisal.indicators)
+  appraisal: PerformanceAppraisal;
 
-	@ManyToOne(() => Department, { nullable: true })
-	@JoinColumn({ name: 'department_id' })
-	department: Department;
+  @ManyToOne(() => Department, { nullable: true })
+  @JoinColumn({ name: 'department_id' })
+  department: Department;
 }

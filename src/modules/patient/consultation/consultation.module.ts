@@ -17,23 +17,23 @@ import { StaffRepository } from '../../hr/staff/staff.repository';
 import { DepartmentRepository } from '../../settings/departments/department.repository';
 
 @Module({
-	imports: [
-		TypeOrmModule.forFeature([
-			EncounterRepository,
-			PatientRepository,
-			AppointmentRepository,
-			DrugGenericRepository,
-			QueueSystemRepository,
-			AuthRepository,
-			PatientNoteRepository,
-			StoreInventoryRepository,
-			PatientVitalRepository,
-			PatientRequestRepository,
-			StaffRepository,
-			DepartmentRepository,
-		]),
-	],
-	controllers: [ConsultationController],
-	providers: [AppGateway, ConsultationService],
+  imports: [
+    TypeOrmModule.forFeature([
+      EncounterRepository,
+      PatientRepository,
+      AppointmentRepository,
+      DrugGenericRepository,
+      QueueSystemRepository,
+      AuthRepository,
+      PatientNoteRepository,
+      StoreInventoryRepository,
+      PatientVitalRepository,
+      PatientRequestRepository,
+      StaffRepository,
+      DepartmentRepository,
+    ]),
+  ],
+  controllers: [ConsultationController],
+  providers: [AppGateway, ConsultationService],
 })
 export class ConsultationModule {}

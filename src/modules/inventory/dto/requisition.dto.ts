@@ -1,9 +1,9 @@
 export class RequisitionDto {
-    staff_id: any;
+  staff_id: any;
 
-    category: string;
+  category: string;
 
-    item_id: any;
+  item_id: any;
 
-    quantity: any;
+  quantity: any;
 }

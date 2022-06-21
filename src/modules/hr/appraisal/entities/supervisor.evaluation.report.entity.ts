@@ -5,24 +5,23 @@ import { PerformanceAppraisalPeriod } from './performance_appraisal_period.entit
 
 @Entity({ name: 'supervisor_evaluation_reports' })
 export class AppraisalEvaluation extends CustomBaseEntity {
+  @Column()
+  sectionTitle: string;
 
-    @Column()
-    sectionTitle: string;
+  @Column({ type: 'json' })
+  answers: string;
 
-    @Column({type: 'json'})
-    answers: string;
+  @ManyToOne(() => StaffDetails)
+  @JoinColumn({ name: 'staff_id' })
+  supervisor: StaffDetails;
 
-    @ManyToOne(() => StaffDetails)
-    @JoinColumn({ name: 'staff_id' })
-    supervisor: StaffDetails;
+  @ManyToOne(() => PerformanceAppraisalPeriod)
+  period: PerformanceAppraisalPeriod;
 
-    @ManyToOne(() => PerformanceAppraisalPeriod)
-    period: PerformanceAppraisalPeriod;
+  @ManyToOne(() => StaffDetails)
+  @JoinColumn({ name: 'evaluator_id' })
+  evaluator: StaffDetails;
 
-    @ManyToOne(() => StaffDetails)
-    @JoinColumn({ name: 'evaluator_id' })
-    evaluator: StaffDetails;
-
-    @Column()
-    evaluatorComment: string;
+  @Column()
+  evaluatorComment: string;
 }

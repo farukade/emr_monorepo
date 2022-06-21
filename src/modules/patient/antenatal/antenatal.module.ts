@@ -16,23 +16,23 @@ import { StaffRepository } from '../../hr/staff/staff.repository';
 import { DepartmentRepository } from '../../settings/departments/department.repository';
 
 @Module({
-	imports: [
-		TypeOrmModule.forFeature([
-			AntenatalAssessmentRepository,
-			AntenatalEnrollmentRepository,
-			PatientRepository,
-			PatientRequestRepository,
-			AntenatalPackageRepository,
-			AdmissionsRepository,
-			TransactionsRepository,
-			PatientNoteRepository,
-			AppointmentRepository,
-			PatientVitalRepository,
-			StaffRepository,
-			DepartmentRepository,
-		]),
-	],
-	providers: [AntenatalService],
-	controllers: [AntenatalController],
+  imports: [
+    TypeOrmModule.forFeature([
+      AntenatalAssessmentRepository,
+      AntenatalEnrollmentRepository,
+      PatientRepository,
+      PatientRequestRepository,
+      AntenatalPackageRepository,
+      AdmissionsRepository,
+      TransactionsRepository,
+      PatientNoteRepository,
+      AppointmentRepository,
+      PatientVitalRepository,
+      StaffRepository,
+      DepartmentRepository,
+    ]),
+  ],
+  providers: [AntenatalService],
+  controllers: [AntenatalController],
 })
 export class AntenatalModule {}

@@ -9,16 +9,16 @@ import { CafeteriaInventoryRepository } from '../cafeteria/cafeteria.repository'
 import { DepartmentRepository } from '../../settings/departments/department.repository';
 
 @Module({
-	imports: [
-		TypeOrmModule.forFeature([
-			RequisitionRepository,
-			StaffRepository,
-			StoreInventoryRepository,
-			CafeteriaInventoryRepository,
-			DepartmentRepository,
-		]),
-	],
-	providers: [RequisitionService],
-	controllers: [RequisitionController],
+  imports: [
+    TypeOrmModule.forFeature([
+      RequisitionRepository,
+      StaffRepository,
+      StoreInventoryRepository,
+      CafeteriaInventoryRepository,
+      DepartmentRepository,
+    ]),
+  ],
+  providers: [RequisitionService],
+  controllers: [RequisitionController],
 })
 export class RequisitionModule {}

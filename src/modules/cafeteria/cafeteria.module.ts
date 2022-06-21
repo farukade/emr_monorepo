@@ -9,9 +9,9 @@ import { PatientRepository } from '../patient/repositories/patient.repository';
 import { AdmissionsRepository } from '../patient/admissions/repositories/admissions.repository';
 import { NicuRepository } from '../patient/nicu/nicu.repository';
 import { PaymentMethodRepository } from '../settings/payment-methods/pm.repository';
-import { HmoSchemeRepository } from '../hmo/repositories/hmo_scheme.repository';
 import { OrderRepository } from './repositories/order.repository';
 import { TransactionsRepository } from '../finance/transactions/transactions.repository';
+import { AppGateway } from '../../app.gateway';
 
 @Module({
   imports: [
@@ -23,12 +23,11 @@ import { TransactionsRepository } from '../finance/transactions/transactions.rep
       AdmissionsRepository,
       NicuRepository,
       PaymentMethodRepository,
-      HmoSchemeRepository,
       OrderRepository,
       TransactionsRepository,
     ]),
   ],
-  providers: [CafeteriaService],
+  providers: [CafeteriaService, AppGateway],
   controllers: [CafeteriaController],
 })
 export class CafeteriaModule {}

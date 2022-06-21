@@ -12,38 +12,37 @@ import { PaymentMethodRepository } from '../settings/payment-methods/pm.reposito
 
 @Injectable()
 export class UtilityService {
-    constructor(
-        @InjectRepository(BanksRepository)
-        private bankRepository: BanksRepository,
-        @InjectRepository(CountryRepository)
-        private countryRepository: CountryRepository,
-        @InjectRepository(StateRepository)
-        private stateRepository: StateRepository,
-        @InjectRepository(PaymentMethodRepository)
-        private paymentMethodRepository: PaymentMethodRepository,
-    ) {
-    }
+  constructor(
+    @InjectRepository(BanksRepository)
+    private bankRepository: BanksRepository,
+    @InjectRepository(CountryRepository)
+    private countryRepository: CountryRepository,
+    @InjectRepository(StateRepository)
+    private stateRepository: StateRepository,
+    @InjectRepository(PaymentMethodRepository)
+    private paymentMethodRepository: PaymentMethodRepository,
+  ) {}
 
-    async getPaymentMethods(): Promise<PaymentMethod[]> {
-        return await this.paymentMethodRepository.find({ where: { status: 1 } });
-    }
+  async getPaymentMethods(): Promise<PaymentMethod[]> {
+    return await this.paymentMethodRepository.find({ where: { status: 1 } });
+  }
 
-    async getCountries(): Promise<Country[]> {
-        return await this.countryRepository.find();
-    }
+  async getCountries(): Promise<Country[]> {
+    return await this.countryRepository.find();
+  }
 
-    async getBanks(): Promise<Bank[]> {
-        return await this.bankRepository.find();
-    }
+  async getBanks(): Promise<Bank[]> {
+    return await this.bankRepository.find();
+  }
 
-    async getActiveDoctors(): Promise<StaffDetails[]> {
-        return await getRepository(StaffDetails)
-            .find({
-                select: ['id', 'first_name', 'last_name', 'room'],
-                where: {
-                    room: Not(IsNull()), isActive: true,
-                },
-                relations: ['room'],
-            });
-    }
+  async getActiveDoctors(): Promise<StaffDetails[]> {
+    return await getRepository(StaffDetails).find({
+      select: ['id', 'first_name', 'last_name', 'room'],
+      where: {
+        room: Not(IsNull()),
+        isActive: true,
+      },
+      relations: ['room'],
+    });
+  }
 }

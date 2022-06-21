@@ -5,12 +5,7 @@ import { QueueSystemModule } from './queue-system/queue-system.module';
 import { DoctorsAppointmentModule } from './doctors-apointment/appointment.module';
 
 @Module({
-	imports: [
-		AppointmentModule,
-		QueueSystemModule,
-		DoctorsAppointmentModule,
-	],
-	controllers: [],
+  imports: [AppointmentModule, QueueSystemModule, DoctorsAppointmentModule],
+  controllers: [],
 })
-export class FrontdeskModule {
-}
+export class FrontdeskModule {}

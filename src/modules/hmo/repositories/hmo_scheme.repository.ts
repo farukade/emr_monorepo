@@ -6,23 +6,22 @@ import { Hmo } from '../entities/hmo.entity';
 
 @EntityRepository(HmoScheme)
 export class HmoSchemeRepository extends Repository<HmoScheme> {
+  async saveScheme(hmoScheme: HmoSchemeDto, hmo: Hmo, type: HmoType, username: string): Promise<HmoScheme> {
+    const { name, address, phoneNumber, email, cacNumber, coverageType, logo } = hmoScheme;
 
-    async saveScheme(hmoScheme: HmoSchemeDto, hmo: Hmo, type: HmoType, username: string): Promise<HmoScheme> {
-        const { name, address, phoneNumber, email, cacNumber, coverageType, logo } = hmoScheme;
+    const scheme = new HmoScheme();
+    scheme.name = name;
+    scheme.logo = logo;
+    scheme.address = address;
+    scheme.phoneNumber = phoneNumber;
+    scheme.email = email;
+    scheme.cacNumber = cacNumber;
+    scheme.coverageType = coverageType;
+    scheme.hmoType = type;
+    scheme.owner = hmo;
+    scheme.createdBy = username;
+    await scheme.save();
 
-        const scheme = new HmoScheme();
-        scheme.name = name;
-        scheme.logo = logo;
-        scheme.address = address;
-        scheme.phoneNumber = phoneNumber;
-        scheme.email = email;
-        scheme.cacNumber = cacNumber;
-        scheme.coverageType = coverageType;
-        scheme.hmoType = type;
-        scheme.owner = hmo;
-        scheme.createdBy = username;
-        await scheme.save();
-
-        return scheme;
-    }
+    return scheme;
+  }
 }

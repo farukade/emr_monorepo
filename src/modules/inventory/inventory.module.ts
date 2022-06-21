@@ -10,19 +10,18 @@ import { DrugModule } from './pharmacy/drug/drug.module';
 import { InventoryActivityModule } from './activity/activity.module';
 
 @Module({
-    imports: [
-        VendorModule,
-        ManufacturerModule,
-        RequisitionModule,
-        StoreModule,
-        CafeteriaInventoryModule,
-        BatchesModule,
-        GenericModule,
-        DrugModule,
-        InventoryActivityModule,
-    ],
-    providers: [],
-    controllers: [],
+  imports: [
+    VendorModule,
+    ManufacturerModule,
+    RequisitionModule,
+    StoreModule,
+    CafeteriaInventoryModule,
+    BatchesModule,
+    GenericModule,
+    DrugModule,
+    InventoryActivityModule,
+  ],
+  providers: [],
+  controllers: [],
 })
-export class InventoryModule {
-}
+export class InventoryModule {}

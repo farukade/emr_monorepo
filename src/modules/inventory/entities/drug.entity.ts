@@ -6,23 +6,23 @@ import { DrugBatch } from './batches.entity';
 
 @Entity({ name: 'drugs' })
 export class Drug extends CustomBaseEntity {
-    @Column({ type: 'varchar', length: 300 })
-    name: string;
+  @Column({ type: 'varchar', length: 300 })
+  name: string;
 
-    @Column({ type: 'varchar', length: 300 })
-    code: string;
+  @Column({ type: 'varchar', length: 300 })
+  code: string;
 
-    @ManyToOne(type => DrugGeneric, item => item.drugs, { eager: true })
-    @JoinColumn({ name: 'drug_generic_id' })
-    generic: DrugGeneric;
+  @ManyToOne((type) => DrugGeneric, (item) => item.drugs, { eager: true })
+  @JoinColumn({ name: 'drug_generic_id' })
+  generic: DrugGeneric;
 
-    @Column({ type: 'varchar', nullable: true, name: 'unit_of_measure' })
-    unitOfMeasure: string;
+  @Column({ type: 'varchar', nullable: true, name: 'unit_of_measure' })
+  unitOfMeasure: string;
 
-    @ManyToOne(type => DrugManufacturer, { nullable: true })
-    @JoinColumn({ name: 'manufacturer_id' })
-    manufacturer: DrugManufacturer;
+  @ManyToOne((type) => DrugManufacturer, { nullable: true })
+  @JoinColumn({ name: 'manufacturer_id' })
+  manufacturer: DrugManufacturer;
 
-    @OneToMany(type => DrugBatch, item => item.drug)
-    batches: DrugBatch[];
+  @OneToMany((type) => DrugBatch, (item) => item.drug)
+  batches: DrugBatch[];
 }

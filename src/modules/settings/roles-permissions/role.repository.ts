@@ -5,20 +5,17 @@ import { slugify } from '../../../common/utils/utils';
 
 @EntityRepository(Role)
 export class RoleRepository extends Repository<Role> {
-	async createRole(
-		createRoleDto: CreateRoleDto,
-		username: string,
-	): Promise<Role> {
-		const { name, description } = createRoleDto;
+  async createRole(createRoleDto: CreateRoleDto, username: string): Promise<Role> {
+    const { name, description } = createRoleDto;
 
-		const role = new Role();
-		role.name = name;
-		role.slug = slugify(name);
-		role.description = description;
-		role.createdBy = username;
+    const role = new Role();
+    role.name = name;
+    role.slug = slugify(name);
+    role.description = description;
+    role.createdBy = username;
 
-		await role.save();
+    await role.save();
 
-		return role;
-	}
+    return role;
+  }
 }

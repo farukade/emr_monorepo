@@ -13,20 +13,20 @@ import { IvfSpermPrepRepository } from './repositories/sperm-prep.repository';
 import { IvfTreatmentRepository } from './repositories/treatment.repository';
 
 @Module({
-	imports: [
-		TypeOrmModule.forFeature([
-			IvfEmbryologyRepository,
-			IvfEmbryoAssessmentRepository,
-			IvfEmbryoTranferRepository,
-			IvfICSIRepository,
-			IvfTreatmentRepository,
-			IvfSpermPrepRepository,
-			PatientRepository,
-			EmbryoTransRecordRepository,
-			StaffRepository,
-		]),
-	],
-	controllers: [EmbryologyController],
-	providers: [IvfEmbryologyService],
+  imports: [
+    TypeOrmModule.forFeature([
+      IvfEmbryologyRepository,
+      IvfEmbryoAssessmentRepository,
+      IvfEmbryoTranferRepository,
+      IvfICSIRepository,
+      IvfTreatmentRepository,
+      IvfSpermPrepRepository,
+      PatientRepository,
+      EmbryoTransRecordRepository,
+      StaffRepository,
+    ]),
+  ],
+  controllers: [EmbryologyController],
+  providers: [IvfEmbryologyService],
 })
 export class IvfEmbryologyModule {}

@@ -6,20 +6,18 @@ import { Transaction } from '../transaction.entity';
 
 @Entity({ name: 'account_deposits' })
 export class AccountDeposit extends CustomBaseEntity {
+  @ManyToOne(() => Patient, { nullable: true })
+  @JoinColumn({ name: 'patient_id' })
+  patient: Patient;
 
-	@ManyToOne(() => Patient, { nullable: true })
-	@JoinColumn({ name: 'patient_id' })
-	patient: Patient;
+  @ManyToOne((type) => StaffDetails, { nullable: true })
+  @JoinColumn({ name: 'staff_id' })
+  staff: StaffDetails;
 
-	@ManyToOne(type => StaffDetails, { nullable: true })
-	@JoinColumn({ name: 'staff_id' })
-	staff: StaffDetails;
+  @Column({ type: 'float4', default: 0.0 })
+  amount: number;
 
-	@Column({ type: 'float4', default: 0.0 })
-	amount: number;
-
-	@OneToOne(type => Transaction, { eager: true })
-	@JoinColumn({ name: 'transaction_id' })
-	transaction: Transaction;
-
+  @OneToOne((type) => Transaction, { eager: true })
+  @JoinColumn({ name: 'transaction_id' })
+  transaction: Transaction;
 }

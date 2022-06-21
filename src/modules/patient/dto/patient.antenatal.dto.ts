@@ -2,20 +2,20 @@ import { IsNotEmpty, IsEmail } from 'class-validator';
 import { Patient } from '../entities/patient.entity';
 
 export class PatientAntenatalDto {
-	@IsNotEmpty()
-	heightOfFunds: string;
+  @IsNotEmpty()
+  heightOfFunds: string;
 
-	@IsNotEmpty()
-	fetalHeartRate: string;
+  @IsNotEmpty()
+  fetalHeartRate: string;
 
-	@IsNotEmpty()
-	patient_id: string;
+  @IsNotEmpty()
+  patient_id: string;
 
-	positionOfFetus: string;
+  positionOfFetus: string;
 
-	fetalLie: string;
+  fetalLie: string;
 
-	relationshipToBrim: string;
+  relationshipToBrim: string;
 
-	patient: Patient;
+  patient: Patient;
 }

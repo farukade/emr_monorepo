@@ -1,7 +1,6 @@
 import { IsNotEmpty } from 'class-validator';
 
 export class ExcuseDutyDto {
-
   @IsNotEmpty()
   patient_id: number;
 
@@ -12,5 +11,4 @@ export class ExcuseDutyDto {
   end_date: string;
 
   diagnoses: any;
-
 }

@@ -9,17 +9,16 @@ import { PatientNoteRepository } from '../repositories/patient_note.repository';
 import { PatientRepository } from '../repositories/patient.repository';
 
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([
-            ExcuseDutyRepository,
-            AdmissionsRepository,
-            NicuRepository,
-            PatientNoteRepository,
-            PatientRepository,
-        ]),
-    ],
-    providers: [ExcuseDutyService],
-    controllers: [ExcuseDutyController],
+  imports: [
+    TypeOrmModule.forFeature([
+      ExcuseDutyRepository,
+      AdmissionsRepository,
+      NicuRepository,
+      PatientNoteRepository,
+      PatientRepository,
+    ]),
+  ],
+  providers: [ExcuseDutyService],
+  controllers: [ExcuseDutyController],
 })
-export class ExcuseDutyModule {
-}
+export class ExcuseDutyModule {}

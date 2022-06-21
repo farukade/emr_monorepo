@@ -4,65 +4,63 @@ import { Patient } from '../../entities/patient.entity';
 import { LabourEnrollment } from './labour_enrollment.entity';
 import { StaffDetails } from '../../../hr/staff/entities/staff_details.entity';
 
-@Entity({name: 'labour_delivery_records'})
+@Entity({ name: 'labour_delivery_records' })
 export class LabourDeliveryRecord extends CustomBaseEntity {
+  @Column()
+  deliveryType: string;
 
-    @Column()
-    deliveryType: string;
+  @Column()
+  isMotherAlive: boolean;
 
-    @Column()
-    isMotherAlive: boolean;
+  @Column()
+  isBabyAlive: boolean;
 
-    @Column()
-    isBabyAlive: boolean;
+  @Column()
+  administeredOxytocin: boolean;
 
-    @Column()
-    administeredOxytocin: boolean;
+  @Column()
+  placentaComplete: boolean;
 
-    @Column()
-    placentaComplete: boolean;
+  @Column()
+  bleeading: boolean;
 
-    @Column()
-    bleeading: boolean;
+  @Column()
+  timeOfBirth: string;
 
-    @Column()
-    timeOfBirth: string;
+  @Column()
+  dateOfBirth: string;
 
-    @Column()
-    dateOfBirth: string;
+  @Column()
+  babyCried: boolean;
 
-    @Column()
-    babyCried: boolean;
+  @Column()
+  sexOfBaby: string;
 
-    @Column()
-    sexOfBaby: string;
+  @Column()
+  apgarScore: string;
 
-    @Column()
-    apgarScore: string;
+  @Column()
+  weight: string;
 
-    @Column()
-    weight: string;
+  @Column()
+  administeredVitaminK: boolean;
 
-    @Column()
-    administeredVitaminK: boolean;
+  @Column()
+  negativeRH: boolean;
 
-    @Column()
-    negativeRH: boolean;
+  @Column({ nullable: true })
+  drugsAdministered: string;
 
-    @Column({nullable: true})
-    drugsAdministered: string;
+  @Column()
+  transferredTo: string;
 
-    @Column()
-    transferredTo: string;
+  @Column({ nullable: true })
+  comment: string;
 
-    @Column({nullable: true})
-    comment: string;
+  @ManyToOne(() => StaffDetails)
+  pediatrician: StaffDetails;
 
-    @ManyToOne(() => StaffDetails)
-    pediatrician: StaffDetails;
-
-    @ManyToOne(() => LabourEnrollment)
-    @JoinColumn({name: 'enrollment_id'})
-    enrollment: LabourEnrollment;
-
+  @ManyToOne(() => LabourEnrollment)
+  @JoinColumn({ name: 'enrollment_id' })
+  enrollment: LabourEnrollment;
 }

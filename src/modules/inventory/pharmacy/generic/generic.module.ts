@@ -8,16 +8,8 @@ import { DrugBatchRepository } from '../batches/batches.repository';
 import { DrugRepository } from '../drug/drug.repository';
 
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([
-            DrugGenericRepository,
-            DrugCategoryRepository,
-            DrugRepository,
-            DrugBatchRepository,
-        ]),
-    ],
-    providers: [DrugGenericService],
-    controllers: [DrugGenericController],
+  imports: [TypeOrmModule.forFeature([DrugGenericRepository, DrugCategoryRepository, DrugRepository, DrugBatchRepository])],
+  providers: [DrugGenericService],
+  controllers: [DrugGenericController],
 })
-export class GenericModule {
-}
+export class GenericModule {}

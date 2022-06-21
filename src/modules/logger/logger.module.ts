@@ -5,9 +5,8 @@ import { LoggerService } from './logger.service';
 import { LoggerRepository } from './logger.repository';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([LoggerRepository])],
-    providers: [LoggerService],
-    controllers: [LoggerController],
+  imports: [TypeOrmModule.forFeature([LoggerRepository])],
+  providers: [LoggerService],
+  controllers: [LoggerController],
 })
-export class LoggerModule {
-}
+export class LoggerModule {}

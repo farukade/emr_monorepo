@@ -18,197 +18,196 @@ import { ServiceRepository } from '../services/repositories/service.repository';
 
 @Injectable()
 export class RoomService {
-    constructor(
-        @InjectRepository(RoomRepository)
-        private roomRepository: RoomRepository,
-        @InjectRepository(RoomCategoryRepository)
-        private roomCategoryRepository: RoomCategoryRepository,
-        @InjectRepository(HmoSchemeRepository)
-        private hmoSchemeRepository: HmoSchemeRepository,
-        @InjectRepository(ServiceCostRepository)
-        private serviceCostRepository: ServiceCostRepository,
-        @InjectRepository(ServiceCategoryRepository)
-        private serviceCategoryRepository: ServiceCategoryRepository,
-        @InjectRepository(ServiceRepository)
-        private serviceRepository: ServiceRepository,
-    ) {
+  constructor(
+    @InjectRepository(RoomRepository)
+    private roomRepository: RoomRepository,
+    @InjectRepository(RoomCategoryRepository)
+    private roomCategoryRepository: RoomCategoryRepository,
+    @InjectRepository(HmoSchemeRepository)
+    private hmoSchemeRepository: HmoSchemeRepository,
+    @InjectRepository(ServiceCostRepository)
+    private serviceCostRepository: ServiceCostRepository,
+    @InjectRepository(ServiceCategoryRepository)
+    private serviceCategoryRepository: ServiceCategoryRepository,
+    @InjectRepository(ServiceRepository)
+    private serviceRepository: ServiceRepository,
+  ) {}
+
+  async getRoomsCategory(options: PaginationOptionsInterface, params): Promise<Pagination> {
+    const { q, hmo_id } = params;
+
+    const page = options.page - 1;
+
+    const hmo = await this.hmoSchemeRepository.findOne(hmo_id);
+
+    let where = {};
+
+    if (q && q !== '') {
+      where = { ...where, name: Raw((alias) => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`) };
     }
 
-    async getRoomsCategory(options: PaginationOptionsInterface, params): Promise<Pagination> {
-        const { q, hmo_id } = params;
+    const [result, total] = await this.roomCategoryRepository.findAndCount({
+      where,
+      order: { name: 'ASC' },
+      take: options.limit,
+      skip: page * options.limit,
+    });
 
-        const page = options.page - 1;
+    let rs = [];
+    for (const item of result) {
+      const service = await this.serviceCostRepository.findOne({ where: { code: item.code, hmo } });
+      const rooms = await this.roomRepository.find({ where: { category: item } });
 
-        const hmo = await this.hmoSchemeRepository.findOne(hmo_id);
-
-        let where = {};
-
-        if (q && q !== '') {
-            where = { ...where, name: Raw(alias => `LOWER(${alias}) Like '%${q.toLowerCase()}%'`) };
-        }
-
-        const [result, total] = await this.roomCategoryRepository.findAndCount({
-            where,
-            order: { name: 'ASC' },
-            take: options.limit,
-            skip: (page * options.limit),
-        });
-
-        let rs = [];
-        for (const item of result) {
-            const service = await this.serviceCostRepository.findOne({ where: { code: item.code, hmo } });
-            const rooms = await this.roomRepository.find({ where: { category: item } });
-
-            rs = [...rs, { ...item, service, rooms, numRooms: rooms.length }];
-        }
-
-        return {
-            result: rs,
-            lastPage: Math.ceil(total / options.limit),
-            itemsPerPage: options.limit,
-            totalPages: total,
-            currentPage: options.page,
-        };
+      rs = [...rs, { ...item, service, rooms, numRooms: rooms.length }];
     }
 
-    async createRoomCategory(roomCategoryDto: RoomCategoryDto, username: string): Promise<any> {
-        const { name, tariff } = roomCategoryDto;
+    return {
+      result: rs,
+      lastPage: Math.ceil(total / options.limit),
+      itemsPerPage: options.limit,
+      totalPages: total,
+      currentPage: options.page,
+    };
+  }
 
-        const serviceCategory = await this.serviceCategoryRepository.findOne({
-            where: { slug: 'ward' },
-        });
-        const lastService = await this.serviceRepository.findOne({
-            where: { category: serviceCategory },
-            order: { code: 'DESC' },
-        });
+  async createRoomCategory(roomCategoryDto: RoomCategoryDto, username: string): Promise<any> {
+    const { name, tariff } = roomCategoryDto;
 
-        const alphaCode = 'WR';
-        let code;
-        if (lastService) {
-            const num = lastService.code.slice(2);
-            const index = parseInt(num, 10) + 1;
-            code = `${alphaCode.toLocaleUpperCase()}${formatPID(index, lastService.code.length - 2)}`;
-        } else {
-            code = `${alphaCode.toLocaleUpperCase()}${formatPID(1)}`;
-        }
+    const serviceCategory = await this.serviceCategoryRepository.findOne({
+      where: { slug: 'ward' },
+    });
+    const lastService = await this.serviceRepository.findOne({
+      where: { category: serviceCategory },
+      order: { code: 'DESC' },
+    });
 
-        const service = await this.serviceRepository.createService(roomCategoryDto, serviceCategory, code);
-
-        const roomCategory = new RoomCategory();
-        roomCategory.name = name;
-        roomCategory.code = code;
-        roomCategory.createdBy = username;
-        const rs = await roomCategory.save();
-
-        const schemes = await this.hmoSchemeRepository.find();
-
-        for (const scheme of schemes) {
-            const serviceCost = new ServiceCost();
-            serviceCost.code = service.code;
-            serviceCost.item = service;
-            serviceCost.hmo = scheme;
-            serviceCost.tariff = parseFloat(tariff);
-
-            await serviceCost.save();
-        }
-
-        const hmo = await this.hmoSchemeRepository.findOne({
-            where: { name: 'Private' },
-        });
-
-        const cost = await this.serviceCostRepository.findOne({
-            where: { code: service.code, hmo },
-        });
-
-        return { ...rs, service: cost };
+    const alphaCode = 'WR';
+    let code;
+    if (lastService) {
+      const num = lastService.code.slice(2);
+      const index = parseInt(num, 10) + 1;
+      code = `${alphaCode.toLocaleUpperCase()}${formatPID(index, lastService.code.length - 2)}`;
+    } else {
+      code = `${alphaCode.toLocaleUpperCase()}${formatPID(1)}`;
     }
 
-    async updateRoomCategory(id: string, roomCategoryDto: RoomCategoryDto, username: string): Promise<any> {
-        try {
-            const { name, hmo_id } = roomCategoryDto;
+    const service = await this.serviceRepository.createService(roomCategoryDto, serviceCategory, code);
 
-            const hmo = await this.hmoSchemeRepository.findOne(hmo_id);
-            const roomCategory = await this.roomCategoryRepository.findOne(id);
+    const roomCategory = new RoomCategory();
+    roomCategory.name = name;
+    roomCategory.code = code;
+    roomCategory.createdBy = username;
+    const rs = await roomCategory.save();
 
-            const serviceCost = await this.serviceCostRepository.findOne({
-                where: { code: roomCategory.code, hmo },
-            });
+    const schemes = await this.hmoSchemeRepository.find();
 
-            const service = await this.serviceRepository.findOne({
-                where: { code: roomCategory.code },
-            });
-            service.name = name;
-            service.lastChangedBy = username;
-            await service.save();
+    for (const scheme of schemes) {
+      const serviceCost = new ServiceCost();
+      serviceCost.code = service.code;
+      serviceCost.item = service;
+      serviceCost.hmo = scheme;
+      serviceCost.tariff = parseFloat(tariff);
 
-            roomCategory.name = name;
-            roomCategory.lastChangedBy = username;
-            const query = await roomCategory.save();
-
-            return { ...query, service: serviceCost };
-        } catch (e) {
-            throw new NotFoundException('could not update room category');
-        }
+      await serviceCost.save();
     }
 
-    async deleteRoomCategory(id: number, username: string): Promise<any> {
-        const category = await this.roomCategoryRepository.findOne(id);
+    const hmo = await this.hmoSchemeRepository.findOne({
+      where: { name: 'Private' },
+    });
 
-        if (!category) {
-            throw new NotFoundException(`Room category with ID '${id}' not found`);
-        }
+    const cost = await this.serviceCostRepository.findOne({
+      where: { code: service.code, hmo },
+    });
 
-        category.deletedBy = username;
-        await category.save();
+    return { ...rs, service: cost };
+  }
 
-        return category.softRemove();
+  async updateRoomCategory(id: string, roomCategoryDto: RoomCategoryDto, username: string): Promise<any> {
+    try {
+      const { name, hmo_id } = roomCategoryDto;
+
+      const hmo = await this.hmoSchemeRepository.findOne(hmo_id);
+      const roomCategory = await this.roomCategoryRepository.findOne(id);
+
+      const serviceCost = await this.serviceCostRepository.findOne({
+        where: { code: roomCategory.code, hmo },
+      });
+
+      const service = await this.serviceRepository.findOne({
+        where: { code: roomCategory.code },
+      });
+      service.name = name;
+      service.lastChangedBy = username;
+      await service.save();
+
+      roomCategory.name = name;
+      roomCategory.lastChangedBy = username;
+      const query = await roomCategory.save();
+
+      return { ...query, service: serviceCost };
+    } catch (e) {
+      throw new NotFoundException('could not update room category');
+    }
+  }
+
+  async deleteRoomCategory(id: number, username: string): Promise<any> {
+    const category = await this.roomCategoryRepository.findOne(id);
+
+    if (!category) {
+      throw new NotFoundException(`Room category with ID '${id}' not found`);
     }
 
-    async getAllRooms(param): Promise<Room[]> {
-        const { category_id } = param;
+    category.deletedBy = username;
+    await category.save();
 
-        let where = {};
-        if (category_id && category_id !== '') {
-            const category = await this.roomCategoryRepository.findOne(category_id);
-            where = { ...where, category };
-        }
+    return category.softRemove();
+  }
 
-        return this.roomRepository.find({
-            where,
-            relations: ['category'],
-        });
+  async getAllRooms(param): Promise<Room[]> {
+    const { category_id } = param;
+
+    let where = {};
+    if (category_id && category_id !== '') {
+      const category = await this.roomCategoryRepository.findOne(category_id);
+      where = { ...where, category };
     }
 
-    async createRoom(roomDto: RoomDto, username: string): Promise<Room> {
-        const { room_category_id } = roomDto;
-        const category = await this.roomCategoryRepository.findOne(room_category_id);
+    return this.roomRepository.find({
+      where,
+      relations: ['category'],
+    });
+  }
 
-        return this.roomRepository.createRoom(roomDto, category, username);
+  async createRoom(roomDto: RoomDto, username: string): Promise<Room> {
+    const { room_category_id } = roomDto;
+    const category = await this.roomCategoryRepository.findOne(room_category_id);
+
+    return this.roomRepository.createRoom(roomDto, category, username);
+  }
+
+  async updateRoom(id: string, roomDto: RoomDto, username: string): Promise<Room> {
+    const { name, floor, room_category_id } = roomDto;
+    const category = await this.roomCategoryRepository.findOne(room_category_id);
+
+    const room = await this.roomRepository.findOne(id);
+    room.name = name;
+    room.floor = floor;
+    room.category = category;
+    room.lastChangedBy = username;
+
+    return await room.save();
+  }
+
+  async deleteRoom(id: number, username: string): Promise<any> {
+    const room = await this.roomRepository.findOne(id);
+
+    if (!room) {
+      throw new NotFoundException(`Room with ID '${id}' not found`);
     }
 
-    async updateRoom(id: string, roomDto: RoomDto, username: string): Promise<Room> {
-        const { name, floor, room_category_id } = roomDto;
-        const category = await this.roomCategoryRepository.findOne(room_category_id);
+    room.deletedBy = username;
+    await room.save();
 
-        const room = await this.roomRepository.findOne(id);
-        room.name = name;
-        room.floor = floor;
-        room.category = category;
-        room.lastChangedBy = username;
-
-        return await room.save();
-    }
-
-    async deleteRoom(id: number, username: string): Promise<any> {
-        const room = await this.roomRepository.findOne(id);
-
-        if (!room) {
-            throw new NotFoundException(`Room with ID '${id}' not found`);
-        }
-
-        room.deletedBy = username;
-        await room.save();
-
-        return room.softRemove();
-    }
+    return room.softRemove();
+  }
 }

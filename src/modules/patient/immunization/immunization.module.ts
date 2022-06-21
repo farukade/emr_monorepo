@@ -11,5 +11,4 @@ import { StaffRepository } from '../../hr/staff/staff.repository';
   controllers: [ImmunizationController],
   providers: [ImmunizationService],
 })
-export class ImmunizationModule {
-}
+export class ImmunizationModule {}

@@ -14,21 +14,20 @@ import { RoomCategoryRepository } from '../room/room.category.repository';
 import { ServicesCategoryController } from './service-categories.controller';
 
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([
-            ServiceRepository,
-            ServiceCategoryRepository,
-            LabTestCategoryRepository,
-            LabTestRepository,
-            HmoOwnerRepository,
-            HmoSchemeRepository,
-            ServiceCostRepository,
-            DrugRepository,
-            RoomCategoryRepository,
-        ]),
-    ],
-    providers: [ServicesService],
-    controllers: [ServicesController, ServicesCategoryController],
+  imports: [
+    TypeOrmModule.forFeature([
+      ServiceRepository,
+      ServiceCategoryRepository,
+      LabTestCategoryRepository,
+      LabTestRepository,
+      HmoOwnerRepository,
+      HmoSchemeRepository,
+      ServiceCostRepository,
+      DrugRepository,
+      RoomCategoryRepository,
+    ]),
+  ],
+  providers: [ServicesService],
+  controllers: [ServicesController, ServicesCategoryController],
 })
-export class ServicesModule {
-}
+export class ServicesModule {}

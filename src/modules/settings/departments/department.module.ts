@@ -6,8 +6,8 @@ import { DepartmentRepository } from './department.repository';
 import { StaffRepository } from '../../hr/staff/staff.repository';
 
 @Module({
-	imports: [TypeOrmModule.forFeature([DepartmentRepository, StaffRepository])],
-	controllers: [DepartmentsController],
-	providers: [DepartmentsService],
+  imports: [TypeOrmModule.forFeature([DepartmentRepository, StaffRepository])],
+  controllers: [DepartmentsController],
+  providers: [DepartmentsService],
 })
 export class DepartmentModule {}

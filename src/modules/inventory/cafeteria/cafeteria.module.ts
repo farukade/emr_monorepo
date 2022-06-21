@@ -7,10 +7,8 @@ import { InventoryActivityRepository } from '../activity/activity.repository';
 import { VendorRepository } from '../vendor/vendor.repository';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([
-      CafeteriaInventoryRepository, InventoryActivityRepository, VendorRepository,
-    ])],
-    providers: [CafeteriaInventoryService],
-    controllers: [CafeteriaInventoryController],
+  imports: [TypeOrmModule.forFeature([CafeteriaInventoryRepository, InventoryActivityRepository, VendorRepository])],
+  providers: [CafeteriaInventoryService],
+  controllers: [CafeteriaInventoryController],
 })
 export class CafeteriaInventoryModule {}

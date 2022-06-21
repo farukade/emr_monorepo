@@ -1,14 +1,14 @@
 import { IsNotEmpty } from 'class-validator';
 
 export class CreateEvaluationDto {
-	@IsNotEmpty()
-	performancePeriod: string;
+  @IsNotEmpty()
+  performancePeriod: string;
 
-	@IsNotEmpty()
-	startDate: string;
+  @IsNotEmpty()
+  startDate: string;
 
-	@IsNotEmpty()
-	endDate: string;
+  @IsNotEmpty()
+  endDate: string;
 
-	id: string;
+  id: string;
 }
