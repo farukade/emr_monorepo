@@ -7,11 +7,7 @@ import { DepartmentRepository } from '../../settings/departments/department.repo
 import { StaffRepository } from '../staff/staff.repository';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([
-    RosterRepository,
-    DepartmentRepository,
-    StaffRepository,
-  ])],
+  imports: [TypeOrmModule.forFeature([RosterRepository, DepartmentRepository, StaffRepository])],
   providers: [HousekeepingService],
   controllers: [HousekeepingController],
 })

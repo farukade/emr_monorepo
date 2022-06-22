@@ -10,30 +10,30 @@ import { ServiceCost } from '../../settings/entities/service_cost.entity';
 
 @EntityRepository(Appointment)
 export class AppointmentRepository extends Repository<Appointment> {
-	async saveAppointment(
-		appointmentDto: AppointmentDto,
-		patient: Patient,
-		consultingRoom: ConsultingRoom,
-		doctor: StaffDetails,
-		service,
-		serviceCost: ServiceCost,
-		department: Department,
-		username: string,
-	) {
-		const appointment = new Appointment();
-		appointment.patient = patient;
-		appointment.whomToSee = doctor;
-		appointment.consultingRoom = consultingRoom;
-		appointment.appointment_date = appointmentDto.appointment_date;
-		appointment.serviceCategory = service.category;
-		appointment.service = serviceCost;
-		appointment.description = appointmentDto.description;
-		appointment.referredBy = appointmentDto.referredBy;
-		appointment.referralCompany = appointmentDto.referralCompany;
-		appointment.department = department;
-		appointment.createdBy = username;
-		await appointment.save();
+  async saveAppointment(
+    appointmentDto: AppointmentDto,
+    patient: Patient,
+    consultingRoom: ConsultingRoom,
+    doctor: StaffDetails,
+    service,
+    serviceCost: ServiceCost,
+    department: Department,
+    username: string,
+  ) {
+    const appointment = new Appointment();
+    appointment.patient = patient;
+    appointment.whomToSee = doctor;
+    appointment.consultingRoom = consultingRoom;
+    appointment.appointment_date = appointmentDto.appointment_date;
+    appointment.serviceCategory = service.category;
+    appointment.service = serviceCost;
+    appointment.description = appointmentDto.description;
+    appointment.referredBy = appointmentDto.referredBy;
+    appointment.referralCompany = appointmentDto.referralCompany;
+    appointment.department = department;
+    appointment.createdBy = username;
+    await appointment.save();
 
-		return appointment;
-	}
+    return appointment;
+  }
 }

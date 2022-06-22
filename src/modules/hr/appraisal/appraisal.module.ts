@@ -11,14 +11,17 @@ import { PerformanceCommentRepository } from './repositories/performance_comment
 import { PerformanceIndicatorReportRepository } from './repositories/performance_indicator_report.repository';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([
-    DepartmentRepository,
-    PerformanceCommentRepository,
-    PerformanceAppraisalRepository,
-    PerformanceAppraisalPeriodRepository,
-    PerformanceIndicatorRepository,
-    PerformanceIndicatorReportRepository,
-    StaffRepository])],
+  imports: [
+    TypeOrmModule.forFeature([
+      DepartmentRepository,
+      PerformanceCommentRepository,
+      PerformanceAppraisalRepository,
+      PerformanceAppraisalPeriodRepository,
+      PerformanceIndicatorRepository,
+      PerformanceIndicatorReportRepository,
+      StaffRepository,
+    ]),
+  ],
   providers: [AppraisalService],
   controllers: [AppraisalController],
 })

@@ -10,14 +10,16 @@ import { IvfEnrollmentRepository } from './ivf_enrollment.repository';
 import { StaffRepository } from '../../hr/staff/staff.repository';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([
-        PatientRequestRepository,
-        StaffRepository,
-        PatientRequestItemRepository,
-        IvfEnrollmentRepository,
-        PatientRepository,
-    ])],
-    controllers: [IvfController],
-    providers: [AppGateway, IvfService],
+  imports: [
+    TypeOrmModule.forFeature([
+      PatientRequestRepository,
+      StaffRepository,
+      PatientRequestItemRepository,
+      IvfEnrollmentRepository,
+      PatientRepository,
+    ]),
+  ],
+  controllers: [IvfController],
+  providers: [AppGateway, IvfService],
 })
 export class IvfModule {}

@@ -4,15 +4,15 @@ import { GroupTest } from './group_tests.entity';
 
 @Entity({ name: 'lab_groups' })
 export class Group extends CustomBaseEntity {
-    @Column({ type: 'varchar', length: 300 })
-    name: string;
+  @Column({ type: 'varchar', length: 300 })
+  name: string;
 
-    @Column({ type: 'varchar', nullable: true})
-    slug: string;
+  @Column({ type: 'varchar', nullable: true })
+  slug: string;
 
-    @Column({type: 'varchar', nullable: true})
-    description: string;
+  @Column({ type: 'varchar', nullable: true })
+  description: string;
 
-    @OneToMany(type => GroupTest, items => items.group)
-    tests: GroupTest[];
+  @OneToMany((type) => GroupTest, (items) => items.group)
+  tests: GroupTest[];
 }

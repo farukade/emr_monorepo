@@ -1,13 +1,13 @@
 import { IsNotEmpty } from 'class-validator';
 
 export class UpdateAppraisalDto {
-	@IsNotEmpty()
-	staffId: string;
+  @IsNotEmpty()
+  staffId: string;
 
-	@IsNotEmpty()
-	lineManagerId: string;
+  @IsNotEmpty()
+  lineManagerId: string;
 
-	departmentId: string;
+  departmentId: string;
 
-	indicators: IndicatorInterfce[];
+  indicators: IndicatorInterfce[];
 }

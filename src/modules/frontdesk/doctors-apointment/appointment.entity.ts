@@ -7,37 +7,37 @@ import { Appointment } from '../appointment/appointment.entity';
 
 @Entity({ name: 'doctor_appointments' })
 export class DoctorsAppointment extends CustomBaseEntity {
-	@Column()
-	appointment_datetime: string;
+  @Column()
+  appointment_datetime: string;
 
-	@Column()
-	appointment_time: string;
+  @Column()
+  appointment_time: string;
 
-	@Column()
-	appointment_date: string;
+  @Column()
+  appointment_date: string;
 
-	@Column('jsonb')
-	appointment_duration: any;
+  @Column('jsonb')
+  appointment_duration: any;
 
-	@ManyToOne(type => Department, { nullable: true })
-	@JoinColumn({ name: 'department_id' })
-	department: Department;
+  @ManyToOne((type) => Department, { nullable: true })
+  @JoinColumn({ name: 'department_id' })
+  department: Department;
 
-	@ManyToOne(type => Patient)
-	@JoinColumn({ name: 'patient_id' })
-	patient: Patient;
+  @ManyToOne((type) => Patient)
+  @JoinColumn({ name: 'patient_id' })
+  patient: Patient;
 
-	@ManyToOne(type => StaffDetails)
-	@JoinColumn({ name: 'doctor_id' })
-	doctor: StaffDetails;
+  @ManyToOne((type) => StaffDetails)
+  @JoinColumn({ name: 'doctor_id' })
+  doctor: StaffDetails;
 
-	@Column({ type: 'boolean', default: false })
-	is_online: boolean;
+  @Column({ type: 'boolean', default: false })
+  is_online: boolean;
 
-	@Column({ type: 'boolean', default: false })
-	is_booked: boolean;
+  @Column({ type: 'boolean', default: false })
+  is_booked: boolean;
 
-	@OneToOne(type => Appointment, { nullable: true })
-	@JoinColumn({ name: 'appointment_id' })
-	appointment: Appointment;
+  @OneToOne((type) => Appointment, { nullable: true })
+  @JoinColumn({ name: 'appointment_id' })
+  appointment: Appointment;
 }

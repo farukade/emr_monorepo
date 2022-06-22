@@ -11,17 +11,18 @@ import { SpecializationRepository } from '../../settings/specialization/speciali
 import { PatientRepository } from '../../patient/repositories/patient.repository';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([
-        StaffRepository,
-        AuthRepository,
-        RoleRepository,
-        DepartmentRepository,
-        AppointmentRepository,
-        SpecializationRepository,
-        PatientRepository,
-    ])],
-    controllers: [StaffController],
-    providers: [StaffService],
+  imports: [
+    TypeOrmModule.forFeature([
+      StaffRepository,
+      AuthRepository,
+      RoleRepository,
+      DepartmentRepository,
+      AppointmentRepository,
+      SpecializationRepository,
+      PatientRepository,
+    ]),
+  ],
+  controllers: [StaffController],
+  providers: [StaffService],
 })
-export class StaffModule {
-}
+export class StaffModule {}

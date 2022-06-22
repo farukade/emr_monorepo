@@ -2,20 +2,19 @@ import { IsNotEmpty } from 'class-validator';
 import { LabourEnrollment } from '../entities/labour_enrollment.entity';
 
 export class LabourRistAssesmentDto {
+  height: string;
 
-    height: string;
+  weight: string;
 
-    weight: string;
+  previousPregnancyOutcome: string;
 
-    previousPregnancyOutcome: string;
+  previousPregnancyExperience: string[];
 
-    previousPregnancyExperience: string[];
+  note: string;
 
-    note: string;
+  createdBy: string;
 
-    createdBy: string;
+  lastChangedBy: string;
 
-    lastChangedBy: string;
-
-    enrollment: LabourEnrollment;
+  enrollment: LabourEnrollment;
 }

@@ -1,8 +1,8 @@
 import { IsNotEmpty } from 'class-validator';
 
 export class SettingsDto {
-    @IsNotEmpty()
-    name: string;
+  @IsNotEmpty()
+  name: string;
 
-    value: string;
+  value: string;
 }

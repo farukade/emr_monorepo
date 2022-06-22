@@ -7,10 +7,8 @@ import { InventoryActivityRepository } from '../activity/activity.repository';
 import { VendorRepository } from '../vendor/vendor.repository';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([
-      StoreInventoryRepository, InventoryActivityRepository, VendorRepository,
-    ])],
-    providers: [StoreService],
-    controllers: [StoreController],
+  imports: [TypeOrmModule.forFeature([StoreInventoryRepository, InventoryActivityRepository, VendorRepository])],
+  providers: [StoreService],
+  controllers: [StoreController],
 })
 export class StoreModule {}

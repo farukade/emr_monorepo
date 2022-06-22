@@ -1,5 +1,5 @@
 export interface IFathersInfoInterface {
-    name: string;
-    phone: string;
-    blood_group: string;
+  name: string;
+  phone: string;
+  blood_group: string;
 }

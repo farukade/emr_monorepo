@@ -1,12 +1,12 @@
 import { IsNotEmpty } from 'class-validator';
 
 export class AccommodationDto {
-    @IsNotEmpty()
-    name: string;
+  @IsNotEmpty()
+  name: string;
 
-    description: string;
+  description: string;
 
-    amount: number;
+  amount: number;
 
-    quantity: number;
+  quantity: number;
 }

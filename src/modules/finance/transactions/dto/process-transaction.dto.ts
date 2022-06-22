@@ -1,17 +1,15 @@
-
 export class ProcessTransactionDto {
+  voucher_id: number;
 
-    voucher_id: number;
+  patient_id: number;
 
-    patient_id: number;
+  amount_paid: number;
 
-    amount_paid: number;
+  voucher_amount: number;
 
-    voucher_amount: number;
+  payment_method: string;
 
-    payment_method: string;
+  items: any;
 
-    items: any;
-
-    expiry_date: string;
+  expiry_date: string;
 }

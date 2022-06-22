@@ -5,26 +5,26 @@ import { Vendor } from './vendor.entity';
 
 @Entity({ name: 'drug_batches' })
 export class DrugBatch extends CustomBaseEntity {
-    @Column({ type: 'varchar', length: 300 })
-    name: string;
+  @Column({ type: 'varchar', length: 300 })
+  name: string;
 
-    @ManyToOne(type => Drug, { eager: true })
-    @JoinColumn({ name: 'drug_id' })
-    drug: Drug;
+  @ManyToOne((type) => Drug, { eager: true })
+  @JoinColumn({ name: 'drug_id' })
+  drug: Drug;
 
-    @Column({ default: 0 })
-    quantity: number;
+  @Column({ default: 0 })
+  quantity: number;
 
-    @Column({ type: 'float4', default: 0.0, name: 'unit_price' })
-    unitPrice: number;
+  @Column({ type: 'float4', default: 0.0, name: 'unit_price' })
+  unitPrice: number;
 
-    @Column({ type: 'float8', default: 0.0, name: 'cost_price' })
-    costPrice: number;
+  @Column({ type: 'float8', default: 0.0, name: 'cost_price' })
+  costPrice: number;
 
-    @Column({ type: 'varchar', nullable: true, name: 'expiration_date' })
-    expirationDate: string;
+  @Column({ type: 'varchar', nullable: true, name: 'expiration_date' })
+  expirationDate: string;
 
-    @ManyToOne(type => Vendor, { nullable: true })
-    @JoinColumn({ name: 'vendor_id' })
-    vendor: Vendor;
+  @ManyToOne((type) => Vendor, { nullable: true })
+  @JoinColumn({ name: 'vendor_id' })
+  vendor: Vendor;
 }

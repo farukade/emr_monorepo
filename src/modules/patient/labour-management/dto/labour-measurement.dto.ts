@@ -3,50 +3,48 @@ import { StaffDetails } from '../../../hr/staff/entities/staff_details.entity';
 import { LabourEnrollment } from '../entities/labour_enrollment.entity';
 
 export class LabourMeasurementDto {
+  isFalseLabour: boolean;
 
-    isFalseLabour: boolean;
+  presentation: string;
 
-    presentation: string;
+  positionOfFestus: string;
 
-    positionOfFestus: string;
+  fetalLies: string;
 
-    fetalLies: string;
+  descent: string;
 
-    descent: string;
+  cervicalLength: string;
 
-    cervicalLength: string;
+  cervicalEffacement: string;
 
-    cervicalEffacement: string;
+  cervicalPosition: string;
 
-    cervicalPosition: string;
+  membrances: string;
 
-    membrances: string;
+  moulding: string;
 
-    moulding: string;
+  caput: string;
 
-    caput: string;
+  hasPassedUrine: boolean;
 
-    hasPassedUrine: boolean;
+  administeredCyatacin: boolean;
 
-    administeredCyatacin: boolean;
+  administeredDrugs: boolean;
 
-    administeredDrugs: boolean;
+  timeOfMeasurement: string;
 
-    timeOfMeasurement: string;
+  dateOfMeasurement: string;
 
-    dateOfMeasurement: string;
+  labTests: string[];
 
-    labTests: string[];
+  measurements: string[];
 
-    measurements: string[];
+  createdBy: string;
+  lastChangedBy: string;
 
-    createdBy: string;
-    lastChangedBy: string;
+  examiner_id: string;
 
-    examiner_id: string;
+  examiner: StaffDetails;
 
-    examiner: StaffDetails;
-
-    enrollment: LabourEnrollment;
-
+  enrollment: LabourEnrollment;
 }

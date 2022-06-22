@@ -9,7 +9,7 @@ export class CafeteriaSalesDto {
 
   patient_id: string;
 
-  balance: string;
+  balance: number;
 
   cartItems: CartDto[];
 
@@ -17,8 +17,6 @@ export class CafeteriaSalesDto {
   paid: number;
 
   payment_method: string;
-
-  staff_total: number;
 
   total: number;
 }

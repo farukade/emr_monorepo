@@ -1,20 +1,19 @@
 import { IsNotEmpty } from 'class-validator';
 
 export class LabTestDto {
+  @IsNotEmpty()
+  name: string;
 
-    @IsNotEmpty()
-    name: string;
+  @IsNotEmpty()
+  lab_category_id: string;
 
-    @IsNotEmpty()
-    lab_category_id: string;
+  parameters: any;
 
-    parameters: any;
+  specimens: any;
 
-    specimens: any;
+  hasParameters: boolean;
 
-    hasParameters: boolean;
+  hmo_id: any;
 
-    hmo_id: any;
-
-    tariff: any;
+  tariff: any;
 }

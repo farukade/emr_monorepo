@@ -1,15 +1,14 @@
 import { IsNotEmpty } from 'class-validator';
 
 export class CreateAppriasalPeriodDto {
+  @IsNotEmpty()
+  performancePeriod: string;
 
-    @IsNotEmpty()
-    performancePeriod: string;
+  @IsNotEmpty()
+  startDate: string;
 
-    @IsNotEmpty()
-    startDate: string;
+  @IsNotEmpty()
+  endDate: string;
 
-    @IsNotEmpty()
-    endDate: string;
-
-    id: number;
+  id: number;
 }

@@ -9,15 +9,16 @@ import { AdmissionsRepository } from '../admissions/repositories/admissions.repo
 import { NicuRepository } from '../nicu/nicu.repository';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([
-        PatientNoteRepository,
-        PatientRepository,
-        DrugGenericRepository,
-        AdmissionsRepository,
-        NicuRepository,
-    ])],
-    providers: [PatientAllergenService],
-    controllers: [PatientAllergenController],
+  imports: [
+    TypeOrmModule.forFeature([
+      PatientNoteRepository,
+      PatientRepository,
+      DrugGenericRepository,
+      AdmissionsRepository,
+      NicuRepository,
+    ]),
+  ],
+  providers: [PatientAllergenService],
+  controllers: [PatientAllergenController],
 })
-export class PatientAllergenModule {
-}
+export class PatientAllergenModule {}

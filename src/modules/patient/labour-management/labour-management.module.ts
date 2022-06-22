@@ -8,13 +8,8 @@ import { AppGateway } from '../../../app.gateway';
 import { AntenatalEnrollmentRepository } from '../antenatal/enrollment.repository';
 
 @Module({
-	imports: [TypeOrmModule.forFeature([
-		LabourEnrollmentRepository,
-		PatientRepository,
-		AntenatalEnrollmentRepository,
-	])],
-	controllers: [LabourManagementController],
-	providers: [AppGateway, LabourManagementService],
+  imports: [TypeOrmModule.forFeature([LabourEnrollmentRepository, PatientRepository, AntenatalEnrollmentRepository])],
+  controllers: [LabourManagementController],
+  providers: [AppGateway, LabourManagementService],
 })
-export class LabourManagementModule {
-}
+export class LabourManagementModule {}

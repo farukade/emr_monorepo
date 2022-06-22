@@ -2,33 +2,32 @@ import { IsNotEmpty } from 'class-validator';
 import { LabourEnrollment } from '../entities/labour_enrollment.entity';
 
 export class LabourVitalDto {
+  fetalHeartRate: string;
 
-    fetalHeartRate: string;
+  cervicalDialation: string;
 
-    cervicalDialation: string;
+  fetalHeadDescent: string;
 
-    fetalHeadDescent: string;
+  isMotherAlive: boolean;
 
-    isMotherAlive: boolean;
+  numberOfContractions: string;
 
-    numberOfContractions: string;
+  durationOfContractions: string;
 
-    durationOfContractions: string;
+  bloodPressure: string;
 
-    bloodPressure: string;
+  currentPulse: string;
 
-    currentPulse: string;
+  currentTemperature: string;
 
-    currentTemperature: string;
+  bloodSugarLevel: string;
 
-    bloodSugarLevel: string;
+  respirationRate: string;
 
-    respirationRate: string;
+  nextAction: string;
 
-    nextAction: string;
+  enrollment: LabourEnrollment;
 
-    enrollment: LabourEnrollment;
-
-    createdBy: string;
-    lastChangedBy: string;
+  createdBy: string;
+  lastChangedBy: string;
 }

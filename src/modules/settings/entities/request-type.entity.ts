@@ -4,12 +4,12 @@ import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 
 @Entity({ name: 'request_types' })
 export class RequestType extends CustomBaseEntity {
-    @Column({ type: 'varchar', length: 300 })
-    name: string;
+  @Column({ type: 'varchar', length: 300 })
+  name: string;
 
-    @Column({ type: 'varchar', length: 300 })
-    group: string;
+  @Column({ type: 'varchar', length: 300 })
+  group: string;
 
-    @Column({type: 'float4'})
-    amount: number;
+  @Column({ type: 'float4' })
+  amount: number;
 }

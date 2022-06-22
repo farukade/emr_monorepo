@@ -1218,7 +1218,7 @@ export class PatientRequestService {
         },
         relations: ['request'],
       });
-      let requestArr = [];
+      const requestArr = [];
 
       monthsRequests.forEach((monthsRequest) => {
         if (monthsRequest.request.requestType == request_type) {
@@ -1226,13 +1226,13 @@ export class PatientRequestService {
         }
       });
 
-      let timeArr = [];
+      const timeArr = [];
 
       requestArr.forEach((request) => {
         const dateOne = moment(request.createdAt);
         const dateTwo = moment(request.approvedAt);
 
-        let timeDifference = dateTwo.diff(dateOne, 'hours');
+        const timeDifference = dateTwo.diff(dateOne, 'hours');
         timeArr.push(timeDifference);
       });
 

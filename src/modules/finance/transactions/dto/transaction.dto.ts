@@ -1,14 +1,13 @@
 export class TransactionDto {
+  patient_id: string;
 
-    patient_id: string;
+  hmo_id: string;
 
-    hmo_id: string;
+  service_id: string;
 
-    service_id: string;
+  amount: number;
 
-    amount: number;
+  description: string;
 
-    description: string;
-
-    hmo_approval_code: string;
+  hmo_approval_code: string;
 }

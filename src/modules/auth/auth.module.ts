@@ -9,16 +9,17 @@ import { DepartmentRepository } from '../settings/departments/department.reposit
 import { SpecializationRepository } from '../settings/specialization/specialization.repository';
 
 @Module({
-	imports: [TypeOrmModule.forFeature([
-		AuthRepository,
-		StaffRepository,
-		RoleRepository,
-		DepartmentRepository,
-		SpecializationRepository,
-	])],
-	controllers: [AuthController],
-	providers: [AuthService],
-	exports: [AuthService],
+  imports: [
+    TypeOrmModule.forFeature([
+      AuthRepository,
+      StaffRepository,
+      RoleRepository,
+      DepartmentRepository,
+      SpecializationRepository,
+    ]),
+  ],
+  controllers: [AuthController],
+  providers: [AuthService],
+  exports: [AuthService],
 })
-export class AuthModule {
-}
+export class AuthModule {}

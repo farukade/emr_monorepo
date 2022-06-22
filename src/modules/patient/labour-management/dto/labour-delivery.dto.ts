@@ -3,48 +3,47 @@ import { LabourEnrollment } from '../entities/labour_enrollment.entity';
 import { StaffDetails } from '../../../hr/staff/entities/staff_details.entity';
 
 export class LabourDeliveryRecordDto {
+  deliveryType: string;
 
-    deliveryType: string;
+  isMotherAlive: boolean;
 
-    isMotherAlive: boolean;
+  isBabyAlive: boolean;
 
-    isBabyAlive: boolean;
+  administeredOxytocin: boolean;
 
-    administeredOxytocin: boolean;
+  placentaComplete: boolean;
 
-    placentaComplete: boolean;
+  bleeading: boolean;
 
-    bleeading: boolean;
+  timeOfBirth: string;
 
-    timeOfBirth: string;
+  dateOfBirth: string;
 
-    dateOfBirth: string;
+  babyCried: boolean;
 
-    babyCried: boolean;
+  sexOfBaby: string;
 
-    sexOfBaby: string;
+  apgarScore: string;
 
-    apgarScore: string;
+  weight: string;
 
-    weight: string;
+  administeredVitaminK: boolean;
 
-    administeredVitaminK: boolean;
+  negativeRH: boolean;
 
-    negativeRH: boolean;
+  drugsAdministered: string;
 
-    drugsAdministered: string;
+  transferredTo: string;
 
-    transferredTo: string;
+  comment: string;
 
-    comment: string;
+  createdBy: string;
 
-    createdBy: string;
+  lastChangedBy: string;
 
-    lastChangedBy: string;
+  enrollment: LabourEnrollment;
 
-    enrollment: LabourEnrollment;
+  pediatrician: StaffDetails;
 
-    pediatrician: StaffDetails;
-
-    pediatrician_id: string;
+  pediatrician_id: string;
 }

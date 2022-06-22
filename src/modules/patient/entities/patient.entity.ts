@@ -1,10 +1,9 @@
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
-import { Entity, Column, OneToOne, JoinColumn, OneToMany, ManyToOne } from 'typeorm';
+import { Entity, Column, JoinColumn, OneToMany, ManyToOne } from 'typeorm';
 import { PatientNOK } from './patient-next-of-kin.entity';
 import { Appointment } from '../../frontdesk/appointment/appointment.entity';
 import { Transaction } from '../../finance/transactions/transaction.entity';
 import { Immunization } from '../immunization/entities/immunization.entity';
-import { Nicu } from '../nicu/entities/nicu.entity';
 import { HmoScheme } from '../../hmo/entities/hmo_scheme.entity';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 import { IvfEmbryologyEntity } from '../ivf/embryology/embryology.entity';

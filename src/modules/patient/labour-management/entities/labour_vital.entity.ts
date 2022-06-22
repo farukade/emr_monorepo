@@ -3,46 +3,45 @@ import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { Patient } from '../../entities/patient.entity';
 import { LabourEnrollment } from './labour_enrollment.entity';
 
-@Entity({name: 'labour_vitals'})
+@Entity({ name: 'labour_vitals' })
 export class LabourVital extends CustomBaseEntity {
+  @Column()
+  fetalHeartRate: string;
 
-    @Column()
-    fetalHeartRate: string;
+  @Column()
+  cervicalDialation: string;
 
-    @Column()
-    cervicalDialation: string;
+  @Column()
+  fetalHeadDescent: string;
 
-    @Column()
-    fetalHeadDescent: string;
+  @Column({ nullable: true, default: true })
+  isMotherAlive: boolean;
 
-    @Column({nullable: true, default: true})
-    isMotherAlive: boolean;
+  @Column()
+  numberOfContractions: string;
 
-    @Column()
-    numberOfContractions: string;
+  @Column()
+  durationOfContractions: string;
 
-    @Column()
-    durationOfContractions: string;
+  @Column()
+  bloodPressure: string;
 
-    @Column()
-    bloodPressure: string;
+  @Column()
+  currentPulse: string;
 
-    @Column()
-    currentPulse: string;
+  @Column()
+  currentTemperature: string;
 
-    @Column()
-    currentTemperature: string;
+  @Column()
+  bloodSugarLevel: string;
 
-    @Column()
-    bloodSugarLevel: string;
+  @Column()
+  respirationRate: string;
 
-    @Column()
-    respirationRate: string;
+  @Column()
+  nextAction: string;
 
-    @Column()
-    nextAction: string;
-
-    @ManyToOne(() => LabourEnrollment)
-    @JoinColumn({name: 'enrollmentId'})
-    enrollment: LabourEnrollment;
+  @ManyToOne(() => LabourEnrollment)
+  @JoinColumn({ name: 'enrollmentId' })
+  enrollment: LabourEnrollment;
 }

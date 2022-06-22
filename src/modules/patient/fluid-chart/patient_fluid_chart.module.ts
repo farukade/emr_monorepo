@@ -11,17 +11,18 @@ import { NicuRepository } from '../nicu/nicu.repository';
 import { LabourEnrollmentRepository } from '../labour-management/repositories/labour-enrollment.repository';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([
-        PatientFluidChartRepository,
-        PatientRepository,
-        AdmissionClinicalTaskRepository,
-        PatientVitalRepository,
-        AdmissionsRepository,
-        NicuRepository,
-        LabourEnrollmentRepository,
-    ])],
-    controllers: [PatientFluidChartController],
-    providers: [PatientFluidChartService],
+  imports: [
+    TypeOrmModule.forFeature([
+      PatientFluidChartRepository,
+      PatientRepository,
+      AdmissionClinicalTaskRepository,
+      PatientVitalRepository,
+      AdmissionsRepository,
+      NicuRepository,
+      LabourEnrollmentRepository,
+    ]),
+  ],
+  controllers: [PatientFluidChartController],
+  providers: [PatientFluidChartService],
 })
-export class PatientFluidChartModule {
-}
+export class PatientFluidChartModule {}

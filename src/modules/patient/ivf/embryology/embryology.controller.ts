@@ -12,35 +12,35 @@ import { IvfEmbryologyService } from './embryology.service';
 @ApiTags('Embryology')
 @Controller('embryology')
 export class EmbryologyController {
-	constructor(private embryologyService: IvfEmbryologyService) {}
+  constructor(private embryologyService: IvfEmbryologyService) {}
 
-	@Post('assessment/create')
-	saveAssessment(@Body() data: EmbryoAssessmentDto) {
-		return this.embryologyService.saveAssessment(data);
-	}
+  @Post('assessment/create')
+  saveAssessment(@Body() data: EmbryoAssessmentDto) {
+    return this.embryologyService.saveAssessment(data);
+  }
 
-	@Post('transfer/create')
-	saveTransfer(@Body() data: EmbryoTransferDto) {
-		return this.embryologyService.saveTransfer(data);
-	}
+  @Post('transfer/create')
+  saveTransfer(@Body() data: EmbryoTransferDto) {
+    return this.embryologyService.saveTransfer(data);
+  }
 
-	@Post('icsi/create')
-	saveIcsi(@Body() data: EmbryoIcsiDto) {
-		return this.embryologyService.saveIcsi(data);
-	}
+  @Post('icsi/create')
+  saveIcsi(@Body() data: EmbryoIcsiDto) {
+    return this.embryologyService.saveIcsi(data);
+  }
 
-	@Post('sperm-prep/create')
-	saveSpermPrep(@Body() data: EmbryoSpermPrepDto) {
-		return this.embryologyService.saveSpermPrep(data);
-	}
+  @Post('sperm-prep/create')
+  saveSpermPrep(@Body() data: EmbryoSpermPrepDto) {
+    return this.embryologyService.saveSpermPrep(data);
+  }
 
-	@Post('treatment/create')
-	saveTreatment(@Body() data: EmbryoTreatmentDto) {
-		return this.embryologyService.saveTreatment(data);
-	}
+  @Post('treatment/create')
+  saveTreatment(@Body() data: EmbryoTreatmentDto) {
+    return this.embryologyService.saveTreatment(data);
+  }
 
-	@Get('/')
-	getEmbryologyById(@Query() urlParams) {
-		return this.embryologyService.getEmbryologyById(urlParams);
-	}
+  @Get('/')
+  getEmbryologyById(@Query() urlParams) {
+    return this.embryologyService.getEmbryologyById(urlParams);
+  }
 }

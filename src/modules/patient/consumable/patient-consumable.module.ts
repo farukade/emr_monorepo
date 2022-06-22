@@ -7,15 +7,8 @@ import { PatientRepository } from '../repositories/patient.repository';
 import { StoreInventoryRepository } from '../../inventory/store/store.repository';
 
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([
-            PatientConsumableRepository,
-            PatientRepository,
-            StoreInventoryRepository,
-        ]),
-    ],
-    providers: [PatientConsumableService],
-    controllers: [PatientConsumableController],
+  imports: [TypeOrmModule.forFeature([PatientConsumableRepository, PatientRepository, StoreInventoryRepository])],
+  providers: [PatientConsumableService],
+  controllers: [PatientConsumableController],
 })
-export class PatientConsumableModule {
-}
+export class PatientConsumableModule {}

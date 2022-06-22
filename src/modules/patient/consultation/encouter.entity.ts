@@ -8,21 +8,20 @@ import { PatientNote } from '../entities/patient_note.entity';
 
 @Entity({ name: 'encounters' })
 export class Encounter extends CustomBaseEntity {
+  @ManyToOne((type) => Patient)
+  @JoinColumn({ name: 'patient_id' })
+  patient: Patient;
 
-    @ManyToOne(type => Patient)
-    @JoinColumn({ name: 'patient_id' })
-    patient: Patient;
+  @OneToOne((type) => Appointment, (item) => item.encounter, { nullable: true })
+  @JoinColumn({ name: 'appointment_id' })
+  appointment: Appointment;
 
-    @OneToOne(type => Appointment, item => item.encounter, { nullable: true })
-    @JoinColumn({ name: 'appointment_id' })
-    appointment: Appointment;
+  @OneToMany(() => PatientNote, (item) => item.encounter)
+  notes: PatientNote[];
 
-    @OneToMany(() => PatientNote, item => item.encounter)
-    notes: PatientNote[];
+  @OneToMany(() => PatientRequest, (item) => item.encounter)
+  requests: PatientRequest[];
 
-    @OneToMany(() => PatientRequest, item => item.encounter)
-    requests: PatientRequest[];
-
-    @OneToMany(() => PatientConsumable, item => item.encounter)
-    consumables: PatientConsumable[];
+  @OneToMany(() => PatientConsumable, (item) => item.encounter)
+  consumables: PatientConsumable[];
 }

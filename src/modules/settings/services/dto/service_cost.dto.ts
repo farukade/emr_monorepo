@@ -7,5 +7,4 @@ export class ServiceCostDto {
   hmo_id: string;
 
   tariff: any;
-
 }

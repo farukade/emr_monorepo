@@ -1,58 +1,57 @@
 import { IsNotEmpty, IsEmail } from 'class-validator';
 
 export class PatientDto {
+  address: string;
 
-    address: string;
+  @IsNotEmpty()
+  date_of_birth: string;
 
-    @IsNotEmpty()
-    date_of_birth: string;
+  email: string;
 
-    email: string;
+  ethnicity: string;
 
-    ethnicity: string;
+  gender: string;
 
-    gender: string;
+  @IsNotEmpty()
+  hmo_id: number;
 
-    @IsNotEmpty()
-    hmo_id: number;
+  maritalStatus: string;
 
-    maritalStatus: string;
+  surname: string;
 
-    surname: string;
+  avatar: string;
 
-    avatar: string;
+  staff_id: any;
 
-    staff_id: any;
+  nok_address: string;
 
-    nok_address: string;
+  nok_date_of_birth: string;
 
-    nok_date_of_birth: string;
+  nok_email: string;
 
-    nok_email: string;
+  nok_ethnicity: string;
 
-    nok_ethnicity: string;
+  nok_gender: string;
 
-    nok_gender: string;
+  nok_maritalStatus: string;
 
-    nok_maritalStatus: string;
+  nok_occupation: string;
 
-    nok_occupation: string;
+  nok_other_names: string;
 
-    nok_other_names: string;
+  nok_phoneNumber: string;
 
-    nok_phoneNumber: string;
+  nok_relationship: string;
 
-    nok_relationship: string;
+  nok_surname: string;
 
-    nok_surname: string;
+  occupation: string;
 
-    occupation: string;
+  other_names: string;
 
-    other_names: string;
+  phone_number: string;
 
-    phone_number: string;
+  referredBy: string;
 
-    referredBy: string;
-
-    enrollee_id: string;
+  enrollee_id: string;
 }

@@ -1,8 +1,8 @@
 import { IsNotEmpty } from 'class-validator';
 
 export class PermissionsDto {
-	@IsNotEmpty()
-	name: string;
+  @IsNotEmpty()
+  name: string;
 
-	department_id: any;
+  department_id: any;
 }

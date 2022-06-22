@@ -7,20 +7,20 @@ import { PerformanceIndicator } from './performance_indicator.entity';
 
 @Entity({ name: 'performance_appraisals' })
 export class PerformanceAppraisal extends CustomBaseEntity {
-    @ManyToOne(() => StaffDetails)
-    @JoinColumn({ name: 'staff_id' })
-    @Type(() => StaffDetails)
-    staff: StaffDetails;
+  @ManyToOne(() => StaffDetails)
+  @JoinColumn({ name: 'staff_id' })
+  @Type(() => StaffDetails)
+  staff: StaffDetails;
 
-    @ManyToOne(() => StaffDetails)
-    @JoinColumn({ name: 'line_manager_id' })
-    @Type(() => StaffDetails)
-    lineManager: StaffDetails;
+  @ManyToOne(() => StaffDetails)
+  @JoinColumn({ name: 'line_manager_id' })
+  @Type(() => StaffDetails)
+  lineManager: StaffDetails;
 
-    @ManyToOne(() => Department, {nullable: true})
-    @JoinColumn({ name: 'department_id' })
-    department: Department;
+  @ManyToOne(() => Department, { nullable: true })
+  @JoinColumn({ name: 'department_id' })
+  department: Department;
 
-    @OneToMany(type => PerformanceIndicator, indicators => indicators.appraisal, {eager: true, cascade: true})
-    indicators: PerformanceIndicator[];
+  @OneToMany((type) => PerformanceIndicator, (indicators) => indicators.appraisal, { eager: true, cascade: true })
+  indicators: PerformanceIndicator[];
 }

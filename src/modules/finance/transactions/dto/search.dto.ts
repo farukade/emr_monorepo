@@ -1,24 +1,24 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty } from '@nestjs/swagger';
 
 export class TransactionSearchDto {
-    @ApiProperty()
-    startDate?: string;
+  @ApiProperty()
+  startDate?: string;
 
-    @ApiProperty()
-    endDate?: string;
+  @ApiProperty()
+  endDate?: string;
 
-    @ApiProperty()
-    page: string;
+  @ApiProperty()
+  page: string;
 
-    @ApiProperty()
-    limit: string;
+  @ApiProperty()
+  limit: string;
 
-    @ApiProperty()
-    term: string;
+  @ApiProperty()
+  term: string;
 
-    @ApiProperty()
-    bill_source: string;
+  @ApiProperty()
+  bill_source: string;
 
-    @ApiProperty()
-    filter: string;
+  @ApiProperty()
+  filter: string;
 }

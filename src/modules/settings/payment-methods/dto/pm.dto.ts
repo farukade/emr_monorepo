@@ -1,8 +1,8 @@
 import { IsNotEmpty } from 'class-validator';
 
 export class PaymentMethodDto {
-    @IsNotEmpty()
-    name: string;
+  @IsNotEmpty()
+  name: string;
 
-    status: number;
+  status: number;
 }

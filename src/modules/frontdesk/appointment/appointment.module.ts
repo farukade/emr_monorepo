@@ -19,24 +19,25 @@ import { AntenatalEnrollmentRepository } from '../../patient/antenatal/enrollmen
 import { AntenatalAssessmentRepository } from '../../patient/antenatal/antenatal-assessment.repository';
 
 @Module({
-	imports: [TypeOrmModule.forFeature([
-		AppointmentRepository,
-		PatientRepository,
-		DepartmentRepository,
-		SpecializationRepository,
-		ConsultingRoomRepository,
-		QueueSystemRepository,
-		ServiceRepository,
-		ServiceCategoryRepository,
-		TransactionsRepository,
-		HmoSchemeRepository,
-		ServiceCostRepository,
-		StaffRepository,
-		AntenatalEnrollmentRepository,
-		AntenatalAssessmentRepository,
-	])],
-	controllers: [AppointmentController],
-	providers: [AppGateway, AppointmentService],
+  imports: [
+    TypeOrmModule.forFeature([
+      AppointmentRepository,
+      PatientRepository,
+      DepartmentRepository,
+      SpecializationRepository,
+      ConsultingRoomRepository,
+      QueueSystemRepository,
+      ServiceRepository,
+      ServiceCategoryRepository,
+      TransactionsRepository,
+      HmoSchemeRepository,
+      ServiceCostRepository,
+      StaffRepository,
+      AntenatalEnrollmentRepository,
+      AntenatalAssessmentRepository,
+    ]),
+  ],
+  controllers: [AppointmentController],
+  providers: [AppGateway, AppointmentService],
 })
-export class AppointmentModule {
-}
+export class AppointmentModule {}

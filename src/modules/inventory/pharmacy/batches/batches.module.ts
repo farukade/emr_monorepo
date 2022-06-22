@@ -8,16 +8,8 @@ import { DrugRepository } from '../drug/drug.repository';
 import { InventoryActivityRepository } from '../../activity/activity.repository';
 
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([
-            DrugBatchRepository,
-            VendorRepository,
-            DrugRepository,
-            InventoryActivityRepository,
-        ]),
-    ],
-    providers: [DrugBatchService],
-    controllers: [DrugBatchController],
+  imports: [TypeOrmModule.forFeature([DrugBatchRepository, VendorRepository, DrugRepository, InventoryActivityRepository])],
+  providers: [DrugBatchService],
+  controllers: [DrugBatchController],
 })
-export class BatchesModule {
-}
+export class BatchesModule {}

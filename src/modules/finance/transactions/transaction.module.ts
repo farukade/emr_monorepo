@@ -19,24 +19,25 @@ import { AdmissionsRepository } from 'src/modules/patient/admissions/repositorie
 import { ServiceCategoryRepository } from '../../settings/services/repositories/service_category.repository';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([
-        AppointmentRepository,
-        TransactionsRepository,
-        PatientRepository,
-        DepartmentRepository,
-        ServiceRepository,
-        VoucherRepository,
-        StaffRepository,
-        QueueSystemRepository,
-        ServiceCostRepository,
-        HmoSchemeRepository,
-        PatientRequestItemRepository,
-        PatientRequestRepository,
-        AdmissionsRepository,
-        ServiceCategoryRepository,
-    ])],
-    controllers: [TransactionsController],
-    providers: [AppGateway, TransactionsService],
+  imports: [
+    TypeOrmModule.forFeature([
+      AppointmentRepository,
+      TransactionsRepository,
+      PatientRepository,
+      DepartmentRepository,
+      ServiceRepository,
+      VoucherRepository,
+      StaffRepository,
+      QueueSystemRepository,
+      ServiceCostRepository,
+      HmoSchemeRepository,
+      PatientRequestItemRepository,
+      PatientRequestRepository,
+      AdmissionsRepository,
+      ServiceCategoryRepository,
+    ]),
+  ],
+  controllers: [TransactionsController],
+  providers: [AppGateway, TransactionsService],
 })
-export class TransactionModule {
-}
+export class TransactionModule {}

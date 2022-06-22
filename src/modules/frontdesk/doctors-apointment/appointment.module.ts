@@ -8,15 +8,10 @@ import { DoctorsAppointmentRepository } from './appointment.repository';
 import { DoctorsAppointmentService } from './appointment.service';
 
 @Module({
-	imports: [
-		TypeOrmModule.forFeature([
-			DoctorsAppointmentRepository,
-			PatientRepository,
-			DepartmentRepository,
-			StaffRepository,
-		]),
-	],
-	controllers: [DoctorsAppointmentController],
-	providers: [DoctorsAppointmentService],
+  imports: [
+    TypeOrmModule.forFeature([DoctorsAppointmentRepository, PatientRepository, DepartmentRepository, StaffRepository]),
+  ],
+  controllers: [DoctorsAppointmentController],
+  providers: [DoctorsAppointmentService],
 })
 export class DoctorsAppointmentModule {}

@@ -7,58 +7,66 @@ import { Service } from '../../entities/service.entity';
 
 @EntityRepository(LabTest)
 export class LabTestRepository extends Repository<LabTest> {
+  async saveLabTest(
+    labTestDto: LabTestDto,
+    category: LabTestCategory,
+    createdBy: string,
+    service: Service,
+  ): Promise<LabTest> {
+    const { name, parameters, specimens, hasParameters } = labTestDto;
+    const labTest = new LabTest();
+    labTest.code = service.code;
+    labTest.name = name;
+    labTest.createdBy = createdBy;
+    labTest.category = category;
+    labTest.parameters = parameters;
+    labTest.hasParameters = hasParameters;
+    labTest.specimens = specimens;
+    await this.manager.save(labTest);
+    return labTest;
+  }
 
-    async saveLabTest(labTestDto: LabTestDto, category: LabTestCategory, createdBy: string, service: Service): Promise<LabTest> {
-        const { name, parameters, specimens, hasParameters } = labTestDto;
-        const labTest = new LabTest();
-        labTest.code = service.code;
-        labTest.name = name;
-        labTest.createdBy = createdBy;
-        labTest.category = category;
-        labTest.parameters = parameters;
-        labTest.hasParameters = hasParameters;
-        labTest.specimens = specimens;
-        await this.manager.save(labTest);
-        return labTest;
+  async updateLabTest(
+    labTestDto: LabTestDto,
+    labTest: LabTest,
+    category: LabTestCategory,
+    updatedBy: string,
+  ): Promise<LabTest> {
+    const { name, parameters, specimens, hasParameters } = labTestDto;
+
+    const allParameters = await this.saveParameters(parameters || [], updatedBy);
+
+    labTest.name = name;
+    labTest.category = category;
+    labTest.lastChangedBy = updatedBy;
+    labTest.parameters = allParameters;
+    labTest.hasParameters = hasParameters;
+    labTest.specimens = specimens;
+    labTest = await this.manager.save(labTest);
+
+    return labTest;
+  }
+
+  async saveParameters(items, updatedBy) {
+    let parameters = [];
+    for (const item of items) {
+      let parameter;
+      if (item.id) {
+        parameter = await getRepository(Parameter)
+          .createQueryBuilder('parameters')
+          .where('parameters.id = :id', { id: item.id })
+          .getOne();
+      } else {
+        const labParameter = new Parameter();
+        labParameter.name = item.name;
+        labParameter.reference = item.reference;
+        labParameter.createdBy = updatedBy;
+        parameter = await labParameter.save();
+      }
+
+      parameters = [...parameters, parameter];
     }
 
-    async updateLabTest(labTestDto: LabTestDto, labTest: LabTest, category: LabTestCategory, updatedBy: string): Promise<LabTest> {
-        const { name, parameters, specimens, hasParameters } = labTestDto;
-
-        const allParameters = await this.saveParameters(parameters || [], updatedBy);
-
-        labTest.name = name;
-        labTest.category = category;
-        labTest.lastChangedBy = updatedBy;
-        labTest.parameters = allParameters;
-        labTest.hasParameters = hasParameters;
-        labTest.specimens = specimens;
-        labTest = await this.manager.save(labTest);
-
-        return labTest;
-    }
-
-    async saveParameters(items, updatedBy) {
-        let parameters = [];
-        for (const item of items) {
-            let parameter;
-            if (item.id) {
-                parameter = await getRepository(Parameter)
-                    .createQueryBuilder('parameters')
-                    .where('parameters.id = :id', { id: item.id })
-                    .getOne();
-
-            } else {
-                const labParameter = new Parameter();
-                labParameter.name = item.name;
-                labParameter.reference = item.reference;
-                labParameter.createdBy = updatedBy;
-                parameter = await labParameter.save();
-            }
-
-            parameters = [...parameters, parameter];
-        }
-
-        return parameters;
-    }
+    return parameters;
+  }
 }

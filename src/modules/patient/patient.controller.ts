@@ -184,7 +184,7 @@ export class PatientController {
     }),
   )
   uploadDocument(@Param('id') id: string, @Body() param, @UploadedFile() file, @Request() req): Promise<any> {
-    return this.patientService.doUploadDocument(id, param, file.filename, req.user.username);
+    return this.patientService.doUploadDocument(+id, param, file.filename, req.user.username);
   }
 
   @UseGuards(AuthGuard('jwt'))

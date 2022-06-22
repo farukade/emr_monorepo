@@ -1,28 +1,26 @@
 import { IsNotEmpty } from 'class-validator';
 
 export class HmoSchemeDto {
+  @IsNotEmpty()
+  name: string;
 
-    @IsNotEmpty()
-    name: string;
+  hmo_id: string;
 
-    hmo_id: string;
+  hmo: any;
 
-    hmo: any;
+  hmo_type_id: string;
 
-    hmo_type_id: string;
+  address: string;
 
-    address: string;
+  phoneNumber: string;
 
-    phoneNumber: string;
+  email: any;
 
-    email: any;
+  cacNumber: string;
 
-    cacNumber: string;
+  coverageType: string;
 
-    coverageType: string;
+  logo: string;
 
-    logo: string;
-
-    coverage: any;
-
+  coverage: any;
 }

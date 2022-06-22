@@ -11,18 +11,18 @@ import { SalaryPaymentDeductionRepository } from './repositories/salary.payment.
 import { DepartmentRepository } from '../../settings/departments/department.repository';
 
 @Module({
-	imports: [
-		TypeOrmModule.forFeature([
-			SalaryAllowanceRepository,
-			SalaryDeductionRepository,
-			SalaryPaymentRepository,
-			StaffRepository,
-			SalaryPaymentAllowanceRepository,
-			SalaryPaymentDeductionRepository,
-			DepartmentRepository,
-		]),
-	],
-	controllers: [PayrollController],
-	providers: [PayrollService],
+  imports: [
+    TypeOrmModule.forFeature([
+      SalaryAllowanceRepository,
+      SalaryDeductionRepository,
+      SalaryPaymentRepository,
+      StaffRepository,
+      SalaryPaymentAllowanceRepository,
+      SalaryPaymentDeductionRepository,
+      DepartmentRepository,
+    ]),
+  ],
+  controllers: [PayrollController],
+  providers: [PayrollService],
 })
 export class PayrollModule {}

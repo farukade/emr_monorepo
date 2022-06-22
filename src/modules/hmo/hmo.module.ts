@@ -15,21 +15,21 @@ import { PatientRequestItemRepository } from '../patient/repositories/patient_re
 import { AppGateway } from '../../app.gateway';
 
 @Module({
-	imports: [
-		TypeOrmModule.forFeature([
-			HmoOwnerRepository,
-			HmoSchemeRepository,
-			HmoTypeRepository,
-			ServiceRepository,
-			TransactionsRepository,
-			QueueSystemRepository,
-			PatientRepository,
-			ServiceCategoryRepository,
-			ServiceCostRepository,
-			PatientRequestItemRepository,
-		]),
-	],
-	controllers: [HmoController],
-	providers: [AppGateway, HmoService],
+  imports: [
+    TypeOrmModule.forFeature([
+      HmoOwnerRepository,
+      HmoSchemeRepository,
+      HmoTypeRepository,
+      ServiceRepository,
+      TransactionsRepository,
+      QueueSystemRepository,
+      PatientRepository,
+      ServiceCategoryRepository,
+      ServiceCostRepository,
+      PatientRequestItemRepository,
+    ]),
+  ],
+  controllers: [HmoController],
+  providers: [AppGateway, HmoService],
 })
 export class HmoModule {}

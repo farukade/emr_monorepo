@@ -9,25 +9,25 @@ import { EmbFreezingService } from './freezing.service';
 @ApiTags('Sperm and Oocyte Freezing')
 @Controller('freezing')
 export class EmbFreezingController {
-	constructor(private freezingService: EmbFreezingService) {}
+  constructor(private freezingService: EmbFreezingService) {}
 
-	@Post('oocyte/save')
-	saveOocyte(@Body() data: OocyteDto) {
-		return this.freezingService.saveOocyte(data);
-	}
+  @Post('oocyte/save')
+  saveOocyte(@Body() data: OocyteDto) {
+    return this.freezingService.saveOocyte(data);
+  }
 
-	@Post('sperm/save')
-	saveSperm(@Body() data: SpermDto) {
-		return this.freezingService.saveSperm(data);
-	}
+  @Post('sperm/save')
+  saveSperm(@Body() data: SpermDto) {
+    return this.freezingService.saveSperm(data);
+  }
 
-	@Get('get')
-	getByFreezingId(@Query() urlParams) {
-		return this.freezingService.getByFreezingId(urlParams);
-	}
+  @Get('get')
+  getByFreezingId(@Query() urlParams) {
+    return this.freezingService.getByFreezingId(urlParams);
+  }
 
-	@Get('')
-	getAllFreezing(@Query() urlParams) {
-		return this.freezingService.getAllEmbFreezing(urlParams);
-	}
+  @Get('')
+  getAllFreezing(@Query() urlParams) {
+    return this.freezingService.getAllEmbFreezing(urlParams);
+  }
 }

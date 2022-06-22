@@ -1,17 +1,15 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CafeteriaItemRepository } from './repositories/cafeteria.item.repository';
-import { Connection, getRepository, MoreThan, Raw } from 'typeorm';
+import { getRepository, MoreThan, Raw } from 'typeorm';
 import { PaginationOptionsInterface } from '../../common/paginate';
 import { CafeteriaItemDto } from './dto/cafeteria.item.dto';
 import { CafeteriaItem } from './entities/cafeteria_item.entity';
 import { CafeteriaSalesDto } from './dto/cafeteria-sales.dto';
-import { Patient } from '../patient/entities/patient.entity';
 import { Pagination } from '../../common/paginate/paginate.interface';
 import * as moment from 'moment';
 import { TransactionCreditDto } from '../finance/transactions/dto/transaction-credit.dto';
-import { postCredit, postDebit } from '../../common/utils/utils';
-import { Admission } from '../patient/admissions/entities/admission.entity';
+import { patientname, postCredit, postDebit, staffname } from '../../common/utils/utils';
 import { CafeteriaFoodItemRepository } from './repositories/cafeteria.food-item.repository';
 import { CafeteriaFoodItem } from './entities/food_item.entity';
 import { CafeteriaFoodItemDto } from './dto/cafeteria-food-item.dto';
@@ -20,12 +18,16 @@ import { PatientRepository } from '../patient/repositories/patient.repository';
 import { AdmissionsRepository } from '../patient/admissions/repositories/admissions.repository';
 import { NicuRepository } from '../patient/nicu/nicu.repository';
 import { PaymentMethodRepository } from '../settings/payment-methods/pm.repository';
-import { HmoSchemeRepository } from '../hmo/repositories/hmo_scheme.repository';
-import { Transaction } from '../finance/transactions/transaction.entity';
+import { OrderDto } from './dto/order.dto';
+import { CafeteriaOrder } from './entities/order.entity';
+import { OrderRepository } from './repositories/order.repository';
+import { TransactionsRepository } from '../finance/transactions/transactions.repository';
+import { AppGateway } from '../../app.gateway';
 
 @Injectable()
 export class CafeteriaService {
   constructor(
+    private readonly appGateway: AppGateway,
     @InjectRepository(CafeteriaItemRepository)
     private cafeteriaItemRepository: CafeteriaItemRepository,
     @InjectRepository(CafeteriaFoodItemRepository)
@@ -40,8 +42,10 @@ export class CafeteriaService {
     private nicuRepository: NicuRepository,
     @InjectRepository(PaymentMethodRepository)
     private paymentMethodRepository: PaymentMethodRepository,
-    @InjectRepository(HmoSchemeRepository)
-    private hmoSchemeRepository: HmoSchemeRepository,
+    @InjectRepository(OrderRepository)
+    private orderRepository: OrderRepository,
+    @InjectRepository(TransactionsRepository)
+    private transactionRepository: TransactionsRepository,
   ) {}
 
   async getAllItems(options: PaginationOptionsInterface, params): Promise<Pagination> {
@@ -146,140 +150,6 @@ export class CafeteriaService {
     return results;
   }
 
-  async saveSales(param: CafeteriaSalesDto, username: string): Promise<any> {
-    try {
-      const { cartItems, customer, patient_id, staff_id, staff_total, total, payment_method, paid } = param;
-
-      const hasPaid: boolean = Number(paid) >= (Number(staff_total) || Number(total));
-      const paidPart: boolean = hasPaid ? false : Number(paid) > 0;
-      let emptyStock = [];
-      for (const sale of cartItems) {
-        const stock = await this.cafeteriaItemRepository.findOne(sale.id);
-        if (sale.qty === '' || Number(sale.qty) === 0 || Number(sale.qty) > stock.quantity) {
-          emptyStock = [...emptyStock, stock];
-        }
-      }
-
-      if (emptyStock.length > 0) {
-        return { success: false, message: `${emptyStock.map((s) => `${s.name} has finished`).join(', ')}` };
-      }
-
-      let patient = null;
-      if (customer === 'patient' && patient_id) {
-        patient = await this.patientRepository.findOne(patient_id);
-      }
-
-      let staff = null;
-      let staffHmo = null;
-      if (customer === 'staff' && staff_id) {
-        staff = await this.staffRepository.findOne(staff_id);
-        staffHmo = await this.hmoSchemeRepository.findOne(5);
-      }
-
-      let admission;
-      let nicu;
-      if (patient !== null) {
-        admission = await this.admissionsRepository.findOne({ where: { patient, status: 0 } });
-
-        nicu = await this.nicuRepository.findOne({ where: { patient, status: 0 } });
-      }
-
-      for (const item of cartItems) {
-        const foodItem = await this.cafeteriaFoodItemRepository.findOne(item.id);
-        const quantity = parseInt(item.qty, 10);
-        for (let i = 0; i < quantity; i++) {
-          const singleItem = await this.cafeteriaItemRepository.findOne({ where: { foodItem, quantity: MoreThan(0) } });
-          if(singleItem){
-            singleItem.quantity = singleItem.quantity - 1;
-            await singleItem.save();
-          }
-        }
-      }
-
-      const method = await this.paymentMethodRepository.findOne(payment_method);
-
-      const totalAmount = customer === 'staff' ? staff_total : total;
-      const balance = Number(paid) - Number(totalAmount);
-
-      let times: number;
-      let remains: number;
-      let firstPay: number;
-      switch (customer) {
-        case 'staff':
-          if (hasPaid) {
-            times = 1;
-          } else if (paidPart) {
-            times = 2;
-            firstPay = Number(paid);
-            remains = Number(totalAmount) - Number(paid);
-          } else {
-            times = 1;
-          }
-          break;
-        case 'customer':
-          if (hasPaid) {
-            times = 1;
-          } else if (paidPart) {
-            times = 2;
-            firstPay = Number(paid);
-            remains = Number(totalAmount) - Number(paid);
-          } else {
-            times = 1;
-          }
-          break;
-        default:
-          times = 1;
-          break;
-      }
-
-      const hmo = customer === 'patient' ? patient.hmo : staffHmo;
-
-      console.log('firstpay: ' + firstPay + ', \n' + 'secondpay: ' + remains);
-
-      let transactionArr = [];
-      for (let i = 0; i < times; i++) {
-        const item: TransactionCreditDto = {
-          patient_id: patient?.id || null,
-          username,
-          sub_total: 0,
-          vat: 0,
-          amount: paidPart ? (i == 0 ? firstPay * -1 : remains * -1) : Number(totalAmount) * -1,
-          voucher_amount: 0,
-          amount_paid: paidPart ? (i == 0 ? Number(paid) : 0) : Number(paid),
-          change: paidPart ? 0 : Number(totalAmount) - Number(paid),
-          description: null,
-          payment_method: null,
-          part_payment_expiry_date: null,
-          bill_source: 'cafeteria',
-          next_location: null,
-          status: paid ? (i == 0 ? 1 : -1) : -1,
-          hmo_approval_code: null,
-          transaction_details: cartItems,
-          admission_id: admission?.id || null,
-          nicu_id: nicu?.id || null,
-          staff_id: customer === 'staff' ? staff?.id : null,
-          lastChangedBy: username,
-        };
-
-        let transaction = await postDebit(item, null, null, null, null, await hmo);
-        transactionArr = [transaction, ...transactionArr];
-        console.log('debit');
-
-        if (Number(paid) > 0 && i < 1) {
-          const credit = { ...item, amount_paid: paid, change: balance, payment_method: method.name };
-          await postCredit(credit, null, null, null, null, await hmo);
-          console.log('credit');
-        }
-      }
-
-      return { success: true, transaction: transactionArr };
-      // return { success: false, message: 'Error, could not make sales' };
-    } catch (error) {
-      console.log(error);
-      return { success: false, message: error.message };
-    }
-  }
-
   async getFoodItems(options: PaginationOptionsInterface, params): Promise<Pagination> {
     const { q } = params;
 
@@ -338,5 +208,249 @@ export class CafeteriaService {
     foodItem.lastChangedBy = username;
 
     return await foodItem.save();
+  }
+
+  async takeOrder(param: OrderDto, username: string): Promise<any> {
+    try {
+      const { cartItems, customer, patient_id, staff_id } = param;
+
+      for (const item of cartItems) {
+        const foodItem = await this.cafeteriaFoodItemRepository.findOne(item.id);
+        const quantity = parseInt(item.qty, 10);
+        for (let i = 0; i < quantity; i++) {
+          const singleItem = await this.cafeteriaItemRepository.findOne({ where: { foodItem, quantity: MoreThan(0) } });
+          if (singleItem) {
+            singleItem.quantity = singleItem.quantity - 1;
+            singleItem.lastChangedBy = username;
+            await singleItem.save();
+          }
+        }
+      }
+
+      let name = null;
+
+      let patient = null;
+      if (customer === 'patient' && patient_id) {
+        patient = await this.patientRepository.findOne(patient_id);
+        name = patientname(patient);
+      }
+
+      let staff = null;
+      if (customer === 'staff' && staff_id) {
+        staff = await this.staffRepository.findOne(staff_id);
+        name = staffname(staff);
+      }
+
+      if (customer === 'walk-in') {
+        const lastOrder = await this.orderRepository.findOne({ where: { customer }, order: { createdAt: 'DESC' } });
+        const guest = lastOrder?.name?.split('-') || [];
+        const count = guest.length > 0 ? Number(guest[1]) + 1 : 1;
+        name = `Guest-${count}`;
+      }
+
+      let orders = [];
+      for (const item of cartItems) {
+        const foodItem = await this.cafeteriaFoodItemRepository.findOne(item.id);
+
+        const order = new CafeteriaOrder();
+        order.customer = customer;
+        order.patient = patient;
+        order.staff = staff;
+        order.name = name;
+        order.foodItem = foodItem;
+        order.quantity = Number(item.qty);
+        order.amount = Number(foodItem.price);
+        order.createdBy = username;
+        const rs = await this.orderRepository.save(order);
+
+        orders = [...orders, rs];
+      }
+
+      return { success: true, data: orders };
+    } catch (error) {
+      console.log(error);
+      return new BadRequestException({ success: false, message: error.message });
+    }
+  }
+
+  async getOrders(options: PaginationOptionsInterface, params): Promise<Pagination> {
+    const { status } = params;
+
+    const query = this.orderRepository.createQueryBuilder('o').select('o.*');
+
+    const page = options.page - 1;
+
+    if (status && status !== '') {
+      query.andWhere('o.status = :status', { status });
+    }
+
+    const orders = await query
+      .offset(page * options.limit)
+      .limit(options.limit)
+      .orderBy('o.createdAt', 'DESC')
+      .getRawMany();
+
+    const total = await query.getCount();
+
+    let result = [];
+    for (const item of orders) {
+      const foodItem = await this.cafeteriaFoodItemRepository.findOne(item.food_item_id);
+
+      let patient;
+      if (item.patient_id) {
+        patient = await this.patientRepository.findOne(item.patient_id);
+        patient.admission = patient.admission_id
+          ? await this.admissionsRepository.findOne(patient.admission_id, { relations: ['room', 'room.category'] })
+          : null;
+      }
+
+      let staff;
+      if (item.staff_id) {
+        staff = await this.staffRepository.findOne(item.staff_id);
+      }
+
+      let transaction;
+      if (item.transaction_id) {
+        transaction = await this.transactionRepository.findOne(item.transaction_id);
+      }
+
+      result = [...result, { ...item, foodItem, patient, staff, transaction }];
+    }
+
+    return {
+      result,
+      lastPage: Math.ceil(total / options.limit),
+      itemsPerPage: options.limit,
+      totalPages: total,
+      currentPage: options.page,
+    };
+  }
+
+  async cancelOrder(id: number, username: string): Promise<any> {
+    try {
+      const order = await this.orderRepository.findOne(id);
+      if (!order) {
+        throw new BadRequestException('Error, order not found');
+      }
+
+      const item = await this.cafeteriaItemRepository.findOne({ where: { foodItem: order.foodItem } });
+      if (item) {
+        item.quantity = Number(item.quantity) + Number(order.quantity);
+        item.lastChangedBy = username;
+        await item.save();
+      }
+
+      order.status = -1;
+      order.cancelled_at = moment().format('YYYY-MM-DD HH:mm:ss');
+      order.cancelled_by = username;
+      const rs = await order.save();
+
+      return { success: true, data: rs };
+    } catch (error) {
+      console.log(error);
+      return { success: false, message: error.message };
+    }
+  }
+
+  async readyOrder(id: number, username: string): Promise<any> {
+    try {
+      const order = await this.orderRepository.findOne(id);
+      if (!order) {
+        throw new BadRequestException('Error, order not found');
+      }
+
+      order.status = 1;
+      order.ready_at = moment().format('YYYY-MM-DD HH:mm:ss');
+      order.ready_by = username;
+      const rs = await order.save();
+
+      return { success: true, data: rs };
+    } catch (error) {
+      console.log(error);
+      return { success: false, message: error.message };
+    }
+  }
+
+  async saveSales(param: CafeteriaSalesDto, username: string): Promise<any> {
+    try {
+      const { cartItems, customer, patient_id, staff_id, balance, paid, total, payment_method } = param;
+
+      const method = await this.paymentMethodRepository.findOne(payment_method);
+
+      let patient = null;
+      let admission = null;
+      let nicu = null;
+
+      if (customer === 'patient' && patient_id) {
+        patient = await this.patientRepository.findOne(patient_id);
+
+        admission = await this.admissionsRepository.findOne({
+          where: { patient, status: 0 },
+        });
+
+        nicu = await this.nicuRepository.findOne({
+          where: { patient, status: 0 },
+        });
+      }
+
+      let staff = null;
+      if (customer === 'staff' && staff_id) {
+        staff = await this.staffRepository.findOne(staff_id);
+      }
+
+      const debit: TransactionCreditDto = {
+        patient_id: patient?.id || null,
+        username,
+        sub_total: 0,
+        vat: 0,
+        amount: Number(total) * -1,
+        voucher_amount: 0,
+        amount_paid: 0,
+        change: 0,
+        description: 'Payment for cafeteria',
+        payment_method: null,
+        part_payment_expiry_date: null,
+        bill_source: 'cafeteria',
+        next_location: null,
+        status: 0,
+        hmo_approval_code: null,
+        transaction_details: cartItems,
+        admission_id: admission?.id || null,
+        nicu_id: nicu?.id || null,
+        staff_id: customer === 'staff' ? staff?.id : null,
+        lastChangedBy: username,
+      };
+
+      const payment = await postDebit(debit, null, null, null, null, null);
+
+      // approve debit
+      payment.status = 1;
+      payment.lastChangedBy = username;
+      payment.amount_paid = Math.abs(paid);
+      payment.payment_method = method.name;
+      await payment.save();
+
+      const credit = {
+        ...debit,
+        status: 1,
+        lastChangedBy: username,
+        amount_paid: Number(paid),
+        payment_method: method.name,
+        change: Number(balance),
+      };
+      const transaction = await postCredit(credit, null, null, null, null, null);
+
+      for (const item of cartItems) {
+        const order = await this.orderRepository.findOne(item.id);
+        order.transaction = transaction;
+        order.status = 2;
+        await order.save();
+      }
+
+      return { success: true, data: { ...transaction, patient, dedastaff: staff } };
+    } catch (error) {
+      console.log(error);
+      return { success: false, message: error.message };
+    }
   }
 }

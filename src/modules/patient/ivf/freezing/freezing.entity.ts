@@ -5,11 +5,11 @@ import { SpermEntity } from './entities/sperm.entity';
 
 @Entity({ name: 'emb_freezing' })
 export class EmbFreezingEntity extends CustomBaseEntity {
-	@OneToOne(() => SpermEntity)
-	@JoinColumn({ name: 'sperm_entity' })
-	sperm: SpermEntity;
+  @OneToOne(() => SpermEntity)
+  @JoinColumn({ name: 'sperm_entity' })
+  sperm: SpermEntity;
 
-	@OneToOne(() => OocyteEntity)
-	@JoinColumn({ name: 'oocyte_entity' })
-	oocyte: OocyteEntity;
+  @OneToOne(() => OocyteEntity)
+  @JoinColumn({ name: 'oocyte_entity' })
+  oocyte: OocyteEntity;
 }

@@ -8,14 +8,8 @@ import { StaffRepository } from '../../hr/staff/staff.repository';
 import { PatientRepository } from '../repositories/patient.repository';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([
-        CareTeamRepository,
-        AdmissionsRepository,
-        StaffRepository,
-        PatientRepository,
-    ])],
-    controllers: [CareTeamController],
-    providers: [CareTeamService],
+  imports: [TypeOrmModule.forFeature([CareTeamRepository, AdmissionsRepository, StaffRepository, PatientRepository])],
+  controllers: [CareTeamController],
+  providers: [CareTeamService],
 })
-export class CareTeamModule {
-}
+export class CareTeamModule {}

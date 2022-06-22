@@ -14,22 +14,21 @@ import { ServiceRepository } from '../services/repositories/service.repository';
 import { ServiceCategoryRepository } from '../services/repositories/service_category.repository';
 
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([
-            LabTestCategoryRepository,
-            LabTestRepository,
-            ParameterRepository,
-            SpecimenRepository,
-            GroupRepository,
-            GroupTestRepository,
-            HmoSchemeRepository,
-            ServiceRepository,
-            ServiceCategoryRepository,
-            ServiceCostRepository,
-        ]),
-    ],
-    controllers: [LabController],
-    providers: [LabService],
+  imports: [
+    TypeOrmModule.forFeature([
+      LabTestCategoryRepository,
+      LabTestRepository,
+      ParameterRepository,
+      SpecimenRepository,
+      GroupRepository,
+      GroupTestRepository,
+      HmoSchemeRepository,
+      ServiceRepository,
+      ServiceCategoryRepository,
+      ServiceCostRepository,
+    ]),
+  ],
+  controllers: [LabController],
+  providers: [LabService],
 })
-export class LabModule {
-}
+export class LabModule {}

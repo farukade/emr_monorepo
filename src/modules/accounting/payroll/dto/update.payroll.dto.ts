@@ -1,12 +1,12 @@
 import { IsNotEmpty } from 'class-validator';
 
 export class UpdatePayslipDto {
-	@IsNotEmpty()
-	payslip_id: string;
+  @IsNotEmpty()
+  payslip_id: string;
 
-	allowances: any;
+  allowances: any;
 
-	deductions: any;
+  deductions: any;
 
-	comment: string;
+  comment: string;
 }

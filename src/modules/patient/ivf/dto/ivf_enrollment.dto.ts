@@ -3,27 +3,26 @@ import { IHusbandLabDetails } from '../interfaces/husbandLabDetails.interface';
 import { Patient } from '../../entities/patient.entity';
 
 export class IvfEnrollmentDto {
+  wifeLabDetails: IWifeLabDetails;
 
-    wifeLabDetails: IWifeLabDetails;
+  husbandLabDetails: IHusbandLabDetails;
 
-    husbandLabDetails: IHusbandLabDetails;
+  prognosis: string;
 
-    prognosis: string;
-
-    treatmentPlan: string;
-    indication: string;
-    assessmentComments: string;
-    dateOfCommencement: string;
-    dateOfStimulation: string;
-    meducationUsed: string;
-    endometricThickness: string;
-    noOfOocyteRetrieved: string;
-    dateOfTreatment: string;
-    embryoTransferDate: string;
-    noOfEmbryoTransfer: string;
-    pregnancyTestDate: string;
-    result: string;
-    otherComments: string;
-    wife: Patient;
-    husband: Patient;
+  treatmentPlan: string;
+  indication: string;
+  assessmentComments: string;
+  dateOfCommencement: string;
+  dateOfStimulation: string;
+  meducationUsed: string;
+  endometricThickness: string;
+  noOfOocyteRetrieved: string;
+  dateOfTreatment: string;
+  embryoTransferDate: string;
+  noOfEmbryoTransfer: string;
+  pregnancyTestDate: string;
+  result: string;
+  otherComments: string;
+  wife: Patient;
+  husband: Patient;
 }

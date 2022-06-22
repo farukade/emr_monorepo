@@ -1,13 +1,13 @@
 import { IsNotEmpty } from 'class-validator';
 
 export class DrugDto {
-    @IsNotEmpty()
-    name: string;
+  @IsNotEmpty()
+  name: string;
 
-    @IsNotEmpty()
-    generic_id: any;
+  @IsNotEmpty()
+  generic_id: any;
 
-    unitOfMeasure: any;
+  unitOfMeasure: any;
 
-    manufacturer_id: any;
+  manufacturer_id: any;
 }

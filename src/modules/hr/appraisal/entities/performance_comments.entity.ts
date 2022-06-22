@@ -5,19 +5,18 @@ import { PerformanceAppraisalPeriod } from './performance_appraisal_period.entit
 
 @Entity({ name: 'performance_comments' })
 export class PerformanceComment extends CustomBaseEntity {
+  @Column({ nullable: true })
+  employeeComment: string;
 
-    @Column({ nullable: true})
-    employeeComment: string;
+  @Column({ nullable: true })
+  lineManagerComment: string;
 
-    @Column({ nullable: true})
-    lineManagerComment: string;
+  @Column({ nullable: true })
+  recommendation: string;
 
-    @Column({ nullable: true})
-    recommendation: string;
+  @ManyToOne((type) => PerformanceAppraisal, (appraisal) => appraisal.indicators)
+  appraisal: PerformanceAppraisal;
 
-    @ManyToOne(type => PerformanceAppraisal, appraisal => appraisal.indicators)
-    appraisal: PerformanceAppraisal;
-
-    @ManyToOne(type => PerformanceAppraisalPeriod)
-    period: PerformanceAppraisalPeriod;
+  @ManyToOne((type) => PerformanceAppraisalPeriod)
+  period: PerformanceAppraisalPeriod;
 }

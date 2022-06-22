@@ -245,5 +245,5 @@ export class IvfEmbryologyService {
 				message: error.message || 'could not fetch data',
 			};
 		}
-	}
+  }
 }

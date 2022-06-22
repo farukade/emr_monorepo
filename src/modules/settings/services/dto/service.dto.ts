@@ -1,15 +1,14 @@
 import { IsNotEmpty } from 'class-validator';
 
 export class ServiceDto {
-    @IsNotEmpty()
-    name: string;
+  @IsNotEmpty()
+  name: string;
 
-    category_id: string;
+  category_id: string;
 
-    hmo_id: any;
+  hmo_id: any;
 
-    tariff: any;
+  tariff: any;
 
-    update_tariff: any;
-
+  update_tariff: any;
 }

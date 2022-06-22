@@ -43,6 +43,7 @@ import { AdmissionsRepository } from '../../patient/admissions/repositories/admi
 import * as path from 'path';
 import { ServiceCategoryRepository } from '../../settings/services/repositories/service_category.repository';
 import { TransactionSearchDto } from './dto/search.dto';
+import { StaffRepository } from 'src/modules/hr/staff/staff.repository';
 
 @Injectable()
 export class TransactionsService {
@@ -70,6 +71,8 @@ export class TransactionsService {
     @InjectRepository(ServiceCategoryRepository)
     private serviceCategoryRepository: ServiceCategoryRepository,
     private readonly appGateway: AppGateway,
+    @InjectRepository(StaffRepository)
+    private staffRepository: StaffRepository,
   ) {}
 
   async fetchList(options: PaginationOptionsInterface, params): Promise<Pagination> {
@@ -175,6 +178,10 @@ export class TransactionsService {
       transaction.appointment = await this.appointmentRepository.findOne({
         where: { transaction: transaction.id },
       });
+
+      if (transaction.staff_id) {
+        transaction.dedastaff = await this.staffRepository.findOne(transaction.staff_id);
+      }
     }
 
     return {
@@ -1151,7 +1158,7 @@ export class TransactionsService {
         }
       }
 
-      let transArr = [];
+      const transArr = [];
       let transIdArr = [];
 
       if (transId && transId !== '') {
@@ -1195,7 +1202,7 @@ export class TransactionsService {
         };
       });
 
-      let total = results.reduce((a, b) => a - b.rawAmount, 0);
+      const total = results.reduce((a, b) => a - b.rawAmount, 0);
 
       const data = {
         patient,
@@ -1314,17 +1321,16 @@ export class TransactionsService {
         );
       }
 
-
-    //query if search term contains alphabets
-    if (chars && chars !== '') {
-      query.andWhere(
-        new Brackets((qb) => {
-          qb.where('patient.surname iLike :surname', { surname: `%${chars}%` })
-            .orWhere('patient.other_names iLike :other_names', { other_names: `%${chars}%` })
-            .orWhere('drug_generic.name iLike :name', { name: `%${chars}%` });
-        }),
-      );
-    }
+      //query if search term contains alphabets
+      if (chars && chars !== '') {
+        query.andWhere(
+          new Brackets((qb) => {
+            qb.where('patient.surname iLike :surname', { surname: `%${chars}%` })
+              .orWhere('patient.other_names iLike :other_names', { other_names: `%${chars}%` })
+              .orWhere('drug_generic.name iLike :name', { name: `%${chars}%` });
+          }),
+        );
+      }
 
       if (startDate && startDate !== '' && endDate && endDate !== '' && endDate === startDate) {
         query.andWhere(`DATE(q.createdAt) = '${startDate}'`);
@@ -1341,7 +1347,6 @@ export class TransactionsService {
           console.log(startDate, endDate, 3);
         }
       }
-
 
       //query if search term contains alphabets
       if (chars && chars !== '') {
@@ -1367,7 +1372,7 @@ export class TransactionsService {
 
       //query if search term contains digits
       if (nums) {
-        let digits = parseInt(nums[0]);
+        const digits = parseInt(nums[0]);
 
         query.andWhere('patient.id = :id', { id: digits }).andWhere('q.amount = :amount', { amount: digits });
       }
