@@ -1,12 +1,13 @@
 import { CustomBaseEntity } from 'src/common/entities/custom-base.entity';
-import { StaffDetails } from 'src/modules/hr/staff/entities/staff_details.entity';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { AttendanceStaff } from './attendance-staff.entity';
+import { DeviceIps } from './device.entity';
 
 @Entity()
 export class Attendance extends CustomBaseEntity {
-  @ManyToOne((type) => StaffDetails)
+  @ManyToOne((type) => AttendanceStaff)
   @JoinColumn({ name: 'staff_id' })
-  staff: StaffDetails;
+  staff: AttendanceStaff;
 
   @Column({ type: 'timestamp' })
   date: string;
@@ -16,4 +17,8 @@ export class Attendance extends CustomBaseEntity {
 
   @Column()
   ip: string;
+
+  @ManyToOne((type) => DeviceIps)
+  @JoinColumn({ name: 'device_id' })
+  device: DeviceIps;
 }

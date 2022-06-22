@@ -4,6 +4,8 @@ export class EmbryoTreatmentDto {
 	@ApiProperty()
 	embryologyId: number;
 	@ApiProperty()
+	patientId: number;
+	@ApiProperty()
 	treatmentChartType: string;
 	@ApiProperty()
 	isHIVPositive: boolean;

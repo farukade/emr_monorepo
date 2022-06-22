@@ -161,10 +161,21 @@ export class IvfEmbryologyService {
 
 	async saveTreatment(data: EmbryoTreatmentDto) {
 		try {
-			const { embryologyId, ...restTreatment } = data;
-			const embryology = await this.embryologyRepository.findOne(embryologyId);
+			const { patientId } = data;
+			const embryology = this.embryologyRepository.create();
 
-			const treatment = this.embryoTreatmentRepository.create(restTreatment);
+			let patient = null;
+			if (patientId) {
+				patient = await this.patientRepository.findOne(patientId);
+			};
+
+			if (!patient) return { success: false, message: "patient not found" };
+
+			embryology.patient = patient;
+			embryology.isSubmitted = false;
+			await this.patientRepository.save(patient);
+
+			const treatment = this.embryoTreatmentRepository.create(data);
 			await this.embryoTreatmentRepository.save(treatment);
 
 			embryology.ivfTreatment = treatment;
