@@ -322,6 +322,13 @@ export class CafeteriaService {
         order.quantity = Number(item.qty);
         order.amount = Number(foodItem.price);
         order.createdBy = username;
+
+        if (foodItem.category_slug === 'show-case') {
+          order.status = 1;
+          order.ready_at = moment().format('YYYY-MM-DD HH:mm:ss');
+          order.ready_by = username;
+        }
+
         const rs = await this.orderRepository.save(order);
 
         orders = [...orders, rs];
