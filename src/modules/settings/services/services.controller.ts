@@ -89,4 +89,11 @@ export class ServicesController {
   deleteService(@Param('id') id: number, @Request() req): Promise<any> {
     return this.servicesService.deleteService(id, req.user.username);
   }
+
+  @Get('cost/print')
+  getServiceById(
+    @Query() urlParams
+  ) {
+    return this.servicesService.printServices(urlParams);
+  }
 }
