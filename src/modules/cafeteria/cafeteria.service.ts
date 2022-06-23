@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CafeteriaItemRepository } from './repositories/cafeteria.item.repository';
-import { getRepository, MoreThan, Raw } from 'typeorm';
+import { getRepository, MoreThan, Not, Raw } from 'typeorm';
 import { PaginationOptionsInterface } from '../../common/paginate';
 import { CafeteriaItemDto } from './dto/cafeteria.item.dto';
 import { CafeteriaItem } from './entities/cafeteria_item.entity';
@@ -9,7 +9,7 @@ import { CafeteriaSalesDto } from './dto/cafeteria-sales.dto';
 import { Pagination } from '../../common/paginate/paginate.interface';
 import * as moment from 'moment';
 import { TransactionCreditDto } from '../finance/transactions/dto/transaction-credit.dto';
-import { patientname, postCredit, postDebit, staffname } from '../../common/utils/utils';
+import { patientname, postCredit, postDebit, slugify, staffname } from '../../common/utils/utils';
 import { CafeteriaFoodItemRepository } from './repositories/cafeteria.food-item.repository';
 import { CafeteriaFoodItem } from './entities/food_item.entity';
 import { CafeteriaFoodItemDto } from './dto/cafeteria-food-item.dto';
@@ -127,7 +127,9 @@ export class CafeteriaService {
     return item.softRemove();
   }
 
-  async getShowcaseItems(): Promise<any> {
+  async getShowcaseItems(params): Promise<any> {
+    const { q } = params;
+
     const query = await getRepository(CafeteriaItem)
       .createQueryBuilder('c')
       .select('c.food_item_id as food_item_id')
@@ -138,12 +140,12 @@ export class CafeteriaService {
 
     for (const item of query) {
       const foodItem = await this.cafeteriaFoodItemRepository.findOne(item.food_item_id);
-      const items = await this.cafeteriaItemRepository.find({ where: { foodItem } });
-      const cafeteriaItem = items.length > 0 ? items[0] : null;
-      if (cafeteriaItem) {
-        const quantity = items.reduce((total, food_item) => total + food_item.quantity, 0);
+      const showcaseItems = await this.cafeteriaItemRepository.find({ where: { foodItem } });
+      const showCaseItem = showcaseItems.length > 0 ? showcaseItems[0] : null;
+      if (showCaseItem) {
+        const quantity = showcaseItems.reduce((total, food_item) => total + food_item.quantity, 0);
 
-        results = [...results, { id: cafeteriaItem.foodItem.id, foodItem: cafeteriaItem.foodItem, quantity }];
+        results = [...results, { id: showCaseItem.foodItem.id, foodItem: showCaseItem.foodItem, quantity }];
       }
     }
 
@@ -151,11 +153,15 @@ export class CafeteriaService {
   }
 
   async getFoodItems(options: PaginationOptionsInterface, params): Promise<Pagination> {
-    const { q } = params;
+    const { q, category } = params;
 
     const page = options.page - 1;
 
     let where = {};
+
+    if (category && category !== '') {
+      where = { ...where, category_slug: 'show-case' };
+    }
 
     if (q && q !== '') {
       where = { ...where, name: Raw((alias) => `LOWER(${alias}) LIKE '%${q.toLowerCase()}%'`) };
@@ -178,17 +184,32 @@ export class CafeteriaService {
   }
 
   async createFoodItem(itemDto: CafeteriaFoodItemDto, username): Promise<CafeteriaFoodItem> {
-    const { name, description, price, discount_price, staff_price, unit } = itemDto;
+    const { name, description, price, discount_price, staff_price, unit, category } = itemDto;
 
-    return await this.cafeteriaFoodItemRepository.save({
+    const foodItem = await this.cafeteriaFoodItemRepository.save({
       name,
       description,
       price,
       discount_price,
       staff_price,
       unit,
+      category,
+      category_slug: slugify(category),
       createdBy: username,
     });
+
+    if (foodItem.category_slug !== 'show-case') {
+      await this.cafeteriaItemRepository.save({
+        foodItem,
+        quantity: -1,
+        approved: 1,
+        approved_by: username,
+        approved_at: moment().format('YYYY-MM-DD HH:mm:ss'),
+        createdBy: username,
+      });
+    }
+
+    return foodItem;
   }
 
   async updateFoodItem(id: number, itemDto: CafeteriaFoodItemDto, username: string): Promise<CafeteriaFoodItem> {
@@ -206,8 +227,45 @@ export class CafeteriaService {
     foodItem.staff_price = staff_price;
     foodItem.unit = unit;
     foodItem.lastChangedBy = username;
+    const rs = await foodItem.save();
 
-    return await foodItem.save();
+    return rs;
+  }
+
+  async updateFoodItemCategory(id: number, username: string): Promise<CafeteriaFoodItem> {
+    const foodItem = await this.cafeteriaFoodItemRepository.findOne(id);
+    if (!foodItem) {
+      throw new BadRequestException('Error, food item not found');
+    }
+
+    const category = 'A La Carte';
+
+    foodItem.category = category;
+    foodItem.category_slug = slugify(category);
+    foodItem.lastChangedBy = username;
+    const rs = await foodItem.save();
+
+    const showcaseItems = await this.cafeteriaItemRepository.find({ foodItem });
+    if (showcaseItems.length > 0) {
+      for (const item of showcaseItems) {
+        const showcaseItem = await this.cafeteriaItemRepository.findOne(item.id);
+        if (showcaseItem) {
+          showcaseItem.deletedBy = username;
+          await showcaseItem.save();
+          await showcaseItem.softRemove();
+        }
+      }
+    }
+
+    await this.cafeteriaItemRepository.save({
+      foodItem,
+      quantity: -1,
+      approved: 1,
+      approved_by: username,
+      approved_at: moment().format('YYYY-MM-DD HH:mm:ss'),
+    });
+
+    return rs;
   }
 
   async takeOrder(param: OrderDto, username: string): Promise<any> {
@@ -218,11 +276,14 @@ export class CafeteriaService {
         const foodItem = await this.cafeteriaFoodItemRepository.findOne(item.id);
         const quantity = parseInt(item.qty, 10);
         for (let i = 0; i < quantity; i++) {
-          const singleItem = await this.cafeteriaItemRepository.findOne({ where: { foodItem, quantity: MoreThan(0) } });
-          if (singleItem) {
-            singleItem.quantity = singleItem.quantity - 1;
-            singleItem.lastChangedBy = username;
-            await singleItem.save();
+          const showcaseItem = await this.cafeteriaItemRepository.findOne({
+            where: { foodItem, quantity: MoreThan(0) },
+            relations: ['foodItem'],
+          });
+          if (showcaseItem && showcaseItem.foodItem.category_slug === 'show-case') {
+            showcaseItem.quantity = showcaseItem.quantity - 1;
+            showcaseItem.lastChangedBy = username;
+            await showcaseItem.save();
           }
         }
       }
@@ -333,8 +394,11 @@ export class CafeteriaService {
         throw new BadRequestException('Error, order not found');
       }
 
-      const item = await this.cafeteriaItemRepository.findOne({ where: { foodItem: order.foodItem } });
-      if (item) {
+      const item = await this.cafeteriaItemRepository.findOne({
+        where: { foodItem: order.foodItem },
+        relations: ['foodItem'],
+      });
+      if (item && item.foodItem.category_slug === 'show-case') {
         item.quantity = Number(item.quantity) + Number(order.quantity);
         item.lastChangedBy = username;
         await item.save();

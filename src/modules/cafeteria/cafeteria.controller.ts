@@ -11,6 +11,7 @@ import {
   Request,
   Put,
   UseGuards,
+  Patch,
 } from '@nestjs/common';
 import { CafeteriaService } from './cafeteria.service';
 import { CafeteriaItem } from './entities/cafeteria_item.entity';
@@ -58,8 +59,8 @@ export class CafeteriaController {
   }
 
   @Get('/showcase-items')
-  getShowcaseItems() {
-    return this.cafeteriaService.getShowcaseItems();
+  getShowcaseItems(@Query() params) {
+    return this.cafeteriaService.getShowcaseItems(params);
   }
 
   @Get('/food-items')
@@ -83,6 +84,12 @@ export class CafeteriaController {
     @Request() req,
   ): Promise<CafeteriaFoodItem> {
     return this.cafeteriaService.updateFoodItem(id, itemDto, req.user.username);
+  }
+
+  @Patch('/food-items/:id/a-la-carte')
+  @UsePipes(ValidationPipe)
+  updateFoodItemCategory(@Param('id') id: number, @Request() req): Promise<CafeteriaFoodItem> {
+    return this.cafeteriaService.updateFoodItemCategory(id, req.user.username);
   }
 
   @Post('/take-order')

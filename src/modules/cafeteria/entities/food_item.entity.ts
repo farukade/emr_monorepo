@@ -9,6 +9,12 @@ export class CafeteriaFoodItem extends CustomBaseEntity {
   @Column({ type: 'float4', default: 0 })
   price: number;
 
+  @Column({ type: 'varchar', default: 'Show Case' })
+  category: string;
+
+  @Column({ type: 'varchar', default: 'show-case' })
+  category_slug: string;
+
   @Column({ type: 'float4', default: 0 })
   discount_price: number;
 

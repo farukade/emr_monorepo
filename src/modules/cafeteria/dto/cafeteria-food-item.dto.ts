@@ -13,4 +13,6 @@ export class CafeteriaFoodItemDto {
   staff_price: number;
 
   unit: string;
+
+  category: string;
 }
