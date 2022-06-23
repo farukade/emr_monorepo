@@ -12,6 +12,7 @@ import { ServiceCostRepository } from './repositories/service_cost.repository';
 import { DrugRepository } from '../../inventory/pharmacy/drug/drug.repository';
 import { RoomCategoryRepository } from '../room/room.category.repository';
 import { ServicesCategoryController } from './service-categories.controller';
+import { PatientRepository } from 'src/modules/patient/repositories/patient.repository';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { ServicesCategoryController } from './service-categories.controller';
       ServiceCostRepository,
       DrugRepository,
       RoomCategoryRepository,
+      PatientRepository,
     ]),
   ],
   providers: [ServicesService],

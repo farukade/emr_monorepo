@@ -5,7 +5,14 @@ import { ServiceCategoryDto } from './dto/service.category.dto';
 import { ServiceCategory } from '../entities/service_category.entity';
 import { Service } from '../entities/service.entity';
 import { ServiceCategoryRepository } from './repositories/service_category.repository';
-import { formatPID, slugify } from '../../../common/utils/utils';
+import {
+  formatCurrency,
+  formatPID,
+  generatePDF,
+  parseDescriptionB,
+  parseSource,
+  slugify,
+} from '../../../common/utils/utils';
 import { PaginationOptionsInterface } from '../../../common/paginate';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import { Raw } from 'typeorm';
@@ -19,6 +26,7 @@ import { DrugRepository } from '../../inventory/pharmacy/drug/drug.repository';
 import { RoomCategoryRepository } from '../room/room.category.repository';
 import * as path from 'path';
 import * as moment from 'moment';
+import { PatientRepository } from 'src/modules/patient/repositories/patient.repository';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Excel = require('exceljs');
@@ -30,8 +38,6 @@ export class ServicesService {
     private serviceRepository: ServiceRepository,
     @InjectRepository(ServiceCategoryRepository)
     private serviceCategoryRepository: ServiceCategoryRepository,
-    @InjectRepository(LabTestCategoryRepository)
-    private labTestCategoryRepository: LabTestCategoryRepository,
     @InjectRepository(LabTestRepository)
     private labTestRepository: LabTestRepository,
     @InjectRepository(HmoSchemeRepository)
@@ -42,6 +48,8 @@ export class ServicesService {
     private drugRepository: DrugRepository,
     @InjectRepository(RoomCategoryRepository)
     private roomCategoryRepository: RoomCategoryRepository,
+    @InjectRepository(PatientRepository)
+    private patientRepository: PatientRepository,
   ) {}
 
   async getAllServices(options: PaginationOptionsInterface, params): Promise<Pagination> {
@@ -354,8 +362,8 @@ export class ServicesService {
   }
 
   /*
-		Service CATEGORY SERVICES
-	*/
+    Service CATEGORY SERVICES
+  */
   async getServicesCategory(params: any): Promise<ServiceCategory[]> {
     const { paypoint } = params;
 
@@ -393,5 +401,58 @@ export class ServicesService {
     await category.save();
 
     return category.softRemove();
+  }
+
+  async printServices(params) {
+    try {
+      const { services, patientId } = params;
+
+      const idArr = services.split('-');
+      console.log(idArr);
+      let serviceCost = [];
+      for (const item of idArr) {
+        serviceCost = [...serviceCost, await this.serviceCostRepository.findOne(item)];
+      }
+
+      const patient = await this.patientRepository.findOne(patientId);
+
+      const date = new Date();
+      const filename = `bill-${date.getTime()}.pdf`;
+      const filepath = path.resolve(__dirname, `../../../../public/outputs/${filename}`);
+      const dob = moment(patient.date_of_birth, 'YYYY-MM-DD HH:mm:ss').format('YYYY-MM-DD');
+
+      const results = serviceCost.map((t) => {
+        return {
+          date: moment().format('DD-MMMM-YYYY h:mm A'),
+          source: parseSource(t.item.category.name),
+          description: t.item.name,
+          amount: formatCurrency(t.tariff, true),
+          rawAmount: t.tariff,
+        };
+      });
+
+      const total = results.reduce((a, b) => a - b.rawAmount, 0);
+
+      const data = {
+        patient,
+        age: moment().diff(dob, 'years'),
+        filepath,
+        results,
+        patient_id: formatPID(patientId),
+        logo: `${process.env.ENDPOINT}/images/logo.png`,
+        totalAmount: formatCurrency(total, true),
+        displayDate: moment().format('DD-MMMM-YYYY h:mm A'),
+      };
+
+      await generatePDF('pending-bill', data);
+
+      return {
+        success: true,
+        url: `${process.env.ENDPOINT}/outputs/${filename}`,
+      };
+    } catch (error) {
+      console.log(error);
+      return { success: false, message: error.message || 'an error occured' };
+    }
   }
 }
