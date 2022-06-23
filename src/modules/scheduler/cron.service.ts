@@ -14,12 +14,11 @@ import { Appointment } from '../frontdesk/appointment/appointment.entity';
 import * as ZKLib from 'zklib-js';
 import { config } from 'dotenv';
 import { InjectRepository } from '@nestjs/typeorm';
-import { AttendanceRepository } from '../hr/attendance/attendance.repository';
+import { AttendanceRepository } from '../hr/attendance/repositories/attendance.repository';
 import { Attendance } from '../hr/attendance/entities/attendance.entity';
+import { DeviceRepository } from '../hr/attendance/repositories/device.repositories';
 config();
 const port = process.env.BIO_PORT;
-const ip = process.env.BIO_IP;
-const zkInstance = new ZKLib(ip, parseInt(port), 5200, 5000);
 
 @Injectable()
 export class TasksService {
@@ -28,7 +27,9 @@ export class TasksService {
   constructor(
     @InjectRepository(AttendanceRepository)
     private attendanceRepository: AttendanceRepository,
-  ) {}
+    @InjectRepository(DeviceRepository)
+    private deviceRepository: DeviceRepository,
+  ) { }
 
   @Cron(CronExpression.EVERY_HOUR)
   async runEveryHour() {
@@ -247,61 +248,65 @@ export class TasksService {
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async saveAttendanceToDB() {
     this.logger.debug('saving attendance to database');
-    try {
-      // Create socket to machine
-      await zkInstance.createSocket();
+    const devices = await this.deviceRepository.find();
+    for (const device of devices) {
+      let zkInstance = new ZKLib(device.ip, parseInt(port), 5200, 5000);
+      try {
+        // Create socket to machine
+        await zkInstance.createSocket();
 
-      // Get general info like logCapacity, user counts, logs count
-      // It's really useful to check the status of device
+        // Get general info like logCapacity, user counts, logs count
+        // It's really useful to check the status of device
 
-      console.log(await zkInstance.getInfo());
-      await zkInstance
-        .getAttendances()
-        .then(async (logs) => {
-          if (!logs) {
+        console.log(await zkInstance.getInfo());
+        await zkInstance
+          .getAttendances()
+          .then(async (logs) => {
+            if (!logs) {
+              console.log({
+                success: false,
+                message: 'no data in logs or bio-devive not connected to network',
+              });
+              return;
+            }
+            const attendanceArr = await logs.data;
+            console.log(await logs.data);
+            let dataArr = [];
+            for (const item of await attendanceArr) {
+              dataArr = [
+                {
+                  staff: item.deviceUserId,
+                  ip: device.ip,
+                  date: item.recordTime,
+                  userDeviceId: item.userSn,
+                },
+                ...dataArr,
+              ];
+            }
+            const rs = await this.attendanceRepository
+              .createQueryBuilder()
+              .insert()
+              .into(Attendance)
+              .values(dataArr)
+              .execute();
+
+            zkInstance.clearAttendanceLog();
             console.log({
-              success: false,
-              message: 'no data in logs or bio-devive not connected to network',
+              success: true,
+              message: 'attendance saved to database',
+              rs,
             });
+            await zkInstance.disconnect();
             return;
-          }
-          const attendanceArr = await logs.data;
-          console.log(await logs.data);
-          let dataArr = [];
-          for (const item of await attendanceArr) {
-            dataArr = [
-              {
-                staff: item.deviceUserId,
-                ip: item.ip,
-                date: item.recordTime,
-                userDeviceId: item.userSn,
-              },
-              ...dataArr,
-            ];
-          }
-          const rs = await this.attendanceRepository
-            .createQueryBuilder()
-            .insert()
-            .into(Attendance)
-            .values(dataArr)
-            .execute();
-
-          zkInstance.clearAttendanceLog();
-          console.log({
-            success: true,
-            message: 'attendance saved to database',
-            rs,
+          })
+          .catch((error) => {
+            console.log('error', error);
+            return;
           });
-          await zkInstance.disconnect();
-          return;
-        })
-        .catch((error) => {
-          console.log('error', error);
-          return;
-        });
-    } catch (error) {
-      console.log({ success: false, error });
-      return;
-    }
+      } catch (error) {
+        console.log({ success: false, error });
+        return;
+      }
+    };
   }
 }

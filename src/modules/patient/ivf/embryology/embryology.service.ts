@@ -18,221 +18,232 @@ import { IvfTreatmentRepository } from './repositories/treatment.repository';
 
 @Injectable()
 export class IvfEmbryologyService {
-  constructor(
-    @InjectRepository(PatientRepository)
-    private patientRepository: PatientRepository,
-    @InjectRepository(IvfEmbryologyRepository)
-    private embryologyRepository: IvfEmbryologyRepository,
-    @InjectRepository(IvfEmbryoAssessmentRepository)
-    private embryoAssessmentRepository: IvfEmbryoAssessmentRepository,
-    @InjectRepository(IvfEmbryoTranferRepository)
-    private embryoTranferRepository: IvfEmbryoTranferRepository,
-    @InjectRepository(IvfICSIRepository)
-    private icsiRepository: IvfICSIRepository,
-    @InjectRepository(IvfSpermPrepRepository)
-    private spermPrepRepository: IvfSpermPrepRepository,
-    @InjectRepository(IvfTreatmentRepository)
-    private embryoTreatmentRepository: IvfTreatmentRepository,
-    @InjectRepository(EmbryoTransRecordRepository)
-    private embryoTransRecordRepository: EmbryoTransRecordRepository,
-    @InjectRepository(StaffRepository)
-    private staffRepository: StaffRepository,
-  ) {}
+	constructor(
+		@InjectRepository(PatientRepository)
+		private patientRepository: PatientRepository,
+		@InjectRepository(IvfEmbryologyRepository)
+		private embryologyRepository: IvfEmbryologyRepository,
+		@InjectRepository(IvfEmbryoAssessmentRepository)
+		private embryoAssessmentRepository: IvfEmbryoAssessmentRepository,
+		@InjectRepository(IvfEmbryoTranferRepository)
+		private embryoTranferRepository: IvfEmbryoTranferRepository,
+		@InjectRepository(IvfICSIRepository)
+		private icsiRepository: IvfICSIRepository,
+		@InjectRepository(IvfSpermPrepRepository)
+		private spermPrepRepository: IvfSpermPrepRepository,
+		@InjectRepository(IvfTreatmentRepository)
+		private embryoTreatmentRepository: IvfTreatmentRepository,
+		@InjectRepository(EmbryoTransRecordRepository)
+		private embryoTransRecordRepository: EmbryoTransRecordRepository,
+		@InjectRepository(StaffRepository)
+		private staffRepository: StaffRepository,
+	) {}
 
-  async saveAssessment(data: EmbryoAssessmentDto) {
-    try {
-      let embryology;
-      const { patientId, embryologyId, ...restData } = data;
-      const patient = await this.patientRepository.findOne(patientId);
+	async saveAssessment(data: EmbryoAssessmentDto) {
+		try {
+			let embryology;
+			const { patientId, embryologyId, ...restData } = data;
+			const patient = await this.patientRepository.findOne(patientId);
 
-      if (embryologyId) {
-        embryology = await this.embryologyRepository.findOne(embryologyId);
-      }
+			if (embryologyId) {
+				embryology = await this.embryologyRepository.findOne(embryologyId);
+			}
 
-      if (!embryology || embryology.isSubmitted == true) {
-        embryology = this.embryologyRepository.create();
-        embryology.patient = patient;
-        embryology.isSubmitted = false;
-        await this.patientRepository.save(patient);
-        await this.embryologyRepository.save(embryology);
-      }
+			if (!embryology || embryology.isSubmitted == true) {
+				embryology = this.embryologyRepository.create();
+				embryology.patient = patient;
+				embryology.isSubmitted = false;
+				await this.patientRepository.save(patient);
+				await this.embryologyRepository.save(embryology);
+			}
 
-      const newAssessment = this.embryoAssessmentRepository.create(restData);
-      await this.embryoAssessmentRepository.save(newAssessment);
+			const newAssessment = this.embryoAssessmentRepository.create(restData);
+			await this.embryoAssessmentRepository.save(newAssessment);
 
-      embryology.embryoAssessment = newAssessment;
-      await this.embryologyRepository.save(embryology);
+			embryology.embryoAssessment = newAssessment;
+			await this.embryologyRepository.save(embryology);
 
-      return {
-        success: true,
-        message: 'form successfully saved',
-        embryology,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: error.message || 'could not save form',
-      };
-    }
-  }
+			return {
+				success: true,
+				message: 'form successfully saved',
+				embryology,
+			};
+		} catch (error) {
+			return {
+				success: false,
+				message: error.message || 'could not save form',
+			};
+		}
+	}
 
-  async saveTransfer(data: EmbryoTransferDto) {
-    try {
-      const { ivfEmbryoTranferRecord, embryologyId, ...restTransfer } = data;
+	async saveTransfer(data: EmbryoTransferDto) {
+		try {
+			const { ivfEmbryoTranferRecord, embryologyId, ...restTransfer } = data;
 
-      const embryology = await this.embryologyRepository.findOne(embryologyId);
+			const embryology = await this.embryologyRepository.findOne(embryologyId);
 
-      const transRecord = this.embryoTransRecordRepository.create(ivfEmbryoTranferRecord);
-      await this.embryoTransRecordRepository.save(transRecord);
+			const transRecord = this.embryoTransRecordRepository.create(ivfEmbryoTranferRecord);
+			await this.embryoTransRecordRepository.save(transRecord);
 
-      const newTransfer = this.embryoTranferRepository.create(restTransfer);
+			const newTransfer = this.embryoTranferRepository.create(restTransfer);
 
-      newTransfer.ivfEmbryoTranferRecord = transRecord;
-      await this.embryoTranferRepository.save(newTransfer);
+			newTransfer.ivfEmbryoTranferRecord = transRecord;
+			await this.embryoTranferRepository.save(newTransfer);
 
-      embryology.embryoTransfer = newTransfer;
-      await this.embryologyRepository.save(embryology);
+			embryology.embryoTransfer = newTransfer;
+			await this.embryologyRepository.save(embryology);
 
-      return {
-        success: true,
-        message: 'form successfully saved',
-        embryology,
-      };
-    } catch (error) {
-      console.log(error);
-      return {
-        success: false,
-        message: error.message || 'could not save form',
-      };
-    }
-  }
+			return {
+				success: true,
+				message: 'form successfully saved',
+				embryology,
+			};
+		} catch (error) {
+			console.log(error);
+			return {
+				success: false,
+				message: error.message || 'could not save form',
+			};
+		}
+	}
 
-  async saveIcsi(data: EmbryoIcsiDto) {
-    try {
-      const { embryologyId, embryologistId, ...restIcsi } = data;
-      const embryology = await this.embryologyRepository.findOne(embryologyId);
-      const embryologist = await this.staffRepository.findOne(embryologistId);
+	async saveIcsi(data: EmbryoIcsiDto) {
+		try {
+			const { embryologyId, embryologistId, ...restIcsi } = data;
+			const embryology = await this.embryologyRepository.findOne(embryologyId);
+			const embryologist = await this.staffRepository.findOne(embryologistId);
 
-      const newIcsi = this.icsiRepository.create(restIcsi);
-      newIcsi.embryologist = embryologist;
-      await this.icsiRepository.save(newIcsi);
+			const newIcsi = this.icsiRepository.create(restIcsi);
+			newIcsi.embryologist = embryologist;
+			await this.icsiRepository.save(newIcsi);
 
-      embryology.icsi = newIcsi;
-      await this.embryologyRepository.save(embryology);
+			embryology.icsi = newIcsi;
+			await this.embryologyRepository.save(embryology);
 
-      return {
-        success: true,
-        message: 'form successfully saved',
-        embryology,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: error.message || 'could not save form',
-      };
-    }
-  }
+			return {
+				success: true,
+				message: 'form successfully saved',
+				embryology,
+			};
+		} catch (error) {
+			return {
+				success: false,
+				message: error.message || 'could not save form',
+			};
+		}
+	}
 
-  async saveSpermPrep(data: EmbryoSpermPrepDto) {
-    try {
-      const { embryologyId, embryologistId, ...restSpermPrep } = data;
-      const embryology = await this.embryologyRepository.findOne(embryologyId);
-      const embryologist = await this.staffRepository.findOne(embryologistId);
+	async saveSpermPrep(data: EmbryoSpermPrepDto) {
+		try {
+			const { embryologyId, embryologistId, ...restSpermPrep } = data;
+			const embryology = await this.embryologyRepository.findOne(embryologyId);
+			const embryologist = await this.staffRepository.findOne(embryologistId);
 
-      const spermPrep = this.spermPrepRepository.create(restSpermPrep);
-      spermPrep.embryologist = embryologist;
-      await this.spermPrepRepository.save(spermPrep);
+			const spermPrep = this.spermPrepRepository.create(restSpermPrep);
+			spermPrep.embryologist = embryologist;
+			await this.spermPrepRepository.save(spermPrep);
 
-      embryology.spermPreparation = spermPrep;
-      await this.embryologyRepository.save(embryology);
+			embryology.spermPreparation = spermPrep;
+			await this.embryologyRepository.save(embryology);
 
-      return {
-        success: true,
-        message: 'form successfully saved',
-        embryology,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: error.message || 'could not save form',
-      };
-    }
-  }
+			return {
+				success: true,
+				message: 'form successfully saved',
+				embryology,
+			};
+		} catch (error) {
+			return {
+				success: false,
+				message: error.message || 'could not save form',
+			};
+		}
+	}
 
-  async saveTreatment(data: EmbryoTreatmentDto) {
-    try {
-      const { embryologyId, ...restTreatment } = data;
-      const embryology = await this.embryologyRepository.findOne(embryologyId);
+	async saveTreatment(data: EmbryoTreatmentDto) {
+		try {
+			const { patientId } = data;
+			const embryology = this.embryologyRepository.create();
 
-      const treatment = this.embryoTreatmentRepository.create(restTreatment);
-      await this.embryoTreatmentRepository.save(treatment);
+			let patient = null;
+			if (patientId) {
+				patient = await this.patientRepository.findOne(patientId);
+			};
 
-      embryology.ivfTreatment = treatment;
-      embryology.isSubmitted = true;
-      await this.embryologyRepository.save(embryology);
+			if (!patient) return { success: false, message: "patient not found" };
 
-      return {
-        success: true,
-        message: 'form successfully saved',
-        embryology,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: error.message || 'could not save form',
-      };
-    }
-  }
+			embryology.patient = patient;
+			embryology.isSubmitted = false;
+			await this.patientRepository.save(patient);
 
-  async getEmbryologyById(urlParams) {
-    try {
-      const { embryologyid, patientid } = urlParams;
+			const treatment = this.embryoTreatmentRepository.create(data);
+			await this.embryoTreatmentRepository.save(treatment);
 
-      if (embryologyid) {
-        const embryology = await this.embryologyRepository.findOne(embryologyid, {
-          relations: ['embryoAssessment', 'embryoTransfer', 'icsi', 'spermPreparation', 'ivfTreatment'],
-        });
+			embryology.ivfTreatment = treatment;
+			embryology.isSubmitted = true;
+			await this.embryologyRepository.save(embryology);
 
-        if (!embryology) {
-          return {
-            success: false,
-            message: 'not found',
-          };
-        }
+			return {
+				success: true,
+				message: 'form successfully saved',
+				embryology,
+			};
+		} catch (error) {
+			return {
+				success: false,
+				message: error.message || 'could not save form',
+			};
+		}
+	}
 
-        return {
-          success: true,
-          embryology,
-        };
-      }
+	async getEmbryologyById(urlParams) {
+		try {
+			const { embryologyid, patientid } = urlParams;
 
-      if (patientid) {
-        const patient = await this.patientRepository.findOne(patientid, {
-          relations: ['embryology'],
-        });
+			if (embryologyid) {
+				const embryology = await this.embryologyRepository.findOne(embryologyid, {
+					relations: ['embryoAssessment', 'embryoTransfer', 'icsi', 'spermPreparation', 'ivfTreatment'],
+				});
 
-        if (!patient) {
-          return {
-            success: false,
-            message: 'not found',
-          };
-        }
+				if (!embryology) {
+					return {
+						success: false,
+						message: 'not found',
+					};
+				}
 
-        return {
-          success: true,
-          patient,
-        };
-      }
+				return {
+					success: true,
+					embryology,
+				};
+			}
 
-      return {
-        success: false,
-        message: 'no parameter added to url',
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: error.message || 'could not fetch data',
-      };
-    }
+			if (patientid) {
+				const patient = await this.patientRepository.findOne(patientid, {
+					relations: ['embryology'],
+				});
+
+				if (!patient) {
+					return {
+						success: false,
+						message: 'not found',
+					};
+				}
+
+				return {
+					success: true,
+					patient,
+				};
+			}
+
+			return {
+				success: false,
+				message: 'no parameter added to url',
+			};
+		} catch (error) {
+			return {
+				success: false,
+				message: error.message || 'could not fetch data',
+			};
+		}
   }
 }

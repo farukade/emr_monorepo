@@ -1,14 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class DeviceUserDto {
+export class AttendanceDepartmentDto {
   @ApiProperty()
   name: string;
 
   @ApiProperty()
-  staffId: number;
-
-  @ApiProperty()
-  departmentId: number;
+  isClinical: boolean;
 
   @ApiProperty()
   deviceId: number;
