@@ -1,12 +1,11 @@
-import { CustomBaseEntity } from "src/common/entities/custom-base.entity";
-import { Column, Entity, JoinColumn, OneToMany } from "typeorm";
-import { AttendanceDepartment } from "./attendance-department.entity";
+import { CustomBaseEntity } from 'src/common/entities/custom-base.entity';
+import { Column, Entity } from 'typeorm';
 
 @Entity({ name: 'attendance-device' })
 export class DeviceIps extends CustomBaseEntity {
-    @Column()
-    ip: string;
+  @Column()
+  ip: string;
 
-    @Column({ nullable: true })
-    name: string;
+  @Column({ nullable: true })
+  name: string;
 }
