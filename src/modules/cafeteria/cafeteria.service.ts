@@ -23,6 +23,7 @@ import { CafeteriaOrder } from './entities/order.entity';
 import { OrderRepository } from './repositories/order.repository';
 import { TransactionsRepository } from '../finance/transactions/transactions.repository';
 import { AppGateway } from '../../app.gateway';
+import { Patient } from "../patient/entities/patient.entity";
 
 @Injectable()
 export class CafeteriaService {
@@ -130,15 +131,21 @@ export class CafeteriaService {
   async getShowcaseItems(params): Promise<any> {
     const { q } = params;
 
-    const query = await getRepository(CafeteriaItem)
+    const query = getRepository(CafeteriaItem)
       .createQueryBuilder('c')
       .select('c.food_item_id as food_item_id')
       .groupBy('food_item_id')
-      .getRawMany();
+      .innerJoin(CafeteriaFoodItem, 'f', 'f.id = c.food_item_id');
+
+    if (q && q !== '') {
+      query.where('LOWER(f.name) Like :name', { name: `%${q.toLowerCase()}%` });
+    }
+
+    const rs = await query.getRawMany();
 
     let results = [];
 
-    for (const item of query) {
+    for (const item of rs) {
       const foodItem = await this.cafeteriaFoodItemRepository.findOne(item.food_item_id);
       const showcaseItems = await this.cafeteriaItemRepository.find({ where: { foodItem } });
       const showCaseItem = showcaseItems.length > 0 ? showcaseItems[0] : null;

@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Request } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { UtilityService } from './utility.service';
 import { Country } from '../../common/entities/country.entity';
 import { Bank } from '../../common/entities/bank.entity';
