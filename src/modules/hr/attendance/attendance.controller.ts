@@ -76,7 +76,7 @@ export class AttendanceController {
     return this.attendanceService.getDevice(urlParams);
   }
 
-  @Get('bulk-create/users')
+  @Post('bulk-create/users')
   bulkCreateUsers(
     @Body() data
   ) {
