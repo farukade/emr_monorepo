@@ -5,7 +5,7 @@ import { DeviceIps } from './device.entity';
 
 @Entity({ name: 'attendance-staff' })
 export class AttendanceStaff extends CustomBaseEntity {
-  @ManyToOne((type) => AttendanceDepartment)
+  @ManyToOne((type) => AttendanceDepartment, { eager: true })
   @JoinColumn({ name: 'department_id' })
   department: AttendanceDepartment;
 
