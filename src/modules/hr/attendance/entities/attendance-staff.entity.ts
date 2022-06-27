@@ -12,7 +12,7 @@ export class AttendanceStaff extends CustomBaseEntity {
   @Column()
   name: string;
 
-  @Column({ unique: true })
+  @Column({ name: 'staff_num' })
   staffNum: string;
 
   @ManyToOne((type) => DeviceIps)
