@@ -54,7 +54,7 @@ export class AttendanceService {
 
       if (nums) {
         const digits = parseInt(nums[0]);
-        query.andWhere('staff.id = :id', { id: digits });
+        query.andWhere('staff.staffNum = :staffNum', { staffNum: digits });
       }
 
       if (chars && chars !== '') {
