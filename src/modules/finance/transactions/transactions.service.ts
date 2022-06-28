@@ -1308,29 +1308,7 @@ export class TransactionsService {
         case 'staff':
           query.andWhere('q.staff IS NOT NULL');
           break;
-      }
-
-      //query if search term contains alphabets
-      if (chars && chars !== '') {
-        query.andWhere(
-          new Brackets((qb) => {
-            qb.where('patient.surname iLike :surname', { surname: `%${chars}%` })
-              .orWhere('patient.other_names iLike :other_names', { other_names: `%${chars}%` })
-              .orWhere('drug_generic.name iLike :name', { name: `%${chars}%` });
-          }),
-        );
-      }
-
-      //query if search term contains alphabets
-      if (chars && chars !== '') {
-        query.andWhere(
-          new Brackets((qb) => {
-            qb.where('patient.surname iLike :surname', { surname: `%${chars}%` })
-              .orWhere('patient.other_names iLike :other_names', { other_names: `%${chars}%` })
-              .orWhere('drug_generic.name iLike :name', { name: `%${chars}%` });
-          }),
-        );
-      }
+      };
 
       if (startDate && startDate !== '' && endDate && endDate !== '' && endDate === startDate) {
         query.andWhere(`DATE(q.createdAt) = '${startDate}'`);

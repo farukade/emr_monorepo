@@ -4,16 +4,14 @@ import { AttendanceController } from './attendance.controller';
 import { AttendanceRepository } from './repositories/attendance.repository';
 import { AttendanceService } from './attendance.service';
 import { DeviceRepository } from './repositories/device.repositories';
-import { AttendanceStaffRepository } from './repositories/attendance-staff.repository';
-import { AttendanceDepartmentRepository } from './repositories/attendance-department.repository';
+import { StaffRepository } from '../staff/staff.repository';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       AttendanceRepository,
       DeviceRepository,
-      AttendanceStaffRepository,
-      AttendanceDepartmentRepository
+      StaffRepository
     ])
   ],
   providers: [AttendanceService],
