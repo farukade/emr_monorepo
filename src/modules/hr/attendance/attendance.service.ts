@@ -6,12 +6,8 @@ import { config } from 'dotenv';
 import { Attendance } from './entities/attendance.entity';
 import { Brackets } from 'typeorm';
 import { DeviceRepository } from './repositories/device.repositories';
-import { AttendanceStaffRepository } from './repositories/attendance-staff.repository';
-import { AttendanceDepartmentRepository } from './repositories/attendance-department.repository';
-import { DeviceUserDto } from './dto/user.dto';
 import { DeviceDto } from './dto/device.dto';
-import { AttendanceDepartmentDto } from './dto/attendance-department.dto';
-import { AttendanceStaff } from './entities/attendance-staff.entity';
+import { StaffRepository } from '../staff/staff.repository';
 config();
 const port = process.env.BIO_PORT;
 const ip = process.env.BIO_IP;
@@ -24,10 +20,8 @@ export class AttendanceService {
     private attendanceRepository: AttendanceRepository,
     @InjectRepository(DeviceRepository)
     private deviceRepository: DeviceRepository,
-    @InjectRepository(AttendanceStaffRepository)
-    private staffRepository: AttendanceStaffRepository,
-    @InjectRepository(AttendanceDepartmentRepository)
-    private departmentRepository: AttendanceDepartmentRepository,
+    @InjectRepository(StaffRepository)
+    private staffRepository: StaffRepository
   ) { }
 
   // this will filter attendance already on emr either by date or staff or (staff & date);
@@ -54,18 +48,20 @@ export class AttendanceService {
 
       if (nums) {
         const digits = parseInt(nums[0]);
-        query.andWhere('staff.staffNum = :staffNum', { staffNum: digits });
+        query.andWhere('staff.id = :id', { id: digits });
       }
 
       if (chars && chars !== '') {
         console.log(chars);
         query.andWhere(
           new Brackets((qb) => {
-            qb.where('staff.name iLike :name', { name: `%${chars}%` })
+            qb.where('staff.first_name iLike :first_name', { first_name: `%${chars}%` })
+              .orWhere('staff.last_name iLike :last_name', { last_name: `%${chars}%` })
+              .orWhere('staff.other_names iLike :other_names', { other_names: `%${chars}%` })
               .orWhere('department.name iLike :name', { name: `%${chars}%` });
           }),
         );
-      }
+      };
 
       query.orderBy('q.updated_at', 'DESC').take(limit).skip(offset);
 
@@ -90,189 +86,193 @@ export class AttendanceService {
 
   // this will get attendance from biometric device local database and save on emr database;
   // NOTE: if there are not logs, it throws error and crashes the server;
-  async saveAttendance(params, res) {
+  async saveAttendance() {
     try {
 
-      const { device_id } = params;
+      let zkInstance;
+      let dataArr = [];
+      const devices = await this.deviceRepository.find();
 
-      const device = await this.deviceRepository.findOne(device_id);
-      if (!device) return { success: false, message: "device not found" };
+      for (const device of devices) {
+        let attendanceArr = [];
+        zkInstance = new ZKLib(device.ip, parseInt(port), 5200, 5000);
 
-      const zkInstance = new ZKLib(device.ip, parseInt(port), 5200, 5000);
+        // Create socket to machine
+        await zkInstance.createSocket();
 
-      // Create socket to machine
-      await zkInstance.createSocket();
+        // Get general info like logCapacity, user counts, logs count
+        // It's really useful to check the status of device
 
-      // Get general info like logCapacity, user counts, logs count
-      // It's really useful to check the status of device
+        console.log(await zkInstance.getInfo());
+        const logs = await zkInstance.getAttendances();
 
-      console.log(await zkInstance.getInfo());
-      await zkInstance
-        .getAttendances()
-        .then(async (logs) => {
-          if (!logs) {
-            console.log({
-              success: false,
-              message: 'no data in logs or bio-devive not connected to network',
-            });
-            return;
-          }
-          const attendanceArr = await logs.data;
-
-          let dataArr = [];
-          for (const item of await attendanceArr) {
-            dataArr = [
-              {
-                staff_id: item.deviceUserId,
-                ip: item.ip,
-                date: item.recordTime,
-                userDeviceId: item.userSn,
-              },
-              ...dataArr,
-            ];
-          }
-          const rs = await this.attendanceRepository
-            .createQueryBuilder()
-            .insert()
-            .into(Attendance)
-            .values(dataArr)
-            .execute();
-
-          zkInstance.clearAttendanceLog();
-
-          await zkInstance.disconnect();
-
-          return res.status(200).send({
-            success: true,
-            message: "attendance saved",
-            result: rs
-          });
-        })
-        .catch(async (error) => {
-          console.log('error', error);
-          await zkInstance.disconnect();
-          return res.status(400).send({
+        if (!logs) {
+          console.log({
             success: false,
-            message: "failed"
+            message: 'no data in logs or bio-devive not connected to network',
           });
-        });
+          return {
+            success: false,
+            message: 'no data in logs or bio-devive not connected to network',
+          };
+        };
+        attendanceArr = await logs.data;
+
+        
+        for (const item of attendanceArr) {
+
+          let staff = await this.staffRepository.findOne(item.deviceUserId);
+
+          dataArr = [
+            {
+              staff,
+              ip: item.ip,
+              date: item.recordTime,
+              device
+            },
+            ...dataArr,
+          ];
+        };
+
+        zkInstance.clearAttendanceLog();
+        await zkInstance.disconnect();
+      };
+
+      const rs = await this.attendanceRepository
+        .createQueryBuilder()
+        .insert()
+        .into(Attendance)
+        .values(dataArr)
+        .execute();
+
+      return {
+        success: true,
+        message: "attendance saved",
+        result: rs
+      };
     } catch (error) {
       console.log({ success: false, error });
-      return res.status(400).send({
+      return {
         success: false,
         message: error.message || "an error occured"
-      });
+      };
     }
   };
 
   // this will add users to biometric device database;
   // "uid" and "userId" on device must be unique for this to work;
-  async createUser(data) {
+  async createUser(params) {
     try {
 
-      const device = await this.deviceRepository.findOne(data.deviceId);
-      if (!device) return { success: false, message: "device not found" };
+      let zkInstance;
+      const { staff_id } = params;
 
+      const staff = await this.staffRepository.findOne(staff_id);
+      if (!staff) return { success: false, message: "staff not found" };
 
-      let zkInstance = new ZKLib(device.ip, parseInt(port), 5200, 5000);
+      const devices = await this.deviceRepository.find();
+      if (!devices.length) return { success: false, message: "device not found" };
 
-      // Create socket to machine
-      await zkInstance.createSocket();
-      console.log(await zkInstance.getInfo());
+      for (const device of devices) {
 
-      if (!data.name || !data.staffId || !data.departmentId || !data.deviceId) {
+        zkInstance = new ZKLib(device.ip, parseInt(port), 5200, 5000);
+
+        // Create socket to machine
+        await zkInstance.createSocket();
+        console.log(await zkInstance.getInfo());
+
+        await zkInstance.setUser(staff.id, `${staff.id}`, `${staff.first_name} ${staff.last_name} ${staff.other_names}`, '123456', 0, 0);
+
         await zkInstance.disconnect();
-        return { success: false, message: 'please provide all parameters' };
+
+        staff.isOnDevice = true;
+        await this.staffRepository.save(staff);
       };
 
-      const department = await this.departmentRepository.findOne(data.departmentId);
-      if (!department) return { success: false, message: "department not found" };
-
-      let staff = await this.staffRepository.findOne({
-        where: {
-          staffNum: data.staffId
-        }
-      });
-      if (!staff) {
-        staff = this.staffRepository.create({
-          staffNum: data.staffId,
-          name: data.name,
-          device,
-          department
-        });
+      return {
+        success: true,
+        message: staff.first_name + " " + staff.last_name + ' was added successfully'
       };
-
-      const user = await zkInstance.setUser(data.staffId, `${data.staffId}`, data.name, '123456', 0, 0);
-      await zkInstance.disconnect();
-
-      await this.staffRepository.save(staff);
-
-      return { success: true, message: 'user creation success', user };
     } catch (error) {
       console.log({ success: false, error });
-      await zkInstance.disconnect();
+      if (zkInstance) await zkInstance.disconnect();
+      return { success: false, message: error.message || 'an error occured' };
+    }
+  };
+
+  // add users
+  async addUsers() {
+    try {
+
+      let zkInstance;
+
+      const staffs = await this.staffRepository.find();
+      const devices = await this.deviceRepository.find();
+
+      for (const device of devices) {
+        zkInstance = new ZKLib(device.ip, parseInt(port), 5200, 5000);
+
+        // Create socket to machine
+        await zkInstance.createSocket();
+        console.log(await zkInstance.getInfo());
+
+        for (const staff of staffs) {
+
+          // Create socket to machine
+          await zkInstance.createSocket();
+          console.log(await zkInstance.getInfo());
+
+          await zkInstance.setUser(staff.id, `${staff.id}`, `${staff.first_name} ${staff.last_name} ${staff.other_names}`, '123456', 0, 0);
+
+          staff.isOnDevice = true;
+          await this.staffRepository.save(staff);
+
+        };
+        await zkInstance.disconnect();
+      };
+
+      return { success: true, message: "success" };
+
+    } catch (error) {
+      console.log({ success: false, error });
+      if (zkInstance) await zkInstance.disconnect();
       return { success: false, message: error.message || 'an error occured' };
     }
   };
 
   // this will fetch users from a biometric device local database;
-  async getAllLiveUsers(params) {
+  async getAllLiveUsers() {
     try {
-      const { device_id } = params;
-      const device = await this.deviceRepository.findOne(device_id);
-      if (!device) return { success: false, message: "device not found" };
+
+      let zkInstance;
+
+      const devices = await this.deviceRepository.find();
+      if (!devices) return { success: false, message: "devices not found" };
+
+      let result = [];
 
 
-      let zkInstance = new ZKLib(device.ip, parseInt(port), 5200, 5000);
+      for (const device of devices) {
 
-      // Create socket to machine
-      await zkInstance.createSocket();
-      console.log(await zkInstance.getInfo());
+        zkInstance = new ZKLib(device.ip, parseInt(port), 5200, 5000);
 
-      const users = await zkInstance.getUsers();
-      if (!users) {
+        // Create socket to machine
+        await zkInstance.createSocket();
+        console.log(await zkInstance.getInfo());
+
+        const users = await zkInstance.getUsers();
+        result = [users, ...result];
         await zkInstance.disconnect();
-        return { success: false, message: 'could not get users' };
-      }
-      await zkInstance.disconnect();
-      return { success: true, message: 'user creation success', users: users.data };
-    } catch (error) {
-      console.log({ success: false, error });
-      await zkInstance.disconnect();
-      return { success: false, message: error.message || 'an error occured' };
-    }
-  };
 
-  // this will fetch users from emr database;
-  async getAllUsers(params) {
-    try {
-      const { page, limit } = params;
-      const offset = (parseInt(page) - 1) * parseInt(limit);
-
-      const query = this.staffRepository.createQueryBuilder('q')
-        .leftJoinAndSelect('q.department', 'department')
-        .leftJoinAndSelect('q.device', 'device');
-
-
-      query.orderBy('q.updated_at', 'DESC').take(limit).skip(offset);
-
-      const total = await query.getCount();
-
-      const users = await query.getMany();
-
-      if (!users) return { success: false, message: 'record not found' };
-
-      return {
-        success: true,
-        result: users,
-        lastPage: Math.ceil(total / limit),
-        itemsPerPage: limit,
-        totalItems: total,
-        currentPage: parseInt(params.page),
       };
+
+      if (!result.length) return { success: false, message: "not found" };
+
+      return { success: true, message: 'user creation success', result };
+
     } catch (error) {
       console.log({ success: false, error });
-      await zkInstance.disconnect();
+      if (zkInstance) await zkInstance.disconnect();
       return { success: false, message: error.message || 'an error occured' };
     }
   };
@@ -321,84 +321,16 @@ export class AttendanceService {
     }
   };
 
-  async addDepartment(data: AttendanceDepartmentDto) {
+  async getDevice() {
     try {
-      const result = this.departmentRepository.create(data);
-      await this.departmentRepository.save(result);
-      return {
-        success: true,
-        result
-      };
-    } catch (error) {
-      console.log(error);
-      return { success: false, message: error.message || "an error occured" };
-    }
-  };
+      let result = await this.deviceRepository.find();
 
-  async getDevice(params) {
-    try {
-      const { device_id } = params;
-
-      let result;
-      if (device_id) {
-        result = await this.deviceRepository.findOne(device_id);
-      } else {
-        result = await this.deviceRepository.find();
-      };
-
+      if (!result) return { success: false, message: "device(s) not found" }
       return { success: true, result };
 
     } catch (error) {
       console.log(error);
       return { success: false, message: error.message || "an error occured" };
-    }
-  };
-
-  async bulkCreateUsers(data) {
-    try {
-
-      const device = await this.deviceRepository.findOne(data.deviceId);
-      if (!device) return { success: false, message: "device not found" };
-
-
-      let zkInstance = new ZKLib(device.ip, parseInt(port), 5200, 5000);
-
-      // Create socket to machine
-      await zkInstance.createSocket();
-      console.log(await zkInstance.getInfo());
-
-      const department = await this.departmentRepository.findOne(data.departmentId);
-      if (!department) return { success: false, message: "department not found" };
-
-      let staffArr = [];
-
-      for (const item of data.data) {
-
-        staffArr.push({
-          staffNum: item.staffId,
-          name: item.name,
-          device,
-          department
-        });
-
-        await zkInstance.setUser(item.staffId, `${item.staffId}`, item.name, '123456', 0, 0);
-
-      };
-
-      await zkInstance.disconnect();
-
-      await this.attendanceRepository
-        .createQueryBuilder()
-        .insert()
-        .into(AttendanceStaff)
-        .values(staffArr)
-        .execute();
-
-      return { success: true, message: 'user creation success', users: staffArr };
-    } catch (error) {
-      console.log({ success: false, error });
-      await zkInstance.disconnect();
-      return { success: false, message: error.message || 'an error occured' };
     }
   };
 }

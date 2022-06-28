@@ -126,4 +126,7 @@ export class StaffDetails extends CustomBaseEntity {
 
   @Column({ type: 'boolean', default: true })
   isActive: boolean;
+
+  @Column({ nullable: true, default: false })
+  isOnDevice: boolean;
 }
