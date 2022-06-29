@@ -97,7 +97,9 @@ export class AntenatalService {
         ? await this.antenatalPackageRepository.findOne(antenatal.package_id)
         : null;
 
-      antenatal.closedBy = await this.staffRepository.findOne(antenatal.closed_by);
+      if (antenatal.closed_by) {
+        antenatal.closedBy = await this.staffRepository.findOne(antenatal.closed_by);
+      }
 
       result = [...result, antenatal];
     }
