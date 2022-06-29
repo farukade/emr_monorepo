@@ -19,4 +19,6 @@ export class CafeteriaSalesDto {
   payment_method: string;
 
   total: number;
+
+  pay_later: string;
 }

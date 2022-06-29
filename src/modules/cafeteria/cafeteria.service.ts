@@ -23,7 +23,6 @@ import { CafeteriaOrder } from './entities/order.entity';
 import { OrderRepository } from './repositories/order.repository';
 import { TransactionsRepository } from '../finance/transactions/transactions.repository';
 import { AppGateway } from '../../app.gateway';
-import { Patient } from "../patient/entities/patient.entity";
 
 @Injectable()
 export class CafeteriaService {
@@ -327,7 +326,7 @@ export class CafeteriaService {
         order.name = name;
         order.foodItem = foodItem;
         order.quantity = Number(item.qty);
-        order.amount = Number(foodItem.price);
+        order.amount = customer === 'staff' && staff ? Number(foodItem.staff_price) : Number(foodItem.price);
         order.createdBy = username;
 
         if (foodItem.category_slug === 'show-case') {
@@ -451,9 +450,7 @@ export class CafeteriaService {
 
   async saveSales(param: CafeteriaSalesDto, username: string): Promise<any> {
     try {
-      const { cartItems, customer, patient_id, staff_id, balance, paid, total, payment_method } = param;
-
-      const method = await this.paymentMethodRepository.findOne(payment_method);
+      const { cartItems, customer, patient_id, staff_id, balance, paid, total, payment_method, pay_later } = param;
 
       let patient = null;
       let admission = null;
@@ -490,7 +487,7 @@ export class CafeteriaService {
         part_payment_expiry_date: null,
         bill_source: 'cafeteria',
         next_location: null,
-        status: 0,
+        status: Number(pay_later) === 0 ? 0 : -1,
         hmo_approval_code: null,
         transaction_details: cartItems,
         admission_id: admission?.id || null,
@@ -501,27 +498,32 @@ export class CafeteriaService {
 
       const payment = await postDebit(debit, null, null, null, null, null);
 
-      // approve debit
-      payment.status = 1;
-      payment.lastChangedBy = username;
-      payment.amount_paid = Math.abs(paid);
-      payment.payment_method = method.name;
-      await payment.save();
+      let transaction = payment;
+      if (Number(pay_later) === 0) {
+        const method = await this.paymentMethodRepository.findOne(payment_method);
 
-      const credit = {
-        ...debit,
-        status: 1,
-        lastChangedBy: username,
-        amount_paid: Number(paid),
-        payment_method: method.name,
-        change: Number(balance),
-      };
-      const transaction = await postCredit(credit, null, null, null, null, null);
+        // approve debit
+        payment.status = 1;
+        payment.lastChangedBy = username;
+        payment.amount_paid = Math.abs(paid);
+        payment.payment_method = method.name;
+        await payment.save();
+
+        const credit = {
+          ...debit,
+          status: 1,
+          lastChangedBy: username,
+          amount_paid: Number(paid),
+          payment_method: method.name,
+          change: Number(balance),
+        };
+        transaction = await postCredit(credit, null, null, null, null, null);
+      }
 
       for (const item of cartItems) {
         const order = await this.orderRepository.findOne(item.id);
         order.transaction = transaction;
-        order.status = 2;
+        order.status = Number(pay_later) === 0 ? 2 : -2;
         await order.save();
       }
 

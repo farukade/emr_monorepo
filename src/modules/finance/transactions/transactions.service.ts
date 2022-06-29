@@ -44,6 +44,7 @@ import * as path from 'path';
 import { ServiceCategoryRepository } from '../../settings/services/repositories/service_category.repository';
 import { TransactionSearchDto } from './dto/search.dto';
 import { StaffRepository } from 'src/modules/hr/staff/staff.repository';
+import { OrderRepository } from '../../cafeteria/repositories/order.repository';
 
 @Injectable()
 export class TransactionsService {
@@ -73,6 +74,8 @@ export class TransactionsService {
     private readonly appGateway: AppGateway,
     @InjectRepository(StaffRepository)
     private staffRepository: StaffRepository,
+    @InjectRepository(OrderRepository)
+    private orderRepository: OrderRepository,
   ) {}
 
   async fetchList(options: PaginationOptionsInterface, params): Promise<Pagination> {
@@ -280,6 +283,10 @@ export class TransactionsService {
       transaction.appointment = await this.appointmentRepository.findOne({
         where: { transaction: transaction.id },
       });
+
+      if (transaction.staff_id) {
+        transaction.dedastaff = await this.staffRepository.findOne(transaction.staff_id);
+      }
     }
 
     return {
@@ -443,7 +450,7 @@ export class TransactionsService {
         next_location: null,
         status: 1,
         hmo_approval_code: null,
-        transaction_details: null,
+        transaction_details: transaction.transaction_details,
         admission_id: transaction.admission?.id || null,
         nicu_id: transaction.nicu?.id || null,
         staff_id: transaction.staff?.id || null,
@@ -508,6 +515,15 @@ export class TransactionsService {
         appointment,
         transaction.hmo,
       );
+
+      if (transaction.bill_source === 'cafeteria') {
+        for (const item of transaction.transaction_details) {
+          const order = await this.orderRepository.findOne(item.id);
+          order.transaction = credit;
+          order.status = 2;
+          await order.save();
+        }
+      }
 
       let balancePayment: Transaction;
       let balance = 0;
@@ -1308,7 +1324,7 @@ export class TransactionsService {
         case 'staff':
           query.andWhere('q.staff IS NOT NULL');
           break;
-      };
+      }
 
       if (startDate && startDate !== '' && endDate && endDate !== '' && endDate === startDate) {
         query.andWhere(`DATE(q.createdAt) = '${startDate}'`);

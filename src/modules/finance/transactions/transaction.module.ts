@@ -17,6 +17,7 @@ import { PatientRequestItemRepository } from '../../patient/repositories/patient
 import { PatientRequestRepository } from '../../patient/repositories/patient_request.repository';
 import { AdmissionsRepository } from 'src/modules/patient/admissions/repositories/admissions.repository';
 import { ServiceCategoryRepository } from '../../settings/services/repositories/service_category.repository';
+import { OrderRepository } from '../../cafeteria/repositories/order.repository';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { ServiceCategoryRepository } from '../../settings/services/repositories/
       PatientRequestRepository,
       AdmissionsRepository,
       ServiceCategoryRepository,
+      OrderRepository,
     ]),
   ],
   controllers: [TransactionsController],
