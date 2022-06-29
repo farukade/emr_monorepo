@@ -29,6 +29,7 @@ import { OpdPatientDto } from './dto/opd-patient.dto';
 import { Pagination } from '../../common/paginate/paginate.interface';
 import { PatientAlert } from './entities/patient_alert.entity';
 import { PatientNote } from './entities/patient_note.entity';
+import { Error } from 'src/common/interface/error.interface';
 
 @Controller('patient')
 export class PatientController {
@@ -153,7 +154,7 @@ export class PatientController {
 
   @UseGuards(AuthGuard('jwt'))
   @Get(':id/diagnoses')
-  getDiagnoses(@Param('id') id: string, @Query() urlParams): Promise<PatientNote[]> {
+  getDiagnoses(@Param('id') id: string, @Query() urlParams): Promise<PatientNote[] | Error>  {
     return this.patientService.getDiagnoses(id, urlParams);
   }
 

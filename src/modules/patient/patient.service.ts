@@ -53,6 +53,7 @@ import { IvfEnrollmentRepository } from './ivf/ivf_enrollment.repository';
 import { QueueService } from '../queue/queue.service';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { Error } from 'src/common/interface/error.interface';
 
 @Injectable()
 export class PatientService {
@@ -104,7 +105,7 @@ export class PatientService {
     private ancEnrollmentRepository: AntenatalEnrollmentRepository,
     @InjectRepository(IvfEnrollmentRepository)
     private ivfEnrollmentRepository: IvfEnrollmentRepository,
-  ) {}
+  ) { }
 
   async listAllPatients(options: PaginationOptionsInterface, params): Promise<Pagination> {
     const { startDate, endDate, q, status } = params;
@@ -275,11 +276,10 @@ export class PatientService {
       const patient = await this.patientRepository.savePatient(patientDto, nok, hmo, createdBy, staff);
 
       const splits = patient.other_names.split(' ');
-      const message = `Dear ${patient.surname} ${
-        splits.length > 0 ? splits[0] : patient.other_names
-      }, welcome to the DEDA Family. Your ID/Folder number is ${formatPID(
-        patient.id,
-      )}. Kindly save the number and provide it at all your appointment visits. Thank you.`;
+      const message = `Dear ${patient.surname} ${splits.length > 0 ? splits[0] : patient.other_names
+        }, welcome to the DEDA Family. Your ID/Folder number is ${formatPID(
+          patient.id,
+        )}. Kindly save the number and provide it at all your appointment visits. Thank you.`;
 
       const data: TransactionCreditDto = {
         patient_id: patient.id,
@@ -896,37 +896,55 @@ export class PatientService {
     }
   }
 
-  async getDiagnoses(id, urlParams: any): Promise<PatientNote[]> {
-    const { startDate, endDate, status, admission_id, nicu_id } = urlParams;
+  async getDiagnoses(id, urlParams: any): Promise<PatientNote[] | Error> {
+    try {
+      const { startDate, endDate, status, admission_id, nicu_id } = urlParams;
 
-    const query = this.patientNoteRepository
-      .createQueryBuilder('q')
-      .where('q.patient_id = :id', { id })
-      .andWhere('q.type = :type', { type: 'diagnosis' });
+      let result = [];
 
-    if (startDate && startDate !== '') {
-      const start = moment(startDate).endOf('day').toISOString();
-      query.andWhere(`q.createdAt >= '${start}'`);
+      const query = this.patientNoteRepository
+        .createQueryBuilder('q')
+        .where('q.patient_id = :id', { id })
+        .andWhere('q.type = :type', { type: 'diagnosis' });
+
+      if (startDate && startDate !== '') {
+        const start = moment(startDate).endOf('day').toISOString();
+        query.andWhere(`q.createdAt >= '${start}'`);
+      }
+
+      if (endDate && endDate !== '') {
+        const end = moment(endDate).endOf('day').toISOString();
+        query.andWhere(`q.createdAt <= '${end}'`);
+      }
+
+      if (admission_id && admission_id !== '') {
+        query.andWhere('q.admission_id = :id', { id: admission_id });
+      }
+
+      if (nicu_id && nicu_id !== '') {
+        query.andWhere('q.nicu_id = :id', { id: nicu_id });
+      }
+
+      if (status && status !== '') {
+        query.andWhere('q.status = :status', { status });
+      }
+
+      const rs = await query.orderBy('q.createdAt', 'DESC').getMany();
+      let test = [];
+
+      for (const item of rs) {
+        if (!test.includes(item.diagnosis.id)) {
+          result = [...result, item];
+          test = [item.diagnosis.id, ...test];
+        };
+      };
+
+      if(result.length) return result;
+      return { success: false, message: "result no found" };
+    } catch (error) {
+      console.log(error);
+      return { success: false, message: error.message || "an error occured" };
     }
-
-    if (endDate && endDate !== '') {
-      const end = moment(endDate).endOf('day').toISOString();
-      query.andWhere(`q.createdAt <= '${end}'`);
-    }
-
-    if (admission_id && admission_id !== '') {
-      query.andWhere('q.admission_id = :id', { id: admission_id });
-    }
-
-    if (nicu_id && nicu_id !== '') {
-      query.andWhere('q.nicu_id = :id', { id: nicu_id });
-    }
-
-    if (status && status !== '') {
-      query.andWhere('q.status = :status', { status });
-    }
-
-    return await query.orderBy('q.createdAt', 'DESC').getMany();
   }
 
   async getAlerts(id: number, params): Promise<PatientAlert[]> {
