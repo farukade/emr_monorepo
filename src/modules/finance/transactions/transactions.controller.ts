@@ -117,4 +117,11 @@ export class TransactionsController {
   getRecords(@Query() urlParams) {
     return this.transactionsService.searchRecords(urlParams);
   }
+
+  @Get('staff')
+  getStaffTransactions(
+    @Query() urlParams
+  ) {
+    return this.transactionsService.staffTransactions(urlParams);
+  }
 }
