@@ -22,9 +22,9 @@ import {
   generatePDF,
   formatCurrency,
   parseSource,
-  parseDescription,
   formatPatientId,
   parseDescriptionB,
+  capitaliseFirstLetter,
 } from '../../../common/utils/utils';
 import { Settings } from '../../settings/entities/settings.entity';
 import { ServiceCostRepository } from '../../settings/services/repositories/service_cost.repository';
@@ -1122,9 +1122,14 @@ export class TransactionsService {
     }
   }
 
-  async printBill(params: any): Promise<any> {
+  async printBill(params: any, user): Promise<any> {
     try {
       const { start_date, end_date, patient_id, service_id, status, transId } = params;
+      console.log(user);
+
+      const staff = await this.staffRepository.findOne(user.id, {
+        relations: ['department']
+      });
 
       const query = this.transactionsRepository
         .createQueryBuilder('q')
@@ -1220,6 +1225,13 @@ export class TransactionsService {
 
       const total = results.reduce((a, b) => a - b.rawAmount, 0);
 
+      const staffName = 
+      capitaliseFirstLetter(staff.first_name) + " " +
+      capitaliseFirstLetter(staff.last_name);
+
+      const department = 
+      capitaliseFirstLetter(staff.department.name);
+
       const data = {
         patient,
         age: moment().diff(dob, 'years'),
@@ -1229,6 +1241,8 @@ export class TransactionsService {
         logo: `${process.env.ENDPOINT}/images/logo.png`,
         totalAmount: formatCurrency(total, true),
         displayDate: moment().format('DD-MMMM-YYYY h:mm A'),
+        staffName,
+        department
       };
 
       await generatePDF('pending-bill', data);

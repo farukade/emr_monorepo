@@ -687,3 +687,7 @@ export const patientname = (user, pid = false) => {
 
   return user ? `${user.other_names} ${user.surname} ${patientId}` : '--';
 };
+
+export const capitaliseFirstLetter = (string: string) => {
+  return `${string.charAt(0).toUpperCase() + string.slice(1).toLowerCase()}`;
+};

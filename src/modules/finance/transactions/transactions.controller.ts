@@ -109,8 +109,8 @@ export class TransactionsController {
   }
 
   @Get('print')
-  printBill(@Query() urlParams): Promise<any> {
-    return this.transactionsService.printBill(urlParams);
+  printBill(@Query() urlParams, @Request() req): Promise<any> {
+    return this.transactionsService.printBill(urlParams, req.user);
   }
 
   @Get('search')
