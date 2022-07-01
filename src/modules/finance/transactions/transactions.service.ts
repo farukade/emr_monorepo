@@ -24,7 +24,6 @@ import {
   parseSource,
   formatPatientId,
   parseDescriptionB,
-  capitaliseFirstLetter,
 } from '../../../common/utils/utils';
 import { Settings } from '../../settings/entities/settings.entity';
 import { ServiceCostRepository } from '../../settings/services/repositories/service_cost.repository';
