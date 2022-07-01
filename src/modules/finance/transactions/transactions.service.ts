@@ -45,6 +45,7 @@ import { ServiceCategoryRepository } from '../../settings/services/repositories/
 import { TransactionSearchDto } from './dto/search.dto';
 import { StaffRepository } from 'src/modules/hr/staff/staff.repository';
 import { OrderRepository } from '../../cafeteria/repositories/order.repository';
+import { startCase } from 'lodash';
 
 @Injectable()
 export class TransactionsService {
@@ -1224,13 +1225,10 @@ export class TransactionsService {
       });
 
       const total = results.reduce((a, b) => a - b.rawAmount, 0);
+      
+      const staffName = startCase(staff.first_name + " " + staff.last_name);
 
-      const staffName = 
-      capitaliseFirstLetter(staff.first_name) + " " +
-      capitaliseFirstLetter(staff.last_name);
-
-      const department = 
-      capitaliseFirstLetter(staff.department.name);
+      const department = startCase(staff.department.name);
 
       const data = {
         patient,
