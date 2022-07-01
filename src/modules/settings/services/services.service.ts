@@ -6,7 +6,6 @@ import { ServiceCategory } from '../entities/service_category.entity';
 import { Service } from '../entities/service.entity';
 import { ServiceCategoryRepository } from './repositories/service_category.repository';
 import {
-  capitaliseFirstLetter,
   formatCurrency,
   formatPID,
   generatePDF,
@@ -29,6 +28,7 @@ import * as path from 'path';
 import * as moment from 'moment';
 import { PatientRepository } from 'src/modules/patient/repositories/patient.repository';
 import { StaffRepository } from 'src/modules/hr/staff/staff.repository';
+import { startCase } from 'lodash';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Excel = require('exceljs');
@@ -429,13 +429,10 @@ export class ServicesService {
       const filename = `bill-${date.getTime()}.pdf`;
       const filepath = path.resolve(__dirname, `../../../../public/outputs/${filename}`);
       const dob = moment(patient.date_of_birth, 'YYYY-MM-DD HH:mm:ss').format('YYYY-MM-DD');
+      
+      const staffName = startCase(staff.first_name + " " + staff.last_name);
 
-      const staffName = 
-      capitaliseFirstLetter(staff.first_name) + " " +
-      capitaliseFirstLetter(staff.last_name);
-
-      const department = 
-      capitaliseFirstLetter(staff.department.name);
+      const department = startCase(staff.department.name);
 
       const results = serviceCost.map((t) => {
         return {
