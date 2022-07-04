@@ -960,7 +960,7 @@ export class PatientService {
       const { document_type } = param;
 
       if (!document_type || (document_type && document_type === '')) {
-        return { success: false, message: 'select docutment type' };
+        return { success: false, message: 'select document type' };
       }
 
       const patient = await this.patientRepository.findOne(id);
