@@ -172,8 +172,8 @@ export class TransactionsService {
 
       transaction.admission = transaction.admission_id
         ? await this.admissionRepository.findOne(transaction.admission_id, {
-            relations: ['room', 'room.category'],
-          })
+          relations: ['room', 'room.category'],
+        })
         : null;
 
       transaction.cashier = await getStaff(transaction.createdBy);
@@ -274,8 +274,8 @@ export class TransactionsService {
 
       transaction.admission = transaction.admission_id
         ? await this.admissionRepository.findOne(transaction.admission_id, {
-            relations: ['room', 'room.category'],
-          })
+          relations: ['room', 'room.category'],
+        })
         : null;
 
       transaction.cashier = await getStaff(transaction.createdBy);
@@ -1404,25 +1404,32 @@ export class TransactionsService {
       });
 
       const query = this.transactionsRepository.createQueryBuilder('q')
-        .where('q.staff_id = :staff_id', { staff_id });
+        .leftJoinAndSelect('q.patient', 'patient');
 
-        const total = await query.getCount();
+      query.andWhere(
+        new Brackets((qb) => {
+          qb.where('q.staff_id = :staff_id', { staff_id })
+            .orWhere('patient.staff_id = :staff_id', { staff_id });
+        })
+      );
 
-        const results = await query.orderBy('q.updated_at', 'DESC').take(limit).skip(offset).getMany();
+      const total = await query.getCount();
 
-        const totalPurchase = transactions.reduce((a, b) => a - b?.amount, 0);
-        const totalAmountPaid = transactions.reduce((a, b) => a - b?.amount_paid, 0);
+      const results = await query.orderBy('q.updated_at', 'DESC').take(limit).skip(offset).getMany();
 
-        return {
-          success: true,
-          totalAmountPaid,
-          totalPurchase,
-          result: results,
-          lastPage: Math.ceil(total / limit),
-          itemsPerPage: limit,
-          totalItems: total,
-          currentPage: parseInt(params.page),
-        };
+      const totalPurchase = transactions.reduce((a, b) => a - b?.amount, 0);
+      const totalAmountPaid = transactions.reduce((a, b) => a - b?.amount_paid, 0);
+
+      return {
+        success: true,
+        totalAmountPaid,
+        totalPurchase,
+        result: results,
+        lastPage: Math.ceil(total / limit),
+        itemsPerPage: limit,
+        totalItems: total,
+        currentPage: parseInt(params.page),
+      };
 
     } catch (error) {
       console.log(error);
