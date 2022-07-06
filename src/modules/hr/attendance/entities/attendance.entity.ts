@@ -1,19 +1,16 @@
 import { CustomBaseEntity } from 'src/common/entities/custom-base.entity';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
-import { AttendanceStaff } from './attendance-staff.entity';
+import { StaffDetails } from '../../staff/entities/staff_details.entity';
 import { DeviceIps } from './device.entity';
 
 @Entity()
 export class Attendance extends CustomBaseEntity {
-  @ManyToOne((type) => AttendanceStaff)
+  @ManyToOne((type) => StaffDetails)
   @JoinColumn({ name: 'staff_id' })
-  staff: AttendanceStaff;
+  staff: StaffDetails;
 
   @Column({ type: 'timestamp' })
   date: string;
-
-  @Column()
-  userDeviceId: number;
 
   @Column()
   ip: string;

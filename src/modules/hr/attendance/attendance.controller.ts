@@ -20,32 +20,20 @@ export class AttendanceController {
   }
 
   @Get('save')
-  saveAttendance(
-    @Query() urlParams,
-    @Res() res
-  ) {
-    return this.attendanceService.saveAttendance(urlParams, res);
+  saveAttendance() {
+    return this.attendanceService.saveAttendance();
   }
 
-  @Post('create-user')
+  @Get('create-user')
   createUser(
-    @Body() data: DeviceUserDto
+    @Query() urlParams
     ) {
-    return this.attendanceService.createUser(data);
+    return this.attendanceService.createUser(urlParams);
   }
 
   @Get('users-live')
-  getLiveUsers(
-    @Query() urlParams
-  ) {
-    return this.attendanceService.getAllLiveUsers(urlParams);
-  }
-
-  @Get('users')
-  getUsers(
-    @Query() urlParams
-  ) {
-    return this.attendanceService.getAllUsers(urlParams);
+  getLiveUsers() {
+    return this.attendanceService.getAllLiveUsers();
   }
 
   @Get('logs')
@@ -62,24 +50,13 @@ export class AttendanceController {
     return this.attendanceService.addDevice(data)
   }
 
-  @Post('department')
-  addDepartment(
-    @Body() data: AttendanceDepartmentDto
-  ) {
-    return this.attendanceService.addDepartment(data)
-  }
-
   @Get('device')
-  getDevice(
-    @Query() urlParams
-  ) {
-    return this.attendanceService.getDevice(urlParams);
+  getDevice() {
+    return this.attendanceService.getDevice();
   }
 
-  @Post('bulk-create/users')
-  bulkCreateUsers(
-    @Body() data
-  ) {
-    return this.attendanceService.bulkCreateUsers(data);
-  }
+  @Get('bulk-create/users')
+  addUsers() {
+    return this.attendanceService.addUsers();
+  };
 }
