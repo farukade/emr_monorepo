@@ -15,7 +15,7 @@ import { NicuRepository } from '../nicu/nicu.repository';
 import { PatientAlertRepository } from '../repositories/patient_alert.repository';
 import * as moment from 'moment';
 import { EncounterRepository } from '../consultation/encounter.repository';
-import { Brackets } from 'typeorm';
+import { Brackets, Raw } from 'typeorm';
 
 @Injectable()
 export class PatientNoteService {
@@ -213,27 +213,39 @@ export class PatientNoteService {
 
   async resolveDiagnosis(id: number, username: string) {
     try {
-      const note = await this.patientNoteRepository.findOne(id);
-      note.status = 'Resolved';
-      note.resolved_by = username;
-      note.resolved_at = moment().format('YYYY-MM-DD HH:mm:ss');
-      note.lastChangedBy = username;
-      await note.save();
-
-      const alertItem = await this.patientAlertRepository.findOne({
-        item_id: id,
-        category: 'critical',
-      });
-      if (alertItem) {
-        alertItem.closed = true;
-        alertItem.closed_by = username;
-        alertItem.closed_at = moment().format('YYYY-MM-DD HH:mm:ss');
-        alertItem.lastChangedBy = username;
-
-        await alertItem.save();
+      const findNote = await this.patientNoteRepository.findOne(id, { relations: ['patient'] });
+      if (!findNote) {
+        throw new NotFoundException('note not found!');
       }
 
-      return { success: true, data: note };
+      const notes = await this.patientNoteRepository.find({
+        patient: findNote.patient,
+        type: findNote.type,
+        diagnosis: Raw((alias) => `${alias} ->> 'code' = '${findNote.diagnosis.code}'`),
+      });
+      let rs = [];
+      for (const item of notes) {
+        const note = await this.patientNoteRepository.findOne(item.id);
+        note.status = 'Resolved';
+        note.resolved_by = username;
+        note.resolved_at = moment().format('YYYY-MM-DD HH:mm:ss');
+        const result = await note.save();
+        rs = [...rs, result];
+
+        const alertItem = await this.patientAlertRepository.findOne({
+          item_id: id,
+          category: 'critical',
+        });
+        if (alertItem) {
+          alertItem.closed = true;
+          alertItem.closed_by = username;
+          alertItem.closed_at = moment().format('YYYY-MM-DD HH:mm:ss');
+
+          await alertItem.save();
+        }
+      }
+
+      return { success: true, data: rs[0] };
     } catch (e) {
       return { success: false, message: e.message };
     }

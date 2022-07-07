@@ -173,8 +173,8 @@ export class TransactionsService {
 
       transaction.admission = transaction.admission_id
         ? await this.admissionRepository.findOne(transaction.admission_id, {
-            relations: ['room', 'room.category'],
-          })
+          relations: ['room', 'room.category'],
+        })
         : null;
 
       transaction.cashier = await getStaff(transaction.createdBy);
@@ -275,8 +275,8 @@ export class TransactionsService {
 
       transaction.admission = transaction.admission_id
         ? await this.admissionRepository.findOne(transaction.admission_id, {
-            relations: ['room', 'room.category'],
-          })
+          relations: ['room', 'room.category'],
+        })
         : null;
 
       transaction.cashier = await getStaff(transaction.createdBy);
