@@ -5,19 +5,11 @@ import { ServiceCategoryDto } from './dto/service.category.dto';
 import { ServiceCategory } from '../entities/service_category.entity';
 import { Service } from '../entities/service.entity';
 import { ServiceCategoryRepository } from './repositories/service_category.repository';
-import {
-  formatCurrency,
-  formatPID,
-  generatePDF,
-  parseDescriptionB,
-  parseSource,
-  slugify,
-} from '../../../common/utils/utils';
+import { formatCurrency, formatPID, generatePDF, parseSource, slugify, staffname } from '../../../common/utils/utils';
 import { PaginationOptionsInterface } from '../../../common/paginate';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import { Raw } from 'typeorm';
 import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repository';
-import { LabTestCategoryRepository } from '../lab/repositories/lab.category.repository';
 import { LabTestRepository } from '../lab/repositories/lab.test.repository';
 import { ServiceRepository } from './repositories/service.repository';
 import { ServiceCostRepository } from './repositories/service_cost.repository';
@@ -27,7 +19,8 @@ import { RoomCategoryRepository } from '../room/room.category.repository';
 import * as path from 'path';
 import * as moment from 'moment';
 import { PatientRepository } from 'src/modules/patient/repositories/patient.repository';
-
+import { StaffRepository } from 'src/modules/hr/staff/staff.repository';
+import * as startCase from 'lodash.startcase';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Excel = require('exceljs');
 
@@ -50,6 +43,8 @@ export class ServicesService {
     private roomCategoryRepository: RoomCategoryRepository,
     @InjectRepository(PatientRepository)
     private patientRepository: PatientRepository,
+    @InjectRepository(StaffRepository)
+    private staffRepository: StaffRepository,
   ) {}
 
   async getAllServices(options: PaginationOptionsInterface, params): Promise<Pagination> {
@@ -403,9 +398,13 @@ export class ServicesService {
     return category.softRemove();
   }
 
-  async printServices(params) {
+  async printServices(params, user) {
     try {
       const { services, patientId } = params;
+
+      const staff = await this.staffRepository.findOne(user.id, {
+        relations: ['department'],
+      });
 
       const idArr = services.split('-');
       console.log(idArr);
@@ -420,6 +419,10 @@ export class ServicesService {
       const filename = `bill-${date.getTime()}.pdf`;
       const filepath = path.resolve(__dirname, `../../../../public/outputs/${filename}`);
       const dob = moment(patient.date_of_birth, 'YYYY-MM-DD HH:mm:ss').format('YYYY-MM-DD');
+
+      const staffName = staffname(staff);
+
+      const department = startCase(staff.department.name);
 
       const results = serviceCost.map((t) => {
         return {
@@ -442,6 +445,8 @@ export class ServicesService {
         logo: `${process.env.ENDPOINT}/images/logo.png`,
         totalAmount: formatCurrency(total, true),
         displayDate: moment().format('DD-MMMM-YYYY h:mm A'),
+        staffName,
+        department,
       };
 
       await generatePDF('pending-bill', data);

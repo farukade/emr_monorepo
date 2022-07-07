@@ -13,6 +13,7 @@ import { DrugRepository } from '../../inventory/pharmacy/drug/drug.repository';
 import { RoomCategoryRepository } from '../room/room.category.repository';
 import { ServicesCategoryController } from './service-categories.controller';
 import { PatientRepository } from 'src/modules/patient/repositories/patient.repository';
+import { StaffRepository } from 'src/modules/hr/staff/staff.repository';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { PatientRepository } from 'src/modules/patient/repositories/patient.repo
       DrugRepository,
       RoomCategoryRepository,
       PatientRepository,
+      StaffRepository
     ]),
   ],
   providers: [ServicesService],
