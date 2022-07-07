@@ -91,10 +91,7 @@ export class ServicesController {
   }
 
   @Get('cost/print')
-  getServiceById(
-    @Query() urlParams,
-    @Request() req
-  ) {
+  getServiceById(@Query() urlParams, @Request() req) {
     return this.servicesService.printServices(urlParams, req.user);
   }
 }

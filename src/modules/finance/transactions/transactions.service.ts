@@ -24,6 +24,7 @@ import {
   parseSource,
   formatPatientId,
   parseDescriptionB,
+  staffname,
 } from '../../../common/utils/utils';
 import { Settings } from '../../settings/entities/settings.entity';
 import { ServiceCostRepository } from '../../settings/services/repositories/service_cost.repository';
@@ -44,7 +45,7 @@ import { ServiceCategoryRepository } from '../../settings/services/repositories/
 import { TransactionSearchDto } from './dto/search.dto';
 import { StaffRepository } from 'src/modules/hr/staff/staff.repository';
 import { OrderRepository } from '../../cafeteria/repositories/order.repository';
-import { startCase } from 'lodash';
+import * as startCase from 'lodash.startcase';
 
 @Injectable()
 export class TransactionsService {
@@ -1128,7 +1129,7 @@ export class TransactionsService {
       console.log(user);
 
       const staff = await this.staffRepository.findOne(user.id, {
-        relations: ['department']
+        relations: ['department'],
       });
 
       const query = this.transactionsRepository
@@ -1224,8 +1225,8 @@ export class TransactionsService {
       });
 
       const total = results.reduce((a, b) => a - b.rawAmount, 0);
-      
-      const staffName = startCase(staff.first_name + " " + staff.last_name);
+
+      const staffName = staffname(staff);
 
       const department = startCase(staff.department.name);
 
@@ -1239,7 +1240,7 @@ export class TransactionsService {
         totalAmount: formatCurrency(total, true),
         displayDate: moment().format('DD-MMMM-YYYY h:mm A'),
         staffName,
-        department
+        department,
       };
 
       await generatePDF('pending-bill', data);
@@ -1405,39 +1406,33 @@ export class TransactionsService {
       const limit = parseInt(params.limit);
       const offset = page * limit;
 
-      if (!staff_id) return { success: false, message: "staff not found" };
+      if (!staff_id) return { success: false, message: 'staff not found' };
       const staff = await this.staffRepository.findOne(staff_id);
 
-      const transactions = await this.transactionsRepository.find({
-        where: {
-          staff
-        }
-      });
+      const transactions = await this.transactionsRepository.find({ where: { staff } });
 
-      const query = this.transactionsRepository.createQueryBuilder('q')
-        .where('q.staff_id = :staff_id', { staff_id });
+      const query = this.transactionsRepository.createQueryBuilder('q').where('q.staff_id = :staff_id', { staff_id });
 
-        const total = await query.getCount();
+      const total = await query.getCount();
 
-        const results = await query.orderBy('q.updated_at', 'DESC').take(limit).skip(offset).getMany();
+      const results = await query.orderBy('q.updated_at', 'DESC').take(limit).skip(offset).getMany();
 
-        const totalPurchase = transactions.reduce((a, b) => a - b?.amount, 0);
-        const totalAmountPaid = transactions.reduce((a, b) => a - b?.amount_paid, 0);
+      const totalPurchase = transactions.reduce((a, b) => a - b?.amount, 0);
+      const totalAmountPaid = transactions.reduce((a, b) => a - b?.amount_paid, 0);
 
-        return {
-          success: true,
-          totalAmountPaid,
-          totalPurchase,
-          result: results,
-          lastPage: Math.ceil(total / limit),
-          itemsPerPage: limit,
-          totalItems: total,
-          currentPage: parseInt(params.page),
-        };
-
+      return {
+        success: true,
+        totalAmountPaid,
+        totalPurchase,
+        result: results,
+        lastPage: Math.ceil(total / limit),
+        itemsPerPage: limit,
+        totalItems: total,
+        currentPage: parseInt(params.page),
+      };
     } catch (error) {
       console.log(error);
-      return { success: true, message: error.message || "an error occurred" };
+      return { success: true, message: error.message || 'an error occurred' };
     }
   }
 }

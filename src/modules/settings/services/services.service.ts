@@ -12,6 +12,7 @@ import {
   parseDescriptionB,
   parseSource,
   slugify,
+  staffname,
 } from '../../../common/utils/utils';
 import { PaginationOptionsInterface } from '../../../common/paginate';
 import { Pagination } from '../../../common/paginate/paginate.interface';
@@ -28,8 +29,7 @@ import * as path from 'path';
 import * as moment from 'moment';
 import { PatientRepository } from 'src/modules/patient/repositories/patient.repository';
 import { StaffRepository } from 'src/modules/hr/staff/staff.repository';
-import { startCase } from 'lodash';
-
+import * as startCase from 'lodash.startcase';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Excel = require('exceljs');
 
@@ -411,9 +411,8 @@ export class ServicesService {
     try {
       const { services, patientId } = params;
 
-      
       const staff = await this.staffRepository.findOne(user.id, {
-        relations: ['department']
+        relations: ['department'],
       });
 
       const idArr = services.split('-');
@@ -429,8 +428,8 @@ export class ServicesService {
       const filename = `bill-${date.getTime()}.pdf`;
       const filepath = path.resolve(__dirname, `../../../../public/outputs/${filename}`);
       const dob = moment(patient.date_of_birth, 'YYYY-MM-DD HH:mm:ss').format('YYYY-MM-DD');
-      
-      const staffName = startCase(staff.first_name + " " + staff.last_name);
+
+      const staffName = staffname(staff);
 
       const department = startCase(staff.department.name);
 
@@ -456,7 +455,7 @@ export class ServicesService {
         totalAmount: formatCurrency(total, true),
         displayDate: moment().format('DD-MMMM-YYYY h:mm A'),
         staffName,
-        department
+        department,
       };
 
       await generatePDF('pending-bill', data);
