@@ -530,7 +530,7 @@ export class TransactionsService {
       let balance = 0;
       if (balance_amount > 0) {
         // save excess amount as credit
-        balance = await this.addCredit(transaction.patient, balance_amount, 'Credit Balance', username);
+        balance = await this.addCredit(transaction.patient, balance_amount, 'Credit Balance', username, null);
       } else if (balance_amount < 0) {
         // create debit transaction
         const duration = await getConnection()
@@ -735,7 +735,7 @@ export class TransactionsService {
       let balance = 0;
       if (balance_amount > 0) {
         // save excess amount as credit
-        balance = await this.addCredit(patient, balance_amount, 'Credit Balance', username);
+        balance = await this.addCredit(patient, balance_amount, 'Credit Balance', username, null);
       } else if (balance_amount < 0) {
         // create debit transaction
         const duration = await getConnection()
@@ -778,15 +778,59 @@ export class TransactionsService {
 
   async creditAccount(params, createdBy: string): Promise<any> {
     try {
-      const { patient_id, amount, payment_method } = params;
+      const { patient_id, amount, payment_method, description } = params;
 
       const patient = await this.patientRepository.findOne(patient_id, {
         relations: ['hmo'],
       });
 
-      const balance = await this.addCredit(patient, amount, payment_method, createdBy);
+      const balance = await this.addCredit(patient, amount, payment_method, createdBy, description);
 
       return { success: true, balance };
+    } catch (error) {
+      console.log(error);
+      return { success: false, message: error.message };
+    }
+  }
+
+  async debitAccount(params, createdBy: string): Promise<any> {
+    try {
+      const { patient_id, type, amount, description } = params;
+
+      const patient = await this.patientRepository.findOne(patient_id, {
+        relations: ['hmo'],
+      });
+
+      if (type === 'debit-charge') {
+        const debitTransaction: TransactionCreditDto = {
+          patient_id: patient.id,
+          username: createdBy,
+          sub_total: 0,
+          vat: 0,
+          amount: Math.abs(amount) * -1,
+          voucher_amount: 0,
+          amount_paid: 0,
+          change: 0,
+          description: description || 'debit account',
+          payment_method: null,
+          part_payment_expiry_date: null,
+          bill_source: type,
+          next_location: null,
+          status: -1,
+          hmo_approval_code: null,
+          transaction_details: null,
+          admission_id: null,
+          nicu_id: null,
+          staff_id: null,
+          lastChangedBy: null,
+        };
+
+        const debit = await postDebit(debitTransaction, null, null, null, null, patient.hmo);
+
+        return { success: true, data: debit };
+      }
+
+      return { success: true };
     } catch (error) {
       console.log(error);
       return { success: false, message: error.message };
@@ -1255,7 +1299,7 @@ export class TransactionsService {
     }
   }
 
-  async addCredit(patient, amount, payment_method, username) {
+  async addCredit(patient, amount, payment_method, username, description) {
     const data: TransactionCreditDto = {
       patient_id: patient.id,
       username,
@@ -1265,7 +1309,7 @@ export class TransactionsService {
       voucher_amount: 0,
       amount_paid: 0,
       change: 0,
-      description: 'credit account',
+      description: description || 'credit account',
       payment_method: payment_method || 'Cash',
       part_payment_expiry_date: null,
       bill_source: 'credit-deposit',
