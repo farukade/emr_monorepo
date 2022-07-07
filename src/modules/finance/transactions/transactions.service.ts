@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TransactionsRepository } from './transactions.repository';
 import * as moment from 'moment';
@@ -22,9 +22,9 @@ import {
   generatePDF,
   formatCurrency,
   parseSource,
-  parseDescription,
   formatPatientId,
   parseDescriptionB,
+  staffname,
 } from '../../../common/utils/utils';
 import { Settings } from '../../settings/entities/settings.entity';
 import { ServiceCostRepository } from '../../settings/services/repositories/service_cost.repository';
@@ -45,6 +45,7 @@ import { ServiceCategoryRepository } from '../../settings/services/repositories/
 import { TransactionSearchDto } from './dto/search.dto';
 import { StaffRepository } from 'src/modules/hr/staff/staff.repository';
 import { OrderRepository } from '../../cafeteria/repositories/order.repository';
+import * as startCase from 'lodash.startcase';
 
 @Injectable()
 export class TransactionsService {
@@ -529,7 +530,7 @@ export class TransactionsService {
       let balance = 0;
       if (balance_amount > 0) {
         // save excess amount as credit
-        balance = await this.addCredit(transaction.patient, balance_amount, 'Credit Balance', username);
+        balance = await this.addCredit(transaction.patient, balance_amount, 'Credit Balance', username, null);
       } else if (balance_amount < 0) {
         // create debit transaction
         const duration = await getConnection()
@@ -734,7 +735,7 @@ export class TransactionsService {
       let balance = 0;
       if (balance_amount > 0) {
         // save excess amount as credit
-        balance = await this.addCredit(patient, balance_amount, 'Credit Balance', username);
+        balance = await this.addCredit(patient, balance_amount, 'Credit Balance', username, null);
       } else if (balance_amount < 0) {
         // create debit transaction
         const duration = await getConnection()
@@ -777,15 +778,59 @@ export class TransactionsService {
 
   async creditAccount(params, createdBy: string): Promise<any> {
     try {
-      const { patient_id, amount, payment_method } = params;
+      const { patient_id, amount, payment_method, description } = params;
 
       const patient = await this.patientRepository.findOne(patient_id, {
         relations: ['hmo'],
       });
 
-      const balance = await this.addCredit(patient, amount, payment_method, createdBy);
+      const balance = await this.addCredit(patient, amount, payment_method, createdBy, description);
 
       return { success: true, balance };
+    } catch (error) {
+      console.log(error);
+      return { success: false, message: error.message };
+    }
+  }
+
+  async debitAccount(params, createdBy: string): Promise<any> {
+    try {
+      const { patient_id, type, amount, description } = params;
+
+      const patient = await this.patientRepository.findOne(patient_id, {
+        relations: ['hmo'],
+      });
+
+      if (type === 'debit-charge') {
+        const debitTransaction: TransactionCreditDto = {
+          patient_id: patient.id,
+          username: createdBy,
+          sub_total: 0,
+          vat: 0,
+          amount: Math.abs(amount) * -1,
+          voucher_amount: 0,
+          amount_paid: 0,
+          change: 0,
+          description: description || 'debit account',
+          payment_method: null,
+          part_payment_expiry_date: null,
+          bill_source: type,
+          next_location: null,
+          status: -1,
+          hmo_approval_code: null,
+          transaction_details: null,
+          admission_id: null,
+          nicu_id: null,
+          staff_id: null,
+          lastChangedBy: null,
+        };
+
+        const debit = await postDebit(debitTransaction, null, null, null, null, patient.hmo);
+
+        return { success: true, data: debit };
+      }
+
+      return { success: true };
     } catch (error) {
       console.log(error);
       return { success: false, message: error.message };
@@ -1122,9 +1167,14 @@ export class TransactionsService {
     }
   }
 
-  async printBill(params: any): Promise<any> {
+  async printBill(params: any, user): Promise<any> {
     try {
       const { start_date, end_date, patient_id, service_id, status, transId } = params;
+      console.log(user);
+
+      const staff = await this.staffRepository.findOne(user.id, {
+        relations: ['department'],
+      });
 
       const query = this.transactionsRepository
         .createQueryBuilder('q')
@@ -1220,6 +1270,10 @@ export class TransactionsService {
 
       const total = results.reduce((a, b) => a - b.rawAmount, 0);
 
+      const staffName = staffname(staff);
+
+      const department = startCase(staff.department.name);
+
       const data = {
         patient,
         age: moment().diff(dob, 'years'),
@@ -1229,6 +1283,8 @@ export class TransactionsService {
         logo: `${process.env.ENDPOINT}/images/logo.png`,
         totalAmount: formatCurrency(total, true),
         displayDate: moment().format('DD-MMMM-YYYY h:mm A'),
+        staffName,
+        department,
       };
 
       await generatePDF('pending-bill', data);
@@ -1243,7 +1299,7 @@ export class TransactionsService {
     }
   }
 
-  async addCredit(patient, amount, payment_method, username) {
+  async addCredit(patient, amount, payment_method, username, description) {
     const data: TransactionCreditDto = {
       patient_id: patient.id,
       username,
@@ -1253,7 +1309,7 @@ export class TransactionsService {
       voucher_amount: 0,
       amount_paid: 0,
       change: 0,
-      description: 'credit account',
+      description: description || 'credit account',
       payment_method: payment_method || 'Cash',
       part_payment_expiry_date: null,
       bill_source: 'credit-deposit',
@@ -1393,46 +1449,50 @@ export class TransactionsService {
     }
   }
 
-  async staffTransactions(params) {
+  async staffTransactions(options: PaginationOptionsInterface, params) {
     try {
       const { staff_id } = params;
-      const page = parseInt(params.page) - 1;
-      const limit = parseInt(params.limit);
-      const offset = page * limit;
 
-      if (!staff_id) return { success: false, message: "staff not found" };
+      const page = options.page - 1;
+
       const staff = await this.staffRepository.findOne(staff_id);
+      if (!staff) {
+        return { success: false, message: 'staff not found' };
+      }
 
-      const transactions = await this.transactionsRepository.find({
-        where: {
-          staff
-        }
-      });
+      const transactions = await this.transactionsRepository.find({ where: { staff } });
 
-      const query = this.transactionsRepository.createQueryBuilder('q')
-        .where('q.staff_id = :staff_id', { staff_id });
+      const query = this.transactionsRepository.createQueryBuilder('q').leftJoinAndSelect('q.patient', 'patient');
+
+      query.andWhere(
+        new Brackets((qb) => {
+          qb.where('q.staff_id = :staff_id', { staff_id }).orWhere('patient.staff_id = :staff_id', { staff_id });
+        }),
+      );
 
       const total = await query.getCount();
 
-      const results = await query.orderBy('q.updated_at', 'DESC').take(limit).skip(offset).getMany();
+      const results = await query
+        .orderBy('q.updated_at', 'DESC')
+        .take(options.limit)
+        .skip(page * options.limit)
+        .getMany();
 
       const totalPurchase = transactions.reduce((a, b) => a - b?.amount, 0);
       const totalAmountPaid = transactions.reduce((a, b) => a - b?.amount_paid, 0);
 
       return {
-        success: true,
+        result: results,
+        lastPage: Math.ceil(total / options.limit),
+        itemsPerPage: options.limit,
+        totalItems: total,
+        currentPage: options.page,
         totalAmountPaid,
         totalPurchase,
-        result: results,
-        lastPage: Math.ceil(total / limit),
-        itemsPerPage: limit,
-        totalItems: total,
-        currentPage: parseInt(params.page),
       };
-
     } catch (error) {
       console.log(error);
-      return { success: true, message: error.message || "an error occurred" };
+      throw new BadRequestException('could not fetch transactions');
     }
   }
 }

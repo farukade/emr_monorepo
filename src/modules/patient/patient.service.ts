@@ -53,6 +53,7 @@ import { IvfEnrollmentRepository } from './ivf/ivf_enrollment.repository';
 import { QueueService } from '../queue/queue.service';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { Error } from 'src/common/interface/error.interface';
 
 @Injectable()
 export class PatientService {
@@ -157,7 +158,10 @@ export class PatientService {
         patient.nextOfKin = await this.nextOfKinRepository.findOne(patient.next_of_kin_id);
       }
 
-      patient.admission = patient.admission_id ? await this.admissionRepository.findOne(patient.admission_id) : null;
+      patient.admission = patient.admission_id
+        ? await this.admissionRepository.findOne(patient.admission_id, { relations: ['room', 'room.category'] })
+        : null;
+
       patient.nicu = patient.nicu_id ? await this.admissionRepository.findOne(patient.nicu_id) : null;
 
       patient.balance = await getBalance(patient.id);
@@ -168,9 +172,7 @@ export class PatientService {
         patient.staff = await this.staffRepository.findOne(patient.staff_id);
       }
 
-      patient.admission = patient.admission_id
-        ? await this.admissionRepository.findOne(patient.admission_id, { relations: ['room', 'room.category'] })
-        : null;
+      patient.mother = patient.mother_id ? await this.patientRepository.findOne(patient.mother_id) : null;
     }
 
     return {
@@ -222,6 +224,12 @@ export class PatientService {
         patient.nextOfKin = await this.nextOfKinRepository.findOne(patient.next_of_kin_id);
       }
 
+      patient.admission = patient.admission_id
+        ? await this.admissionRepository.findOne(patient.admission_id, { relations: ['room', 'room.category'] })
+        : null;
+
+      patient.nicu = patient.nicu_id ? await this.admissionRepository.findOne(patient.nicu_id) : null;
+
       patient.balance = await getBalance(patient.id);
       patient.outstanding = await getOutstanding(patient.id);
       patient.lastAppointment = await getLastAppointment(patient.id);
@@ -230,10 +238,7 @@ export class PatientService {
         patient.staff = await this.staffRepository.findOne(patient.staff_id);
       }
 
-      patient.admission = patient.admission_id
-        ? await this.admissionRepository.findOne(patient.admission_id, { relations: ['room', 'room.category'] })
-        : null;
-      patient.nicu = patient.nicu_id ? await this.admissionRepository.findOne(patient.nicu_id) : null;
+      patient.mother = patient.mother_id ? await this.patientRepository.findOne(patient.mother_id) : null;
     }
 
     return patients;
@@ -275,11 +280,9 @@ export class PatientService {
       const patient = await this.patientRepository.savePatient(patientDto, nok, hmo, createdBy, staff);
 
       const splits = patient.other_names.split(' ');
-      const message = `Dear ${patient.surname} ${
-        splits.length > 0 ? splits[0] : patient.other_names
-      }, welcome to the DEDA Family. Your ID/Folder number is ${formatPID(
-        patient.id,
-      )}. Kindly save the number and provide it at all your appointment visits. Thank you.`;
+      const other_name = splits.length > 0 ? splits[0] : patient.other_names;
+      const pid = formatPID(patient.id);
+      const message = `Dear ${patient.surname} ${other_name}, welcome to the DEDA Family. Your ID/Folder number is ${pid}. Kindly save the number and provide it at all your appointment visits. Thank you.`;
 
       const data: TransactionCreditDto = {
         patient_id: patient.id,
@@ -327,7 +330,9 @@ export class PatientService {
       const balance = await getBalance(patient.id);
       const outstanding = await getOutstanding(patient.id);
 
-      const pat = { ...patient, outstanding, balance, staff };
+      const mother = patient.mother_id ? await this.patientRepository.findOne(patient.mother_id) : null;
+
+      const pat = { ...patient, outstanding, balance, staff, mother };
 
       return { success: true, patient: pat };
     } catch (err) {
@@ -393,6 +398,7 @@ export class PatientService {
       patient.lastChangedBy = updatedBy;
       patient.hmo = hmo;
       patient.enrollee_id = patientDto.enrollee_id;
+      patient.mother_id = patientDto.mother_id || null;
 
       await patient.save();
 
@@ -467,7 +473,9 @@ export class PatientService {
         result.staff = await this.staffRepository.findOne(patientDto.staff_id);
       }
 
-      return { success: true, patient: { ...result, balance, outstanding, lastAppointment } };
+      const mother = result.mother_id ? await this.patientRepository.findOne(result.mother_id) : null;
+
+      return { success: true, patient: { ...result, balance, outstanding, lastAppointment, mother } };
     } catch (err) {
       console.log(err);
       await queryRunner.rollbackTransaction();
@@ -856,7 +864,7 @@ export class PatientService {
 
       const labour = await this.labourEnrollmentRepository.findOne({ where: { patient, status: 0 } });
 
-      let diagonsis = [];
+      let diagnosis = [];
       for (const item of diagnoses) {
         const patientDiagnosis = new PatientNote();
         patientDiagnosis.diagnosis = item.diagnosis;
@@ -886,47 +894,67 @@ export class PatientService {
           alertItem = await alert.save();
         }
 
-        diagonsis = [...diagonsis, { ...rs, alertItem }];
+        diagnosis = [...diagnosis, { ...rs, alertItem }];
       }
 
-      return { success: true, diagonsis };
+      return { success: true, diagnosis };
     } catch (e) {
       console.log(e);
       return { success: false, message: e.message };
     }
   }
 
-  async getDiagnoses(id, urlParams: any): Promise<PatientNote[]> {
-    const { startDate, endDate, status, admission_id, nicu_id } = urlParams;
+  async getDiagnoses(id, urlParams: any): Promise<PatientNote[] | Error> {
+    try {
+      const { startDate, endDate, status, admission_id, nicu_id, group_by } = urlParams;
 
-    const query = this.patientNoteRepository
-      .createQueryBuilder('q')
-      .where('q.patient_id = :id', { id })
-      .andWhere('q.type = :type', { type: 'diagnosis' });
+      if (group_by && group_by !== '') {
+        const rs = await this.patientNoteRepository.query(
+          status && status !== ''
+            ? `SELECT json_agg(diagnosis) as diagnosis, MAX(id) as id FROM patient_notes WHERE patient_id = ${id} AND type = 'diagnosis' AND status = '${status}' GROUP BY diagnosis #>> '{code}'`
+            : `SELECT json_agg(diagnosis) as diagnosis, MAX(id) as id FROM patient_notes WHERE patient_id = ${id} AND type = 'diagnosis' GROUP BY diagnosis #>> '{code}'`,
+        );
 
-    if (startDate && startDate !== '') {
-      const start = moment(startDate).endOf('day').toISOString();
-      query.andWhere(`q.createdAt >= '${start}'`);
+        let note_ids = [];
+        for (const item of rs) {
+          note_ids = [...note_ids, item.id];
+        }
+
+        return await this.patientNoteRepository.findByIds(note_ids);
+      }
+
+      const query = this.patientNoteRepository
+        .createQueryBuilder('q')
+        .where('q.patient_id = :id', { id })
+        .andWhere('q.type = :type', { type: 'diagnosis' });
+
+      if (startDate && startDate !== '') {
+        const start = moment(startDate).endOf('day').toISOString();
+        query.andWhere(`q.createdAt >= '${start}'`);
+      }
+
+      if (endDate && endDate !== '') {
+        const end = moment(endDate).endOf('day').toISOString();
+        query.andWhere(`q.createdAt <= '${end}'`);
+      }
+
+      if (admission_id && admission_id !== '') {
+        query.andWhere('q.admission_id = :id', { id: admission_id });
+      }
+
+      if (nicu_id && nicu_id !== '') {
+        query.andWhere('q.nicu_id = :id', { id: nicu_id });
+      }
+
+      if (status && status !== '') {
+        query.andWhere('q.status = :status', { status });
+      }
+
+      return await query.orderBy('q.createdAt', 'DESC').getMany();
+    } catch (error) {
+      console.log(error);
+      return { success: false, message: error.message || 'an error occurred' };
     }
-
-    if (endDate && endDate !== '') {
-      const end = moment(endDate).endOf('day').toISOString();
-      query.andWhere(`q.createdAt <= '${end}'`);
-    }
-
-    if (admission_id && admission_id !== '') {
-      query.andWhere('q.admission_id = :id', { id: admission_id });
-    }
-
-    if (nicu_id && nicu_id !== '') {
-      query.andWhere('q.nicu_id = :id', { id: nicu_id });
-    }
-
-    if (status && status !== '') {
-      query.andWhere('q.status = :status', { status });
-    }
-
-    return await query.orderBy('q.createdAt', 'DESC').getMany();
   }
 
   async getAlerts(id: number, params): Promise<PatientAlert[]> {

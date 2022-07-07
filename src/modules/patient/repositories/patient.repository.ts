@@ -26,6 +26,7 @@ export class PatientRepository extends Repository<Patient> {
     patient.profile_pic = patientDto.avatar || '';
     patient.hmo = hmo;
     patient.enrollee_id = patientDto.enrollee_id;
+    patient.mother_id = patientDto.mother_id || null;
 
     if (staff) {
       patient.staff = staff;

@@ -73,6 +73,12 @@ export class TransactionsController {
     return this.transactionsService.creditAccount(params, req.user.username);
   }
 
+  @Post('/debit-account')
+  @UsePipes(ValidationPipe)
+  debitAccount(@Body() params, @Request() req): Promise<any> {
+    return this.transactionsService.debitAccount(params, req.user.username);
+  }
+
   @Post('/transfer-credit')
   @UsePipes(ValidationPipe)
   transferCredit(@Body() params, @Request() req): Promise<any> {
@@ -109,8 +115,8 @@ export class TransactionsController {
   }
 
   @Get('print')
-  printBill(@Query() urlParams): Promise<any> {
-    return this.transactionsService.printBill(urlParams);
+  printBill(@Query() urlParams, @Request() req): Promise<any> {
+    return this.transactionsService.printBill(urlParams, req.user);
   }
 
   @Get('search')
@@ -119,9 +125,9 @@ export class TransactionsController {
   }
 
   @Get('staff')
-  getStaffTransactions(
-    @Query() urlParams
-  ) {
-    return this.transactionsService.staffTransactions(urlParams);
+  getStaffTransactions(@Query() urlParams, @Request() request) {
+    const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
+    const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
+    return this.transactionsService.staffTransactions({ page, limit }, urlParams);
   }
 }

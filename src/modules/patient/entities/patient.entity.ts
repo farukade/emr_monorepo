@@ -1,5 +1,5 @@
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
-import { Entity, Column, JoinColumn, OneToMany, ManyToOne } from 'typeorm';
+import { Entity, Column, JoinColumn, OneToMany, ManyToOne, Index } from 'typeorm';
 import { PatientNOK } from './patient-next-of-kin.entity';
 import { Appointment } from '../../frontdesk/appointment/appointment.entity';
 import { Transaction } from '../../finance/transactions/transaction.entity';
@@ -10,18 +10,21 @@ import { IvfEmbryologyEntity } from '../ivf/embryology/embryology.entity';
 
 @Entity({ name: 'patients' })
 export class Patient extends CustomBaseEntity {
+  @Index()
   @Column({ type: 'varchar', nullable: true })
   legacy_patient_id: string;
 
   @Column({ type: 'varchar', nullable: true })
   title: string;
 
+  @Index()
   @Column({ type: 'varchar' })
   surname: string;
 
   @Column({ type: 'varchar', length: 300, nullable: true })
   profile_pic: string;
 
+  @Index()
   @Column({ type: 'varchar' })
   other_names: string;
 
@@ -37,6 +40,7 @@ export class Patient extends CustomBaseEntity {
   @Column({ type: 'varchar', nullable: true })
   email: string;
 
+  @Index()
   @Column({ type: 'varchar', nullable: true })
   phone_number: string;
 
@@ -117,4 +121,7 @@ export class Patient extends CustomBaseEntity {
 
   @OneToMany((type) => IvfEmbryologyEntity, (embryology) => embryology.patient)
   embryology: IvfEmbryologyEntity;
+
+  @Column({ nullable: true })
+  mother_id: number;
 }
