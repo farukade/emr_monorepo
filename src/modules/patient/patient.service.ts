@@ -158,7 +158,10 @@ export class PatientService {
         patient.nextOfKin = await this.nextOfKinRepository.findOne(patient.next_of_kin_id);
       }
 
-      patient.admission = patient.admission_id ? await this.admissionRepository.findOne(patient.admission_id) : null;
+      patient.admission = patient.admission_id
+        ? await this.admissionRepository.findOne(patient.admission_id, { relations: ['room', 'room.category'] })
+        : null;
+
       patient.nicu = patient.nicu_id ? await this.admissionRepository.findOne(patient.nicu_id) : null;
 
       patient.balance = await getBalance(patient.id);
@@ -169,9 +172,7 @@ export class PatientService {
         patient.staff = await this.staffRepository.findOne(patient.staff_id);
       }
 
-      patient.admission = patient.admission_id
-        ? await this.admissionRepository.findOne(patient.admission_id, { relations: ['room', 'room.category'] })
-        : null;
+      patient.mother = patient.mother_id ? await this.patientRepository.findOne(patient.mother_id) : null;
     }
 
     return {
@@ -223,6 +224,12 @@ export class PatientService {
         patient.nextOfKin = await this.nextOfKinRepository.findOne(patient.next_of_kin_id);
       }
 
+      patient.admission = patient.admission_id
+        ? await this.admissionRepository.findOne(patient.admission_id, { relations: ['room', 'room.category'] })
+        : null;
+
+      patient.nicu = patient.nicu_id ? await this.admissionRepository.findOne(patient.nicu_id) : null;
+
       patient.balance = await getBalance(patient.id);
       patient.outstanding = await getOutstanding(patient.id);
       patient.lastAppointment = await getLastAppointment(patient.id);
@@ -231,10 +238,7 @@ export class PatientService {
         patient.staff = await this.staffRepository.findOne(patient.staff_id);
       }
 
-      patient.admission = patient.admission_id
-        ? await this.admissionRepository.findOne(patient.admission_id, { relations: ['room', 'room.category'] })
-        : null;
-      patient.nicu = patient.nicu_id ? await this.admissionRepository.findOne(patient.nicu_id) : null;
+      patient.mother = patient.mother_id ? await this.patientRepository.findOne(patient.mother_id) : null;
     }
 
     return patients;
@@ -326,7 +330,9 @@ export class PatientService {
       const balance = await getBalance(patient.id);
       const outstanding = await getOutstanding(patient.id);
 
-      const pat = { ...patient, outstanding, balance, staff };
+      const mother = patient.mother_id ? await this.patientRepository.findOne(patient.mother_id) : null;
+
+      const pat = { ...patient, outstanding, balance, staff, mother };
 
       return { success: true, patient: pat };
     } catch (err) {
@@ -392,6 +398,7 @@ export class PatientService {
       patient.lastChangedBy = updatedBy;
       patient.hmo = hmo;
       patient.enrollee_id = patientDto.enrollee_id;
+      patient.mother_id = patientDto.mother_id || null;
 
       await patient.save();
 
@@ -466,7 +473,9 @@ export class PatientService {
         result.staff = await this.staffRepository.findOne(patientDto.staff_id);
       }
 
-      return { success: true, patient: { ...result, balance, outstanding, lastAppointment } };
+      const mother = result.mother_id ? await this.patientRepository.findOne(result.mother_id) : null;
+
+      return { success: true, patient: { ...result, balance, outstanding, lastAppointment, mother } };
     } catch (err) {
       console.log(err);
       await queryRunner.rollbackTransaction();

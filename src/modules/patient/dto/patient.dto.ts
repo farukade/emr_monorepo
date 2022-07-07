@@ -54,4 +54,6 @@ export class PatientDto {
   referredBy: string;
 
   enrollee_id: string;
+
+  mother_id: any;
 }
