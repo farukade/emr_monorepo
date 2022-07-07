@@ -5,20 +5,11 @@ import { ServiceCategoryDto } from './dto/service.category.dto';
 import { ServiceCategory } from '../entities/service_category.entity';
 import { Service } from '../entities/service.entity';
 import { ServiceCategoryRepository } from './repositories/service_category.repository';
-import {
-  formatCurrency,
-  formatPID,
-  generatePDF,
-  parseDescriptionB,
-  parseSource,
-  slugify,
-  staffname,
-} from '../../../common/utils/utils';
+import { formatCurrency, formatPID, generatePDF, parseSource, slugify, staffname } from '../../../common/utils/utils';
 import { PaginationOptionsInterface } from '../../../common/paginate';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import { Raw } from 'typeorm';
 import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repository';
-import { LabTestCategoryRepository } from '../lab/repositories/lab.category.repository';
 import { LabTestRepository } from '../lab/repositories/lab.test.repository';
 import { ServiceRepository } from './repositories/service.repository';
 import { ServiceCostRepository } from './repositories/service_cost.repository';

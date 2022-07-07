@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TransactionsRepository } from './transactions.repository';
 import * as moment from 'moment';
@@ -173,8 +173,8 @@ export class TransactionsService {
 
       transaction.admission = transaction.admission_id
         ? await this.admissionRepository.findOne(transaction.admission_id, {
-          relations: ['room', 'room.category'],
-        })
+            relations: ['room', 'room.category'],
+          })
         : null;
 
       transaction.cashier = await getStaff(transaction.createdBy);
@@ -275,8 +275,8 @@ export class TransactionsService {
 
       transaction.admission = transaction.admission_id
         ? await this.admissionRepository.findOne(transaction.admission_id, {
-          relations: ['room', 'room.category'],
-        })
+            relations: ['room', 'room.category'],
+          })
         : null;
 
       transaction.cashier = await getStaff(transaction.createdBy);
@@ -1399,40 +1399,51 @@ export class TransactionsService {
     }
   }
 
-  async staffTransactions(params) {
+  async staffTransactions(options: PaginationOptionsInterface, params) {
     try {
       const { staff_id } = params;
-      const page = parseInt(params.page) - 1;
-      const limit = parseInt(params.limit);
-      const offset = page * limit;
 
-      if (!staff_id) return { success: false, message: 'staff not found' };
+      const page = options.page - 1;
+
       const staff = await this.staffRepository.findOne(staff_id);
+      if (!staff) {
+        return { success: false, message: 'staff not found' };
+      }
 
       const transactions = await this.transactionsRepository.find({ where: { staff } });
 
-      const query = this.transactionsRepository.createQueryBuilder('q').where('q.staff_id = :staff_id', { staff_id });
+      const query = this.transactionsRepository.createQueryBuilder('q').leftJoinAndSelect('q.patient', 'patient');
+
+      query.andWhere(
+        new Brackets((qb) => {
+          qb.where('q.staff_id = :staff_id', { staff_id }).orWhere('patient.staff_id = :staff_id', { staff_id });
+        }),
+      );
 
       const total = await query.getCount();
 
-      const results = await query.orderBy('q.updated_at', 'DESC').take(limit).skip(offset).getMany();
+      const results = await query
+        .orderBy('q.updated_at', 'DESC')
+        .take(options.limit)
+        .skip(page * options.limit)
+        .getMany();
 
       const totalPurchase = transactions.reduce((a, b) => a - b?.amount, 0);
       const totalAmountPaid = transactions.reduce((a, b) => a - b?.amount_paid, 0);
 
       return {
-        success: true,
+        result: results,
+        lastPage: Math.ceil(total / options.limit),
+        itemsPerPage: options.limit,
+        totalItems: total,
+        currentPage: options.page,
+
         totalAmountPaid,
         totalPurchase,
-        result: results,
-        lastPage: Math.ceil(total / limit),
-        itemsPerPage: limit,
-        totalItems: total,
-        currentPage: parseInt(params.page),
       };
     } catch (error) {
       console.log(error);
-      return { success: true, message: error.message || 'an error occurred' };
+      throw new BadRequestException('could not fetch transactions');
     }
   }
 }

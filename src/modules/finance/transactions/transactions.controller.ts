@@ -119,9 +119,9 @@ export class TransactionsController {
   }
 
   @Get('staff')
-  getStaffTransactions(
-    @Query() urlParams
-  ) {
-    return this.transactionsService.staffTransactions(urlParams);
+  getStaffTransactions(@Query() urlParams, @Request() request) {
+    const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
+    const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
+    return this.transactionsService.staffTransactions({ page, limit }, urlParams);
   }
 }
