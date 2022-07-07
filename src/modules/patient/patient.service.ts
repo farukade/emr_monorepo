@@ -105,7 +105,7 @@ export class PatientService {
     private ancEnrollmentRepository: AntenatalEnrollmentRepository,
     @InjectRepository(IvfEnrollmentRepository)
     private ivfEnrollmentRepository: IvfEnrollmentRepository,
-  ) { }
+  ) {}
 
   async listAllPatients(options: PaginationOptionsInterface, params): Promise<Pagination> {
     const { startDate, endDate, q, status } = params;
@@ -276,10 +276,9 @@ export class PatientService {
       const patient = await this.patientRepository.savePatient(patientDto, nok, hmo, createdBy, staff);
 
       const splits = patient.other_names.split(' ');
-      const message = `Dear ${patient.surname} ${splits.length > 0 ? splits[0] : patient.other_names
-        }, welcome to the DEDA Family. Your ID/Folder number is ${formatPID(
-          patient.id,
-        )}. Kindly save the number and provide it at all your appointment visits. Thank you.`;
+      const other_name = splits.length > 0 ? splits[0] : patient.other_names;
+      const pid = formatPID(patient.id);
+      const message = `Dear ${patient.surname} ${other_name}, welcome to the DEDA Family. Your ID/Folder number is ${pid}. Kindly save the number and provide it at all your appointment visits. Thank you.`;
 
       const data: TransactionCreditDto = {
         patient_id: patient.id,
@@ -856,7 +855,7 @@ export class PatientService {
 
       const labour = await this.labourEnrollmentRepository.findOne({ where: { patient, status: 0 } });
 
-      let diagonsis = [];
+      let diagnosis = [];
       for (const item of diagnoses) {
         const patientDiagnosis = new PatientNote();
         patientDiagnosis.diagnosis = item.diagnosis;
@@ -886,10 +885,10 @@ export class PatientService {
           alertItem = await alert.save();
         }
 
-        diagonsis = [...diagonsis, { ...rs, alertItem }];
+        diagnosis = [...diagnosis, { ...rs, alertItem }];
       }
 
-      return { success: true, diagonsis };
+      return { success: true, diagnosis };
     } catch (e) {
       console.log(e);
       return { success: false, message: e.message };
@@ -898,9 +897,22 @@ export class PatientService {
 
   async getDiagnoses(id, urlParams: any): Promise<PatientNote[] | Error> {
     try {
-      const { startDate, endDate, status, admission_id, nicu_id } = urlParams;
+      const { startDate, endDate, status, admission_id, nicu_id, group_by } = urlParams;
 
-      let result = [];
+      if (group_by && group_by !== '') {
+        const rs = await this.patientNoteRepository.query(
+          status && status !== ''
+            ? `SELECT json_agg(diagnosis) as diagnosis, MAX(id) as id FROM patient_notes WHERE patient_id = ${id} AND type = 'diagnosis' AND status = '${status}' GROUP BY diagnosis #>> '{code}'`
+            : `SELECT json_agg(diagnosis) as diagnosis, MAX(id) as id FROM patient_notes WHERE patient_id = ${id} AND type = 'diagnosis' GROUP BY diagnosis #>> '{code}'`,
+        );
+
+        let note_ids = [];
+        for (const item of rs) {
+          note_ids = [...note_ids, item.id];
+        }
+
+        return await this.patientNoteRepository.findByIds(note_ids);
+      }
 
       const query = this.patientNoteRepository
         .createQueryBuilder('q')
@@ -929,21 +941,10 @@ export class PatientService {
         query.andWhere('q.status = :status', { status });
       }
 
-      const rs = await query.orderBy('q.createdAt', 'DESC').getMany();
-      let test = [];
-
-      for (const item of rs) {
-        if (!test.includes(item.diagnosis.id)) {
-          result = [...result, item];
-          test = [item.diagnosis.id, ...test];
-        };
-      };
-
-      if(result.length) return result;
-      return { success: false, message: "result no found" };
+      return await query.orderBy('q.createdAt', 'DESC').getMany();
     } catch (error) {
       console.log(error);
-      return { success: false, message: error.message || "an error occured" };
+      return { success: false, message: error.message || 'an error occurred' };
     }
   }
 

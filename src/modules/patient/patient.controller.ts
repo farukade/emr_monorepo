@@ -154,7 +154,7 @@ export class PatientController {
 
   @UseGuards(AuthGuard('jwt'))
   @Get(':id/diagnoses')
-  getDiagnoses(@Param('id') id: string, @Query() urlParams): Promise<PatientNote[] | Error>  {
+  getDiagnoses(@Param('id') id: string, @Query() urlParams): Promise<PatientNote[] | Error> {
     return this.patientService.getDiagnoses(id, urlParams);
   }
 
