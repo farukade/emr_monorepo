@@ -76,7 +76,7 @@ export class TransactionsService {
     private staffRepository: StaffRepository,
     @InjectRepository(OrderRepository)
     private orderRepository: OrderRepository,
-  ) {}
+  ) { }
 
   async fetchList(options: PaginationOptionsInterface, params): Promise<Pagination> {
     const { startDate, endDate, patient_id, staff_id, service_id, status } = params;
@@ -172,8 +172,8 @@ export class TransactionsService {
 
       transaction.admission = transaction.admission_id
         ? await this.admissionRepository.findOne(transaction.admission_id, {
-            relations: ['room', 'room.category'],
-          })
+          relations: ['room', 'room.category'],
+        })
         : null;
 
       transaction.cashier = await getStaff(transaction.createdBy);
@@ -274,8 +274,8 @@ export class TransactionsService {
 
       transaction.admission = transaction.admission_id
         ? await this.admissionRepository.findOne(transaction.admission_id, {
-            relations: ['room', 'room.category'],
-          })
+          relations: ['room', 'room.category'],
+        })
         : null;
 
       transaction.cashier = await getStaff(transaction.createdBy);
@@ -1278,7 +1278,7 @@ export class TransactionsService {
 
   async searchRecords(data: TransactionSearchDto) {
     try {
-      const { term, startDate, endDate, bill_source, filter } = data;
+      const { term, startDate, endDate, bill_source, filter, hmo_id } = data;
       const page = parseInt(data.page) - 1;
       const limit = parseInt(data.limit);
       const offset = page * limit;
@@ -1289,12 +1289,13 @@ export class TransactionsService {
       if (term && term !== '') {
         nums = term.match(/(\d+)/g);
         chars = term.replace(/[^a-z]+/gi, '');
-      }
+      };
 
       const query = this.transactionsRepository
         .createQueryBuilder('q')
         .leftJoinAndSelect('q.patient', 'patient')
         .leftJoinAndSelect('q.patientRequestItem', 'patient_requests');
+
       switch (bill_source) {
         case 'drugs':
           query.leftJoinAndSelect('patient_requests.drugGeneric', 'drug_generic');
@@ -1309,11 +1310,11 @@ export class TransactionsService {
           query.leftJoinAndSelect('q.staff', 'staff');
           break;
 
-        default:
-          return { success: false, message: 'please enter a valid bill source' };
-      }
+      };
 
-      query.where('q.bill_source = :bill_source', { bill_source });
+      if (bill_source && bill_source != '') {
+        query.andWhere('q.bill_source = :bill_source', { bill_source });
+      };
 
       //might include filter for cafeteria transactions only;
       switch (filter) {
@@ -1340,7 +1341,7 @@ export class TransactionsService {
           query.andWhere(`q.createdAt <= '${end}'`);
           console.log(startDate, endDate, 3);
         }
-      }
+      };
 
       //query if search term contains alphabets
       if (chars && chars !== '') {
@@ -1369,11 +1370,16 @@ export class TransactionsService {
         const digits = parseInt(nums[0]);
 
         query.andWhere('patient.id = :id', { id: digits }).andWhere('q.amount = :amount', { amount: digits });
-      }
+      };
+
+      if (parseInt(hmo_id)) {
+        query.leftJoinAndSelect('q.hmo', 'hmo')
+          .andWhere('hmo.id = :id', { id: parseInt(hmo_id) });
+      };
 
       const total = await query.getCount();
-
       const results = await query.orderBy('q.updated_at', 'DESC').take(limit).skip(offset).getMany();
+
       return {
         success: true,
         result: results,
@@ -1406,23 +1412,23 @@ export class TransactionsService {
       const query = this.transactionsRepository.createQueryBuilder('q')
         .where('q.staff_id = :staff_id', { staff_id });
 
-        const total = await query.getCount();
+      const total = await query.getCount();
 
-        const results = await query.orderBy('q.updated_at', 'DESC').take(limit).skip(offset).getMany();
+      const results = await query.orderBy('q.updated_at', 'DESC').take(limit).skip(offset).getMany();
 
-        const totalPurchase = transactions.reduce((a, b) => a - b?.amount, 0);
-        const totalAmountPaid = transactions.reduce((a, b) => a - b?.amount_paid, 0);
+      const totalPurchase = transactions.reduce((a, b) => a - b?.amount, 0);
+      const totalAmountPaid = transactions.reduce((a, b) => a - b?.amount_paid, 0);
 
-        return {
-          success: true,
-          totalAmountPaid,
-          totalPurchase,
-          result: results,
-          lastPage: Math.ceil(total / limit),
-          itemsPerPage: limit,
-          totalItems: total,
-          currentPage: parseInt(params.page),
-        };
+      return {
+        success: true,
+        totalAmountPaid,
+        totalPurchase,
+        result: results,
+        lastPage: Math.ceil(total / limit),
+        itemsPerPage: limit,
+        totalItems: total,
+        currentPage: parseInt(params.page),
+      };
 
     } catch (error) {
       console.log(error);
