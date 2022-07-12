@@ -937,14 +937,47 @@ export class TransactionsService {
           relations: ['patient', 'staff', 'appointment', 'hmo', 'admission', 'nicu'],
         });
 
+        const balance = await getDepositBalance(transaction.patient.id, true);
+        const remaining = balance - Math.abs(item.amount);
+
+        let payment_amount = Math.abs(item.amount);
+        if (remaining < 0) {
+          payment_amount = balance;
+
+          const debit: TransactionCreditDto = {
+            patient_id: transaction.patient.id,
+            username,
+            sub_total: transaction.sub_total,
+            vat: transaction.vat,
+            amount: remaining,
+            voucher_amount: 0,
+            amount_paid: 0,
+            change: 0,
+            description: transaction.description,
+            payment_method: null,
+            part_payment_expiry_date: null,
+            bill_source: transaction.bill_source,
+            next_location: transaction.next_location || null,
+            status: -1,
+            hmo_approval_code: null,
+            transaction_details: transaction.transaction_details || null,
+            admission_id: transaction.admission?.id || null,
+            nicu_id: transaction.nicu?.id || null,
+            staff_id: transaction.staff?.id || null,
+            lastChangedBy: null,
+          };
+
+          await postDebit(debit, transaction.service, null, transaction.patientRequestItem, null, transaction.hmo);
+        }
+
         const data: TransactionCreditDto = {
           patient_id: transaction.patient.id,
           username,
           sub_total: 0,
           vat: 0,
-          amount: Math.abs(item.amount),
+          amount: payment_amount,
           voucher_amount: 0,
-          amount_paid: 0,
+          amount_paid: payment_amount,
           change: 0,
           description: transaction.description,
           payment_method,
@@ -957,7 +990,7 @@ export class TransactionsService {
           admission_id: transaction.admission?.id || null,
           nicu_id: transaction.nicu?.id || null,
           staff_id: transaction.staff?.id || null,
-          lastChangedBy: username,
+          lastChangedBy: null,
         };
 
         let queue;
@@ -992,10 +1025,11 @@ export class TransactionsService {
           .getRepository(AccountDeposit)
           .save({
             patient: transaction.patient,
-            amount: Math.abs(item.amount) * -1,
+            amount: Math.abs(payment_amount) * -1,
             transaction: credit,
           });
 
+        transaction.amount = Math.abs(payment_amount) * -1;
         transaction.next_location = null;
         transaction.status = 1;
         transaction.lastChangedBy = username;
