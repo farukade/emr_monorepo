@@ -4,5 +4,5 @@ export class PermissionsDto {
   @IsNotEmpty()
   name: string;
 
-  department_id: any;
+  category_id: any;
 }

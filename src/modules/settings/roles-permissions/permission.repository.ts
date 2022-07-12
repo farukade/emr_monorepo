@@ -2,6 +2,7 @@ import { EntityRepository, Repository } from 'typeorm';
 import { PermissionsDto } from './dto/permissions.dto';
 import { Permission } from '../entities/permission.entity';
 import { slugify } from '../../../common/utils/utils';
+import * as startCase from 'lodash.startcase';
 
 @EntityRepository(Permission)
 export class PermissionRepository extends Repository<Permission> {
@@ -9,7 +10,7 @@ export class PermissionRepository extends Repository<Permission> {
     const { name } = permissionDto;
 
     const permission = new Permission();
-    permission.name = name;
+    permission.name = startCase(name);
     permission.slug = slugify(name);
     permission.category = category;
     permission.createdBy = username;

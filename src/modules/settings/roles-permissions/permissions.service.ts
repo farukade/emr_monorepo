@@ -4,15 +4,16 @@ import { PermissionsDto } from './dto/permissions.dto';
 import { Permission } from '../entities/permission.entity';
 import { PermissionRepository } from './permission.repository';
 import { slugify } from '../../../common/utils/utils';
-import { DepartmentRepository } from '../departments/department.repository';
+import { PermissionCategoryRepository } from './permission-category.repository';
+import { PermissionCategory } from '../entities/permission-category.entity';
 
 @Injectable()
 export class PermissionsService {
   constructor(
     @InjectRepository(PermissionRepository)
     private permissionRepository: PermissionRepository,
-    @InjectRepository(DepartmentRepository)
-    private departmentRepository: DepartmentRepository,
+    @InjectRepository(PermissionCategoryRepository)
+    private permissionCategoryRepository: PermissionCategoryRepository,
   ) {}
 
   async getAllPermissions(params): Promise<Permission[]> {
@@ -29,7 +30,7 @@ export class PermissionsService {
     let result = [];
     for (const item of permissions) {
       if (item.category_id) {
-        item.category = await this.departmentRepository.findOne(item.category_id);
+        item.category = await this.permissionCategoryRepository.findOne(item.category_id);
       }
 
       result = [...result, item];
@@ -47,15 +48,15 @@ export class PermissionsService {
       throw new NotFoundException(`Permission '${permission.name}' already exists`);
     }
 
-    const category = await this.departmentRepository.findOne(permissionDto.department_id);
+    const category = await this.permissionCategoryRepository.findOne(permissionDto.category_id);
 
     return this.permissionRepository.createPermission(permissionDto, category, username);
   }
 
   async updatePermission(id: string, permissionDto: PermissionsDto, updatedBy: string): Promise<Permission> {
-    const { name, department_id } = permissionDto;
+    const { category_id } = permissionDto;
 
-    const category = await this.departmentRepository.findOne(department_id);
+    const category = await this.permissionCategoryRepository.findOne(category_id);
 
     const permission = await this.permissionRepository.findOne(id);
 
@@ -63,8 +64,6 @@ export class PermissionsService {
       throw new NotFoundException(`Permission '${permission.name}' not found!`);
     }
 
-    permission.name = name;
-    permission.slug = slugify(name);
     permission.category = category;
     permission.lastChangedBy = updatedBy;
     await permission.save();
@@ -78,5 +77,9 @@ export class PermissionsService {
     if (result.affected === 0) {
       throw new NotFoundException(`Permission with ID '${id}' not found`);
     }
+  }
+
+  async getPermissionCategories(): Promise<PermissionCategory[]> {
+    return await this.permissionCategoryRepository.createQueryBuilder('q').select('q.*').orderBy('q.name').getRawMany();
   }
 }

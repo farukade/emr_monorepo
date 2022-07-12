@@ -33,7 +33,7 @@ export class PermissionsController {
     return this.permissionService.createPermission(permissionDto, req.user.username);
   }
 
-  @Patch('/:id/update')
+  @Patch('/:id')
   @UsePipes(ValidationPipe)
   updatePermission(@Param('id') id: string, @Body() permissionDto: PermissionsDto, @Request() req): Promise<Permission> {
     return this.permissionService.updatePermission(id, permissionDto, req.user.username);

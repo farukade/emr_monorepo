@@ -6,11 +6,12 @@ import { PermissionsController } from './permissions.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RoleRepository } from './role.repository';
 import { PermissionRepository } from './permission.repository';
-import { DepartmentRepository } from '../departments/department.repository';
+import { PermissionCategoryRepository } from './permission-category.repository';
+import { PermissionCategoryController } from './permission-category.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([RoleRepository, PermissionRepository, DepartmentRepository])],
+  imports: [TypeOrmModule.forFeature([RoleRepository, PermissionRepository, PermissionCategoryRepository])],
   providers: [RolesService, PermissionsService],
-  controllers: [RolesController, PermissionsController],
+  controllers: [RolesController, PermissionsController, PermissionCategoryController],
 })
 export class RolesPermissionsModule {}

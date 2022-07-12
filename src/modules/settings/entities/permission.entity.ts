@@ -1,6 +1,6 @@
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
-import { Department } from './department.entity';
+import { PermissionCategory } from './permission-category.entity';
 
 @Entity({ name: 'permissions' })
 export class Permission extends CustomBaseEntity {
@@ -10,7 +10,7 @@ export class Permission extends CustomBaseEntity {
   @Column({ type: 'varchar', nullable: true })
   slug: string;
 
-  @ManyToOne(() => Department, { eager: true, nullable: true })
+  @ManyToOne(() => PermissionCategory, { eager: true, nullable: true })
   @JoinColumn({ name: 'category_id' })
-  category: Department;
+  category: PermissionCategory;
 }
