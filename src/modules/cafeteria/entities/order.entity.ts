@@ -1,4 +1,4 @@
-import { Transaction } from 'src/modules/finance/transactions/transaction.entity';
+import { Transaction } from 'src/modules/finance/transactions/entities/transaction.entity';
 import { StaffDetails } from 'src/modules/hr/staff/entities/staff_details.entity';
 import { Patient } from 'src/modules/patient/entities/patient.entity';
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';

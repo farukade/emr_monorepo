@@ -1,14 +1,14 @@
-import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
+import { CustomBaseEntity } from '../../../../common/entities/custom-base.entity';
 import { Entity, ManyToOne, JoinColumn, Column } from 'typeorm';
-import { Patient } from '../../patient/entities/patient.entity';
-import { Voucher } from '../vouchers/voucher.entity';
-import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
-import { PatientRequestItem } from '../../patient/entities/patient_request_items.entity';
-import { Appointment } from '../../frontdesk/appointment/appointment.entity';
-import { HmoScheme } from '../../hmo/entities/hmo_scheme.entity';
-import { ServiceCost } from '../../settings/entities/service_cost.entity';
-import { Admission } from '../../patient/admissions/entities/admission.entity';
-import { Nicu } from '../../patient/nicu/entities/nicu.entity';
+import { Patient } from '../../../patient/entities/patient.entity';
+import { Voucher } from '../../vouchers/voucher.entity';
+import { StaffDetails } from '../../../hr/staff/entities/staff_details.entity';
+import { PatientRequestItem } from '../../../patient/entities/patient_request_items.entity';
+import { Appointment } from '../../../frontdesk/appointment/appointment.entity';
+import { HmoScheme } from '../../../hmo/entities/hmo_scheme.entity';
+import { ServiceCost } from '../../../settings/entities/service_cost.entity';
+import { Admission } from '../../../patient/admissions/entities/admission.entity';
+import { Nicu } from '../../../patient/nicu/entities/nicu.entity';
 
 @Entity({ name: 'transactions' })
 export class Transaction extends CustomBaseEntity {

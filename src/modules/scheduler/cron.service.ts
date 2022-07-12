@@ -3,7 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { getConnection, MoreThan } from 'typeorm';
 import { Patient } from '../patient/entities/patient.entity';
 import * as moment from 'moment';
-import { Transaction } from '../finance/transactions/transaction.entity';
+import { Transaction } from '../finance/transactions/entities/transaction.entity';
 import { Admission } from '../patient/admissions/entities/admission.entity';
 import { HmoScheme } from '../hmo/entities/hmo_scheme.entity';
 import { ServiceCost } from '../settings/entities/service_cost.entity';

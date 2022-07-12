@@ -11,7 +11,7 @@ import { StaffDetails } from '../../modules/hr/staff/entities/staff_details.enti
 import { LogEntity } from '../../modules/logger/entities/logger.entity';
 import { Appointment } from '../../modules/frontdesk/appointment/appointment.entity';
 import { Patient } from '../../modules/patient/entities/patient.entity';
-import { Transaction } from '../../modules/finance/transactions/transaction.entity';
+import { Transaction } from '../../modules/finance/transactions/entities/transaction.entity';
 import { Admission } from '../../modules/patient/admissions/entities/admission.entity';
 import { TransactionCreditDto } from '../../modules/finance/transactions/dto/transaction-credit.dto';
 import { HmoScheme } from '../../modules/hmo/entities/hmo_scheme.entity';

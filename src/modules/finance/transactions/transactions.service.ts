@@ -32,7 +32,7 @@ import { HmoSchemeRepository } from '../../hmo/repositories/hmo_scheme.repositor
 import { PatientRequestItemRepository } from '../../patient/repositories/patient_request_items.repository';
 import { TransactionCreditDto } from './dto/transaction-credit.dto';
 import { AccountDeposit } from './entities/deposit.entity';
-import { Transaction } from './transaction.entity';
+import { Transaction } from './entities/transaction.entity';
 import { Admission } from '../../patient/admissions/entities/admission.entity';
 import { Nicu } from '../../patient/nicu/entities/nicu.entity';
 import { Queue } from 'src/modules/frontdesk/queue-system/queue.entity';

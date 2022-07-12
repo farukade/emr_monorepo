@@ -4,7 +4,7 @@ import { LabTest } from '../../settings/entities/lab_test.entity';
 import { PatientRequest } from './patient_requests.entity';
 import { PatientDocument } from './patient_documents.entity';
 import { Immunization } from '../immunization/entities/immunization.entity';
-import { Transaction } from '../../finance/transactions/transaction.entity';
+import { Transaction } from '../../finance/transactions/entities/transaction.entity';
 import { Drug } from '../../inventory/entities/drug.entity';
 import { DrugBatch } from '../../inventory/entities/batches.entity';
 import { DrugGeneric } from '../../inventory/entities/drug_generic.entity';

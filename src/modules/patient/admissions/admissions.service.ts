@@ -21,7 +21,7 @@ import { getStaff, postDebit } from '../../../common/utils/utils';
 import { ServiceCostRepository } from '../../settings/services/repositories/service_cost.repository';
 import { NicuAccommodationRepository } from '../../settings/nicu-accommodation/accommodation.repository';
 import { TransactionCreditDto } from '../../finance/transactions/dto/transaction-credit.dto';
-import { Transaction } from '../../finance/transactions/transaction.entity';
+import { Transaction } from '../../finance/transactions/entities/transaction.entity';
 import { getConnection } from 'typeorm';
 import { Nicu } from '../nicu/entities/nicu.entity';
 import { Admission } from './entities/admission.entity';

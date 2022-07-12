@@ -2,7 +2,7 @@ import { Column, Entity, OneToMany, ManyToOne, JoinColumn, OneToOne } from 'type
 import { CustomBaseEntity } from '../../../../common/entities/custom-base.entity';
 import { Department } from '../../../settings/entities/department.entity';
 import { User } from '../../../auth/entities/user.entity';
-import { Transaction } from '../../../finance/transactions/transaction.entity';
+import { Transaction } from '../../../finance/transactions/entities/transaction.entity';
 import { Specialization } from '../../../settings/entities/specialization.entity';
 import { ConsultingRoom } from '../../../settings/entities/consulting-room.entity';
 import { Immunization } from '../../../patient/immunization/entities/immunization.entity';

@@ -2,7 +2,7 @@ import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 import { Entity, Column, JoinColumn, OneToMany, ManyToOne, Index } from 'typeorm';
 import { PatientNOK } from './patient-next-of-kin.entity';
 import { Appointment } from '../../frontdesk/appointment/appointment.entity';
-import { Transaction } from '../../finance/transactions/transaction.entity';
+import { Transaction } from '../../finance/transactions/entities/transaction.entity';
 import { Immunization } from '../immunization/entities/immunization.entity';
 import { HmoScheme } from '../../hmo/entities/hmo_scheme.entity';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';

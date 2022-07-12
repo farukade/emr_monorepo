@@ -1,5 +1,5 @@
 import { getConnection } from 'typeorm';
-import { Transaction } from '../../modules/finance/transactions/transaction.entity';
+import { Transaction } from '../../modules/finance/transactions/entities/transaction.entity';
 import { Patient } from '../../modules/patient/entities/patient.entity';
 import { PatientRequestItem } from '../../modules/patient/entities/patient_request_items.entity';
 import { PatientRequest } from '../../modules/patient/entities/patient_requests.entity';

@@ -47,7 +47,7 @@ import { GroupTestRepository } from '../settings/lab/repositories/group_tests.re
 import { PatientVitalRepository } from '../patient/repositories/patient_vitals.repository';
 import { PatientFluidChart } from '../patient/entities/patient_fluid_chart.entity';
 import { AdmissionClinicalTaskRepository } from '../patient/admissions/repositories/admission-clinical-tasks.repository';
-import { Transaction } from '../finance/transactions/transaction.entity';
+import { Transaction } from '../finance/transactions/entities/transaction.entity';
 import { Permission } from '../settings/entities/permission.entity';
 import { Appointment } from '../frontdesk/appointment/appointment.entity';
 import { AntenatalEnrollment } from '../patient/antenatal/entities/antenatal-enrollment.entity';

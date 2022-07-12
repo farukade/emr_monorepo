@@ -5,7 +5,7 @@ import { ConsultingRoom } from '../../settings/entities/consulting-room.entity';
 import { ServiceCategory } from '../../settings/entities/service_category.entity';
 import { Encounter } from '../../patient/consultation/encouter.entity';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
-import { Transaction } from '../../finance/transactions/transaction.entity';
+import { Transaction } from '../../finance/transactions/entities/transaction.entity';
 import { Department } from '../../settings/entities/department.entity';
 import { ServiceCost } from '../../settings/entities/service_cost.entity';
 import { AntenatalAssessment } from '../../patient/antenatal/entities/antenatal-assessment.entity';
