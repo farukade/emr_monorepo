@@ -1021,22 +1021,24 @@ export class MigrationProcessor {
     for (const item of admissions) {
       // console.log(item);
       const patient = await this.patientRepository.findOne(item.patient_id);
-      console.log(`${item.id} --- patient: ${patient?.admission_id}[${patient?.id}]`);
-      patient.admission_id = item.id;
-      await patient.save();
+      if (patient && !patient.admission_id) {
+        console.log(`${item.id} --- patient: ${patient?.admission_id}[${patient?.id}]`);
+        patient.admission_id = item.id;
+        await patient.save();
+      }
     }
 
-    const patients = await this.patientRepository
-      .createQueryBuilder('q')
-      .select('q.*')
-      .where('q.admission_id is not null')
-      .getRawMany();
-
-    for (const item of patients) {
-      // console.log(item);
-      const admission = await this.admissionsRepository.findOne(item.admission_id, { relations: ['patient'] });
-      console.log(`${item.id} --- admission: ${admission?.status} - ${admission?.id}[${admission?.patient?.id}]`);
-    }
+    // const patients = await this.patientRepository
+    //   .createQueryBuilder('q')
+    //   .select('q.*')
+    //   .where('q.admission_id is not null')
+    //   .getRawMany();
+    //
+    // for (const item of patients) {
+    //   // console.log(item);
+    //   const admission = await this.admissionsRepository.findOne(item.admission_id, { relations: ['patient'] });
+    //   console.log(`${item.id} --- admission: ${admission?.status} - ${admission?.id}[${admission?.patient?.id}]`);
+    // }
   }
 
   @Process('fix-nicu')
