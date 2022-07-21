@@ -1368,7 +1368,7 @@ export class TransactionsService {
 
   async searchRecords(data: TransactionSearchDto) {
     try {
-      const { term, startDate, endDate, bill_source, filter, type } = data;
+      const { term, startDate, endDate, bill_source, filter, hmo_id, type } = data;
       const page = parseInt(data.page) - 1;
       const limit = parseInt(data.limit);
       const offset = page * limit;
@@ -1384,7 +1384,7 @@ export class TransactionsService {
       if (term && term !== '') {
         nums = term.match(/(\d+)/g);
         chars = term.replace(/[^a-z]+/gi, '');
-      }
+      };
 
       const query = this.transactionsRepository
         .createQueryBuilder('q')
@@ -1405,11 +1405,11 @@ export class TransactionsService {
           query.leftJoinAndSelect('q.staff', 'staff');
           break;
 
-        default:
-          return { success: false, message: 'please enter a valid bill source' };
-      }
+      };
 
-      query.where('q.bill_source = :bill_source', { bill_source });
+      if (bill_source && bill_source != '') {
+        query.andWhere('q.bill_source = :bill_source', { bill_source });
+      };
 
       //might include filter for cafeteria transactions only;
       switch (filter) {
@@ -1436,7 +1436,7 @@ export class TransactionsService {
           query.andWhere(`q.createdAt <= '${end}'`);
           console.log(startDate, endDate, 3);
         }
-      }
+      };
 
       //query if search term contains alphabets
       if (chars && chars !== '') {
@@ -1465,12 +1465,12 @@ export class TransactionsService {
         const digits = parseInt(nums[0]);
 
         query.andWhere('patient.id = :id', { id: digits }).andWhere('q.amount = :amount', { amount: digits });
-      }
+      };
 
-      const total = await query.getCount();
+      if (hmo_id && hmo_id !== '') {
+        query.leftJoinAndSelect('q.hmo', 'hmo').andWhere('hmo.id = :id', { id: Number(hmo_id) });
+      };
 
-      // let totalQty = 0;
-      // let transDetails = null;
       let totalAmount = 0;
       let totalVat = 0;
 
@@ -1482,21 +1482,15 @@ export class TransactionsService {
         .getMany();
 
         totalAmount = all.map(a => a.amount).reduce((a, b) => a - b, 0);
-        // transDetails = all.map(a => a.transaction_details);
-        // transDetails.forEach(elem => {
-        //   if (elem && bill_source == "cafeteria") {
-        //     totalQty += elem.map(a => a.qty).reduce((a, b) => a + b, 0)
-        //   }
-        // });
-        // totalQty = Math.round(totalQty);
         totalAmount = Math.round(totalAmount);
 
         totalVat = Math.round(((totalAmount / 100) * 7.5));
       }
 
-
+      const = await query.getCount();
       const results = await query.orderBy('q.updated_at', 'DESC').take(limit).skip(offset).getMany();
-      
+
+
       return {
         success: true,
         totalAmount,
@@ -1551,7 +1545,6 @@ export class TransactionsService {
         itemsPerPage: options.limit,
         totalItems: total,
         currentPage: options.page,
-
         totalAmountPaid,
         totalPurchase,
       };

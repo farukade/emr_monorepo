@@ -24,4 +24,7 @@ export class TransactionSearchDto {
 
   @ApiProperty()
   type?: string;
+
+  @ApiProperty()
+  hmo_id?: string;
 }
