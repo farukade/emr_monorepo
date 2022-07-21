@@ -270,6 +270,7 @@ export class PatientRequestService {
         });
 
         let allRequests = [];
+        let drug;
         for (const request of requests) {
           const transaction = request.item
             ? await this.transactionsRepository.findOne({
@@ -277,7 +278,6 @@ export class PatientRequestService {
               })
             : null;
 
-          let drug;
           if (request?.item?.drug?.id) {
             drug = await this.drugRepository.findOne({
               where: { id: request.item.drug.id },
@@ -293,6 +293,15 @@ export class PatientRequestService {
           relations: ['nextOfKin', 'immunization', 'hmo'],
         });
 
+        
+        let serviceCosts;
+        if(await drug && patient.hmo) {
+          let code = drug.code;
+          serviceCosts = await this.serviceCostRepository.findOne({
+            where: { code, hmo: patient.hmo }
+          });
+        };
+
         const admission = req.admission_id
           ? await this.admissionRepository.findOne(req.admission_id, {
               relations: ['room', 'room.category'],
@@ -301,6 +310,7 @@ export class PatientRequestService {
 
         const patientReq = allRequests.find((r) => r.item?.substituted === 0);
         const hasPaid = allRequests.find((r) => r.item?.transaction?.status === 1);
+
         result = [
           ...result,
           {
@@ -314,6 +324,7 @@ export class PatientRequestService {
             patient,
             requests: allRequests,
             admission,
+            serviceCosts
           },
         ];
       }
