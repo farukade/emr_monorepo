@@ -1428,9 +1428,8 @@ export class TransactionsService {
         query.andWhere('patient.id = :id', { id: digits }).andWhere('q.amount = :amount', { amount: digits });
       };
 
-      if (parseInt(hmo_id)) {
-        query.leftJoinAndSelect('q.hmo', 'hmo')
-          .andWhere('hmo.id = :id', { id: parseInt(hmo_id) });
+      if (hmo_id && hmo_id !== '') {
+        query.leftJoinAndSelect('q.hmo', 'hmo').andWhere('hmo.id = :id', { id: Number(hmo_id) });
       };
 
       const total = await query.getCount();
