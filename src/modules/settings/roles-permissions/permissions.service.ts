@@ -6,6 +6,7 @@ import { PermissionRepository } from './permission.repository';
 import { slugify } from '../../../common/utils/utils';
 import { PermissionCategoryRepository } from './permission-category.repository';
 import { PermissionCategory } from '../entities/permission-category.entity';
+import * as startCase from 'lodash.startcase';
 
 @Injectable()
 export class PermissionsService {
@@ -64,6 +65,8 @@ export class PermissionsService {
       throw new NotFoundException(`Permission '${permission.name}' not found!`);
     }
 
+    permission.name = startCase(permission.name);
+    permission.slug = slugify(permission.name);
     permission.category = category;
     permission.lastChangedBy = updatedBy;
     await permission.save();
