@@ -1368,10 +1368,15 @@ export class TransactionsService {
 
   async searchRecords(data: TransactionSearchDto) {
     try {
-      const { term, startDate, endDate, bill_source, filter, hmo_id } = data;
+      const { term, startDate, endDate, bill_source, filter, hmo_id, type } = data;
       const page = parseInt(data.page) - 1;
       const limit = parseInt(data.limit);
       const offset = page * limit;
+
+      const date = new Date();
+      const month = Number(date.getMonth()) + 1;
+      const day = Number(date.getDate());
+      const year = Number(date.getFullYear());
 
       //separate digits from alphabets
       let nums;
@@ -1466,11 +1471,31 @@ export class TransactionsService {
         query.leftJoinAndSelect('q.hmo', 'hmo').andWhere('hmo.id = :id', { id: Number(hmo_id) });
       };
 
-      const total = await query.getCount();
+      let totalAmount = 0;
+      let totalVat = 0;
+
+      if (type && type == "report") {
+
+        const all = await query
+        .andWhere(`q.createdAt >= '1-${month}-${year}'`)
+        .andWhere(`q.createdAt <= '${day}-${month}-${year}'`)
+        .getMany();
+
+        totalAmount = all.map(a => a.amount).reduce((a, b) => a - b, 0);
+        totalAmount = Math.round(totalAmount);
+
+        totalVat = Math.round(((totalAmount / 100) * 7.5));
+      }
+
+      const = await query.getCount();
       const results = await query.orderBy('q.updated_at', 'DESC').take(limit).skip(offset).getMany();
+
 
       return {
         success: true,
+        totalAmount,
+        totalQty: total,
+        totalVat,
         result: results,
         lastPage: Math.ceil(total / limit),
         itemsPerPage: limit,
