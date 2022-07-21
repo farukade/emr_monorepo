@@ -77,7 +77,7 @@ export class TransactionsService {
     private staffRepository: StaffRepository,
     @InjectRepository(OrderRepository)
     private orderRepository: OrderRepository,
-  ) {}
+  ) { }
 
   async fetchList(options: PaginationOptionsInterface, params): Promise<Pagination> {
     const { startDate, endDate, patient_id, staff_id, service_id, status } = params;
@@ -173,8 +173,8 @@ export class TransactionsService {
 
       transaction.admission = transaction.admission_id
         ? await this.admissionRepository.findOne(transaction.admission_id, {
-            relations: ['room', 'room.category'],
-          })
+          relations: ['room', 'room.category'],
+        })
         : null;
 
       transaction.cashier = await getStaff(transaction.createdBy);
@@ -275,8 +275,8 @@ export class TransactionsService {
 
       transaction.admission = transaction.admission_id
         ? await this.admissionRepository.findOne(transaction.admission_id, {
-            relations: ['room', 'room.category'],
-          })
+          relations: ['room', 'room.category'],
+        })
         : null;
 
       transaction.cashier = await getStaff(transaction.createdBy);
@@ -1368,10 +1368,15 @@ export class TransactionsService {
 
   async searchRecords(data: TransactionSearchDto) {
     try {
-      const { term, startDate, endDate, bill_source, filter } = data;
+      const { term, startDate, endDate, bill_source, filter, type } = data;
       const page = parseInt(data.page) - 1;
       const limit = parseInt(data.limit);
       const offset = page * limit;
+
+      const date = new Date();
+      const month = Number(date.getMonth()) + 1;
+      const day = Number(date.getDate());
+      const year = Number(date.getFullYear());
 
       //separate digits from alphabets
       let nums;
@@ -1385,6 +1390,7 @@ export class TransactionsService {
         .createQueryBuilder('q')
         .leftJoinAndSelect('q.patient', 'patient')
         .leftJoinAndSelect('q.patientRequestItem', 'patient_requests');
+
       switch (bill_source) {
         case 'drugs':
           query.leftJoinAndSelect('patient_requests.drugGeneric', 'drug_generic');
@@ -1463,9 +1469,39 @@ export class TransactionsService {
 
       const total = await query.getCount();
 
+      // let totalQty = 0;
+      // let transDetails = null;
+      let totalAmount = 0;
+      let totalVat = 0;
+
+      if (type && type == "report") {
+
+        const all = await query
+        .andWhere(`q.createdAt >= '1-${month}-${year}'`)
+        .andWhere(`q.createdAt <= '${day}-${month}-${year}'`)
+        .getMany();
+
+        totalAmount = all.map(a => a.amount).reduce((a, b) => a - b, 0);
+        // transDetails = all.map(a => a.transaction_details);
+        // transDetails.forEach(elem => {
+        //   if (elem && bill_source == "cafeteria") {
+        //     totalQty += elem.map(a => a.qty).reduce((a, b) => a + b, 0)
+        //   }
+        // });
+        // totalQty = Math.round(totalQty);
+        totalAmount = Math.round(totalAmount);
+
+        totalVat = Math.round(((totalAmount / 100) * 7.5));
+      }
+
+
       const results = await query.orderBy('q.updated_at', 'DESC').take(limit).skip(offset).getMany();
+      
       return {
         success: true,
+        totalAmount,
+        totalQty: total,
+        totalVat,
         result: results,
         lastPage: Math.ceil(total / limit),
         itemsPerPage: limit,
