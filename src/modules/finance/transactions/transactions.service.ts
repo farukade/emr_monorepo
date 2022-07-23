@@ -1424,17 +1424,14 @@ export class TransactionsService {
 
       if (startDate && startDate !== '' && endDate && endDate !== '' && endDate === startDate) {
         query.andWhere(`DATE(q.createdAt) = '${startDate}'`);
-        console.log(startDate, endDate, 1);
       } else {
         if (startDate && startDate !== '') {
           const start = moment(startDate).startOf('day').toISOString();
           query.andWhere(`q.createdAt >= '${start}'`);
-          console.log(startDate, endDate, 2);
         }
         if (endDate && endDate !== '') {
           const end = moment(endDate).endOf('day').toISOString();
           query.andWhere(`q.createdAt <= '${end}'`);
-          console.log(startDate, endDate, 3);
         }
       };
 
@@ -1473,34 +1470,45 @@ export class TransactionsService {
 
       let totalAmount = 0;
       let totalVat = 0;
+      let results;
+      let total;
 
-      if (type && type == "report") {
+      if ((!startDate || startDate == "") && (!endDate || endDate == "") && type == "report") {
 
-        const all = await query
-        .andWhere(`q.createdAt >= '1-${month}-${year}'`)
-        .andWhere(`q.createdAt <= '${day}-${month}-${year}'`)
-        .getMany();
+        results = await query
+          .andWhere(`q.createdAt >= '1-${month}-${year}'`)
+          .andWhere(`q.createdAt <= '${day}-${month}-${year}'`)
+          .getMany();
 
-        totalAmount = all.map(a => a.amount).reduce((a, b) => a - b, 0);
+        totalAmount = results.map(a => a.amount).reduce((a, b) => a - b, 0);
         totalAmount = Math.round(totalAmount);
-
         totalVat = Math.round(((totalAmount / 100) * 7.5));
-      }
-
-      const total = await query.getCount();
-      const results = await query.orderBy('q.updated_at', 'DESC').take(limit).skip(offset).getMany();
+        total = await query.getCount();
 
 
+      } else if (startDate && startDate != "" && endDate && endDate != "" && type == "report") {
+
+        total = await query.getCount();
+        results = await query.orderBy('q.updated_at', 'DESC').take(limit).skip(offset).getMany();
+        totalAmount = results.map(a => a.amount).reduce((a, b) => a - b, 0);
+        totalAmount = Math.round(totalAmount);
+        totalVat = Math.round(((totalAmount / 100) * 7.5));
+      } else {
+
+        total = await query.getCount();
+        results = await query.orderBy('q.updated_at', 'DESC').take(limit).skip(offset).getMany();
+      };
+      
       return {
         success: true,
         totalAmount,
         totalQty: total,
         totalVat,
-        result: results,
         lastPage: Math.ceil(total / limit),
         itemsPerPage: limit,
         totalItems: total,
         currentPage: parseInt(data.page),
+        result: results
       };
     } catch (error) {
       return { success: false, message: error.message || 'could not get records' };
