@@ -293,15 +293,6 @@ export class PatientRequestService {
           relations: ['nextOfKin', 'immunization', 'hmo'],
         });
 
-        
-        let serviceCosts;
-        if(await drug && patient.hmo) {
-          let code = drug.code;
-          serviceCosts = await this.serviceCostRepository.findOne({
-            where: { code, hmo: patient.hmo }
-          });
-        };
-
         const admission = req.admission_id
           ? await this.admissionRepository.findOne(req.admission_id, {
               relations: ['room', 'room.category'],
@@ -324,7 +315,6 @@ export class PatientRequestService {
             patient,
             requests: allRequests,
             admission,
-            serviceCosts
           },
         ];
       }
