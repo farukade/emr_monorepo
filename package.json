@@ -55,7 +55,7 @@
     "handlebars": "^4.7.7",
     "jsonwebtoken": "^8.5.1",
     "lodash.startcase": "^4.4.0",
-    "moment": "^2.29.3",
+    "moment": "^2.29.4",
     "mysql2": "^2.3.3",
     "numeral": "^2.0.6",
     "passport": "^0.5.2",
