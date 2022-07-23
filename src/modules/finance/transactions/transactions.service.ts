@@ -1487,7 +1487,7 @@ export class TransactionsService {
         totalVat = Math.round(((totalAmount / 100) * 7.5));
       }
 
-      const = await query.getCount();
+      const total = await query.getCount();
       const results = await query.orderBy('q.updated_at', 'DESC').take(limit).skip(offset).getMany();
 
 

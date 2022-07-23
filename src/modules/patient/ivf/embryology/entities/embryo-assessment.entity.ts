@@ -1,11 +1,9 @@
 import { CustomBaseEntity } from 'src/common/entities/custom-base.entity';
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Biopsy } from './biopsy.entity';
 
 @Entity({ name: 'embryo_assessment' })
-export class IvfEmbryoAssessment {
-  @PrimaryGeneratedColumn()
-  id: number;
-
+export class IvfEmbryoAssessment extends CustomBaseEntity {
   @Column({ nullable: true, type: 'date' })
   date: string;
 
@@ -26,4 +24,7 @@ export class IvfEmbryoAssessment {
 
   @Column({ nullable: true })
   day3Comment: string;
+
+  @OneToMany(() => Biopsy, biopsy => biopsy.assessment, { nullable: true, eager: true })
+  biopsy: Biopsy[];
 }

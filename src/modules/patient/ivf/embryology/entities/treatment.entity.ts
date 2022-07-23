@@ -2,10 +2,7 @@ import { CustomBaseEntity } from 'src/common/entities/custom-base.entity';
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity({ name: 'ivf_treatment' })
-export class IvfTreatmentEntity {
-  @PrimaryGeneratedColumn()
-  id: number;
-
+export class IvfTreatmentEntity extends CustomBaseEntity {
   @Column({ nullable: true })
   treatmentChartType: string;
 
@@ -40,7 +37,7 @@ export class IvfTreatmentEntity {
   numOfEggsReceived: number;
 
   @Column({ nullable: true })
-  instructionsForLab: number;
+  instructionsForLab: string;
 
   @Column({ nullable: true })
   method: string;

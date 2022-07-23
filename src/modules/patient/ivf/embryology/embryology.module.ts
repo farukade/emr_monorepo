@@ -5,6 +5,9 @@ import { PatientRepository } from '../../repositories/patient.repository';
 import { EmbryologyController } from './embryology.controller';
 import { IvfEmbryologyRepository } from './embryology.repository';
 import { IvfEmbryologyService } from './embryology.service';
+import { BiopsyRepository } from './repositories/biopsy.repository';
+import { CellInfoRepository } from './repositories/cell-info.repository';
+import { DayRecordsRepository } from './repositories/day-records.repository';
 import { IvfEmbryoAssessmentRepository } from './repositories/embryo-assessment.repository';
 import { EmbryoTransRecordRepository } from './repositories/embryo-trans-record.repository';
 import { IvfEmbryoTranferRepository } from './repositories/embryo-transfer.repository';
@@ -24,6 +27,9 @@ import { IvfTreatmentRepository } from './repositories/treatment.repository';
       PatientRepository,
       EmbryoTransRecordRepository,
       StaffRepository,
+      CellInfoRepository,
+      DayRecordsRepository,
+      BiopsyRepository
     ]),
   ],
   controllers: [EmbryologyController],

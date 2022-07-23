@@ -1,12 +1,10 @@
 import { CustomBaseEntity } from 'src/common/entities/custom-base.entity';
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { StaffDetails } from 'src/modules/hr/staff/entities/staff_details.entity';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { IvfEmbryoTransferRecord } from './embryo-trans-record.entity';
 
 @Entity({ name: 'ivf_embryo_transfer' })
-export class IvfEmbryoTransfer {
-  @PrimaryGeneratedColumn()
-  id: number;
-
+export class IvfEmbryoTransfer extends CustomBaseEntity {
   @Column({ nullable: true })
   nameOfEmbryoTransfered: string;
 
@@ -19,9 +17,6 @@ export class IvfEmbryoTransfer {
   @Column({ nullable: true })
   dr: string;
 
-  @Column({ nullable: true })
-  embryologist: string;
-
   @Column({ nullable: true, type: 'date' })
   date: string;
 
@@ -31,7 +26,11 @@ export class IvfEmbryoTransfer {
   @Column({ nullable: true })
   numOfStraws: number;
 
-  @ManyToOne(() => IvfEmbryoTransferRecord, { nullable: true })
-  @JoinColumn({ name: 'ivf_embryo_trans_record_id' })
-  ivfEmbryoTranferRecord: IvfEmbryoTransferRecord;
+  @ManyToOne(() => StaffDetails, { eager: true })
+  @JoinColumn({ name: 'staff_id' })
+  embryologist: StaffDetails;
+
+  @OneToMany(() => IvfEmbryoTransferRecord, trans_record => trans_record.ivf_transfer, { nullable: true, eager: true })
+  trans_record: IvfEmbryoTransferRecord[];
+
 }

@@ -4,24 +4,34 @@ import { IvfEmbryoTransferRecord } from '../entities/embryo-trans-record.entity'
 export class EmbryoTransferDto {
   @ApiProperty()
   embryologyId: number;
+
   @ApiProperty()
   nameOfEmbryoTransfered: string;
+
   @ApiProperty()
   numOfEmbryoTransfered: number;
+
   @ApiProperty()
   dateOfEmbryoTransfered: string;
+
   @ApiProperty()
   dr: string;
+
   @ApiProperty()
-  embryologist: string;
+  embryologistId: number;
+
   @ApiProperty()
   date: string;
+
   @ApiProperty()
   numOfEmbryoVit: number;
+
   @ApiProperty()
   numOfStraws: number;
+
   @ApiProperty()
   patientId: number;
+
   @ApiProperty()
-  ivfEmbryoTranferRecord: IvfEmbryoTransferRecord;
+  transRecord: IvfEmbryoTransferRecord[];
 }
