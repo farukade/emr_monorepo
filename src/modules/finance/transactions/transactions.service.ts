@@ -1368,6 +1368,7 @@ export class TransactionsService {
 
   async searchRecords(data: TransactionSearchDto) {
     try {
+      console.time();
       const { term, startDate, endDate, bill_source, filter, hmo_id, type } = data;
       const page = parseInt(data.page) - 1;
       const limit = parseInt(data.limit);
@@ -1470,34 +1471,37 @@ export class TransactionsService {
 
       let totalAmount = 0;
       let totalVat = 0;
-      let results;
       let total;
 
       if ((!startDate || startDate == "") && (!endDate || endDate == "") && type == "report") {
+        console.log(1)
+        query.andWhere(`q.createdAt >= '1-${month}-${year}'`)
+          .andWhere(`q.createdAt <= '${day}-${month}-${year}'`);
 
-        results = await query
-          .andWhere(`q.createdAt >= '1-${month}-${year}'`)
-          .andWhere(`q.createdAt <= '${day}-${month}-${year}'`)
-          .getMany();
+        let all = await query.getMany();
 
-        totalAmount = results.map(a => a.amount).reduce((a, b) => a - b, 0);
+        totalAmount = all.map(a => a.amount).reduce((a, b) => a - b, 0);
         totalAmount = Math.round(totalAmount);
         totalVat = Math.round(((totalAmount / 100) * 7.5));
         total = await query.getCount();
 
       } else if (startDate && startDate != "" && endDate && endDate != "" && type == "report") {
 
+        console.log(2);
+        let all = await query.getMany();
         total = await query.getCount();
-        results = await query.orderBy('q.updated_at', 'DESC').take(limit).skip(offset).getMany();
-        totalAmount = results.map(a => a.amount).reduce((a, b) => a - b, 0);
+        totalAmount = all.map(a => a.amount).reduce((a, b) => a - b, 0);
         totalAmount = Math.round(totalAmount);
         totalVat = Math.round(((totalAmount / 100) * 7.5));
       } else {
 
+        console.log(3)
         total = await query.getCount();
-        results = await query.orderBy('q.updated_at', 'DESC').take(limit).skip(offset).getMany();
       };
-      
+
+      const results = await query.orderBy('q.updated_at', 'DESC').take(limit).skip(offset).getMany();
+
+      console.timeEnd();
       return {
         success: true,
         totalAmount,
