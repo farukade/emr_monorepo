@@ -98,6 +98,8 @@ export class TransactionsService {
         bill_source = 'credit-transfer';
       } else if (service_id === 'cafeteria') {
         bill_source = 'cafeteria';
+      } else if (service_id === 'drugs') {
+        bill_source = 'drugs';
       } else {
         const serviceCategory = await this.serviceCategoryRepository.findOne(service_id);
         bill_source = serviceCategory?.slug || '';
