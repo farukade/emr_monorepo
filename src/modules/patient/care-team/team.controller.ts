@@ -1,14 +1,4 @@
-import {
-  Controller,
-  Get,
-  Request,
-  UseGuards,
-  Query,
-  Body,
-  Post,
-  UsePipes,
-  ValidationPipe,
-} from '@nestjs/common';
+import { Controller, Get, Request, UseGuards, Query, Body, Post, UsePipes, ValidationPipe } from '@nestjs/common';
 import { CareTeamService } from './team.service';
 import { AuthGuard } from '@nestjs/passport';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
