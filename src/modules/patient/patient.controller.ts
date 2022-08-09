@@ -182,6 +182,7 @@ export class PatientController {
           return cb(null, `doc-${randomName}${extname(file.originalname)}`);
         },
       }),
+      limits: { fieldSize: 1073741824 },
     }),
   )
   uploadDocument(@Param('id') id: string, @Body() param, @UploadedFile() file, @Request() req): Promise<any> {
