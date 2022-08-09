@@ -1375,6 +1375,11 @@ export class TransactionsService {
       const limit = parseInt(data.limit);
       const offset = page * limit;
 
+      let control = true;
+      if ((hmo_id && hmo_id != "") || (term && term != "")) {
+        control = false;
+      };
+
       const date = new Date();
       const month = Number(date.getMonth()) + 1;
       const day = Number(date.getDate());
@@ -1391,6 +1396,7 @@ export class TransactionsService {
       const query = this.transactionsRepository
         .createQueryBuilder('q')
         .leftJoinAndSelect('q.patient', 'patient')
+        .leftJoinAndSelect('q.staff', 'staff')
         .leftJoinAndSelect('q.patientRequestItem', 'patient_requests');
 
       switch (bill_source) {
@@ -1401,12 +1407,6 @@ export class TransactionsService {
         case 'labs':
           query.leftJoinAndSelect('patient_requests.labTest', 'lab_test');
           break;
-
-        //if bill source is "cafeteria" and contains filter
-        case 'cafeteria':
-          query.leftJoinAndSelect('q.staff', 'staff');
-          break;
-
       };
 
       if (bill_source && bill_source != '') {
@@ -1441,10 +1441,11 @@ export class TransactionsService {
       if (chars && chars !== '') {
         query.andWhere(
           new Brackets((qb) => {
-            qb.where('patient.surname iLike :surname', { surname: `%${chars}%` }).orWhere(
-              'patient.other_names iLike :other_names',
-              { other_names: `%${chars}%` },
-            );
+              qb
+              .orWhere('patient.surname iLike :surname', { surname: `%${chars}%` })
+              .orWhere('patient.other_names iLike :other_names', { other_names: `%${chars}%` })
+              .orWhere('staff.first_name iLike :surname', { surname: `%${chars}%` })
+              .orWhere('staff.last_name iLike :other_names', { other_names: `%${chars}%` });
 
             switch (bill_source) {
               case 'drugs':
@@ -1457,7 +1458,7 @@ export class TransactionsService {
             }
           }),
         );
-      }
+      };
 
       //query if search term contains digits
       if (nums) {
@@ -1472,34 +1473,47 @@ export class TransactionsService {
 
       let totalAmount = 0;
       let totalVat = 0;
-      let results;
       let total;
 
-      if ((!startDate || startDate == "") && (!endDate || endDate == "") && type == "report") {
+      if (
+        (!startDate || startDate == "") && 
+        (!endDate || endDate == "") && 
+        type == "report" &&
+        control
+        ) {
 
-        results = await query
-          .andWhere(`q.createdAt >= '1-${month}-${year}'`)
-          .andWhere(`q.createdAt <= '${day}-${month}-${year}'`)
-          .getMany();
+        query.andWhere(`q.createdAt >= '1-${month}-${year}'`)
+          .andWhere(`q.createdAt <= '${day}-${month}-${year}'`);
 
-        totalAmount = results.map(a => a.amount).reduce((a, b) => a - b, 0);
+        let all = await query.getMany();
+
+        totalAmount = all.map(a => a.amount).reduce((a, b) => a - b, 0);
         totalAmount = Math.round(totalAmount);
         totalVat = Math.round(((totalAmount / 100) * 7.5));
         total = await query.getCount();
 
       } else if (startDate && startDate != "" && endDate && endDate != "" && type == "report") {
 
+        let all = await query.getMany();
         total = await query.getCount();
-        results = await query.orderBy('q.updated_at', 'DESC').take(limit).skip(offset).getMany();
-        totalAmount = results.map(a => a.amount).reduce((a, b) => a - b, 0);
+        totalAmount = all.map(a => a.amount).reduce((a, b) => a - b, 0);
         totalAmount = Math.round(totalAmount);
         totalVat = Math.round(((totalAmount / 100) * 7.5));
+      } else if (type == "report") {
+
+        let all = await query.getMany();
+        total = await query.getCount();
+        totalAmount = all.map(a => a.amount).reduce((a, b) => a - b, 0);
+        totalAmount = Math.round(totalAmount);
+        totalVat = Math.round(((totalAmount / 100) * 7.5));
+
       } else {
 
         total = await query.getCount();
-        results = await query.orderBy('q.updated_at', 'DESC').take(limit).skip(offset).getMany();
       };
-      
+
+      const results = await query.orderBy('q.updated_at', 'DESC').take(limit).skip(offset).getMany();
+
       return {
         success: true,
         totalAmount,
@@ -1512,6 +1526,7 @@ export class TransactionsService {
         result: results
       };
     } catch (error) {
+      console.log(error);
       return { success: false, message: error.message || 'could not get records' };
     }
   }
