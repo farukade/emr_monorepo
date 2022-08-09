@@ -1,12 +1,10 @@
 import { CustomBaseEntity } from 'src/common/entities/custom-base.entity';
 import { StaffDetails } from 'src/modules/hr/staff/entities/staff_details.entity';
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { IcsiDayRecord } from './day-record.entity';
 
 @Entity({ name: 'ivf_icsi' })
-export class IvfICSIEntity {
-  @PrimaryGeneratedColumn()
-  id: number;
-
+export class IvfICSIEntity extends CustomBaseEntity {
   @Column({ nullable: true })
   time: string;
 
@@ -41,9 +39,15 @@ export class IvfICSIEntity {
   comment: string;
 
   @Column({ nullable: true })
+  oocyteComment: string;
+
+  @Column({ nullable: true })
   witness: string;
 
-  @ManyToOne(() => StaffDetails, (staff) => staff.transactions, { nullable: true })
+  @ManyToOne(() => StaffDetails, { eager: true })
   @JoinColumn({ name: 'staff_id' })
   embryologist: StaffDetails;
+
+  @OneToMany(() => IcsiDayRecord, icsi_day_record => icsi_day_record.icsi, { nullable: true, eager: true })
+  icsi_day_record: IcsiDayRecord[];
 }

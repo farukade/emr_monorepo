@@ -3,10 +3,7 @@ import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 't
 import { IvfEmbryoTransfer } from './embryo-transfer.entity';
 
 @Entity({ name: 'ivf_embryo_transfer_record' })
-export class IvfEmbryoTransferRecord {
-  @PrimaryGeneratedColumn()
-  id: number;
-
+export class IvfEmbryoTransferRecord extends CustomBaseEntity {
   @Column({ nullable: true })
   stage: string;
 
@@ -21,4 +18,9 @@ export class IvfEmbryoTransferRecord {
 
   @Column({ nullable: true })
   ivf: string;
+
+  @ManyToOne(() => IvfEmbryoTransfer, ivf_transfer => ivf_transfer.trans_record)
+  @JoinColumn({ name: 'ivf_transfer_id' })
+  ivf_transfer: IvfEmbryoTransfer;
+
 }

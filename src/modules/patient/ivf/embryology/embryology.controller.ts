@@ -8,7 +8,7 @@ import { EmbryoSpermPrepDto } from './dto/sperm-prep.dto';
 import { EmbryoTreatmentDto } from './dto/treatment.dto';
 import { IvfEmbryologyService } from './embryology.service';
 
-@UseGuards(AuthGuard('jwt'))
+// @UseGuards(AuthGuard('jwt'))
 @ApiTags('Embryology')
 @Controller('embryology')
 export class EmbryologyController {

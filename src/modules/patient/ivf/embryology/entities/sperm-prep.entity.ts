@@ -1,12 +1,10 @@
 import { CustomBaseEntity } from 'src/common/entities/custom-base.entity';
 import { StaffDetails } from 'src/modules/hr/staff/entities/staff_details.entity';
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { CellInfo } from './cell-info.entity';
 
 @Entity({ name: 'ivf_sperm_preparation' })
-export class IvfSpermPreparationEntity {
-  @PrimaryGeneratedColumn()
-  id: number;
-
+export class IvfSpermPreparationEntity extends CustomBaseEntity {
   @Column({ nullable: true })
   type: string;
 
@@ -15,9 +13,6 @@ export class IvfSpermPreparationEntity {
 
   @Column({ nullable: true })
   viscousity: string;
-
-  @Column({ nullable: true })
-  withdrawalMethod: string;
 
   @Column({ nullable: true })
   timeOfProduction: string;
@@ -31,7 +26,10 @@ export class IvfSpermPreparationEntity {
   @Column({ nullable: true })
   witness: string;
 
-  @ManyToOne(() => StaffDetails, (staff) => staff.transactions, { nullable: true })
+  @ManyToOne(() => StaffDetails, { eager: true })
   @JoinColumn({ name: 'staff_id' })
   embryologist: StaffDetails;
+
+  @OneToMany(() => CellInfo, cell_info => cell_info.sperm_prep, { eager: true })
+  cell_info: CellInfo[];
 }

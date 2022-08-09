@@ -9,6 +9,13 @@ import { EmbryoIcsiDto } from './dto/icsi.dto';
 import { EmbryoSpermPrepDto } from './dto/sperm-prep.dto';
 import { EmbryoTreatmentDto } from './dto/treatment.dto';
 import { IvfEmbryologyRepository } from './embryology.repository';
+import { Biopsy } from './entities/biopsy.entity';
+import { CellInfo } from './entities/cell-info.entity';
+import { IcsiDayRecord } from './entities/day-record.entity';
+import { IvfEmbryoTransferRecord } from './entities/embryo-trans-record.entity';
+import { BiopsyRepository } from './repositories/biopsy.repository';
+import { CellInfoRepository } from './repositories/cell-info.repository';
+import { DayRecordsRepository } from './repositories/day-records.repository';
 import { IvfEmbryoAssessmentRepository } from './repositories/embryo-assessment.repository';
 import { EmbryoTransRecordRepository } from './repositories/embryo-trans-record.repository';
 import { IvfEmbryoTranferRepository } from './repositories/embryo-transfer.repository';
@@ -35,27 +42,25 @@ export class IvfEmbryologyService {
 		private embryoTreatmentRepository: IvfTreatmentRepository,
 		@InjectRepository(EmbryoTransRecordRepository)
 		private embryoTransRecordRepository: EmbryoTransRecordRepository,
+		@InjectRepository(CellInfoRepository)
+		private cellInfoRepository: CellInfoRepository,
+		@InjectRepository(DayRecordsRepository)
+		private dayRepository: DayRecordsRepository,
+		@InjectRepository(BiopsyRepository)
+		private biopsyRepository: BiopsyRepository,
 		@InjectRepository(StaffRepository)
 		private staffRepository: StaffRepository,
-	) {}
+	) { }
 
 	async saveAssessment(data: EmbryoAssessmentDto) {
 		try {
 			let embryology;
-			const { patientId, embryologyId, ...restData } = data;
-			const patient = await this.patientRepository.findOne(patientId);
+			const { patientId, embryologyId, biopsy, ...restData } = data;
+			embryology = await this.embryologyRepository.findOne(embryologyId);
 
-			if (embryologyId) {
-				embryology = await this.embryologyRepository.findOne(embryologyId);
-			}
-
-			if (!embryology || embryology.isSubmitted == true) {
-				embryology = this.embryologyRepository.create();
-				embryology.patient = patient;
-				embryology.isSubmitted = false;
-				await this.patientRepository.save(patient);
-				await this.embryologyRepository.save(embryology);
-			}
+			if (!embryology) {
+				return { success: false, message: "embryology not found" }
+			};
 
 			const newAssessment = this.embryoAssessmentRepository.create(restData);
 			await this.embryoAssessmentRepository.save(newAssessment);
@@ -63,12 +68,43 @@ export class IvfEmbryologyService {
 			embryology.embryoAssessment = newAssessment;
 			await this.embryologyRepository.save(embryology);
 
+			if (biopsy.length) {
+				let biopsyData = [];
+				for (const item of biopsy) {
+					biopsyData = [{
+						type: item.type,
+						one: item.one,
+						two: item.two,
+						three: item.three,
+						four: item.four,
+						five: item.five,
+						six: item.six,
+						seven: item.seven,
+						eight: item.eight,
+						nine: item.nine,
+						ten: item.ten,
+						eleven: item.eleven,
+						twelve: item.twelve,
+						assessment: newAssessment
+					},
+					...biopsyData
+					]
+				};
+				await this.biopsyRepository
+					.createQueryBuilder()
+					.insert()
+					.into(Biopsy)
+					.values(biopsyData)
+					.execute();
+			};
+
 			return {
 				success: true,
 				message: 'form successfully saved',
 				embryology,
 			};
 		} catch (error) {
+			console.log(error);
 			return {
 				success: false,
 				message: error.message || 'could not save form',
@@ -78,20 +114,43 @@ export class IvfEmbryologyService {
 
 	async saveTransfer(data: EmbryoTransferDto) {
 		try {
-			const { ivfEmbryoTranferRecord, embryologyId, ...restTransfer } = data;
+			const { transRecord, embryologistId, embryologyId, ...restTransfer } = data;
 
 			const embryology = await this.embryologyRepository.findOne(embryologyId);
+			const embryologist = await this.staffRepository.findOne(embryologistId);
 
-			const transRecord = this.embryoTransRecordRepository.create(ivfEmbryoTranferRecord);
-			await this.embryoTransRecordRepository.save(transRecord);
+			if (!embryology || !embryologist) {
+				return { success: false, message: "embryology or embryologist not found" }
+			};
 
 			const newTransfer = this.embryoTranferRepository.create(restTransfer);
-
-			newTransfer.ivfEmbryoTranferRecord = transRecord;
+			newTransfer.embryologist = embryologist;
 			await this.embryoTranferRepository.save(newTransfer);
 
 			embryology.embryoTransfer = newTransfer;
 			await this.embryologyRepository.save(embryology);
+
+			if (transRecord.length) {
+				let transData = [];
+				for (const item of transRecord) {
+					transData = [{
+						stage: item.stage,
+						grade: item.grade,
+						comments: item.comments,
+						icsi: item.icsi,
+						ivf: item.ivf,
+						ivf_transfer: item.ivf_transfer
+					},
+					...transData
+					]
+				};
+				await this.embryoTransRecordRepository
+					.createQueryBuilder()
+					.insert()
+					.into(IvfEmbryoTransferRecord)
+					.values(transData)
+					.execute();
+			};
 
 			return {
 				success: true,
@@ -109,9 +168,13 @@ export class IvfEmbryologyService {
 
 	async saveIcsi(data: EmbryoIcsiDto) {
 		try {
-			const { embryologyId, embryologistId, ...restIcsi } = data;
+			const { embryologyId, dayOne, embryologistId, ...restIcsi } = data;
 			const embryology = await this.embryologyRepository.findOne(embryologyId);
 			const embryologist = await this.staffRepository.findOne(embryologistId);
+
+			if (!embryology || !embryologist) {
+				return { success: false, message: "embryology or embryologist not found" }
+			};
 
 			const newIcsi = this.icsiRepository.create(restIcsi);
 			newIcsi.embryologist = embryologist;
@@ -120,12 +183,40 @@ export class IvfEmbryologyService {
 			embryology.icsi = newIcsi;
 			await this.embryologyRepository.save(embryology);
 
+			if (dayOne.length) {
+				let dayData = [];
+				for (const item of dayOne) {
+					dayData = [{
+						type: item.type,
+						one_pn: item.one_pn,
+						two_pn: item.two_pn,
+						three_pn: item.three_pn,
+						mil: item.mil,
+						ml: item.ml,
+						gv: item.gv,
+						others: item.others,
+						comment: item.comment,
+						witness: item.witness,
+						embryologist: embryologist.user.username,
+						icsi: newIcsi
+					},
+					...dayData
+					]
+				};
+				await this.dayRepository
+					.createQueryBuilder()
+					.insert()
+					.into(IcsiDayRecord)
+					.values(dayData)
+					.execute();
+			};
+
 			return {
 				success: true,
-				message: 'form successfully saved',
 				embryology,
 			};
 		} catch (error) {
+			console.log(error);
 			return {
 				success: false,
 				message: error.message || 'could not save form',
@@ -135,9 +226,13 @@ export class IvfEmbryologyService {
 
 	async saveSpermPrep(data: EmbryoSpermPrepDto) {
 		try {
-			const { embryologyId, embryologistId, ...restSpermPrep } = data;
+			const { embryologyId, cellInfo, embryologistId, ...restSpermPrep } = data;
 			const embryology = await this.embryologyRepository.findOne(embryologyId);
 			const embryologist = await this.staffRepository.findOne(embryologistId);
+
+			if (!embryology || !embryologist) {
+				return { success: false, message: "embryology or embryologist not found" }
+			};
 
 			const spermPrep = this.spermPrepRepository.create(restSpermPrep);
 			spermPrep.embryologist = embryologist;
@@ -146,12 +241,37 @@ export class IvfEmbryologyService {
 			embryology.spermPreparation = spermPrep;
 			await this.embryologyRepository.save(embryology);
 
+			if (cellInfo.length) {
+				let cellData = [];
+				for (const item of cellInfo) {
+					cellData = [{
+						type: item.type,
+						volume: item.volume,
+						cells: item.cells,
+						density: item.density,
+						motility: item.motility,
+						prog: item.prog,
+						abnor: item.abnor,
+						agglutination: item.agglutination,
+						sperm_prep: spermPrep
+					},
+					...cellData
+					]
+				};
+				await this.cellInfoRepository
+					.createQueryBuilder()
+					.insert()
+					.into(CellInfo)
+					.values(cellData)
+					.execute();
+			};
+
 			return {
 				success: true,
-				message: 'form successfully saved',
 				embryology,
 			};
 		} catch (error) {
+			console.log(error);
 			return {
 				success: false,
 				message: error.message || 'could not save form',
@@ -188,6 +308,7 @@ export class IvfEmbryologyService {
 				embryology,
 			};
 		} catch (error) {
+			console.log(error);
 			return {
 				success: false,
 				message: error.message || 'could not save form',
@@ -197,53 +318,74 @@ export class IvfEmbryologyService {
 
 	async getEmbryologyById(urlParams) {
 		try {
-			const { embryologyid, patientid } = urlParams;
+			const { embryology_id, patient_id } = urlParams;
 
-			if (embryologyid) {
-				const embryology = await this.embryologyRepository.findOne(embryologyid, {
+			if ((!embryology_id || embryology_id == "") && (!patient_id || patient_id == "")) {
+				return {
+					success: false,
+					message: 'no parameter added to url',
+				};
+			};
+
+			let embryology = null;
+			let patient = null;
+
+			if (embryology_id) {
+				embryology = await this.embryologyRepository.findOne(embryology_id, {
 					relations: ['embryoAssessment', 'embryoTransfer', 'icsi', 'spermPreparation', 'ivfTreatment'],
 				});
 
 				if (!embryology) {
 					return {
 						success: false,
-						message: 'not found',
+						message: 'embryology not found',
 					};
-				}
-
-				return {
-					success: true,
-					embryology,
 				};
-			}
+			};
 
-			if (patientid) {
-				const patient = await this.patientRepository.findOne(patientid, {
-					relations: ['embryology'],
+			if (patient_id) {
+				patient = await this.patientRepository.findOne(patient_id, {
+					relations: [ 
+						'embryology', 
+						'embryology.embryoAssessment', 
+						'embryology.embryoTransfer',
+						'embryology.icsi',
+						'embryology.spermPreparation',
+						'embryology.ivfTreatment'
+					],
 				});
 
 				if (!patient) {
 					return {
 						success: false,
-						message: 'not found',
+						message: 'patient not found',
 					};
-				}
+				};
+			};
 
+			if (embryology) {
+				return {
+					success: true,
+					embryology
+				}
+			} else if (patient) {
 				return {
 					success: true,
 					patient,
 				};
-			}
-
-			return {
-				success: false,
-				message: 'no parameter added to url',
+			} else {
+				return {
+					success: false,
+					message: 'embryology or patient not found',
+				};
 			};
+
 		} catch (error) {
+			console.log(error);
 			return {
 				success: false,
 				message: error.message || 'could not fetch data',
 			};
 		}
-  }
+	}
 }

@@ -1492,6 +1492,7 @@ export class TransactionsService {
         totalVat = Math.round(((totalAmount / 100) * 7.5));
         total = await query.getCount();
 
+
       } else if (startDate && startDate != "" && endDate && endDate != "" && type == "report") {
 
         let all = await query.getMany();
