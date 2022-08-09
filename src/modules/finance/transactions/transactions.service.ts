@@ -77,7 +77,7 @@ export class TransactionsService {
     private staffRepository: StaffRepository,
     @InjectRepository(OrderRepository)
     private orderRepository: OrderRepository,
-  ) { }
+  ) {}
 
   async fetchList(options: PaginationOptionsInterface, params): Promise<Pagination> {
     const { startDate, endDate, patient_id, staff_id, service_id, status } = params;
@@ -175,8 +175,8 @@ export class TransactionsService {
 
       transaction.admission = transaction.admission_id
         ? await this.admissionRepository.findOne(transaction.admission_id, {
-          relations: ['room', 'room.category'],
-        })
+            relations: ['room', 'room.category'],
+          })
         : null;
 
       transaction.cashier = await getStaff(transaction.createdBy);
@@ -277,8 +277,8 @@ export class TransactionsService {
 
       transaction.admission = transaction.admission_id
         ? await this.admissionRepository.findOne(transaction.admission_id, {
-          relations: ['room', 'room.category'],
-        })
+            relations: ['room', 'room.category'],
+          })
         : null;
 
       transaction.cashier = await getStaff(transaction.createdBy);
@@ -651,6 +651,7 @@ export class TransactionsService {
     const { payment_method, items, patient_id, amount_paid } = transactionDto;
     try {
       let transactions = [];
+      let credits = [];
       let total = 0;
       for (const item of items) {
         const transaction = await this.transactionsRepository.findOne(item.id, {
@@ -701,7 +702,14 @@ export class TransactionsService {
           }
         }
 
-        await postCredit(data, transaction.service, null, transaction.patientRequestItem, appointment, transaction.hmo);
+        const credit = await postCredit(
+          data,
+          transaction.service,
+          null,
+          transaction.patientRequestItem,
+          appointment,
+          transaction.hmo,
+        );
 
         transaction.next_location = null;
         transaction.status = 1;
@@ -712,6 +720,7 @@ export class TransactionsService {
         rs.staff = await getStaff(transaction.lastChangedBy);
 
         transactions = [...transactions, rs];
+        credits = [...credits, credit];
       }
 
       const patient = await this.patientRepository.findOne(patient_id, {
@@ -771,7 +780,7 @@ export class TransactionsService {
         balancePayment = await postDebit(value, null, null, null, null, patient.hmo);
       }
 
-      return { success: true, transactions, balancePayment, balance };
+      return { success: true, transactions, balancePayment, balance, credits };
     } catch (error) {
       console.log(error);
       return { success: false, message: error.message };
@@ -1376,9 +1385,9 @@ export class TransactionsService {
       const offset = page * limit;
 
       let control = true;
-      if ((hmo_id && hmo_id != "") || (term && term != "")) {
+      if ((hmo_id && hmo_id != '') || (term && term != '')) {
         control = false;
-      };
+      }
 
       const date = new Date();
       const month = Number(date.getMonth()) + 1;
@@ -1391,7 +1400,7 @@ export class TransactionsService {
       if (term && term !== '') {
         nums = term.match(/(\d+)/g);
         chars = term.replace(/[^a-z]+/gi, '');
-      };
+      }
 
       const query = this.transactionsRepository
         .createQueryBuilder('q')
@@ -1407,11 +1416,11 @@ export class TransactionsService {
         case 'labs':
           query.leftJoinAndSelect('patient_requests.labTest', 'lab_test');
           break;
-      };
+      }
 
       if (bill_source && bill_source != '') {
         query.andWhere('q.bill_source = :bill_source', { bill_source });
-      };
+      }
 
       //might include filter for cafeteria transactions only;
       switch (filter) {
@@ -1435,14 +1444,13 @@ export class TransactionsService {
           const end = moment(endDate).endOf('day').toISOString();
           query.andWhere(`q.createdAt <= '${end}'`);
         }
-      };
+      }
 
       //query if search term contains alphabets
       if (chars && chars !== '') {
         query.andWhere(
           new Brackets((qb) => {
-              qb
-              .orWhere('patient.surname iLike :surname', { surname: `%${chars}%` })
+            qb.orWhere('patient.surname iLike :surname', { surname: `%${chars}%` })
               .orWhere('patient.other_names iLike :other_names', { other_names: `%${chars}%` })
               .orWhere('staff.first_name iLike :surname', { surname: `%${chars}%` })
               .orWhere('staff.last_name iLike :other_names', { other_names: `%${chars}%` });
@@ -1458,60 +1466,47 @@ export class TransactionsService {
             }
           }),
         );
-      };
+      }
 
       //query if search term contains digits
       if (nums) {
         const digits = parseInt(nums[0]);
 
         query.andWhere('patient.id = :id', { id: digits }).andWhere('q.amount = :amount', { amount: digits });
-      };
+      }
 
       if (hmo_id && hmo_id !== '') {
         query.leftJoinAndSelect('q.hmo', 'hmo').andWhere('hmo.id = :id', { id: Number(hmo_id) });
-      };
+      }
 
       let totalAmount = 0;
       let totalVat = 0;
       let total;
 
-      if (
-        (!startDate || startDate == "") && 
-        (!endDate || endDate == "") && 
-        type == "report" &&
-        control
-        ) {
+      if ((!startDate || startDate == '') && (!endDate || endDate == '') && type == 'report' && control) {
+        query.andWhere(`q.createdAt >= '1-${month}-${year}'`).andWhere(`q.createdAt <= '${day}-${month}-${year}'`);
 
-        query.andWhere(`q.createdAt >= '1-${month}-${year}'`)
-          .andWhere(`q.createdAt <= '${day}-${month}-${year}'`);
+        const all = await query.getMany();
 
-        let all = await query.getMany();
-
-        totalAmount = all.map(a => a.amount).reduce((a, b) => a - b, 0);
+        totalAmount = all.map((a) => a.amount).reduce((a, b) => a - b, 0);
         totalAmount = Math.round(totalAmount);
-        totalVat = Math.round(((totalAmount / 100) * 7.5));
+        totalVat = Math.round((totalAmount / 100) * 7.5);
         total = await query.getCount();
-
-
-      } else if (startDate && startDate != "" && endDate && endDate != "" && type == "report") {
-
-        let all = await query.getMany();
+      } else if (startDate && startDate != '' && endDate && endDate != '' && type == 'report') {
+        const all = await query.getMany();
         total = await query.getCount();
-        totalAmount = all.map(a => a.amount).reduce((a, b) => a - b, 0);
+        totalAmount = all.map((a) => a.amount).reduce((a, b) => a - b, 0);
         totalAmount = Math.round(totalAmount);
-        totalVat = Math.round(((totalAmount / 100) * 7.5));
-      } else if (type == "report") {
-
-        let all = await query.getMany();
+        totalVat = Math.round((totalAmount / 100) * 7.5);
+      } else if (type == 'report') {
+        const all = await query.getMany();
         total = await query.getCount();
-        totalAmount = all.map(a => a.amount).reduce((a, b) => a - b, 0);
+        totalAmount = all.map((a) => a.amount).reduce((a, b) => a - b, 0);
         totalAmount = Math.round(totalAmount);
-        totalVat = Math.round(((totalAmount / 100) * 7.5));
-
+        totalVat = Math.round((totalAmount / 100) * 7.5);
       } else {
-
         total = await query.getCount();
-      };
+      }
 
       const results = await query.orderBy('q.updated_at', 'DESC').take(limit).skip(offset).getMany();
 
@@ -1524,7 +1519,7 @@ export class TransactionsService {
         itemsPerPage: limit,
         totalItems: total,
         currentPage: parseInt(data.page),
-        result: results
+        result: results,
       };
     } catch (error) {
       console.log(error);
