@@ -94,23 +94,27 @@ export class CareTeamService {
 
       const patient = await this.patientRepository.findOne(patient_id);
 
-      await this.careTeamRepository.softDelete({ type, item_id });
-
       let results = [];
       for (const item of staffs) {
         const staff = await this.staffRepository.findOne(item.id);
 
-        const member = new CareTeam();
-        member.member = staff;
-        member.is_primary_care_giver = staff.id === primary_care_id;
-        member.type = type;
-        member.item_id = item_id;
-        member.patient = patient;
-        member.createdBy = username;
+        let rs;
+        const _staff = await this.careTeamRepository.findOne({ where: { patient, type, item_id, member: staff }, relations: ['member'] });
+        if (!_staff) {
+          const member = new CareTeam();
+          member.member = staff;
+          member.is_primary_care_giver = staff.id === primary_care_id;
+          member.type = type;
+          member.item_id = item_id;
+          member.patient = patient;
+          member.createdBy = username;
 
-        const rs = await member.save();
+          rs = await member.save();
 
-        results = [...results, rs];
+          results = [...results, rs];
+        } else {
+          results = [...results, { ..._staff }];
+        }
       }
 
       return { success: true, members: results };

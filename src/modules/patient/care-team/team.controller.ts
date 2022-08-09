@@ -8,14 +8,9 @@ import {
   Post,
   UsePipes,
   ValidationPipe,
-  UseInterceptors,
-  UploadedFile,
 } from '@nestjs/common';
 import { CareTeamService } from './team.service';
 import { AuthGuard } from '@nestjs/passport';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { extname } from 'path';
-import { StaffDto } from '../../hr/staff/dto/staff.dto';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 import { CareTeamDto } from './dto/team.dto';
 

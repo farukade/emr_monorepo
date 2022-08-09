@@ -1,4 +1,4 @@
-import { Entity, ManyToOne, JoinColumn, OneToOne, Column } from 'typeorm';
+import { Entity, ManyToOne, JoinColumn, Column } from 'typeorm';
 import { CustomBaseEntity } from '../../../../common/entities/custom-base.entity';
 import { Patient } from '../../entities/patient.entity';
 import { StaffDetails } from '../../../hr/staff/entities/staff_details.entity';
