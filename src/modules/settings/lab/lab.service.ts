@@ -201,23 +201,34 @@ export class LabService {
 
     test.deletedBy = username;
     await test.save();
-    await test.softRemove();
 
     const service = await this.serviceRepository.findOne({
       where: { code: test.code },
     });
-    await service?.softRemove();
+    if (service) {
+      service.deletedBy = username;
+      await service.save();
+      await service?.softRemove();
+    }
 
     const services = await this.serviceCostRepository.find({
       where: { code: test.code },
       relations: ['hmo'],
     });
     for (const item of services) {
+      item.deletedBy = username;
+      await item.save();
       await item?.softRemove();
     }
 
     const group = await this.groupTestRepository.findOne({ where: { labTest: test } });
-    await group?.softRemove();
+    if (group) {
+      group.deletedBy = username;
+      await group.save();
+      await group.softRemove();
+    }
+
+    await test.softRemove();
 
     return { ...test, service: services.find((s) => s.hmo.name === 'Private') };
   }

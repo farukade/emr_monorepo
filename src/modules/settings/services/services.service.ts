@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ServiceDto } from './dto/service.dto';
 import { ServiceCategoryDto } from './dto/service.category.dto';
@@ -21,6 +21,7 @@ import * as moment from 'moment';
 import { PatientRepository } from 'src/modules/patient/repositories/patient.repository';
 import { StaffRepository } from 'src/modules/hr/staff/staff.repository';
 import * as startCase from 'lodash.startcase';
+import { RoomCategory } from '../entities/room_category.entity';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Excel = require('exceljs');
 
@@ -264,6 +265,15 @@ export class ServicesService {
 
     const service = await this.serviceRepository.createService(serviceDto, category, code);
 
+    switch (category.slug) {
+      case 'ward':
+        const room = new RoomCategory();
+        room.name = serviceDto.name;
+        room.code = code;
+        await this.roomCategoryRepository.save(room);
+        break;
+    }
+
     const schemes = await this.hmoSchemeRepository.find();
 
     for (const scheme of schemes) {
@@ -344,16 +354,34 @@ export class ServicesService {
   }
 
   async deleteService(id: number, username: string): Promise<any> {
-    const service = await this.serviceRepository.findOne(id);
+    try {
+      const service = await this.serviceRepository.findOne(id, { relations: ['category'] });
 
-    if (!service) {
-      throw new NotFoundException(`Service with ID '${id}' not found`);
+      if (!service) {
+        throw new NotFoundException(`Service with ID '${id}' not found`);
+      }
+
+      service.deletedBy = username;
+      await service.save();
+
+      switch (service.category.slug) {
+        case 'drugs':
+          break;
+        case 'labs':
+          break;
+        case 'ward':
+          const room = await this.roomCategoryRepository.findOne({ where: { code: service.code } });
+          room.deletedBy = username;
+          await room.save();
+          await room.softRemove();
+          break;
+      }
+
+      return service.softRemove();
+    } catch (e) {
+      console.log(e);
+      throw new BadRequestException(e);
     }
-
-    service.deletedBy = username;
-    await service.save();
-
-    return service.softRemove();
   }
 
   /*

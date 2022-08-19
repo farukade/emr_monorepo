@@ -157,6 +157,22 @@ export class RoomService {
       throw new NotFoundException(`Room category with ID '${id}' not found`);
     }
 
+    const serviceCost = await this.serviceCostRepository.find({
+      where: { code: category.code },
+    });
+    for (const cost of serviceCost) {
+      cost.deletedBy = username;
+      await cost.save();
+      await cost.softRemove();
+    }
+
+    const service = await this.serviceRepository.findOne({
+      where: { code: category.code },
+    });
+    service.deletedBy = username;
+    await service.save();
+    await service.softRemove();
+
     category.deletedBy = username;
     await category.save();
 

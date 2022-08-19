@@ -32,7 +32,7 @@ export class TasksService {
     private deviceRepository: DeviceRepository,
     @InjectRepository(StaffRepository)
     private staffRepository: StaffRepository,
-  ) { }
+  ) {}
 
   @Cron(CronExpression.EVERY_HOUR)
   async runEveryHour() {
@@ -252,70 +252,63 @@ export class TasksService {
   async saveAttendanceToDB() {
     this.logger.debug('saving attendance to database');
     try {
-    let zkInstance;
-    let dataArr = [];
-    const devices = await this.deviceRepository.find();
+      let zkInstance;
+      let dataArr = [];
+      const devices = await this.deviceRepository.find();
 
-    for (const device of devices) {
-      let attendanceArr = [];
-      zkInstance = new ZKLib(device.ip, parseInt(port), 5200, 5000);
+      for (const device of devices) {
+        let attendanceArr = [];
+        zkInstance = new ZKLib(device.ip, parseInt(port), 5200, 5000);
 
-      // Create socket to machine
-      await zkInstance.createSocket();
+        // Create socket to machine
+        await zkInstance.createSocket();
 
-      // Get general info like logCapacity, user counts, logs count
-      // It's really useful to check the status of device
+        // Get general info like logCapacity, user counts, logs count
+        // It's really useful to check the status of device
 
-      console.log(await zkInstance.getInfo());
-      const logs = await zkInstance.getAttendances();
+        console.log(await zkInstance.getInfo());
+        const logs = await zkInstance.getAttendances();
 
-      if (!logs) {
-        console.log({
-          success: false,
-          message: 'no data in logs or bio-devive not connected to network',
-        });
-        return {
-          success: false,
-          message: 'no data in logs or bio-devive not connected to network',
-        };
+        if (!logs) {
+          console.log({
+            success: false,
+            message: 'no data in logs or bio-devive not connected to network',
+          });
+          return {
+            success: false,
+            message: 'no data in logs or bio-devive not connected to network',
+          };
+        }
+        attendanceArr = await logs.data;
+
+        for (const item of attendanceArr) {
+          const staff = await this.staffRepository.findOne(item.deviceUserId);
+
+          dataArr = [
+            {
+              staff,
+              ip: item.ip,
+              date: item.recordTime,
+              device,
+            },
+            ...dataArr,
+          ];
+        }
+
+        zkInstance.clearAttendanceLog();
+        await zkInstance.disconnect();
+      }
+
+      const rs = await this.attendanceRepository.createQueryBuilder().insert().into(Attendance).values(dataArr).execute();
+
+      return {
+        success: true,
+        message: 'attendance saved',
+        result: rs,
       };
-      attendanceArr = await logs.data;
-
-
-      for (const item of attendanceArr) {
-
-        let staff = await this.staffRepository.findOne(item.deviceUserId);
-
-        dataArr = [
-          {
-            staff,
-            ip: item.ip,
-            date: item.recordTime,
-            device
-          },
-          ...dataArr,
-        ];
-      };
-
-      zkInstance.clearAttendanceLog();
-      await zkInstance.disconnect();
-    };
-
-    const rs = await this.attendanceRepository
-      .createQueryBuilder()
-      .insert()
-      .into(Attendance)
-      .values(dataArr)
-      .execute();
-
-    return {
-      success: true,
-      message: "attendance saved",
-      result: rs
-    };
-  } catch(error) {
-    console.log({ success: false, error });
-    return;
+    } catch (error) {
+      console.log({ success: false, error });
+      return;
+    }
   }
-};
 }

@@ -55,6 +55,8 @@ import { LabourEnrollment } from '../patient/labour-management/entities/labour_e
 import { IvfEnrollment } from '../patient/ivf/entities/ivf_enrollment.entity';
 import { QueueService } from '../queue/queue.service';
 import { PatientDocument } from '../patient/entities/patient_documents.entity';
+import { RoomCategory } from '../settings/entities/room_category.entity';
+import { ServiceCategory } from "../settings/entities/service_category.entity";
 
 @Processor(process.env.MIGRATION_QUEUE_NAME)
 export class MigrationProcessor {
@@ -1271,6 +1273,24 @@ export class MigrationProcessor {
         if (patient) {
           patient.ivf_id = item.id;
           await patient.save();
+        }
+      }
+    }
+  }
+
+  @Process('fix-wards')
+  async fixWards(): Promise<any> {
+    const category = await getConnection().getRepository(ServiceCategory).findOne(17);
+    const services = await getConnection().getRepository(Service).find({ category });
+    for (const item of services) {
+      if (item) {
+        const room = await getConnection().getRepository(RoomCategory).findOne({ code: item.code });
+        if (!room) {
+          const ward = new RoomCategory();
+          ward.code = item.code;
+          ward.name = item.name;
+
+          await ward.save();
         }
       }
     }

@@ -135,6 +135,11 @@ export class MigrationController {
     return this.migrationService.queueMigration('fix-enrollments');
   }
 
+  @Get('/fix-wards')
+  fixWards(): Promise<any> {
+    return this.migrationService.queueMigration('fix-wards');
+  }
+
   @Get('/test')
   test(): Promise<any> {
     return this.migrationService.queueMigration('test');
