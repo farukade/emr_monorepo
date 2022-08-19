@@ -56,7 +56,8 @@ import { IvfEnrollment } from '../patient/ivf/entities/ivf_enrollment.entity';
 import { QueueService } from '../queue/queue.service';
 import { PatientDocument } from '../patient/entities/patient_documents.entity';
 import { RoomCategory } from '../settings/entities/room_category.entity';
-import { ServiceCategory } from "../settings/entities/service_category.entity";
+import { ServiceCategory } from '../settings/entities/service_category.entity';
+import { HmoScheme } from '../hmo/entities/hmo_scheme.entity';
 
 @Processor(process.env.MIGRATION_QUEUE_NAME)
 export class MigrationProcessor {
@@ -1278,19 +1279,29 @@ export class MigrationProcessor {
     }
   }
 
-  @Process('fix-wards')
-  async fixWards(): Promise<any> {
-    const category = await getConnection().getRepository(ServiceCategory).findOne(17);
-    const services = await getConnection().getRepository(Service).find({ category });
-    for (const item of services) {
-      if (item) {
-        const room = await getConnection().getRepository(RoomCategory).findOne({ code: item.code });
-        if (!room) {
-          const ward = new RoomCategory();
-          ward.code = item.code;
-          ward.name = item.name;
+  @Process('fix-services')
+  async fixServices(): Promise<any> {
+    const services = await getConnection()
+      .getRepository(Service)
+      .find({ order: { id: 'ASC' } });
 
-          await ward.save();
+    for (const service of services) {
+      if (service) {
+        const schemes = await this.hmoSchemeRepository.find();
+
+        for (const scheme of schemes) {
+          const cost = await getConnection().getRepository(ServiceCost).findOne({ code: service.code, hmo: scheme });
+
+          if (!cost) {
+            console.log({ id: service.id, name: service.name, code: service.code, hmo: scheme.name });
+            const serviceCost = new ServiceCost();
+            serviceCost.code = service.code;
+            serviceCost.item = service;
+            serviceCost.hmo = scheme;
+            serviceCost.tariff = 0;
+
+            await serviceCost.save();
+          }
         }
       }
     }

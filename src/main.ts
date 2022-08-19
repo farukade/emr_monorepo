@@ -39,10 +39,9 @@ async function bootstrap() {
   app.use('/images', express.static(join(__dirname, '..', 'public/images')));
   app.use('/outputs', express.static(join(__dirname, '..', 'public/outputs')));
 
-  const host = process.env.HOST || 'localhost';
   const port = process.env.PORT || 3001;
 
-  await app.listen(port, host, async () => {
+  await app.listen(port, async () => {
     console.info(`EMRAPP API running on: ${await app.getUrl()}`);
   });
 }
