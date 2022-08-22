@@ -1544,26 +1544,6 @@ export class TransactionsService {
 
       const patientId = patient?.id;
 
-      let trans = [];
-      let patientTransactions;
-      let staffTransactions;
-
-      if (patient) {
-        patientTransactions = await this.transactionsRepository.find({ where: { patient } });
-      };
-
-      if (staff) {
-        staffTransactions = await this.transactionsRepository.find({ where: { staff } });
-      };
-
-      if (staffTransactions) {
-        trans = [...staffTransactions];
-      };
-
-      if (patientTransactions) {
-        trans = [...patientTransactions];
-      };
-
       const query = this.transactionsRepository.createQueryBuilder('q')
         .leftJoinAndSelect('q.patient', 'patient')
         .leftJoinAndSelect('q.staff', 'staff');
@@ -1577,6 +1557,7 @@ export class TransactionsService {
       );
 
       const total = await query.getCount();
+      const trans = await query.getMany();
 
       const results = await query
         .orderBy('q.updated_at', 'DESC')
