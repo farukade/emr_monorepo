@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags } from '@nestjs/swagger';
 import { EmbryoAssessmentDto } from './dto/embryo-assessment.dto';
@@ -12,7 +12,7 @@ import { IvfEmbryologyService } from './embryology.service';
 @ApiTags('Embryology')
 @Controller('embryology')
 export class EmbryologyController {
-  constructor(private embryologyService: IvfEmbryologyService) {}
+  constructor(private embryologyService: IvfEmbryologyService) { }
 
   @Post('assessment/create')
   saveAssessment(@Body() data: EmbryoAssessmentDto) {
@@ -42,5 +42,30 @@ export class EmbryologyController {
   @Get('/')
   getEmbryologyById(@Query() urlParams) {
     return this.embryologyService.getEmbryologyById(urlParams);
+  }
+
+  @Patch('treatment/update')
+  updateTreatment(@Body() data) {
+    return this.embryologyService.updateTreatment(data);
+  };
+
+  @Patch('sperm-prep/update')
+  updateSperm(@Body() data) {
+    return this.embryologyService.updateSperm(data);
+  };
+
+  @Patch('icsi/update')
+  updateIcsi(@Body() data) {
+    return this.embryologyService.updateIcsi(data);
+  }
+
+  @Patch('transfer/update')
+  updateTransfer(@Body() data) {
+    return this.embryologyService.updateTransfer(data);
+  }
+
+  @Patch('assessment/update')
+  updateAssessment(@Body() data) {
+    return this.embryologyService.updateAssessment(data);
   }
 }

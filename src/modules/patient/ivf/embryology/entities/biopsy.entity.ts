@@ -2,7 +2,7 @@ import { CustomBaseEntity } from "src/common/entities/custom-base.entity";
 import { Column, Entity, JoinColumn, ManyToOne } from "typeorm";
 import { IvfEmbryoAssessment } from "./embryo-assessment.entity";
 
-@Entity()
+@Entity({ name: 'ivf_biopsy' })
 export class Biopsy extends CustomBaseEntity {
     @Column({ nullable: true })
     type: string;

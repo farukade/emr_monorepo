@@ -2,7 +2,7 @@ import { CustomBaseEntity } from "src/common/entities/custom-base.entity";
 import { Column, Entity, JoinColumn, ManyToOne } from "typeorm";
 import { IvfSpermPreparationEntity } from "./sperm-prep.entity";
 
-@Entity()
+@Entity({ name: 'ivf_cell_info' })
 export class CellInfo extends CustomBaseEntity {
     @Column()
     type: string;

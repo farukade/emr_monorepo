@@ -12,7 +12,12 @@ import { IvfEmbryologyRepository } from './embryology.repository';
 import { Biopsy } from './entities/biopsy.entity';
 import { CellInfo } from './entities/cell-info.entity';
 import { IcsiDayRecord } from './entities/day-record.entity';
+import { IvfEmbryoAssessment } from './entities/embryo-assessment.entity';
 import { IvfEmbryoTransferRecord } from './entities/embryo-trans-record.entity';
+import { IvfEmbryoTransfer } from './entities/embryo-transfer.entity';
+import { IvfICSIEntity } from './entities/icsi.entity';
+import { IvfSpermPreparationEntity } from './entities/sperm-prep.entity';
+import { IvfTreatmentEntity } from './entities/treatment.entity';
 import { BiopsyRepository } from './repositories/biopsy.repository';
 import { CellInfoRepository } from './repositories/cell-info.repository';
 import { DayRecordsRepository } from './repositories/day-records.repository';
@@ -68,35 +73,35 @@ export class IvfEmbryologyService {
 			embryology.embryoAssessment = newAssessment;
 			await this.embryologyRepository.save(embryology);
 
+			let biopsyData = [];
 			if (biopsy.length) {
-				let biopsyData = [];
 				for (const item of biopsy) {
 					biopsyData = [{
 						type: item.type,
-						one: item.one,
-						two: item.two,
-						three: item.three,
-						four: item.four,
-						five: item.five,
-						six: item.six,
-						seven: item.seven,
-						eight: item.eight,
-						nine: item.nine,
-						ten: item.ten,
-						eleven: item.eleven,
-						twelve: item.twelve,
+						one: item?.one,
+						two: item?.two,
+						three: item?.three,
+						four: item?.four,
+						five: item?.five,
+						six: item?.six,
+						seven: item?.seven,
+						eight: item?.eight,
+						nine: item?.nine,
+						ten: item?.ten,
+						eleven: item?.eleven,
+						twelve: item?.twelve,
 						assessment: newAssessment
 					},
 					...biopsyData
 					]
 				};
-				await this.biopsyRepository
-					.createQueryBuilder()
-					.insert()
-					.into(Biopsy)
-					.values(biopsyData)
-					.execute();
 			};
+			await this.biopsyRepository
+				.createQueryBuilder()
+				.insert()
+				.into(Biopsy)
+				.values(biopsyData)
+				.execute();
 
 			return {
 				success: true,
@@ -139,7 +144,7 @@ export class IvfEmbryologyService {
 						comments: item.comments,
 						icsi: item.icsi,
 						ivf: item.ivf,
-						ivf_transfer: item.ivf_transfer
+						ivf_transfer: newTransfer
 					},
 					...transData
 					]
@@ -197,7 +202,7 @@ export class IvfEmbryologyService {
 						others: item.others,
 						comment: item.comment,
 						witness: item.witness,
-						embryologist: embryologist.user.username,
+						embryologist: embryologist.user?.username || newIcsi.createdBy,
 						icsi: newIcsi
 					},
 					...dayData
@@ -345,9 +350,9 @@ export class IvfEmbryologyService {
 
 			if (patient_id) {
 				patient = await this.patientRepository.findOne(patient_id, {
-					relations: [ 
-						'embryology', 
-						'embryology.embryoAssessment', 
+					relations: [
+						'embryology',
+						'embryology.embryoAssessment',
 						'embryology.embryoTransfer',
 						'embryology.icsi',
 						'embryology.spermPreparation',
@@ -386,6 +391,189 @@ export class IvfEmbryologyService {
 				success: false,
 				message: error.message || 'could not fetch data',
 			};
+		}
+	}
+
+	async updateTreatment(data) {
+		try {
+			const { embryologyId, patientId, treatmentId, ...treatmentData } = data;
+			if (!embryologyId || !patientId || !treatmentId) {
+				return { success: false, message: "no treatment, patient or embryology ID in request body" };
+			};
+			const embryology = await this.embryologyRepository.findOne(data.embryologyId);
+			const patient = await this.patientRepository.findOne(patientId);
+
+			const update = await this.embryoTreatmentRepository
+				.createQueryBuilder()
+				.update(IvfTreatmentEntity)
+				.set(treatmentData)
+				.where("id = :id", { id: treatmentId })
+				.execute()
+
+			if (update.affected) {
+				let treatment = await this.embryoTreatmentRepository.findOne(treatmentId);
+				embryology.ivfTreatment = treatment;
+				embryology.patient = patient;
+				await this.embryologyRepository.save(embryology);
+
+				return {
+					success: true,
+					message: "update success",
+					result: treatment
+				};
+			};
+
+			return {
+				success: false,
+				message: "an error occured"
+			};
+
+		} catch (error) {
+			console.log(error);
+			return { success: false, message: error.message || "an error occured" };
+		}
+	}
+
+	async updateSperm(data) {
+		try {
+			const { spermId, embryologistId, ...spermData } = data;
+			if (!spermId) {
+				return { success: false, message: "no sperm ID in request body" };
+			};
+			const update = await this.spermPrepRepository
+				.createQueryBuilder()
+				.update(IvfSpermPreparationEntity)
+				.set(spermData)
+				.where("id = :id", { id: spermId })
+				.execute()
+
+			if (update.affected) {
+				let spermPrep = await this.spermPrepRepository.findOne(spermId);
+
+				let embryologist;
+				if (embryologistId) {
+					embryologist = await this.staffRepository.findOne(embryologistId);
+					spermPrep.embryologist = embryologist;
+					await this.spermPrepRepository.save(spermPrep);
+				};
+
+				return {
+					success: true,
+					message: "update success",
+					result: spermPrep
+				};
+			};
+
+			return {
+				success: false,
+				message: "an error occured"
+			};
+
+		} catch (error) {
+			console.log(error);
+			return { success: false, message: error.message || "an error occured" };
+		};
+	}
+
+	async updateIcsi(data) {
+		try {
+			const { icsiId, embryologistId, ...icsiData } = data;
+			if (!icsiId) {
+				return { success: false, message: "no icsi ID in request body" };
+			};
+
+			const update = await this.icsiRepository
+				.createQueryBuilder()
+				.update(IvfICSIEntity)
+				.set(icsiData)
+				.where("id = :id", { id: icsiId })
+				.execute()
+
+			if (update.affected) {
+				let icsi = await this.icsiRepository.findOne(icsiId);
+
+				let embryologist;
+				if (embryologistId) {
+					embryologist = await this.staffRepository.findOne(embryologistId);
+					icsi.embryologist = embryologist;
+				};
+
+				return {
+					success: true,
+					message: "update success",
+					result: icsi
+				};
+			};
+
+			return {
+				success: false,
+				message: "an error occured"
+			};
+
+		} catch (error) {
+			console.log(error);
+			return { success: false, message: error.message || "an error occured" };
+		}
+	}
+
+	async updateTransfer(data) {
+		try {
+			const { transId, ...transData } = data;
+			if (!transId) {
+				return { success: false, message: "no transfer ID in request body" };
+			};
+
+			let transUpdate = await this.embryoTranferRepository
+				.createQueryBuilder()
+				.update(IvfEmbryoTransfer)
+				.set(transData)
+				.where("id = :id", { id: transId })
+				.execute()
+
+			const transfer = await this.embryoTranferRepository.findOne(transId);
+
+			return {
+				success: true,
+				message: "update success",
+				result: transfer
+			};
+
+		} catch (error) {
+			console.log(error);
+			return { success: false, message: error.message || "an error occured" };
+		}
+	}
+
+	async updateAssessment(data) {
+		try {
+			const { assessmentId, ...assessmentData } = data;
+			if (!assessmentId) {
+				return { success: false, message: "no assessment ID in request body" };
+			};
+
+			const update = await this.embryoTranferRepository
+				.createQueryBuilder()
+				.update(IvfEmbryoAssessment)
+				.set(assessmentData)
+				.where("id = :id", { id: assessmentId })
+				.execute();
+
+			if (update.affected) {
+				const assessment = await this.embryoTranferRepository.findOne(assessmentId);
+				return {
+					success: true,
+					message: "update success",
+					result: assessment
+				};
+			};
+			return {
+				success: false,
+				message: "update failed"
+			}
+
+		} catch (error) {
+			console.log(error);
+			return { success: false, message: error.message || "an error occured" };
 		}
 	}
 }
