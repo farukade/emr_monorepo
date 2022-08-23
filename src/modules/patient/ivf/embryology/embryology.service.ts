@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { StaffRepository } from 'src/modules/hr/staff/staff.repository';
-import { Patient } from '../../entities/patient.entity';
 import { PatientRepository } from '../../repositories/patient.repository';
 import { EmbryoAssessmentDto } from './dto/embryo-assessment.dto';
 import { EmbryoTransferDto } from './dto/embryo-transfer.dto';
@@ -125,7 +124,7 @@ export class IvfEmbryologyService {
 			const embryologist = await this.staffRepository.findOne(embryologistId);
 
 			if (!embryology || !embryologist) {
-				return { success: false, message: "embryology or embryologist not found" }
+				return { success: false, message: "embryology or embryologist not found" };
 			};
 
 			const newTransfer = this.embryoTranferRepository.create(restTransfer);
@@ -139,11 +138,11 @@ export class IvfEmbryologyService {
 				let transData = [];
 				for (const item of transRecord) {
 					transData = [{
-						stage: item.stage,
-						grade: item.grade,
-						comments: item.comments,
-						icsi: item.icsi,
-						ivf: item.ivf,
+						stage: item?.stage,
+						grade: item?.grade,
+						comments: item?.comments,
+						icsi: item?.icsi,
+						ivf: item?.ivf,
 						ivf_transfer: newTransfer
 					},
 					...transData
@@ -194,17 +193,17 @@ export class IvfEmbryologyService {
 				let dayData = [];
 				for (const item of dayOne) {
 					dayData = [{
-						type: item.type,
-						one_pn: item.one_pn,
-						two_pn: item.two_pn,
-						three_pn: item.three_pn,
-						mil: item.mil,
-						ml: item.ml,
-						gv: item.gv,
-						others: item.others,
-						comment: item.comment,
-						witness: item.witness,
-						embryologist: embryologist.user?.username || newIcsi.createdBy,
+						type: item?.type,
+						one_pn: item?.one_pn,
+						two_pn: item?.two_pn,
+						three_pn: item?.three_pn,
+						mil: item?.mil,
+						ml: item?.ml,
+						gv: item?.gv,
+						others: item?.others,
+						comment: item?.comment,
+						witness: item?.witness,
+						embryologist: embryologist?.user.username,
 						icsi: newIcsi
 					},
 					...dayData
