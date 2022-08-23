@@ -35,7 +35,7 @@ export class StaffService {
     private specializationRepository: SpecializationRepository,
     @InjectRepository(PatientRepository)
     private patientRepository: PatientRepository,
-  ) {}
+  ) { }
 
   async getStaffs(options: PaginationOptionsInterface, params): Promise<Pagination> {
     const { q, status } = params;
@@ -94,8 +94,10 @@ export class StaffService {
 
     const query = this.staffRepository
       .createQueryBuilder('s')
-      .select('s.*')
-      .andWhere(
+      .select('s.*');
+
+    if (q && q != "") {
+      query.andWhere(
         new Brackets((qb) => {
           qb.where('LOWER(s.first_name) Like :first_name', { first_name: `%${q.toLowerCase()}%` })
             .orWhere('LOWER(s.last_name) Like :last_name', { last_name: `%${q.toLowerCase()}%` })
@@ -104,10 +106,10 @@ export class StaffService {
             .orWhere('CAST(s.id AS text) LIKE :id', { id: `%${q}%` });
         }),
       );
-
+    };
     if (profession && profession !== '') {
       query.andWhere('s.profession = :profession', { profession });
-    }
+    };
 
     return await query.take(options.limit).getRawMany();
   }
