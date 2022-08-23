@@ -175,8 +175,8 @@ export class TransactionsService {
 
       transaction.admission = transaction.admission_id
         ? await this.admissionRepository.findOne(transaction.admission_id, {
-            relations: ['room', 'room.category'],
-          })
+          relations: ['room', 'room.category'],
+        })
         : null;
 
       transaction.cashier = await getStaff(transaction.createdBy);
@@ -277,8 +277,8 @@ export class TransactionsService {
 
       transaction.admission = transaction.admission_id
         ? await this.admissionRepository.findOne(transaction.admission_id, {
-            relations: ['room', 'room.category'],
-          })
+          relations: ['room', 'room.category'],
+        })
         : null;
 
       transaction.cashier = await getStaff(transaction.createdBy);
@@ -1536,19 +1536,28 @@ export class TransactionsService {
       const staff = await this.staffRepository.findOne(staff_id);
       if (!staff) {
         return { success: false, message: 'staff not found' };
-      }
+      };
 
-      const transactions = await this.transactionsRepository.find({ where: { staff } });
+      const patient = await this.patientRepository.createQueryBuilder('q')
+        .where('q.staff_id = :staff_id', { staff_id })
+        .getOne();
 
-      const query = this.transactionsRepository.createQueryBuilder('q').leftJoinAndSelect('q.patient', 'patient');
+      const patientId = patient?.id;
+
+      const query = this.transactionsRepository.createQueryBuilder('q')
+        .leftJoinAndSelect('q.patient', 'patient')
+        .leftJoinAndSelect('q.staff', 'staff');
 
       query.andWhere(
         new Brackets((qb) => {
-          qb.where('q.staff_id = :staff_id', { staff_id }).orWhere('patient.staff_id = :staff_id', { staff_id });
+          qb.where('staff.id = :staff_id', { staff_id })
+            .orWhere('patient.id = :patientId', { patientId })
+            .orWhere('patient.staff_id = :staff_id', { staff_id })
         }),
       );
 
       const total = await query.getCount();
+      const trans = await query.getMany();
 
       const results = await query
         .orderBy('q.updated_at', 'DESC')
@@ -1556,17 +1565,17 @@ export class TransactionsService {
         .skip(page * options.limit)
         .getMany();
 
-      const totalPurchase = transactions.reduce((a, b) => a - b?.amount, 0);
-      const totalAmountPaid = transactions.reduce((a, b) => a - b?.amount_paid, 0);
+      const totalPurchase = trans.reduce((a, b) => a - b?.amount, 0);
+      const totalAmountPaid = trans.reduce((a, b) => a - b?.amount_paid, 0);
 
       return {
-        result: results,
         lastPage: Math.ceil(total / options.limit),
         itemsPerPage: options.limit,
         totalItems: total,
         currentPage: options.page,
         totalAmountPaid,
         totalPurchase,
+        result: results,
       };
     } catch (error) {
       console.log(error);
