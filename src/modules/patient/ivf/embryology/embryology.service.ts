@@ -175,7 +175,9 @@ export class IvfEmbryologyService {
 		try {
 			const { embryologyId, dayOne, embryologistId, ...restIcsi } = data;
 			const embryology = await this.embryologyRepository.findOne(embryologyId);
-			const embryologist = await this.staffRepository.findOne(embryologistId);
+			const embryologist = await this.staffRepository.findOne(embryologistId, {
+				relations: ['user']
+			});
 
 			if (!embryology || !embryologist) {
 				return { success: false, message: "embryology or embryologist not found" }
