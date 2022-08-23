@@ -90,7 +90,7 @@ export class StaffService {
   }
 
   async findStaffs(options, param): Promise<StaffDetails[]> {
-    const { q, profession } = param;
+    const { q, profession, department_id } = param;
 
     const query = this.staffRepository
       .createQueryBuilder('s')
@@ -109,6 +109,10 @@ export class StaffService {
     };
     if (profession && profession !== '') {
       query.andWhere('s.profession = :profession', { profession });
+    };
+
+    if (department_id && department_id != "") {
+      query.andWhere('s.department_id = :department_id', { department_id });
     };
 
     return await query.take(options.limit).getRawMany();
