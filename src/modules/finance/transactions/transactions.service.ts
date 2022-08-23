@@ -77,7 +77,7 @@ export class TransactionsService {
     private staffRepository: StaffRepository,
     @InjectRepository(OrderRepository)
     private orderRepository: OrderRepository,
-  ) {}
+  ) { }
 
   async fetchList(options: PaginationOptionsInterface, params): Promise<Pagination> {
     const { startDate, endDate, patient_id, staff_id, service_id, status } = params;
@@ -1430,6 +1430,10 @@ export class TransactionsService {
 
         case 'staff':
           query.andWhere('q.staff IS NOT NULL');
+          break;
+
+        case 'walk-in':
+          query.andWhere('q.staff IS NULL AND q.patient IS NULL');
           break;
       }
 
