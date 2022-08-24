@@ -1,8 +1,23 @@
-import { Controller, Post, Body, Request, UseGuards, Param, Get, Query, UsePipes, ValidationPipe } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Request,
+  UseGuards,
+  Param,
+  Get,
+  Query,
+  UsePipes,
+  ValidationPipe,
+  Put,
+} from '@nestjs/common';
 import { LabourManagementService } from './labour-management.service';
 import { LabourEnrollmentDto } from './dto/labour-enrollment.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { Pagination } from '../../../common/paginate/paginate.interface';
+import { LabourMeasurementDto } from './dto/labour-measurement.dto';
+import { LabourRiskAssessmentDto } from './dto/labour-risk-assessment.dto';
+import { LabourDeliveryRecordDto } from './dto/labour-delivery.dto';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('labour-managements')
@@ -22,63 +37,44 @@ export class LabourManagementController {
     return this.labourManagementService.saveEnrollment(createDto, req.user.username);
   }
 
-  // @Post('measurement/:id/save')
-  // @UsePipes(ValidationPipe)
-  // saveMeasurement(
-  // 	@Body() param: LabourMeasurementDto,
-  // 	@Request() req,
-  // 	@Param('id') id: number,
-  // ) {
-  // 	return this.labourManagementService.doSaveMeasurement(id, param, req.user.username);
-  // }
-  //
-  // @Get(':enrollmentId/measurement')
-  // getMeasurement(@Param('enrollmentId') id: number): Promise<LabourMeasurement[]> {
-  // 	return this.labourManagementService.fetchMeasurement(id);
-  // }
-  //
-  // @Post('vital/:id/save')
-  // @UsePipes(ValidationPipe)
-  // saveVitals(
-  // 	@Body() param: LabourVitalDto,
-  // 	@Request() req,
-  // 	@Param('id') id: string,
-  // ) {
-  // 	return this.labourManagementService.doSaveVital(id, param, req.user.username);
-  // }
-  //
-  // @Get(':enrollemntId/vitals')
-  // getVitals(@Param('enrollmentId') id: string): Promise<LabourVital[]> {
-  // 	return this.labourManagementService.fetchVital(id);
-  // }
-  //
-  // @Post('risk-assessment/:id/save')
-  // @UsePipes(ValidationPipe)
-  // saveRiskAssessment(
-  // 	@Body() param: LabourRistAssesmentDto,
-  // 	@Request() req,
-  // 	@Param('id') id: string,
-  // ) {
-  // 	return this.labourManagementService.doSaveRiskAssessment(id, param, req.user.username);
-  // }
-  //
-  // @Get(':enrollmentId/risk-assessment')
-  // getRiskAssessment(@Param('enrollmentId') id: string): Promise<LabourRiskAssessment[]> {
-  // 	return this.labourManagementService.fetchRiskAssessment(id);
-  // }
-  //
-  // @Post('delivery-record/:id/save')
-  // @UsePipes(ValidationPipe)
-  // saveDelivery(
-  // 	@Body() param: LabourDeliveryRecordDto,
-  // 	@Request() req,
-  // 	@Param('id') id: string,
-  // ) {
-  // 	return this.labourManagementService.doSaveDeliveryRecord(id, param, req.user.username);
-  // }
-  //
-  // @Get(':enrollmentId/delivery-record')
-  // getDeliveryRecord(@Param('enrollmentId') id: string): Promise<LabourDeliveryRecord[]> {
-  // 	return this.labourManagementService.fetchDeliveryRecord(id);
-  // }
+  @Get(':id/measurements')
+  getMeasurements(@Param('id') id: string, @Request() request): Promise<Pagination> {
+    const limit = request.query.hasOwnProperty('limit') ? parseInt(request.query.limit, 10) : 10;
+    const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
+    return this.labourManagementService.fetchMeasurements(+id, { page, limit });
+  }
+
+  @Post(':id/measurements')
+  @UsePipes(ValidationPipe)
+  saveMeasurement(@Body() param: LabourMeasurementDto, @Request() req, @Param('id') id: string) {
+    return this.labourManagementService.saveMeasurement(+id, param, req.user.username);
+  }
+
+  @Get(':id/risk-assessments')
+  getRiskAssessment(@Param('id') id: string): Promise<Pagination> {
+    return this.labourManagementService.fetchRiskAssessment(+id);
+  }
+
+  @Post(':id/risk-assessments')
+  @UsePipes(ValidationPipe)
+  saveRiskAssessment(@Body() param: LabourRiskAssessmentDto, @Request() req, @Param('id') id: string) {
+    return this.labourManagementService.saveRiskAssessment(+id, param, req.user.username);
+  }
+
+  @Get(':id/delivery-record')
+  getDeliveryRecord(@Param('id') id: string): Promise<any> {
+    return this.labourManagementService.fetchDeliveryRecord(+id);
+  }
+
+  @Post(':id/delivery-record')
+  @UsePipes(ValidationPipe)
+  saveDelivery(@Body() param: LabourDeliveryRecordDto, @Request() req, @Param('id') id: string) {
+    return this.labourManagementService.saveDeliveryRecord(+id, param, req.user.username);
+  }
+
+  @Put(':id/close')
+  @UsePipes(ValidationPipe)
+  completeDischarge(@Param('id') id: string, @Body() params, @Request() req): Promise<any> {
+    return this.labourManagementService.close(+id, params, req.user.username);
+  }
 }

@@ -40,5 +40,8 @@ export class LabourEnrollment extends CustomBaseEntity {
   closedBy: StaffDetails;
 
   @Column({ type: 'smallint', default: 0 })
+  delivered: number;
+
+  @Column({ type: 'smallint', default: 0 })
   status: number;
 }

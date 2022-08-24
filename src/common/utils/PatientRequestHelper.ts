@@ -16,12 +16,13 @@ import { createServiceCost, getSerialCode } from './utils';
 import { Nicu } from '../../modules/patient/nicu/entities/nicu.entity';
 import { Patient } from '../../modules/patient/entities/patient.entity';
 import { PatientAlert } from '../../modules/patient/entities/patient_alert.entity';
+import { LabourEnrollment } from '../../modules/patient/labour-management/entities/labour_enrollment.entity';
 
 export class PatientRequestHelper {
   constructor(private patientRequestRepo: PatientRequestRepository) {}
 
   static async handleLabRequest(param: any, patient: Patient, createdBy: string, encounter = null) {
-    const { requestType, request_note, tests, urgent, antenatal_id, admission_id, nicu_id, ivf_id } = param;
+    const { requestType, request_note, tests, urgent, antenatal_id, admission_id, nicu_id, ivf_id, labour_id } = param;
 
     try {
       const serialCode = await getSerialCode(requestType);
@@ -32,6 +33,10 @@ export class PatientRequestHelper {
       let antenatal = null;
       if (antenatal_id && antenatal_id !== '') {
         antenatal = await getConnection().getRepository(AntenatalEnrollment).findOne(antenatal_id);
+      } else {
+        antenatal = await getConnection()
+          .getRepository(AntenatalEnrollment)
+          .findOne({ where: { patient, status: 0 } });
       }
 
       let admission = null;
@@ -49,6 +54,15 @@ export class PatientRequestHelper {
         ivf = await getConnection().getRepository(IvfEnrollment).findOne(ivf_id);
       }
 
+      let labour = null;
+      if (labour_id && labour_id !== '') {
+        labour = await getConnection().getRepository(LabourEnrollment).findOne(labour_id);
+      } else {
+        labour = await getConnection()
+          .getRepository(LabourEnrollment)
+          .findOne({ where: { patient, status: 0 } });
+      }
+
       let result = [];
       for (const item of tests) {
         const data = {
@@ -60,6 +74,7 @@ export class PatientRequestHelper {
           urgent,
           admission,
           antenatal,
+          labour,
           createdBy,
           ivf,
           nicu,

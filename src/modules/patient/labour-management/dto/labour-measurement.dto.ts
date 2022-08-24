@@ -1,50 +1,18 @@
-import { IsNotEmpty } from 'class-validator';
-import { StaffDetails } from '../../../hr/staff/entities/staff_details.entity';
-import { LabourEnrollment } from '../entities/labour_enrollment.entity';
-
 export class LabourMeasurementDto {
-  isFalseLabour: boolean;
-
+  patient_id: string;
+  labour_sign: string;
   presentation: string;
-
-  positionOfFestus: string;
-
-  fetalLies: string;
-
+  position_of_foetus: string;
+  fetal_lie: string;
   descent: string;
-
-  cervicalLength: string;
-
-  cervicalEffacement: string;
-
-  cervicalPosition: string;
-
-  membrances: string;
-
+  cervical_length: string;
+  cervical_effacement: string;
+  cervical_position: string;
+  membranes: string;
   moulding: string;
-
   caput: string;
-
-  hasPassedUrine: boolean;
-
-  administeredCyatacin: boolean;
-
-  administeredDrugs: boolean;
-
-  timeOfMeasurement: string;
-
-  dateOfMeasurement: string;
-
-  labTests: string[];
-
-  measurements: string[];
-
-  createdBy: string;
-  lastChangedBy: string;
-
-  examiner_id: string;
-
-  examiner: StaffDetails;
-
-  enrollment: LabourEnrollment;
+  has_passed_urine: string;
+  administered_oxytocin: string;
+  administered_other_drugs: string;
+  measurements: any;
 }

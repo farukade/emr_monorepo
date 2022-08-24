@@ -8,6 +8,7 @@ import { Encounter } from '../consultation/encouter.entity';
 import { AntenatalEnrollment } from '../antenatal/entities/antenatal-enrollment.entity';
 import { Admission } from '../admissions/entities/admission.entity';
 import { Nicu } from '../nicu/entities/nicu.entity';
+import { LabourEnrollment } from '../labour-management/entities/labour_enrollment.entity';
 
 @Entity({ name: 'patient_requests' })
 export class PatientRequest extends CustomBaseEntity {
@@ -55,6 +56,10 @@ export class PatientRequest extends CustomBaseEntity {
   @ManyToOne(() => AntenatalEnrollment, { nullable: true })
   @JoinColumn({ name: 'antenatal_id' })
   antenatal: AntenatalEnrollment;
+
+  @ManyToOne(() => LabourEnrollment, { nullable: true })
+  @JoinColumn({ name: 'labour_id' })
+  labour: LabourEnrollment;
 
   @OneToMany((type) => AdmissionClinicalTask, (task) => task.request)
   task: AdmissionClinicalTask;

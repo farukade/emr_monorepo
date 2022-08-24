@@ -1,49 +1,21 @@
-import { IsNotEmpty } from 'class-validator';
-import { LabourEnrollment } from '../entities/labour_enrollment.entity';
-import { StaffDetails } from '../../../hr/staff/entities/staff_details.entity';
-
 export class LabourDeliveryRecordDto {
-  deliveryType: string;
-
-  isMotherAlive: boolean;
-
-  isBabyAlive: boolean;
-
-  administeredOxytocin: boolean;
-
-  placentaComplete: boolean;
-
-  bleeading: boolean;
-
-  timeOfBirth: string;
-
-  dateOfBirth: string;
-
-  babyCried: boolean;
-
-  sexOfBaby: string;
-
-  apgarScore: string;
-
+  patient_id: string;
+  delivery_type: string;
+  is_mother_alive: any;
+  is_baby_alive: any;
+  administered_oxytocin: any;
+  placenta_delivered: any;
+  normal_bleeding: any;
+  date_of_birth: string;
+  time_of_birth: string;
+  baby_cried_immediately: any;
+  sex_of_baby: string;
+  apgar_score: string;
   weight: string;
-
-  administeredVitaminK: boolean;
-
-  negativeRH: boolean;
-
-  drugsAdministered: string;
-
-  transferredTo: string;
-
+  administered_vitamin_k: any;
+  mother_rh_negative: any;
+  drugs_administered: string;
+  transferred_to: string;
   comment: string;
-
-  createdBy: string;
-
-  lastChangedBy: string;
-
-  enrollment: LabourEnrollment;
-
-  pediatrician: StaffDetails;
-
   pediatrician_id: string;
 }

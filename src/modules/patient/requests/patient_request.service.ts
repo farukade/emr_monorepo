@@ -111,6 +111,10 @@ export class PatientRequestService {
       query.andWhere('q.antenatal_id = :item_id', { item_id });
     }
 
+    if (type && type === 'labour') {
+      query.andWhere('q.labour_id = :item_id', { item_id });
+    }
+
     if (type && type === 'ivf') {
       query.andWhere('q.ivf_id = :item_id', { item_id });
     }
@@ -372,6 +376,10 @@ export class PatientRequestService {
 
     if (type && type === 'antenatal') {
       query.andWhere('q.antenatal_id = :item_id', { item_id });
+    }
+
+    if (type && type === 'labour') {
+      query.andWhere('q.labour_id = :item_id', { item_id });
     }
 
     if (type && type === 'ivf') {

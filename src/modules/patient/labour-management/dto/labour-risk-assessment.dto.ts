@@ -1,20 +1,10 @@
-import { IsNotEmpty } from 'class-validator';
-import { LabourEnrollment } from '../entities/labour_enrollment.entity';
-
-export class LabourRistAssesmentDto {
+export class LabourRiskAssessmentDto {
+  patient_id: string;
+  risk_score: string;
   height: string;
-
   weight: string;
-
-  previousPregnancyOutcome: string;
-
-  previousPregnancyExperience: string[];
-
+  previous_pregnancy_outcome: string;
+  history_low_birth_weight: any;
+  previous_pregnancy_experience: any;
   note: string;
-
-  createdBy: string;
-
-  lastChangedBy: string;
-
-  enrollment: LabourEnrollment;
 }

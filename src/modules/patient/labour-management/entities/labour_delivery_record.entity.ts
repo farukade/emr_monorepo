@@ -1,66 +1,71 @@
 import { CustomBaseEntity } from '../../../../common/entities/custom-base.entity';
-import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { Patient } from '../../entities/patient.entity';
+import { Entity, ManyToOne, JoinColumn, Column } from 'typeorm';
 import { LabourEnrollment } from './labour_enrollment.entity';
+import { Patient } from '../../entities/patient.entity';
 import { StaffDetails } from '../../../hr/staff/entities/staff_details.entity';
 
 @Entity({ name: 'labour_delivery_records' })
 export class LabourDeliveryRecord extends CustomBaseEntity {
-  @Column()
-  deliveryType: string;
+  @ManyToOne(() => LabourEnrollment)
+  @JoinColumn({ name: 'enrollment_id' })
+  enrolment: LabourEnrollment;
 
-  @Column()
-  isMotherAlive: boolean;
-
-  @Column()
-  isBabyAlive: boolean;
-
-  @Column()
-  administeredOxytocin: boolean;
-
-  @Column()
-  placentaComplete: boolean;
-
-  @Column()
-  bleeading: boolean;
-
-  @Column()
-  timeOfBirth: string;
-
-  @Column()
-  dateOfBirth: string;
-
-  @Column()
-  babyCried: boolean;
-
-  @Column()
-  sexOfBaby: string;
-
-  @Column()
-  apgarScore: string;
-
-  @Column()
-  weight: string;
-
-  @Column()
-  administeredVitaminK: boolean;
-
-  @Column()
-  negativeRH: boolean;
+  @ManyToOne(() => Patient)
+  @JoinColumn({ name: 'patient_id' })
+  patient: Patient;
 
   @Column({ nullable: true })
-  drugsAdministered: string;
+  delivery_type: string;
 
-  @Column()
-  transferredTo: string;
+  @Column({ nullable: true })
+  is_mother_alive: string;
+
+  @Column({ nullable: true })
+  is_baby_alive: string;
+
+  @Column({ nullable: true })
+  administered_oxytocin: string;
+
+  @Column({ nullable: true })
+  placenta_delivered: string;
+
+  @Column({ nullable: true })
+  normal_bleeding: string;
+
+  @Column({ nullable: true })
+  date_of_birth: string;
+
+  @Column({ nullable: true })
+  time_of_birth: string;
+
+  @Column({ nullable: true })
+  baby_cried_immediately: string;
+
+  @Column({ nullable: true })
+  sex_of_baby: string;
+
+  @Column({ nullable: true })
+  apgar_score: string;
+
+  @Column({ nullable: true })
+  weight: string;
+
+  @Column({ nullable: true })
+  administered_vitamin_k: string;
+
+  @Column({ nullable: true })
+  mother_rh_negative: string;
+
+  @Column({ nullable: true })
+  drugs_administered: string;
+
+  @Column({ nullable: true })
+  transferred_to: string;
 
   @Column({ nullable: true })
   comment: string;
 
-  @ManyToOne(() => StaffDetails)
+  @ManyToOne(() => StaffDetails, { nullable: true })
+  @JoinColumn({ name: 'pediatrician_id' })
   pediatrician: StaffDetails;
-
-  @ManyToOne(() => LabourEnrollment)
-  @JoinColumn({ name: 'enrollment_id' })
-  enrollment: LabourEnrollment;
 }

@@ -1,34 +1,41 @@
 import { CustomBaseEntity } from '../../../../common/entities/custom-base.entity';
-import { Entity, Column, ManyToOne, JoinColumn, OneToOne } from 'typeorm';
-import { StaffDetails } from '../../../hr/staff/entities/staff_details.entity';
+import { Entity, ManyToOne, JoinColumn, Column } from 'typeorm';
 import { LabourEnrollment } from './labour_enrollment.entity';
-import { PatientRequest } from '../../entities/patient_requests.entity';
+import { Patient } from '../../entities/patient.entity';
 
 @Entity({ name: 'labour_measurements' })
 export class LabourMeasurement extends CustomBaseEntity {
+  @ManyToOne(() => LabourEnrollment)
+  @JoinColumn({ name: 'enrollment_id' })
+  enrolment: LabourEnrollment;
+
+  @ManyToOne(() => Patient)
+  @JoinColumn({ name: 'patient_id' })
+  patient: Patient;
+
   @Column({ nullable: true })
-  isFalseLabour: boolean;
+  labour_sign: string;
 
   @Column({ nullable: true })
   presentation: string;
 
   @Column({ nullable: true })
-  positionOfFoetus: string;
+  position_of_foetus: string;
 
   @Column({ nullable: true })
-  fetalLies: string;
+  fetal_lie: string;
 
   @Column({ nullable: true })
   descent: string;
 
   @Column({ nullable: true })
-  cervicalLength: string;
+  cervical_length: string;
 
   @Column({ nullable: true })
-  cervicalEffacement: string;
+  cervical_effacement: string;
 
   @Column({ nullable: true })
-  cervicalPosition: string;
+  cervical_position: string;
 
   @Column({ nullable: true })
   membranes: string;
@@ -40,30 +47,14 @@ export class LabourMeasurement extends CustomBaseEntity {
   caput: string;
 
   @Column({ nullable: true })
-  hasPassedUrine: boolean;
+  has_passed_urine: string;
 
   @Column({ nullable: true })
-  administeredCyatacin: boolean;
+  administered_oxytocin: string;
 
   @Column({ nullable: true })
-  administeredDrugs: boolean;
-
-  @Column()
-  timeOfMeasurement: string;
-
-  @Column()
-  dateOfMeasurement: string;
+  administered_other_drugs: string;
 
   @Column('simple-array', { nullable: true })
   measurements: string[];
-
-  @ManyToOne(() => StaffDetails)
-  examiner: StaffDetails;
-
-  @ManyToOne(() => LabourEnrollment)
-  enrollment: LabourEnrollment;
-
-  @OneToOne((type) => PatientRequest)
-  @JoinColumn({ name: 'request_id' })
-  request: PatientRequest;
 }

@@ -822,20 +822,24 @@ export class PatientService {
   }
 
   async getVitals(id, urlParams): Promise<PatientVital[]> {
-    const { startDate, endDate } = urlParams;
+    const { startDate, endDate, labour_id } = urlParams;
 
-    const query = this.patientVitalRepository
-      .createQueryBuilder('q')
-      .innerJoin(Patient, 'patient', 'q.patient = patient.id')
-      .where('q.patient = :id', { id });
+    const query = this.patientVitalRepository.createQueryBuilder('q').where('q.patient = :id', { id });
+
     if (startDate && startDate !== '') {
       const start = moment(startDate).endOf('day').toISOString();
       query.andWhere(`q.createdAt >= '${start}'`);
     }
+
     if (endDate && endDate !== '') {
       const end = moment(endDate).endOf('day').toISOString();
       query.andWhere(`q.createdAt <= '${end}'`);
     }
+
+    if (labour_id && labour_id !== '') {
+      // query.andWhere('q.labour_id = :id', { id: +labour_id });
+    }
+
     return await query.orderBy('q.createdAt', 'DESC').getMany();
   }
 
