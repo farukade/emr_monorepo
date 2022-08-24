@@ -20,6 +20,7 @@ import { Pagination } from '../../common/paginate/paginate.interface';
 import { HmoSchemeDto } from './dto/hmo_scheme.dto';
 import { HmoType } from './entities/hmo_type.entity';
 import { HmoScheme } from './entities/hmo_scheme.entity';
+import { Error } from 'src/common/interface/error.interface';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('hmos')
@@ -80,7 +81,7 @@ export class HmoController {
   }
 
   @Get('/transactions')
-  getHmoTransactions(@Query() params, @Request() request): Promise<Pagination> {
+  getHmoTransactions(@Query() params, @Request() request): Promise<Pagination | Error> {
     const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 10;
     const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
     return this.hmoService.fetchTransactions({ page, limit }, params);

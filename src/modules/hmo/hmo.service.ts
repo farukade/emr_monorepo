@@ -18,6 +18,8 @@ import { ServiceCostRepository } from '../settings/services/repositories/service
 import { PatientRequestItemRepository } from '../patient/repositories/patient_request_items.repository';
 import { Patient } from '../patient/entities/patient.entity';
 import { ServiceCategoryRepository } from '../settings/services/repositories/service_category.repository';
+import { Error } from 'src/common/interface/error.interface';
+const { log } = console;
 
 @Injectable()
 export class HmoService {
@@ -227,8 +229,9 @@ export class HmoService {
     return data.softRemove();
   }
 
-  async fetchTransactions(options: PaginationOptionsInterface, params): Promise<Pagination> {
-    const { startDate, endDate, patient_id, hmo_id, status, service_id } = params;
+  async fetchTransactions(options: PaginationOptionsInterface, params): Promise<Pagination | Error> {
+    try {
+      const { startDate, endDate, patient_id, hmo_id, status, service_id } = params;
 
     const query = this.transactionsRepository
       .createQueryBuilder('q')
@@ -285,6 +288,8 @@ export class HmoService {
     }
 
     const page = options.page - 1;
+    
+    const total = await query.getCount();
 
     const items = await query
       .offset(page * options.limit)
@@ -292,7 +297,6 @@ export class HmoService {
       .orderBy('q.createdAt', 'DESC')
       .getRawMany();
 
-    const total = await query.getCount();
 
     let result = [];
     for (const item of items) {
@@ -322,6 +326,10 @@ export class HmoService {
       totalPages: total,
       currentPage: options.page,
     };
+    } catch (error) {
+      log(error);
+      return { success: false, message: error.message || "an error occurred" };
+    }
   }
 
   async getHmoTypes(): Promise<HmoType[]> {
