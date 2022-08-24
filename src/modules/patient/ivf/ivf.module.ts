@@ -6,8 +6,9 @@ import { PatientRepository } from '../repositories/patient.repository';
 import { AppGateway } from '../../../app.gateway';
 import { IvfController } from './ivf.controller';
 import { IvfService } from './ivf.service';
-import { IvfEnrollmentRepository } from './ivf_enrollment.repository';
+import { IvfEnrollmentRepository } from './repositories/ivf_enrollment.repository';
 import { StaffRepository } from '../../hr/staff/staff.repository';
+import { IvfHcgRepository } from './repositories/hcg.repository';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { StaffRepository } from '../../hr/staff/staff.repository';
       PatientRequestItemRepository,
       IvfEnrollmentRepository,
       PatientRepository,
+      IvfHcgRepository
     ]),
   ],
   controllers: [IvfController],

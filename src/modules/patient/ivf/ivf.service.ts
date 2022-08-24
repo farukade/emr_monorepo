@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { getConnection, getRepository } from 'typeorm';
-import { IvfEnrollmentRepository } from './ivf_enrollment.repository';
+import { IvfEnrollmentRepository } from './repositories/ivf_enrollment.repository';
 import { IvfEnrollmentDto } from './dto/ivf_enrollment.dto';
 import { StaffRepository } from '../../hr/staff/staff.repository';
 import { PatientRepository } from '../repositories/patient.repository';
@@ -17,6 +17,9 @@ import { AppGateway } from '../../../app.gateway';
 import { PatientRequestItemRepository } from '../repositories/patient_request_items.repository';
 import { PatientRequestRepository } from '../repositories/patient_request.repository';
 import { getStaff } from '../../../common/utils/utils';
+import { Patient } from '../entities/patient.entity';
+import { IvfHcgRepository } from './repositories/hcg.repository';
+const { log } = console;
 
 @Injectable()
 export class IvfService {
@@ -31,8 +34,10 @@ export class IvfService {
     private staffRepository: StaffRepository,
     @InjectRepository(PatientRepository)
     private patientRepository: PatientRepository,
+    @InjectRepository(IvfHcgRepository)
+    private hcgRepository: IvfHcgRepository,
     private readonly appGateway: AppGateway,
-  ) {}
+  ) { }
 
   async getEnrollments(options: PaginationOptionsInterface, params): Promise<Pagination> {
     const { startDate, endDate, patient_id } = params;
@@ -257,5 +262,39 @@ export class IvfService {
     await ivf.save();
 
     return ivf.softRemove();
+  }
+
+  async getHcg(params) {
+    try {
+      const { patient_id, hcg_id } = params;
+
+      if ((!patient_id || patient_id == "") && (!hcg_id || hcg_id == "")) {
+        return { success: false, message: "no patient ID or HCG ID added to url params" };
+      };
+
+      let patient: Patient;
+      let enrollmentId;
+      let ivfEnrollment;
+      if (patient_id && patient_id != "") {
+        patient = await this.patientRepository.findOne(patient_id);
+        enrollmentId = patient.ivf_id;
+      };
+
+      if (await enrollmentId) {
+        ivfEnrollment = await this.ivfEnrollmentRepo.findOne(await enrollmentId);
+      };
+
+      let hcg: IvfHcgAdministrationChartEntity;
+      if (hcg_id && hcg_id != "") {
+        hcg = await this.hcgRepository.findOne(hcg_id);
+      };
+
+      const result = [hcg, ivfEnrollment, patient];
+      return { success: true, result };
+
+    } catch (error) {
+      log(error);
+      return { success: false, message: error.message || "an error occurred" };
+    }
   }
 }
