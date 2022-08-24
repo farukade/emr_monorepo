@@ -7,7 +7,7 @@ import { PatientNote } from '../entities/patient_note.entity';
 import { getStaff } from '../../../common/utils/utils';
 import { AdmissionsRepository } from '../admissions/repositories/admissions.repository';
 import { PatientRequestItemRepository } from '../repositories/patient_request_items.repository';
-import { IvfEnrollmentRepository } from '../ivf/ivf_enrollment.repository';
+import { IvfEnrollmentRepository } from '../ivf/repositories/ivf_enrollment.repository';
 import { AntenatalEnrollmentRepository } from '../antenatal/enrollment.repository';
 import { DrugGenericRepository } from '../../inventory/pharmacy/generic/generic.repository';
 import { LabourEnrollmentRepository } from '../labour-management/repositories/labour-enrollment.repository';

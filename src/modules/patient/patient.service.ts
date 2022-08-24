@@ -49,7 +49,7 @@ import { NicuRepository } from './nicu/nicu.repository';
 import { LabourEnrollmentRepository } from './labour-management/repositories/labour-enrollment.repository';
 import { PatientFluidChart } from './entities/patient_fluid_chart.entity';
 import { AntenatalEnrollmentRepository } from './antenatal/enrollment.repository';
-import { IvfEnrollmentRepository } from './ivf/ivf_enrollment.repository';
+import { IvfEnrollmentRepository } from './ivf/repositories/ivf_enrollment.repository';
 import { QueueService } from '../queue/queue.service';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';

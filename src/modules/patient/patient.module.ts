@@ -13,7 +13,7 @@ import { AntenatalModule } from './antenatal/antenatal.module';
 import { AdmissionsModule } from './admissions/admissions.module';
 import { ConsultationModule } from './consultation/consultation.module';
 import { LabourManagementModule } from './labour-management/labour-management.module';
-import { IvfEnrollmentRepository } from './ivf/ivf_enrollment.repository';
+import { IvfEnrollmentRepository } from './ivf/repositories/ivf_enrollment.repository';
 import { StaffRepository } from '../hr/staff/staff.repository';
 import { AppGateway } from '../../app.gateway';
 import { AppointmentRepository } from '../frontdesk/appointment/appointment.repository';

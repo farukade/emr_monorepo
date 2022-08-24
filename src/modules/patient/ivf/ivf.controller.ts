@@ -5,11 +5,13 @@ import { IvfEnrollmentDto } from './dto/ivf_enrollment.dto';
 import { IvfEnrollment } from './entities/ivf_enrollment.entity';
 import { IvfDownRegulationChartDto } from './dto/ivf-down-regulation-chart.dto';
 import { Pagination } from '../../../common/paginate/paginate.interface';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('IVF')
 @UseGuards(AuthGuard('jwt'))
 @Controller('ivf')
 export class IvfController {
-  constructor(private ivfService: IvfService) {}
+  constructor(private ivfService: IvfService) { }
 
   @Get('')
   listEnrollments(@Query() urlParams, @Request() request): Promise<Pagination> {
@@ -46,5 +48,12 @@ export class IvfController {
   @Delete('/:id')
   deleteIVF(@Param('id') id: number, @Request() req): Promise<any> {
     return this.ivfService.deleteIVF(id, req.user.username);
+  }
+
+  @Get('/hcg-administration')
+  getHcg(
+    @Query() urlParams
+  ) {
+    return this.ivfService.getHcg(urlParams);
   }
 }
