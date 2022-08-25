@@ -12,7 +12,7 @@ export class ConsultationController {
   getEnrollments(@Query() urlParams, @Request() request) {
     const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 10;
     const page = request.query.hasOwnProperty('page') ? request.query.page : 1;
-    return this.consultationService.getEncounters({ page, limit }, urlParams);
+    return this.consultationService.getFormattedEncounters({ page, limit }, urlParams);
   }
 
   @Post(':patient_id/save')

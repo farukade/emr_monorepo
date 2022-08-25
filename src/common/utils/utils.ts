@@ -25,6 +25,8 @@ import { PatientRequestItem } from '../../modules/patient/entities/patient_reque
 import * as numeral from 'numeral';
 import * as startCase from 'lodash.startcase';
 import { S3Client } from '@aws-sdk/client-s3';
+import { PatientNote } from 'src/modules/patient/entities/patient_note.entity';
+const { log } = console;
 
 const mysql = require('mysql2/promise');
 
@@ -276,8 +278,8 @@ export const getOutstanding = async (patient_id) => {
   return patient.credit_limit > 0
     ? 0
     : transactions.reduce((totalAmount, item) => {
-        return totalAmount + item.amount;
-      }, 0);
+      return totalAmount + item.amount;
+    }, 0);
 };
 
 export const getBalance = async (patient_id) => {
@@ -630,9 +632,8 @@ export const parseDescription = (item) => {
   if (item.bill_source === 'drugs') {
     const reqItem = item.patientRequestItem;
 
-    return ` : ${reqItem.fill_quantity} ${reqItem.drug.unitOfMeasure} of ${reqItem.drugGeneric.name} (${
-      reqItem.drug.name
-    }) at ${formatCurrency(reqItem.drugBatch.unitPrice)} each`;
+    return ` : ${reqItem.fill_quantity} ${reqItem.drug.unitOfMeasure} of ${reqItem.drugGeneric.name} (${reqItem.drug.name
+      }) at ${formatCurrency(reqItem.drugBatch.unitPrice)} each`;
   }
 
   if (
@@ -661,9 +662,8 @@ export const parseDescriptionB = (item) => {
   if (item.bill_source === 'drugs') {
     const reqItem = item.patientRequestItem;
 
-    return `  ${reqItem.fill_quantity} ${reqItem.drug.unitOfMeasure} of ${reqItem.drugGeneric.name} (${
-      reqItem.drug.name
-    }) at ${formatCurrency(reqItem.drugBatch.unitPrice)} each`;
+    return `  ${reqItem.fill_quantity} ${reqItem.drug.unitOfMeasure} of ${reqItem.drugGeneric.name} (${reqItem.drug.name
+      }) at ${formatCurrency(reqItem.drugBatch.unitPrice)} each`;
   }
 
   if (
@@ -686,4 +686,15 @@ export const patientname = (user, pid = false) => {
   const patientId = pid ? `(${formatPatientId(user)})` : '';
 
   return user ? `${user.other_names} ${user.surname} ${patientId}` : '--';
+};
+
+export const removeEmptyLines = async (arr: Array<PatientNote>) => {
+
+  const match = /(<p>(<u>|<br>)?(<br>|<u>)?<\/p>)|(\n\n)/g;
+
+  for (const element of arr) {
+    element.description = element?.description?.replace(match, "");
+  };
+  
+  return
 };

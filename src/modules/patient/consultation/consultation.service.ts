@@ -15,7 +15,7 @@ import { QueueSystemRepository } from '../../frontdesk/queue-system/queue-system
 import { PatientConsumable } from '../entities/patient_consumable.entity';
 import { AuthRepository } from '../../auth/auth.repository';
 import { Connection, getConnection, getRepository } from 'typeorm';
-import { getStaff } from '../../../common/utils/utils';
+import { getStaff, removeEmptyLines } from '../../../common/utils/utils';
 import { PatientNoteRepository } from '../repositories/patient_note.repository';
 import { DrugGenericRepository } from '../../inventory/pharmacy/generic/generic.repository';
 import { StoreInventoryRepository } from '../../inventory/store/store.repository';
@@ -25,6 +25,7 @@ import { PatientRequestRepository } from '../repositories/patient_request.reposi
 import { DoctorsAppointment } from '../../frontdesk/doctors-apointment/appointment.entity';
 import { StaffRepository } from '../../hr/staff/staff.repository';
 import { DepartmentRepository } from '../../settings/departments/department.repository';
+const { log } = console;
 
 @Injectable()
 export class ConsultationService {
@@ -55,7 +56,7 @@ export class ConsultationService {
     private staffRepository: StaffRepository,
     @InjectRepository(DepartmentRepository)
     private departmentRepository: DepartmentRepository,
-  ) {}
+  ) { }
 
   async getEncounters(options: PaginationOptionsInterface, urlParams): Promise<any> {
     try {
@@ -522,6 +523,25 @@ export class ConsultationService {
       await queryRunner.release();
       console.log(err);
       return { success: false, message: err.message };
+    }
+  }
+
+  async getFormattedEncounters(options: PaginationOptionsInterface, params) {
+    try {
+      let response = await this.getEncounters(options, params);
+
+      if (response.result) {
+        let results = response.result;
+
+        for (let result of results) {
+          removeEmptyLines(result.patient_notes);
+        };
+        return response;
+      };
+
+      return response;
+    } catch (error) {
+      log(error);
     }
   }
 }
