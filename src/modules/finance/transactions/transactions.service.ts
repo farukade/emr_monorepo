@@ -1416,6 +1416,10 @@ export class TransactionsService {
         case 'labs':
           query.leftJoinAndSelect('patient_requests.labTest', 'lab_test');
           break;
+
+        case 'cafeteria':
+          query.andWhere('q.transaction_type = :transaction_type', { transaction_type: 'debit' });
+          break;
       }
 
       if (bill_source && bill_source != '') {
