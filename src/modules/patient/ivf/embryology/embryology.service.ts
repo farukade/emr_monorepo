@@ -414,13 +414,14 @@ export class IvfEmbryologyService {
 			if (update.affected) {
 				let treatment = await this.embryoTreatmentRepository.findOne(treatmentId);
 				embryology.ivfTreatment = treatment;
-				embryology.patient = patient;
+				if (patient) {
+					embryology.patient = patient;
+				};
 				await this.embryologyRepository.save(embryology);
 
 				return {
 					success: true,
-					message: "update success",
-					result: treatment
+					message: "update success"
 				};
 			};
 
@@ -437,7 +438,7 @@ export class IvfEmbryologyService {
 
 	async updateSperm(data) {
 		try {
-			const { spermId, embryologistId, ...spermData } = data;
+			const { spermId, embryologistId, cellInfo, ...spermData } = data;
 			if (!spermId) {
 				return { success: false, message: "no sperm ID in request body" };
 			};
@@ -446,10 +447,21 @@ export class IvfEmbryologyService {
 				.update(IvfSpermPreparationEntity)
 				.set(spermData)
 				.where("id = :id", { id: spermId })
-				.execute()
+				.execute();
 
 			if (update.affected) {
 				let spermPrep = await this.spermPrepRepository.findOne(spermId);
+
+				for (const cell of cellInfo) {
+
+					await this.spermPrepRepository
+						.createQueryBuilder()
+						.update(CellInfo)
+						.set(cell)
+						.where("id = :id", { id: cell.id })
+						.execute();
+
+				};
 
 				let embryologist;
 				if (embryologistId) {
@@ -460,8 +472,7 @@ export class IvfEmbryologyService {
 
 				return {
 					success: true,
-					message: "update success",
-					result: spermPrep
+					message: "update success"
 				};
 			};
 
@@ -478,7 +489,7 @@ export class IvfEmbryologyService {
 
 	async updateIcsi(data) {
 		try {
-			const { icsiId, embryologistId, ...icsiData } = data;
+			const { icsiId, embryologistId, dayOne, ...icsiData } = data;
 			if (!icsiId) {
 				return { success: false, message: "no icsi ID in request body" };
 			};
@@ -493,16 +504,27 @@ export class IvfEmbryologyService {
 			if (update.affected) {
 				let icsi = await this.icsiRepository.findOne(icsiId);
 
+				for (const dayData of dayOne) {
+
+					await this.spermPrepRepository
+						.createQueryBuilder()
+						.update(IcsiDayRecord)
+						.set(dayData)
+						.where("id = :id", { id: dayData.id })
+						.execute();
+
+				};
+
 				let embryologist;
 				if (embryologistId) {
 					embryologist = await this.staffRepository.findOne(embryologistId);
 					icsi.embryologist = embryologist;
+					await this.icsiRepository.save(icsi);
 				};
 
 				return {
 					success: true,
-					message: "update success",
-					result: icsi
+					message: "update success"
 				};
 			};
 
@@ -519,25 +541,40 @@ export class IvfEmbryologyService {
 
 	async updateTransfer(data) {
 		try {
-			const { transId, ...transData } = data;
+			const { transId, transRecord, ...transData } = data;
 			if (!transId) {
 				return { success: false, message: "no transfer ID in request body" };
 			};
 
-			let transUpdate = await this.embryoTranferRepository
+			const transfer = await this.embryoTranferRepository
 				.createQueryBuilder()
 				.update(IvfEmbryoTransfer)
 				.set(transData)
 				.where("id = :id", { id: transId })
-				.execute()
+				.execute();
 
-			const transfer = await this.embryoTranferRepository.findOne(transId);
+			if (transfer.affected) {
 
-			return {
-				success: true,
-				message: "update success",
-				result: transfer
+				for (const record of transRecord) {
+
+					await this.embryoTransRecordRepository
+						.createQueryBuilder()
+						.update(IvfEmbryoTransferRecord)
+						.set(record)
+						.where("id = :id", { id: record.id })
+						.execute();
+
+				};
+
+				return {
+					success: true,
+					message: "update success"
+				};
 			};
+			return {
+				success: false,
+				message: "not updated"
+			}
 
 		} catch (error) {
 			console.log(error);
@@ -547,7 +584,7 @@ export class IvfEmbryologyService {
 
 	async updateAssessment(data) {
 		try {
-			const { assessmentId, ...assessmentData } = data;
+			const { assessmentId, biopsy, ...assessmentData } = data;
 			if (!assessmentId) {
 				return { success: false, message: "no assessment ID in request body" };
 			};
@@ -560,11 +597,21 @@ export class IvfEmbryologyService {
 				.execute();
 
 			if (update.affected) {
-				const assessment = await this.embryoTranferRepository.findOne(assessmentId);
+
+				for (const item of biopsy) {
+
+					await this.embryoTransRecordRepository
+						.createQueryBuilder()
+						.update(Biopsy)
+						.set(item)
+						.where("id = :id", { id: item.id })
+						.execute();
+
+				};
+
 				return {
 					success: true,
-					message: "update success",
-					result: assessment
+					message: "update success"
 				};
 			};
 			return {
