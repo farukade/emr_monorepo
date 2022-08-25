@@ -266,30 +266,24 @@ export class IvfService {
 
   async getHcg(params) {
     try {
-      const { patient_id, hcg_id } = params;
+      const { hcg_id } = params;
 
-      if ((!patient_id || patient_id == "") && (!hcg_id || hcg_id == "")) {
+      if ((!hcg_id || hcg_id == "")) {
         return { success: false, message: "no patient ID or HCG ID added to url params" };
-      };
-
-      let patient: Patient;
-      let enrollmentId;
-      let ivfEnrollment;
-      if (patient_id && patient_id != "") {
-        patient = await this.patientRepository.findOne(patient_id);
-        enrollmentId = patient.ivf_id;
-      };
-
-      if (await enrollmentId) {
-        ivfEnrollment = await this.ivfEnrollmentRepo.findOne(await enrollmentId);
       };
 
       let hcg: IvfHcgAdministrationChartEntity;
       if (hcg_id && hcg_id != "") {
-        hcg = await this.hcgRepository.findOne(hcg_id);
+        hcg = await this.hcgRepository.findOne(hcg_id, {
+          relations: ['patient', 'staff']
+        });
       };
 
-      const result = [hcg, ivfEnrollment, patient];
+      let ivf;
+      if (hcg.patient.ivf_id) {
+        ivf = await this.ivfEnrollmentRepo.findOne(hcg.patient.ivf_id);
+      };
+      const result = { ...hcg, ivf };
       return { success: true, result };
 
     } catch (error) {
