@@ -272,7 +272,7 @@ export class IvfService {
       let hcg;
       if (patient_id && patient_id != "") {
         patient = await this.patientRepository.findOne(patient_id, {
-          relations: ['hcg']
+          relations: ['hcg', 'hcg.staff']
         });
       } else if (hcg_id && hcg_id != "") {
         hcg = await this.hcgRepository.findOne(hcg_id, {
