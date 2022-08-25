@@ -7,6 +7,7 @@ import { Immunization } from '../immunization/entities/immunization.entity';
 import { HmoScheme } from '../../hmo/entities/hmo_scheme.entity';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 import { IvfEmbryologyEntity } from '../ivf/embryology/embryology.entity';
+import { IvfHcgAdministrationChartEntity } from '../ivf/entities/ivf_hcg_administration_chart.entity';
 
 @Entity({ name: 'patients' })
 export class Patient extends CustomBaseEntity {
@@ -124,4 +125,7 @@ export class Patient extends CustomBaseEntity {
 
   @Column({ nullable: true })
   mother_id: number;
+
+  @OneToMany((type) => IvfHcgAdministrationChartEntity, (hcg) => hcg.patient)
+  hcg: IvfHcgAdministrationChartEntity;
 }
