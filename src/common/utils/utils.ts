@@ -690,11 +690,11 @@ export const patientname = (user, pid = false) => {
 
 export const removeEmptyLines = async (arr: Array<PatientNote>) => {
 
-  const match = /(<p>(<u>|<br>)?(<br>|<u>)?<\/p>)|(\n\n)/g;
+  const match = /(<p>(<u>|<br>)?(<br>|<u>)?<\/p>)|(\n\n(\n)?)/g;
 
   for (const element of arr) {
     element.description = element?.description?.replace(match, "");
   };
-  
+
   return
 };
