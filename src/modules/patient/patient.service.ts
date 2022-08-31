@@ -379,6 +379,13 @@ export class PatientService {
     const queryRunner = getConnection().createQueryRunner();
     await queryRunner.startTransaction();
     try {
+      const { staff_id } = patientDto;
+
+      let staff;
+      if (staff_id) {
+        staff = await this.staffRepository.findOne(staff_id);
+      }
+
       const patient = await this.patientRepository.findOne(id, { relations: ['nextOfKin'] });
 
       const hmo = await this.hmoSchemeRepository.findOne(patientDto.hmo_id);
@@ -399,6 +406,7 @@ export class PatientService {
       patient.hmo = hmo;
       patient.enrollee_id = patientDto.enrollee_id;
       patient.mother_id = patientDto.mother_id || null;
+      patient.staff = staff;
 
       await patient.save();
 
