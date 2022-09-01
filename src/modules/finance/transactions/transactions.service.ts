@@ -1555,7 +1555,8 @@ export class TransactionsService {
       const query = this.transactionsRepository.createQueryBuilder('q')
         .leftJoinAndSelect('q.patient', 'patient')
         .leftJoinAndSelect('q.staff', 'staff')
-        .leftJoinAndSelect('q.patientRequestItem', 'patient_request')
+        .leftJoinAndSelect('q.patientRequestItem', 'request_item')
+        .leftJoinAndSelect('request_item.request', 'request')
         .leftJoinAndSelect('q.service', 'service');
 
       query.andWhere(
