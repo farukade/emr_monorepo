@@ -1554,7 +1554,14 @@ export class TransactionsService {
 
       const query = this.transactionsRepository.createQueryBuilder('q')
         .leftJoinAndSelect('q.patient', 'patient')
-        .leftJoinAndSelect('q.staff', 'staff');
+        .leftJoinAndSelect('q.staff', 'staff')
+        .leftJoinAndSelect('q.patientRequestItem', 'request_item')
+        .leftJoinAndSelect('request_item.request', 'request')
+        .leftJoinAndSelect('q.service', 'service')
+        .leftJoinAndSelect('request_item.labTest', 'lab_item')
+        .leftJoinAndSelect('request_item.drug', 'drug')
+        .leftJoinAndSelect('request_item.drugBatch', 'drug_batch')
+        .leftJoinAndSelect('request_item.drugGeneric', 'drug_generic');
 
       query.andWhere(
         new Brackets((qb) => {
@@ -1567,14 +1574,48 @@ export class TransactionsService {
       const total = await query.getCount();
       const trans = await query.getMany();
 
-      const results = await query
+      const transactions = await query
         .orderBy('q.updated_at', 'DESC')
         .take(options.limit)
         .skip(page * options.limit)
         .getMany();
 
+      let results: any = [];
       const totalPurchase = trans.reduce((a, b) => a - b?.amount, 0);
       const totalAmountPaid = trans.reduce((a, b) => a - b?.amount_paid, 0);
+
+      for (const item of transactions) {
+
+        let { patientRequestItem, service, ...restItem } = item;
+
+        let request;
+        let drug;
+        let drugBatch;
+        let drugGeneric;
+        let labTest;
+
+        if (item?.patientRequestItem?.request) {
+          request = item?.patientRequestItem?.request;
+        };
+
+        if (item?.patientRequestItem?.drug) {
+          drug = item?.patientRequestItem?.drug;
+        };
+
+        if (item?.patientRequestItem?.drugBatch) {
+          drugBatch = item?.patientRequestItem?.drugBatch;
+        };
+
+        if (item?.patientRequestItem?.drugGeneric) {
+          drugGeneric = item?.patientRequestItem?.drugGeneric;
+        };
+
+        if (item?.patientRequestItem?.drugGeneric) {
+          labTest = item?.patientRequestItem?.labTest;
+        };
+
+        results = [{ patientRequestItem, drug, drugBatch, drugGeneric, labTest, request, service, ...restItem }, ...results];
+      };
 
       return {
         lastPage: Math.ceil(total / options.limit),
