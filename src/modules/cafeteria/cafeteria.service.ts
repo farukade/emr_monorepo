@@ -23,6 +23,7 @@ import { CafeteriaOrder } from './entities/order.entity';
 import { OrderRepository } from './repositories/order.repository';
 import { TransactionsRepository } from '../finance/transactions/transactions.repository';
 import { AppGateway } from '../../app.gateway';
+const { log } = console;
 
 @Injectable()
 export class CafeteriaService {
@@ -473,6 +474,21 @@ export class CafeteriaService {
         staff = await this.staffRepository.findOne(staff_id);
       }
 
+      let foodItems: CafeteriaFoodItem[] = [];
+      if (cartItems.length) {
+        for (const cartItem of cartItems) {
+          if (cartItem.name) {
+            let foodItem = await this.cafeteriaFoodItemRepository.findOne({
+              where: { name: cartItem.name }
+            });
+            if (foodItem) {
+              foodItems = [foodItem, ...foodItems];
+            };
+          };
+        }
+      };
+      log(foodItems);
+
       const debit: TransactionCreditDto = {
         patient_id: patient?.id || null,
         username,
@@ -494,6 +510,7 @@ export class CafeteriaService {
         nicu_id: nicu?.id || null,
         staff_id: customer === 'staff' ? staff?.id : null,
         lastChangedBy: username,
+        foodItems
       };
 
       const payment = await postDebit(debit, null, null, null, null, null);
