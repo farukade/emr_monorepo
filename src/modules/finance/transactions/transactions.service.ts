@@ -46,6 +46,7 @@ import { TransactionSearchDto } from './dto/search.dto';
 import { StaffRepository } from 'src/modules/hr/staff/staff.repository';
 import { OrderRepository } from '../../cafeteria/repositories/order.repository';
 import * as startCase from 'lodash.startcase';
+const { log } = console;
 
 @Injectable()
 export class TransactionsService {
@@ -1379,7 +1380,7 @@ export class TransactionsService {
 
   async searchRecords(data: TransactionSearchDto) {
     try {
-      const { term, startDate, endDate, bill_source, filter, hmo_id, type } = data;
+      const { term, startDate, endDate, bill_source, filter, hmo_id, type, category } = data;
       const page = parseInt(data.page) - 1;
       const limit = parseInt(data.limit);
       const offset = page * limit;
@@ -1418,7 +1419,8 @@ export class TransactionsService {
           break;
 
         case 'cafeteria':
-          query.andWhere('q.transaction_type = :transaction_type', { transaction_type: 'debit' });
+          query.leftJoinAndSelect('q.foodItems', 'food_items')
+            .andWhere('q.transaction_type = :transaction_type', { transaction_type: 'debit' });
           break;
       }
 
@@ -1471,6 +1473,10 @@ export class TransactionsService {
               case 'labs':
                 qb.orWhere('lab_test.name iLike :name', { name: `%${chars}%` });
                 break;
+
+              case 'cafeteria':
+                qb.orWhere('food_items.name iLike :name', { name: `%${chars}%` })
+                break;
             }
           }),
         );
@@ -1484,7 +1490,17 @@ export class TransactionsService {
       }
 
       if (hmo_id && hmo_id !== '') {
-        query.leftJoinAndSelect('q.hmo', 'hmo').andWhere('hmo.id = :id', { id: Number(hmo_id) });
+        if (bill_source == 'cafeteria') {
+          query.leftJoinAndSelect('patient.hmo', 'phmo')
+            .andWhere('phmo.id = :id', { id: hmo_id });
+        } else {
+          query.leftJoinAndSelect('q.hmo', 'hmo')
+            .andWhere('hmo.id = :id', { id: hmo_id });
+        }
+      };
+
+      if (category && category != "") {
+        query.andWhere('food_items.category_slug = :category', { category })
       }
 
       let totalAmount = 0;

@@ -411,6 +411,7 @@ export const postDebit = async (
     nicu_id,
     staff_id,
     lastChangedBy,
+    foodItems
   } = data;
 
   const connection = getConnection();
@@ -462,6 +463,7 @@ export const postDebit = async (
       _transaction.hmo = hmo;
       _transaction.createdBy = username;
       _transaction.lastChangedBy = lastChangedBy;
+      _transaction.foodItems = foodItems;
 
       paypoint = await _transaction.save();
     }
@@ -503,6 +505,7 @@ export const postDebit = async (
   transaction.hmo = hmo;
   transaction.createdBy = username;
   transaction.lastChangedBy = lastChangedBy;
+  transaction.foodItems = foodItems;
 
   const rs = await transaction.save();
 
@@ -535,6 +538,7 @@ export const postCredit = async (data: TransactionCreditDto, service, voucher, r
     nicu_id,
     staff_id,
     lastChangedBy,
+    foodItems
   } = data;
 
   const connection = getConnection();
@@ -582,6 +586,7 @@ export const postCredit = async (data: TransactionCreditDto, service, voucher, r
   transaction.hmo = hmo;
   transaction.createdBy = username;
   transaction.lastChangedBy = lastChangedBy;
+  transaction.foodItems = foodItems;
 
   return await transaction.save();
 };

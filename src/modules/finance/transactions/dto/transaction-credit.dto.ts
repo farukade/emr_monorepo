@@ -1,3 +1,5 @@
+import { CafeteriaFoodItem } from "src/modules/cafeteria/entities/food_item.entity";
+
 export class TransactionCreditDto {
   patient_id: number;
   username: string;
@@ -19,4 +21,5 @@ export class TransactionCreditDto {
   nicu_id: number;
   staff_id: number;
   lastChangedBy: string;
+  foodItems?: CafeteriaFoodItem[]; 
 }

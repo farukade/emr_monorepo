@@ -1,5 +1,5 @@
 import { CustomBaseEntity } from '../../../../common/entities/custom-base.entity';
-import { Entity, ManyToOne, JoinColumn, Column } from 'typeorm';
+import { Entity, ManyToOne, JoinColumn, Column, ManyToMany, JoinTable } from 'typeorm';
 import { Patient } from '../../../patient/entities/patient.entity';
 import { Voucher } from '../../vouchers/voucher.entity';
 import { StaffDetails } from '../../../hr/staff/entities/staff_details.entity';
@@ -9,6 +9,7 @@ import { HmoScheme } from '../../../hmo/entities/hmo_scheme.entity';
 import { ServiceCost } from '../../../settings/entities/service_cost.entity';
 import { Admission } from '../../../patient/admissions/entities/admission.entity';
 import { Nicu } from '../../../patient/nicu/entities/nicu.entity';
+import { CafeteriaFoodItem } from 'src/modules/cafeteria/entities/food_item.entity';
 
 @Entity({ name: 'transactions' })
 export class Transaction extends CustomBaseEntity {
@@ -98,4 +99,8 @@ export class Transaction extends CustomBaseEntity {
   @ManyToOne(() => HmoScheme, { nullable: true })
   @JoinColumn({ name: 'hmo_scheme_id' })
   hmo: HmoScheme;
+
+  @ManyToMany(() => CafeteriaFoodItem)
+  @JoinTable()
+  foodItems: CafeteriaFoodItem[];
 }
