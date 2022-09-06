@@ -1407,7 +1407,9 @@ export class TransactionsService {
         .createQueryBuilder('q')
         .leftJoinAndSelect('q.patient', 'patient')
         .leftJoinAndSelect('q.staff', 'staff')
-        .leftJoinAndSelect('q.patientRequestItem', 'patient_requests');
+        .leftJoinAndSelect('q.patientRequestItem', 'patient_requests')
+        .leftJoinAndSelect('q.hmo', 'hmo')
+        .leftJoinAndSelect('patient.hmo', 'phmo');
 
       switch (bill_source) {
         case 'drugs':
@@ -1490,13 +1492,11 @@ export class TransactionsService {
       }
 
       if (hmo_id && hmo_id !== '') {
-        if (bill_source == 'cafeteria') {
-          query.leftJoinAndSelect('patient.hmo', 'phmo')
-            .andWhere('phmo.id = :id', { id: hmo_id });
-        } else {
-          query.leftJoinAndSelect('q.hmo', 'hmo')
-            .andWhere('hmo.id = :id', { id: hmo_id });
-        }
+        query.andWhere(
+          new Brackets((qb) => {
+            qb.orWhere('phmo.id = :id', { id: hmo_id })
+              .orWhere('hmo.id = :id', { id: hmo_id });
+          }))
       };
 
       if (category && category != "") {
