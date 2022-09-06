@@ -30,4 +30,7 @@ export class TransactionSearchDto {
 
   @ApiProperty()
   category?: string;
+
+  @ApiProperty()
+  status: string;
 }
