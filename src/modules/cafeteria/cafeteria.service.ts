@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CafeteriaItemRepository } from './repositories/cafeteria.item.repository';
-import { getRepository, MoreThan, Not, Raw } from 'typeorm';
+import { getRepository, ILike, MoreThan, Not, Raw } from 'typeorm';
 import { PaginationOptionsInterface } from '../../common/paginate';
 import { CafeteriaItemDto } from './dto/cafeteria.item.dto';
 import { CafeteriaItem } from './entities/cafeteria_item.entity';
@@ -23,6 +23,7 @@ import { CafeteriaOrder } from './entities/order.entity';
 import { OrderRepository } from './repositories/order.repository';
 import { TransactionsRepository } from '../finance/transactions/transactions.repository';
 import { AppGateway } from '../../app.gateway';
+import { HmoSchemeRepository } from '../hmo/repositories/hmo_scheme.repository';
 const { log } = console;
 
 @Injectable()
@@ -47,6 +48,8 @@ export class CafeteriaService {
     private orderRepository: OrderRepository,
     @InjectRepository(TransactionsRepository)
     private transactionRepository: TransactionsRepository,
+    @InjectRepository(HmoSchemeRepository)
+    private hmoRepository: HmoSchemeRepository
   ) {}
 
   async getAllItems(options: PaginationOptionsInterface, params): Promise<Pagination> {
@@ -456,9 +459,12 @@ export class CafeteriaService {
       let patient = null;
       let admission = null;
       let nicu = null;
+      let hmo = null;
 
       if (customer === 'patient' && patient_id) {
-        patient = await this.patientRepository.findOne(patient_id);
+        patient = await this.patientRepository.findOne(patient_id, {
+          relations: ['hmo']
+        });
 
         admission = await this.admissionsRepository.findOne({
           where: { patient, status: 0 },
@@ -467,11 +473,18 @@ export class CafeteriaService {
         nicu = await this.nicuRepository.findOne({
           where: { patient, status: 0 },
         });
+
+        hmo = patient.hmo;
       }
 
       let staff = null;
       if (customer === 'staff' && staff_id) {
         staff = await this.staffRepository.findOne(staff_id);
+        hmo = await this.hmoRepository.findOne({
+          where: {
+            name: ILike("%staff%")
+          }
+        });
       }
 
       let foodItems: CafeteriaFoodItem[] = [];
@@ -487,7 +500,6 @@ export class CafeteriaService {
           };
         }
       };
-      log(foodItems);
 
       const debit: TransactionCreditDto = {
         patient_id: patient?.id || null,
@@ -510,10 +522,11 @@ export class CafeteriaService {
         nicu_id: nicu?.id || null,
         staff_id: customer === 'staff' ? staff?.id : null,
         lastChangedBy: username,
-        foodItems
+        foodItems, 
+        hmo
       };
 
-      const payment = await postDebit(debit, null, null, null, null, null);
+      const payment = await postDebit(debit, null, null, null, null, hmo);
 
       let transaction = payment;
       if (Number(pay_later) === 0) {
@@ -534,7 +547,7 @@ export class CafeteriaService {
           payment_method: method.name,
           change: Number(balance),
         };
-        transaction = await postCredit(credit, null, null, null, null, null);
+        transaction = await postCredit(credit, null, null, null, null, hmo);
       }
 
       for (const item of cartItems) {
