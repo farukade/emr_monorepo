@@ -12,6 +12,7 @@ import { PaymentMethodRepository } from '../settings/payment-methods/pm.reposito
 import { OrderRepository } from './repositories/order.repository';
 import { TransactionsRepository } from '../finance/transactions/transactions.repository';
 import { AppGateway } from '../../app.gateway';
+import { HmoSchemeRepository } from '../hmo/repositories/hmo_scheme.repository';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { AppGateway } from '../../app.gateway';
       PaymentMethodRepository,
       OrderRepository,
       TransactionsRepository,
+      HmoSchemeRepository
     ]),
   ],
   providers: [CafeteriaService, AppGateway],

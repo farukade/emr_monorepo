@@ -1,4 +1,5 @@
 import { CafeteriaFoodItem } from "src/modules/cafeteria/entities/food_item.entity";
+import { HmoScheme } from "src/modules/hmo/entities/hmo_scheme.entity";
 
 export class TransactionCreditDto {
   patient_id: number;
@@ -22,4 +23,5 @@ export class TransactionCreditDto {
   staff_id: number;
   lastChangedBy: string;
   foodItems?: CafeteriaFoodItem[]; 
+  hmo?: HmoScheme
 }
