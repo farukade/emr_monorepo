@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { StaffDetails } from 'src/modules/hr/staff/entities/staff_details.entity';
 import { PatientRepository } from 'src/modules/patient/repositories/patient.repository';
 import { DepartmentRepository } from 'src/modules/settings/departments/department.repository';
-import { getRepository, Not, Raw } from 'typeorm';
+import { getRepository, Raw } from 'typeorm';
 import { DoctorsAppointmentRepository } from './appointment.repository';
 import { DoctorsAppointmentDto } from './dto/appointment.dto';
 import * as moment from 'moment';

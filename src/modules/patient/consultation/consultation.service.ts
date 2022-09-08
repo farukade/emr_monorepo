@@ -56,7 +56,7 @@ export class ConsultationService {
     private staffRepository: StaffRepository,
     @InjectRepository(DepartmentRepository)
     private departmentRepository: DepartmentRepository,
-  ) { }
+  ) {}
 
   async getEncounters(options: PaginationOptionsInterface, urlParams): Promise<any> {
     try {
@@ -528,16 +528,16 @@ export class ConsultationService {
 
   async getFormattedEncounters(options: PaginationOptionsInterface, params) {
     try {
-      let response = await this.getEncounters(options, params);
+      const response = await this.getEncounters(options, params);
 
       if (response.result) {
-        let results = response.result;
+        const results = response.result;
 
-        for (let result of results) {
+        for (const result of results) {
           removeEmptyLines(result.patient_notes);
-        };
+        }
         return response;
-      };
+      }
 
       return response;
     } catch (error) {
