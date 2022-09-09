@@ -13,6 +13,7 @@ import { HmoTypeRepository } from './repositories/hmo_type.repository';
 import { ServiceCostRepository } from '../settings/services/repositories/service_cost.repository';
 import { PatientRequestItemRepository } from '../patient/repositories/patient_request_items.repository';
 import { AppGateway } from '../../app.gateway';
+import { EncounterRepository } from '../patient/consultation/encounter.repository';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { AppGateway } from '../../app.gateway';
       ServiceCategoryRepository,
       ServiceCostRepository,
       PatientRequestItemRepository,
+      EncounterRepository
     ]),
   ],
   controllers: [HmoController],

@@ -19,6 +19,7 @@ import { PatientRequestItemRepository } from '../patient/repositories/patient_re
 import { Patient } from '../patient/entities/patient.entity';
 import { ServiceCategoryRepository } from '../settings/services/repositories/service_category.repository';
 import { Error } from 'src/common/interface/error.interface';
+import { EncounterRepository } from '../patient/consultation/encounter.repository';
 const { log } = console;
 
 @Injectable()
@@ -40,7 +41,9 @@ export class HmoService {
     private patientRequestItemRepository: PatientRequestItemRepository,
     @InjectRepository(ServiceCategoryRepository)
     private serviceCategoryRepository: ServiceCategoryRepository,
-  ) {}
+    @InjectRepository(EncounterRepository)
+    private encounterRepository: EncounterRepository,
+  ) { }
 
   async fetchHmos(options: PaginationOptionsInterface, params): Promise<Pagination> {
     const { q } = params;
@@ -233,99 +236,99 @@ export class HmoService {
     try {
       const { startDate, endDate, patient_id, hmo_id, status, service_id } = params;
 
-    const query = this.transactionsRepository
-      .createQueryBuilder('q')
-      .where('q.payment_type = :type', { type: 'HMO' })
-      .select('q.*');
+      const query = this.transactionsRepository
+        .createQueryBuilder('q')
+        .where('q.payment_type = :type', { type: 'HMO' })
+        .select('q.*');
 
-    if (startDate && startDate !== '') {
-      const start = moment(startDate).endOf('day').toISOString();
-      query.andWhere(`q.createdAt >= '${start}'`);
-    }
-
-    if (endDate && endDate !== '') {
-      const end = moment(endDate).endOf('day').toISOString();
-      query.andWhere(`q.createdAt <= '${end}'`);
-    }
-
-    if (hmo_id && hmo_id !== '') {
-      query.andWhere('q.hmo_scheme_id = :hmo_id', { hmo_id });
-    }
-
-    if (patient_id && patient_id !== '') {
-      query.andWhere('q.patient_id = :patient_id', { patient_id });
-    }
-
-    if (status && status !== '') {
-      if (status === 1) {
-        query.andWhere('q.status = :status', { status: 1 });
-      } else {
-        query.andWhere(
-          new Brackets((qb) => {
-            qb.where('q.status = :status', { status: 0 }).orWhere('q.status = :status', { status: -1 });
-          }),
-        );
-      }
-    }
-
-    if (service_id && service_id !== '') {
-      let bill_source = '';
-
-      if (service_id === 'credit') {
-        bill_source = 'credit-deposit';
-      } else if (service_id === 'transfer') {
-        bill_source = 'credit-transfer';
-      } else if (service_id === 'cafeteria') {
-        bill_source = 'cafeteria';
-      } else {
-        const serviceCategory = await this.serviceCategoryRepository.findOne(service_id);
-        bill_source = serviceCategory?.slug || '';
+      if (startDate && startDate !== '') {
+        const start = moment(startDate).endOf('day').toISOString();
+        query.andWhere(`q.createdAt >= '${start}'`);
       }
 
-      if (bill_source && bill_source !== '') {
-        query.andWhere('q.bill_source = :bill_source', { bill_source });
-      }
-    }
-
-    const page = options.page - 1;
-    
-    const total = await query.getCount();
-
-    const items = await query
-      .offset(page * options.limit)
-      .limit(options.limit)
-      .orderBy('q.createdAt', 'DESC')
-      .getRawMany();
-
-
-    let result = [];
-    for (const item of items) {
-      item.scheme = await this.hmoSchemeRepository.findOne(item.hmo_scheme_id);
-
-      item.patient = await this.patientRepository.findOne(item.patient_id, {
-        relations: ['nextOfKin', 'immunization', 'hmo'],
-      });
-
-      if (item.service_cost_id) {
-        item.service = await this.serviceCostRepository.findOne(item.service_cost_id);
+      if (endDate && endDate !== '') {
+        const end = moment(endDate).endOf('day').toISOString();
+        query.andWhere(`q.createdAt <= '${end}'`);
       }
 
-      if (item.patient_request_item_id) {
-        item.patientRequestItem = await this.patientRequestItemRepository.findOne(item.patient_request_item_id, {
-          relations: ['request', 'diagnosis'],
+      if (hmo_id && hmo_id !== '') {
+        query.andWhere('q.hmo_scheme_id = :hmo_id', { hmo_id });
+      }
+
+      if (patient_id && patient_id !== '') {
+        query.andWhere('q.patient_id = :patient_id', { patient_id });
+      }
+
+      if (status && status !== '') {
+        if (status === 1) {
+          query.andWhere('q.status = :status', { status: 1 });
+        } else {
+          query.andWhere(
+            new Brackets((qb) => {
+              qb.where('q.status = :status', { status: 0 }).orWhere('q.status = :status', { status: -1 });
+            }),
+          );
+        }
+      }
+
+      if (service_id && service_id !== '') {
+        let bill_source = '';
+
+        if (service_id === 'credit') {
+          bill_source = 'credit-deposit';
+        } else if (service_id === 'transfer') {
+          bill_source = 'credit-transfer';
+        } else if (service_id === 'cafeteria') {
+          bill_source = 'cafeteria';
+        } else {
+          const serviceCategory = await this.serviceCategoryRepository.findOne(service_id);
+          bill_source = serviceCategory?.slug || '';
+        }
+
+        if (bill_source && bill_source !== '') {
+          query.andWhere('q.bill_source = :bill_source', { bill_source });
+        }
+      }
+
+      const page = options.page - 1;
+
+      const total = await query.getCount();
+
+      const items = await query
+        .offset(page * options.limit)
+        .limit(options.limit)
+        .orderBy('q.createdAt', 'DESC')
+        .getRawMany();
+
+
+      let result = [];
+      for (const item of items) {
+        item.scheme = await this.hmoSchemeRepository.findOne(item.hmo_scheme_id);
+
+        item.patient = await this.patientRepository.findOne(item.patient_id, {
+          relations: ['nextOfKin', 'immunization', 'hmo'],
         });
+
+        if (item.service_cost_id) {
+          item.service = await this.serviceCostRepository.findOne(item.service_cost_id);
+        }
+
+        if (item.patient_request_item_id) {
+          item.patientRequestItem = await this.patientRequestItemRepository.findOne(item.patient_request_item_id, {
+            relations: ['request', 'diagnosis'],
+          });
+        }
+
+        result = [...result, item];
       }
 
-      result = [...result, item];
-    }
-
-    return {
-      result,
-      lastPage: Math.ceil(total / options.limit),
-      itemsPerPage: options.limit,
-      totalPages: total,
-      currentPage: options.page,
-    };
+      return {
+        result,
+        lastPage: Math.ceil(total / options.limit),
+        itemsPerPage: options.limit,
+        totalPages: total,
+        currentPage: options.page,
+      };
     } catch (error) {
       log(error);
       return { success: false, message: error.message || "an error occurred" };
@@ -334,5 +337,72 @@ export class HmoService {
 
   async getHmoTypes(): Promise<HmoType[]> {
     return await this.hmoTypeRepository.find();
+  }
+
+  async getClaims(options: PaginationOptionsInterface, params) {
+    try {
+      const { hmo_id, start_date, end_date } = params;
+      const { page } = options;
+
+      const skip = +page - 1;
+      const limit = +options.limit;
+
+      const query = this.encounterRepository.createQueryBuilder('e')
+        .leftJoinAndSelect('e.patient', 'patient')
+        .leftJoinAndSelect('patient.hmo', 'hmo')
+        .leftJoinAndSelect('e.appointment', 'appointment')
+        .leftJoinAndSelect('e.notes', 'notes')
+        .leftJoinAndSelect('e.requests', 'requests')
+        .leftJoinAndSelect('requests.item', 'item')
+        .leftJoinAndSelect('item.transaction', 'transaction')
+        .leftJoinAndSelect('e.consumables', 'consumables');
+
+      if (hmo_id && hmo_id != "") {
+        query.where('hmo.id = :id', { id: hmo_id })
+      };
+
+      if (start_date && start_date !== '' && end_date && end_date !== '' && end_date === start_date) {
+
+        query.andWhere(`DATE(e.createdAt) = '${start_date}'`);
+
+      } else if (start_date && start_date !== '' && end_date && end_date !== '') {
+
+        const start = moment(start_date).startOf('day').toISOString();
+        const end = moment(end_date).endOf('day').toISOString();
+        query.andWhere(`e.createdAt >= '${start}'`);
+        query.andWhere(`e.createdAt <= '${end}'`);
+
+      } else {
+
+        const today = new Date();
+        const start = moment(today).startOf('month').toISOString();
+        const end = moment(today).endOf('month').toISOString();
+        log('start:-', start, 'end:-', end);
+        query.andWhere(`e.createdAt >= '${start}'`);
+        query.andWhere(`e.createdAt <= '${end}'`);
+
+      }
+
+      const total = await query.getCount();
+
+      const result = await query
+        .orderBy('e.createdAt', 'DESC')
+        .take(limit)
+        .skip(skip)
+        .getMany();
+
+      return {
+        success: true,
+        lastPage: Math.ceil(total / limit),
+        itemsPerPage: limit,
+        totalItems: total,
+        currentPage: +page,
+        result,
+      };
+
+    } catch (error) {
+      log(error);
+      return { success: false, message: error.message || "an error occurred" };
+    }
   }
 }

@@ -25,7 +25,7 @@ import { Error } from 'src/common/interface/error.interface';
 @UseGuards(AuthGuard('jwt'))
 @Controller('hmos')
 export class HmoController {
-  constructor(private hmoService: HmoService) {}
+  constructor(private hmoService: HmoService) { }
 
   @Get('/owners')
   getHmo(@Query() params, @Request() request): Promise<Pagination> {
@@ -90,5 +90,12 @@ export class HmoController {
   @Get('/insurance-types')
   getHmoTypes(): Promise<HmoType[]> {
     return this.hmoService.getHmoTypes();
+  }
+
+  @Get('/claims')
+  getClaims(@Query() urlParams, @Request() request) {
+    const limit = request.query.hasOwnProperty('limit') ? request.query.limit : 10;
+    const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
+    return this.hmoService.getClaims({ page, limit }, urlParams);
   }
 }
