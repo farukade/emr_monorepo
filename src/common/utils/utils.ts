@@ -703,3 +703,8 @@ export const removeEmptyLines = async (arr: Array<PatientNote>) => {
 
   return
 };
+
+export const getChatRoomId = (arr: number[]) => {
+  const sortedArr = arr.sort();
+  return sortedArr.join("-");
+}
