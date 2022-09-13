@@ -1380,7 +1380,7 @@ export class TransactionsService {
 
   async searchRecords(data: TransactionSearchDto) {
     try {
-      const { term, startDate, endDate, bill_source, filter, hmo_id, type, category } = data;
+      const { term, startDate, endDate, bill_source, filter, hmo_id, type, category, status } = data;
       const page = parseInt(data.page) - 1;
       const limit = parseInt(data.limit);
       const offset = page * limit;
@@ -1425,6 +1425,23 @@ export class TransactionsService {
             .andWhere('q.transaction_type = :transaction_type', { transaction_type: 'debit' });
           break;
       }
+
+      if (status && status != "") {
+        switch (status) {
+          case 'paid':
+            query.andWhere('q.status = :status', { status: 1 });
+            break;
+
+          case 'owing':
+            query.andWhere('q.status = :status', { status: -1 });
+            break;
+
+
+          case 'pending':
+            query.andWhere('q.status = :status', { status: 0 });
+            break;
+        }
+      };
 
       if (bill_source && bill_source != '') {
         query.andWhere('q.bill_source = :bill_source', { bill_source });
