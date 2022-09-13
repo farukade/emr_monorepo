@@ -23,7 +23,7 @@ import { CafeteriaFoodItem } from './entities/food_item.entity';
 import { CafeteriaFoodItemDto } from './dto/cafeteria-food-item.dto';
 import { OrderDto } from './dto/order.dto';
 
-@UseGuards(AuthGuard('jwt'))
+// @UseGuards(AuthGuard('jwt'))
 @Controller('cafeteria')
 export class CafeteriaController {
   constructor(private cafeteriaService: CafeteriaService) {}
@@ -121,5 +121,10 @@ export class CafeteriaController {
   @UsePipes(ValidationPipe)
   postSales(@Request() req, @Body() param: CafeteriaSalesDto): Promise<any> {
     return this.cafeteriaService.saveSales(param, req.user.username);
+  }
+
+  @Get('categories/get')
+  getCategories() {
+    return this.cafeteriaService.getCategories();
   }
 }

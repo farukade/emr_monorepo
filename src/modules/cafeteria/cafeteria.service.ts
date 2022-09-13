@@ -563,4 +563,21 @@ export class CafeteriaService {
       return { success: false, message: error.message };
     }
   }
+
+  async getCategories() {
+    try {
+      const result = await this.cafeteriaFoodItemRepository.createQueryBuilder('f')
+      .select('f.category_slug as category')
+      .groupBy('f.category_slug')
+      .getRawMany();
+
+      return {
+        success: true, 
+        result
+      }
+    } catch (error) {
+      log(error);
+      return { success: false, message: error.message || "an error occurred" };
+    }
+  }
 }
