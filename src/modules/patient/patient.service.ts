@@ -206,7 +206,7 @@ export class PatientService {
     }
 
     if (gender && gender !== '') {
-      query.andWhere('p.gender = :gender', { gender });
+      query.andWhere('p.gender iLike :gender', { gender });
     }
 
     const patients = await query.take(options.limit).getRawMany();
