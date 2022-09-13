@@ -77,7 +77,7 @@ export class ChatService {
       const total = await query.getCount();
 
       const result = await query
-        .orderBy('q.createdAt', 'DESC')
+        .orderBy('c.createdAt', 'DESC')
         .take(limit)
         .skip(skip)
         .getMany();
