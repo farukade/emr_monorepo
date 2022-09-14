@@ -144,12 +144,16 @@ export class ChatService {
         let user = await this.userRepository.findOne(item.recipient, {
           relations: ['details']
         });
-        recipients = [{ ...user.details, userId: item.recipient }, ...recipients];
+        let messages = await this.chatRepository.find({
+          where: { recipient_id: item.recipient },
+          order: { createdAt: 'DESC' }
+        });
+        recipients = [{ ...user.details, userId: item.recipient, messages }, ...recipients];
       };
 
       return {
         success: true,
-        recipients
+        result: recipients.sort((a, b) => b.messages[0].createdAt - a.messages[0].createdAt)
       }
     } catch (error) {
       log(error);
