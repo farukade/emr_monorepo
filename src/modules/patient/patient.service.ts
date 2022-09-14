@@ -54,6 +54,12 @@ import { QueueService } from '../queue/queue.service';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Error } from 'src/common/interface/error.interface';
+const axios = require('axios').default;
+const { log } = console;
+const dojahBaseUrl = process.env.DOJAH_BASE_URL;
+const dojahPublicKey = process.env.DOJAH_PUBLIC_KEY;
+const dojahPrivateKey = process.env.DOJAH_PRIVATE_KEYS;
+const dojahAppId = process.env.DOJAH_APP_ID;
 
 @Injectable()
 export class PatientService {
@@ -105,7 +111,7 @@ export class PatientService {
     private ancEnrollmentRepository: AntenatalEnrollmentRepository,
     @InjectRepository(IvfEnrollmentRepository)
     private ivfEnrollmentRepository: IvfEnrollmentRepository,
-  ) {}
+  ) { }
 
   async listAllPatients(options: PaginationOptionsInterface, params): Promise<Pagination> {
     const { startDate, endDate, q, status } = params;
@@ -1145,6 +1151,35 @@ export class PatientService {
       return { success: true, summary: { vitals: result, diagnosis } };
     } catch (error) {
       return { success: false, message: error.message };
+    }
+  }
+
+  async lookUpUsingPhone(data: { phone: string }) {
+    try {
+      
+      const url = dojahBaseUrl + "api/v1/kyc/phone_number?phone_number=" + data.phone;
+      let options = {
+        method: 'GET',
+        url,
+        headers: {
+          'Authorization': `${dojahPrivateKey}`,
+          'AppId': `${dojahAppId}`,
+          'Content-Type': 'application/json'
+        }
+      };
+
+      const rs = await axios.get(
+        url,
+        options
+      );
+
+      return {
+        success: true,
+        result: rs.data
+      };
+    } catch (error) {
+      log(error);
+      return { success: false, message: error.message || "an error occurred" };
     }
   }
 }

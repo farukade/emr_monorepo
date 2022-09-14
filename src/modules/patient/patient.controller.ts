@@ -218,4 +218,12 @@ export class PatientController {
   getSummary(@Param('id') id: number): Promise<Voucher[]> {
     return this.patientService.getSummary(id);
   }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post('look-up/phone')
+  lookUpPhone(
+    @Body() data
+  ) {
+    return this.patientService.lookUpUsingPhone(data);
+  }
 }
