@@ -17,7 +17,7 @@ export class ChatService {
     private chatRepository: ChatRepository,
     @InjectRepository(AuthRepository)
     private userRepository: AuthRepository,
-) { }
+  ) { }
 
   async saveChat(data: ChatDto, chat_id: string, room_id: string) {
     try {
@@ -124,6 +124,33 @@ export class ChatService {
 
       return { success: false, message: "delete failed" };
 
+    } catch (error) {
+      log(error);
+      return { success: false, message: error.message || "an error occurred" };
+    }
+  }
+
+  async getRecipients(params) {
+    try {
+      const { sender_id } = params;
+      const recipient = await this.chatRepository.createQueryBuilder('c')
+        .where('c.sender_id = :sender_id', { sender_id })
+        .select('c.recipient_id as recipient')
+        .groupBy('c.recipient_id')
+        .getRawMany();
+
+      let recipients = [];
+      for (const item of recipient) {
+        let user = await this.userRepository.findOne(item.recipient, {
+          relations: ['details']
+        });
+        recipients = [{ ...user.details, userId: item.recipient }, ...recipients];
+      };
+
+      return {
+        success: true,
+        recipients
+      }
     } catch (error) {
       log(error);
       return { success: false, message: error.message || "an error occurred" };
