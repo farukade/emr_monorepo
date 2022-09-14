@@ -23,7 +23,7 @@ import { CafeteriaFoodItem } from './entities/food_item.entity';
 import { CafeteriaFoodItemDto } from './dto/cafeteria-food-item.dto';
 import { OrderDto } from './dto/order.dto';
 
-// @UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt'))
 @Controller('cafeteria')
 export class CafeteriaController {
   constructor(private cafeteriaService: CafeteriaService) {}
