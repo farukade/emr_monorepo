@@ -1,11 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { getChatRoomId } from 'src/common/utils/utils';
-import { AuthRepository } from '../auth/auth.repository';
+import { StaffRepository } from '../hr/staff/staff.repository';
 import { ChatRepository } from './chat.repository';
 import { ChatDto } from './dto/chat.dto';
-import { CreateChatDto } from './dto/create-chat.dto';
-import { UpdateChatDto } from './dto/update-chat.dto';
 import { ChatEntity } from './entities/chat.entity';
 const { log } = console;
 
@@ -15,15 +13,15 @@ export class ChatService {
   constructor(
     @InjectRepository(ChatRepository)
     private chatRepository: ChatRepository,
-    @InjectRepository(AuthRepository)
-    private userRepository: AuthRepository,
+    @InjectRepository(StaffRepository)
+    private staffRepository: StaffRepository,
   ) { }
 
   async saveChat(data: ChatDto, chat_id: string, room_id: string) {
     try {
 
-      const recipient = await this.userRepository.findOne(+data.recipient_id);
-      const sender = await this.userRepository.findOne(+data.sender_id);
+      const recipient = await this.staffRepository.findOne(+data.recipient_id);
+      const sender = await this.staffRepository.findOne(+data.sender_id);
 
       if (!sender || !recipient)
         return { success: false, message: "sender | receiver not found" };
@@ -53,12 +51,12 @@ export class ChatService {
 
       let recipient;
       if (recipient_id) {
-        recipient = await this.userRepository.findOne(+recipient_id);
+        recipient = await this.staffRepository.findOne(+recipient_id);
       };
 
       let sender;
       if (sender_id) {
-        sender = await this.userRepository.findOne(+sender_id);
+        sender = await this.staffRepository.findOne(+sender_id);
       }
 
       let chat_id: string;
@@ -141,14 +139,12 @@ export class ChatService {
 
       let recipients = [];
       for (const item of recipient) {
-        let user = await this.userRepository.findOne(item.recipient, {
-          relations: ['details']
-        });
+        let user = await this.staffRepository.findOne(item.recipient);
         let messages = await this.chatRepository.find({
           where: { recipient_id: item.recipient },
           order: { createdAt: 'DESC' }
         });
-        recipients = [{ ...user.details, userId: item.recipient, messages }, ...recipients];
+        recipients = [{ ...user, userId: item.recipient, messages }, ...recipients];
       };
 
       return {
