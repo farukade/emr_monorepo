@@ -11,5 +11,8 @@ export class ChatDto {
     body: string;
 
     @ApiProperty()
+    room_id?: number;
+
+    @ApiProperty()
     is_sent?: boolean;
 }

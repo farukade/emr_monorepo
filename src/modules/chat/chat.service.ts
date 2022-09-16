@@ -2,9 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { getChatRoomId } from 'src/common/utils/utils';
 import { StaffRepository } from '../hr/staff/staff.repository';
-import { ChatRepository } from './chat.repository';
+import { ChatRepository } from './repositories/chat.repository';
 import { ChatDto } from './dto/chat.dto';
 import { ChatEntity } from './entities/chat.entity';
+import { ChatGroupRepository } from './repositories/chat-room.repository';
+import { ChatGroup } from './entities/chat_room.entity';
 const { log } = console;
 
 @Injectable()
@@ -15,21 +17,27 @@ export class ChatService {
     private chatRepository: ChatRepository,
     @InjectRepository(StaffRepository)
     private staffRepository: StaffRepository,
+    @InjectRepository(ChatGroupRepository)
+    private roomRepository: ChatGroupRepository
   ) { }
 
-  async saveChat(data: ChatDto, chat_id: string, room_id: string) {
+  async saveChat(data: ChatDto, chat_id: string, room: ChatGroup) {
     try {
 
-      const recipient = await this.staffRepository.findOne(+data.recipient_id);
+      let recipient;
+      if (data.recipient_id) {
+        recipient = await this.staffRepository.findOne(+data.recipient_id);
+      };
+
       const sender = await this.staffRepository.findOne(+data.sender_id);
 
-      if (!sender || !recipient)
-        return { success: false, message: "sender | receiver not found" };
+      if (!sender && !recipient)
+        return { success: false, message: "'sender | recipient' not found" };
 
       const chat = this.chatRepository.create({
         ...data,
         chat_id,
-        room_id
+        room
       });
 
       await this.chatRepository.save(chat);
@@ -154,6 +162,83 @@ export class ChatService {
     } catch (error) {
       log(error);
       return { success: false, message: error.message || "an error occurred" };
+    }
+  }
+
+  async addRoom(data) {
+    try {
+      const room = this.roomRepository.create(data);
+      await this.roomRepository.save(room);
+      return { success: true, message: "chat group created" }
+    } catch (error) {
+      log(error);
+      return { success: true, message: error.message || "an error occurred" };
+    }
+  };
+
+  async getRooms(params: { room_id: string }) {
+    try {
+      const { room_id } = params;
+      let result;
+      if (room_id && room_id != "") {
+        result = await this.roomRepository.findOne(+room_id, {
+          relations: ['staffs']
+        });
+        if (!result) {
+          return {
+            success: false,
+            message: "chat group not found"
+          }
+        }
+      } else {
+        result = await this.roomRepository.find({
+          relations: ['staffs']
+        });
+        if (!result.length) {
+          return {
+            success: false,
+            message: "chat groups not found"
+          }
+        }
+      };
+
+      return { success: true, result }
+    } catch (error) {
+      log(error);
+      return { success: true, message: error.message || "an error occurred" }
+    }
+  }
+
+  async addUserToGroup(data: { room_id: number, ids: number[] }) {
+    try {
+      const { room_id, ids } = data;
+
+      const staff = await this.staffRepository.createQueryBuilder('s')
+        .where('s.id IN (:...ids)', { ids })
+        .getMany();
+
+      if (!staff.length)
+        return { success: false, message: "staff(s) not found" };
+
+      let room = await this.roomRepository.findOne(room_id, {
+        relations: ['staffs']
+      });
+
+      if (!room)
+        return { success: false, message: "room not found" };
+
+      room.staffs = [...room.staffs, ...staff];
+
+      await this.roomRepository.save(room);
+
+      return { success: true, message: "staff(s) added to group" }
+
+    } catch (error) {
+      log(error);
+      return {
+        success: false,
+        message: error.message || "an error occurred"
+      }
     }
   }
 }
