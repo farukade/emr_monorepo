@@ -278,8 +278,8 @@ export const getOutstanding = async (patient_id) => {
   return patient.credit_limit > 0
     ? 0
     : transactions.reduce((totalAmount, item) => {
-      return totalAmount + item.amount;
-    }, 0);
+        return totalAmount + item.amount;
+      }, 0);
 };
 
 export const getBalance = async (patient_id) => {
@@ -347,7 +347,7 @@ export const callPatient1 = async (pid) => {
     const text = `Patient ${parsePID(pid)}, please proceed to consulting Room 3`;
     say.speak(text, null, 1.0, (err) => {
       if (err) {
-        console.error(err);
+        //console.error(err);
         return;
       }
 
@@ -355,7 +355,7 @@ export const callPatient1 = async (pid) => {
       say.stop();
     });
   } catch (e) {
-    console.log(e);
+    //console.log(e);
   }
 };
 
@@ -365,7 +365,7 @@ export const callPatient = async (appointment: Appointment, room) => {
       const text = `Patient ${parsePID(appointment.patient.id)}, please proceed to consulting ${room.name}`;
       say.speak(text, null, 1.0, (err) => {
         if (err) {
-          console.error(err);
+          //console.error(err);
           return;
         }
 
@@ -374,7 +374,7 @@ export const callPatient = async (appointment: Appointment, room) => {
       });
     }
   } catch (e) {
-    console.log(e);
+    //console.log(e);
   }
 };
 
@@ -411,7 +411,7 @@ export const postDebit = async (
     nicu_id,
     staff_id,
     lastChangedBy,
-    foodItems
+    foodItems,
   } = data;
 
   const connection = getConnection();
@@ -538,7 +538,7 @@ export const postCredit = async (data: TransactionCreditDto, service, voucher, r
     nicu_id,
     staff_id,
     lastChangedBy,
-    foodItems
+    foodItems,
   } = data;
 
   const connection = getConnection();
@@ -637,8 +637,9 @@ export const parseDescription = (item) => {
   if (item.bill_source === 'drugs') {
     const reqItem = item.patientRequestItem;
 
-    return ` : ${reqItem.fill_quantity} ${reqItem.drug.unitOfMeasure} of ${reqItem.drugGeneric.name} (${reqItem.drug.name
-      }) at ${formatCurrency(reqItem.drugBatch.unitPrice)} each`;
+    return ` : ${reqItem.fill_quantity} ${reqItem.drug.unitOfMeasure} of ${reqItem.drugGeneric.name} (${
+      reqItem.drug.name
+    }) at ${formatCurrency(reqItem.drugBatch.unitPrice)} each`;
   }
 
   if (
@@ -667,8 +668,9 @@ export const parseDescriptionB = (item) => {
   if (item.bill_source === 'drugs') {
     const reqItem = item.patientRequestItem;
 
-    return `  ${reqItem.fill_quantity} ${reqItem.drug.unitOfMeasure} of ${reqItem.drugGeneric.name} (${reqItem.drug.name
-      }) at ${formatCurrency(reqItem.drugBatch.unitPrice)} each`;
+    return `  ${reqItem.fill_quantity} ${reqItem.drug.unitOfMeasure} of ${reqItem.drugGeneric.name} (${
+      reqItem.drug.name
+    }) at ${formatCurrency(reqItem.drugBatch.unitPrice)} each`;
   }
 
   if (
@@ -694,17 +696,16 @@ export const patientname = (user, pid = false) => {
 };
 
 export const removeEmptyLines = async (arr: Array<PatientNote>) => {
-
   const match = /(<p>(<u>|<br>)?(<br>|<u>)?<\/p>)|(\n\n(\n)?)/g;
 
   for (const element of arr) {
-    element.description = element?.description?.replace(match, "");
-  };
+    element.description = element?.description?.replace(match, '');
+  }
 
-  return
+  return;
 };
 
 export const getChatRoomId = (arr: number[]) => {
   const sortedArr = arr.sort();
-  return sortedArr.join("-");
-}
+  return sortedArr.join('-');
+};

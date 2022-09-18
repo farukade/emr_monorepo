@@ -7,6 +7,21 @@ import * as compression from 'compression';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import 'reflect-metadata';
 
+(function () {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const childProcess = require('child_process');
+  const oldSpawn = childProcess.spawn;
+  function mySpawn() {
+    console.log('spawn called');
+    // eslint-disable-next-line prefer-rest-params
+    console.log(arguments);
+    // eslint-disable-next-line prefer-rest-params
+    const result = oldSpawn.apply(this, arguments);
+    return result;
+  }
+  childProcess.spawn = mySpawn;
+})();
+
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 require('events').EventEmitter.defaultMaxListeners = 50;
 
@@ -39,7 +54,7 @@ async function bootstrap() {
   app.use('/images', express.static(join(__dirname, '..', 'public/images')));
   app.use('/outputs', express.static(join(__dirname, '..', 'public/outputs')));
 
-  const port = process.env.PORT || 3001;
+  const port = process.env.PORT || 3002;
 
   await app.listen(port, async () => {
     console.info(`EMRAPP API running on: ${await app.getUrl()}`);

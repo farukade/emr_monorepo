@@ -634,15 +634,12 @@ export class AppointmentService {
   async acceptAppointment({ appointmentId, action, doctor_id, consulting_room_id }, username: string) {
     try {
       const doctor = await getRepository(StaffDetails).findOne(doctor_id);
-      console.log('-------1');
 
       const appointment = await this.getAppointment(appointmentId);
-      console.log('-------2');
 
       if (doctor) {
         appointment.whomToSee = doctor;
       }
-      console.log('-------3');
 
       if (consulting_room_id) {
         const room = await this.consultingRoomRepository.findOne(consulting_room_id);
@@ -650,19 +647,14 @@ export class AppointmentService {
 
         await callPatient(appointment, room);
       }
-      console.log('-------4');
 
       appointment.doctorStatus = action;
       appointment.lastChangedBy = username;
-      await appointment.save();
-      console.log('-------5');
+      const rs = await appointment.save();
 
-      this.appGateway.server.emit('appointment-update', {
-        appointment,
-        action,
-      });
+      this.appGateway.server.emit('appointment-update', { rs, action });
       console.log('-------6');
-      return { success: true, appointment };
+      return { success: true, appointment: rs };
     } catch (e) {
       console.log(e);
       return { success: false, message: e.message };
