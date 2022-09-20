@@ -278,8 +278,8 @@ export const getOutstanding = async (patient_id) => {
   return patient.credit_limit > 0
     ? 0
     : transactions.reduce((totalAmount, item) => {
-        return totalAmount + item.amount;
-      }, 0);
+      return totalAmount + item.amount;
+    }, 0);
 };
 
 export const getBalance = async (patient_id) => {
@@ -637,9 +637,8 @@ export const parseDescription = (item) => {
   if (item.bill_source === 'drugs') {
     const reqItem = item.patientRequestItem;
 
-    return ` : ${reqItem.fill_quantity} ${reqItem.drug.unitOfMeasure} of ${reqItem.drugGeneric.name} (${
-      reqItem.drug.name
-    }) at ${formatCurrency(reqItem.drugBatch.unitPrice)} each`;
+    return ` : ${reqItem.fill_quantity} ${reqItem.drug.unitOfMeasure} of ${reqItem.drugGeneric.name} (${reqItem.drug.name
+      }) at ${formatCurrency(reqItem.drugBatch.unitPrice)} each`;
   }
 
   if (
@@ -668,9 +667,8 @@ export const parseDescriptionB = (item) => {
   if (item.bill_source === 'drugs') {
     const reqItem = item.patientRequestItem;
 
-    return `  ${reqItem.fill_quantity} ${reqItem.drug.unitOfMeasure} of ${reqItem.drugGeneric.name} (${
-      reqItem.drug.name
-    }) at ${formatCurrency(reqItem.drugBatch.unitPrice)} each`;
+    return `  ${reqItem.fill_quantity} ${reqItem.drug.unitOfMeasure} of ${reqItem.drugGeneric.name} (${reqItem.drug.name
+      }) at ${formatCurrency(reqItem.drugBatch.unitPrice)} each`;
   }
 
   if (
@@ -709,3 +707,13 @@ export const getChatRoomId = (arr: number[]) => {
   const sortedArr = arr.sort();
   return sortedArr.join('-');
 };
+
+export const getDiagnosis = (notes: PatientNote[]) => {
+  let diagnoses = [];
+  for (const note of notes) {
+    if (note.diagnosis) {
+      diagnoses = [...diagnoses, note.diagnosis.description]
+    }
+  };
+  return diagnoses;
+}
