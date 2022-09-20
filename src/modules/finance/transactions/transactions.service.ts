@@ -1399,8 +1399,10 @@ export class TransactionsService {
       let nums;
       let chars;
       if (term && term !== '') {
-        nums = term.match(/(\d+)/g);
-        chars = term.replace(/[^a-z]+/gi, '');
+        nums = term.toString().match(/(\d+)/g);
+        chars = term.toString().replace(/[^a-z]+/gi, '');
+        log(nums);
+        log(chars);
       }
 
       const query = this.transactionsRepository
@@ -1504,8 +1506,13 @@ export class TransactionsService {
       //query if search term contains digits
       if (nums) {
         const digits = parseInt(nums[0]);
-
-        query.andWhere('patient.id = :id', { id: digits }).andWhere('q.amount = :amount', { amount: digits });
+        log(digits);
+        query.andWhere(
+          new Brackets((qb) => {
+            qb.orWhere('q.patient_id = :id', { id: digits })
+              .orWhere('q.amount = :amount', { amount: digits });
+          })
+        )
       }
 
       if (hmo_id && hmo_id !== '') {
