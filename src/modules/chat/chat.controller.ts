@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } f
 import { AuthGuard } from '@nestjs/passport';
 import { ChatService } from './chat.service';
 
-@UseGuards(AuthGuard('jwt'))
+// @UseGuards(AuthGuard('jwt'))
 @Controller('messages/chat')
 export class ChatController {
   constructor(private readonly chatService: ChatService) { }

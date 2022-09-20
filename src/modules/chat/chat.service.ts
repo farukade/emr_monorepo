@@ -98,9 +98,8 @@ export class ChatService {
         let staff = await this.staffRepository.findOne(item.sender_id);
         result = [...result, { 
           ...item, 
-          staff_id: staff.id, 
-          staff_first_name: staff.first_name,
-          staff_last_name: staff.last_name,
+          sender_first_name: staff.first_name,
+          sender_last_name: staff.last_name,
         }]
       }
 
@@ -186,7 +185,7 @@ export class ChatService {
     try {
       const room = this.roomRepository.create(data);
       await this.roomRepository.save(room);
-      return { success: true, message: "chat group created" }
+      return { success: true, message: "chat group created", data: room };
     } catch (error) {
       log(error);
       return { success: true, message: error.message || "an error occurred" };
