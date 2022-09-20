@@ -80,13 +80,29 @@ export class ChatService {
         query.andWhere('c.room_id = :room_id', { room_id });
       };
 
+      let room;
+      if (room_id && room_id != "") {
+        room = await this.roomRepository.findOne(+room_id);
+      }
+
       const total = await query.getCount();
 
-      const result = await query
+      let result = [];
+      const chats = await query
         .orderBy('c.createdAt', 'DESC')
         .take(limit)
         .skip(skip)
         .getMany();
+
+      for (const item of chats) {
+        let staff = await this.staffRepository.findOne(item.sender_id);
+        result = [...result, { 
+          ...item, 
+          staff_id: staff.id, 
+          staff_first_name: staff.first_name,
+          staff_last_name: staff.last_name,
+        }]
+      }
 
       return {
         success: true,
@@ -94,6 +110,7 @@ export class ChatService {
         itemsPerPage: limit,
         totalItems: total,
         currentPage: page,
+        room,
         sender,
         recipient,
         result,
