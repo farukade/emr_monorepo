@@ -711,8 +711,77 @@ export const getDiagnosis = (notes: PatientNote[]) => {
   let diagnoses = [];
   for (const note of notes) {
     if (note.diagnosis) {
-      diagnoses = [...diagnoses, note.diagnosis.description]
+      diagnoses = [...diagnoses, { diagnosis: startCase(note.diagnosis.description) }]
     }
   };
   return diagnoses;
 }
+
+export const getComplaints = (notes: PatientNote[]) => {
+
+  let str = "";
+  const match1 = /presenting complain/gi;
+  const match2 = /seen/gi;
+  const match3 = /&nbsp/gi;
+  const tagMatch = /<\/?[a-z]([a-z])?>|\n/gi;
+
+  for (const note of notes) {
+    if (note.type == "complaints") {
+      str += note.description;
+    }
+  }
+  let arr = str.split("<\/p>");
+
+  let res = "";
+  let num = 1;
+  for (let i = 0; i < arr.length; i++) {
+
+    const item = arr[i];
+    let newItem = item.replace(tagMatch, "");
+    newItem = newItem.replace(match3, "");
+
+    if (!match1.test(newItem) && !match2.test(newItem) && newItem != "") {
+      res += `${num}-${startCase(newItem)} `
+      num++;
+    }
+  };
+  return res;
+}
+
+export const getCharts = (requests: PatientRequest[]) => {
+  let result = [];
+  for (const request of requests) {
+    result = [...result, { service: parseCharts(request.item) }]
+  };
+  return result;
+}
+
+export const parseCharts = (item) => {
+  if (!item) {
+    return '--';
+  }
+
+  if (item?.transaction?.bill_source === 'ward' || item?.transaction?.bill_source === 'nicu-accommodation') {
+    return startCase(item?.transaction?.bill_source) + `: ${startCase(item?.transaction?.description)}`;
+  }
+
+  if (item?.transaction?.bill_source === 'drugs') {
+    const reqItem = item;
+
+    return  startCase(item?.transaction?.bill_source) + `:  ${reqItem?.fill_quantity} ${reqItem?.drug?.unitOfMeasure} of ${reqItem?.drug?.generic?.name} (${reqItem?.drug?.name
+      })`;
+  }
+
+  if (
+    (item?.transaction?.bill_source === 'consultancy' ||
+      item?.transaction?.bill_source === 'labs' ||
+      item?.transaction?.bill_source === 'scans' ||
+      item?.transaction?.bill_source === 'procedure' ||
+      item?.transaction?.bill_source === 'nursing-service') &&
+    item?.transaction?.service?.item?.name
+  ) {
+    return startCase(item?.transaction?.bill_source) + `: ${startCase(item?.transaction?.service?.item?.name)}`;
+  }
+
+  return '--';
+};

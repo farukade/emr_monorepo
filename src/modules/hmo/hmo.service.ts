@@ -20,7 +20,7 @@ import { Patient } from '../patient/entities/patient.entity';
 import { ServiceCategoryRepository } from '../settings/services/repositories/service_category.repository';
 import { Error } from 'src/common/interface/error.interface';
 import { EncounterRepository } from '../patient/consultation/encounter.repository';
-import { generatePDF, getDiagnosis } from 'src/common/utils/utils';
+import { generatePDF, getCharts, getComplaints, getDiagnosis, parseDescriptionB } from 'src/common/utils/utils';
 import * as path from 'path';
 import { AdmissionsRepository } from '../patient/admissions/repositories/admissions.repository';
 const { log } = console;
@@ -47,7 +47,7 @@ export class HmoService {
     @InjectRepository(EncounterRepository)
     private encounterRepository: EncounterRepository,
     @InjectRepository(AdmissionsRepository)
-    private admissionRepository: AdmissionsRepository
+    private admissionRepository: AdmissionsRepository,
   ) { }
 
   async fetchHmos(options: PaginationOptionsInterface, params): Promise<Pagination> {
@@ -305,7 +305,6 @@ export class HmoService {
         .orderBy('q.createdAt', 'DESC')
         .getRawMany();
 
-
       let result = [];
       for (const item of items) {
         item.scheme = await this.hmoSchemeRepository.findOne(item.hmo_scheme_id);
@@ -336,7 +335,7 @@ export class HmoService {
       };
     } catch (error) {
       log(error);
-      return { success: false, message: error.message || "an error occurred" };
+      return { success: false, message: error.message || 'an error occurred' };
     }
   }
 
@@ -352,56 +351,53 @@ export class HmoService {
       const skip = +page - 1;
       const limit = +options.limit;
 
-      const query = this.encounterRepository.createQueryBuilder('e')
+      const query = this.encounterRepository
+        .createQueryBuilder('e')
         .leftJoinAndSelect('e.patient', 'patient')
         .leftJoinAndSelect('patient.hmo', 'hmo')
         .leftJoinAndSelect('e.appointment', 'appointment')
+        .leftJoinAndSelect('appointment.whomToSee', 'doctor')
         .leftJoinAndSelect('e.notes', 'notes')
         .leftJoinAndSelect('e.requests', 'requests')
         .leftJoinAndSelect('requests.item', 'item')
+        .leftJoinAndSelect('item.drug', 'drug')
+        .leftJoinAndSelect('drug.generic', 'generic')
+        .leftJoinAndSelect('drug.batches', 'batches')
         .leftJoinAndSelect('item.transaction', 'transaction')
+        .leftJoinAndSelect('transaction.service', 'service')
+        .leftJoinAndSelect('service.item', 'service_item')
         .leftJoinAndSelect('e.consumables', 'consumables');
 
-      if (hmo_id && hmo_id != "") {
-        query.where('hmo.id = :id', { id: hmo_id })
-      };
+      if (hmo_id && hmo_id != '') {
+        query.where('hmo.id = :id', { id: hmo_id });
+      }
 
       if (start_date && start_date !== '' && end_date && end_date !== '' && end_date === start_date) {
-
         query.andWhere(`DATE(e.createdAt) = '${start_date}'`);
-
       } else if (start_date && start_date !== '' && end_date && end_date !== '') {
-
         const start = moment(start_date).startOf('day').toISOString();
         const end = moment(end_date).endOf('day').toISOString();
         query.andWhere(`e.createdAt >= '${start}'`);
         query.andWhere(`e.createdAt <= '${end}'`);
-
       } else {
-
         const today = new Date();
         const start = moment(today).startOf('month').toISOString();
         const end = moment(today).endOf('month').toISOString();
         log('start:-', start, 'end:-', end);
         query.andWhere(`e.createdAt >= '${start}'`);
         query.andWhere(`e.createdAt <= '${end}'`);
-
       }
 
       const total = await query.getCount();
 
       let result = [];
-      let claims = await query
-        .orderBy('e.createdAt', 'DESC')
-        .take(limit)
-        .skip(skip)
-        .getMany();
+      let claims = await query.orderBy('e.createdAt', 'DESC').take(limit).skip(skip).getMany();
 
       for (const item of claims) {
         let admission = null;
         if (item.patient.admission_id) {
           admission = await this.admissionRepository.findOne(item.patient.admission_id);
-        };
+        }
         result = [{ ...item, admission }, ...result];
       }
 
@@ -413,50 +409,57 @@ export class HmoService {
         currentPage: +page,
         result,
       };
-
     } catch (error) {
       log(error);
-      return { success: false, message: error.message || "an error occurred" };
+      return { success: false, message: error.message || 'an error occurred' };
     }
   }
 
   async printClaims(params) {
     try {
-      const page = params.page && params.page != "" ? +params.page : 1;
-      const limit = params.limit && params.limit != "" ? +params.limit : 10;
+      const page = params.page && params.page != '' ? +params.page : 1;
+      const limit = params.limit && params.limit != '' ? +params.limit : 10;
       const res = await this.getClaims({ page, limit }, params);
 
       const date = new Date();
       const filename = `claims-${date.getTime()}.pdf`;
       const filepath = path.resolve(__dirname, `../../../public/outputs/${filename}`);
-      const viewsDir = path.resolve(__dirname, '../../../views/')
+      const viewsDir = path.resolve(__dirname, '../../../views/');
+      const logo = `${process.env.ENDPOINT}/images/logo.png`;
 
-      if (!res.success)
-        return { success: false, message: res.message };
+      if (!res.success) return { success: false, message: res.message };
 
       const { result } = res;
       let resArr = [];
 
       for (const item of result) {
-        let diagnoses = { diagnosis: getDiagnosis(item.notes) }
+        let diagnoses = getDiagnosis(item.notes);
+        let complaints = getComplaints(item.notes);
+        let doctor =
+          item.appointment?.whomToSee?.profession + " " +
+          item.appointment?.whomToSee?.last_name + " " +
+          item.appointment?.whomToSee?.first_name
+        let admission_date = item.admission?.createdAt ? item.admission.createdAt : "--";
+        let discharge_date = item.admission?.date_discharged ? item.admission.date_discharged : "--";
+        let services = getCharts(item.requests);
+
         let data = {
           patient_id: `0000${item.patient.id}`,
-          patient_fullName: item.patient.surname + " " + item.patient.other_names,
-          enrollee_name: null,
-          enrollee_number: 0,
-          doctor: item.createdBy,
+          patient_fullName: item.patient.surname + ' ' + item.patient.other_names,
+          doctor,
           diagnoses,
           date: date.toDateString(),
-          admission_date: item.admission?.createdAt,
-          discharge_date: item.admission?.date_discharged,
-          due_date: null,
-          complaints: null,
-          charts: null,
+          admission_date,
+          discharge_date,
+          due_date: "--",
+          complaints,
+          services,
           hmo_name: item.patient?.hmo?.name,
-          viewsDir
+          viewsDir,
+          logo,
         };
-        resArr = [...resArr, data]
-      };
+        resArr = [...resArr, data];
+      }
 
       await generatePDF('hmo-claims', { filepath, items: resArr });
 
@@ -464,11 +467,9 @@ export class HmoService {
         success: true,
         url: `${process.env.ENDPOINT}/outputs/${filename}`,
       };
-
-      // return { success: true, result: resArr}
     } catch (error) {
       log(error);
-      return { success: false, message: error.message || "an error occurred" };
+      return { success: false, message: error.message || 'an error occurred' };
     }
   }
 }
