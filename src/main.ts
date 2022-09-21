@@ -7,21 +7,6 @@ import * as compression from 'compression';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import 'reflect-metadata';
 
-(function () {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const childProcess = require('child_process');
-  const oldSpawn = childProcess.spawn;
-  function mySpawn() {
-    console.log('spawn called');
-    // eslint-disable-next-line prefer-rest-params
-    console.log(arguments);
-    // eslint-disable-next-line prefer-rest-params
-    const result = oldSpawn.apply(this, arguments);
-    return result;
-  }
-  childProcess.spawn = mySpawn;
-})();
-
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 require('events').EventEmitter.defaultMaxListeners = 50;
 
