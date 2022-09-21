@@ -1,22 +1,24 @@
 import { CustomBaseEntity } from "src/common/entities/custom-base.entity";
-import { Column, Entity } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne } from "typeorm";
+import { ChatGroup } from "./chat_room.entity";
 
 @Entity({ name: 'chat' })
 export class ChatEntity extends CustomBaseEntity {
-    @Column({ nullable: true })
+    @Column()
     body: string;
 
     @Column()
     sender_id: number;
 
-    @Column()
+    @Column({ nullable: true })
     recipient_id: number;
 
     @Column({ nullable: true })
     chat_id: string;
 
-    @Column({ nullable: true })
-    room_id: string;
+    @ManyToOne(() => ChatGroup, (room) => room.chats, { nullable: true })
+    @JoinColumn({ name: 'room_id' })
+    room: ChatGroup;
 
     @Column({ default: false })
     is_delivered: boolean;
