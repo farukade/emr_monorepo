@@ -14,6 +14,7 @@ import { ServiceCostRepository } from '../settings/services/repositories/service
 import { PatientRequestItemRepository } from '../patient/repositories/patient_request_items.repository';
 import { AppGateway } from '../../app.gateway';
 import { EncounterRepository } from '../patient/consultation/encounter.repository';
+import { AdmissionsRepository } from '../patient/admissions/repositories/admissions.repository';
 
 @Module({
   imports: [
@@ -28,7 +29,8 @@ import { EncounterRepository } from '../patient/consultation/encounter.repositor
       ServiceCategoryRepository,
       ServiceCostRepository,
       PatientRequestItemRepository,
-      EncounterRepository
+      EncounterRepository, 
+      AdmissionsRepository
     ]),
   ],
   controllers: [HmoController],

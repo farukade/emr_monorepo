@@ -20,6 +20,9 @@ import { Patient } from '../patient/entities/patient.entity';
 import { ServiceCategoryRepository } from '../settings/services/repositories/service_category.repository';
 import { Error } from 'src/common/interface/error.interface';
 import { EncounterRepository } from '../patient/consultation/encounter.repository';
+import { generatePDF, getDiagnosis } from 'src/common/utils/utils';
+import * as path from 'path';
+import { AdmissionsRepository } from '../patient/admissions/repositories/admissions.repository';
 const { log } = console;
 
 @Injectable()
@@ -43,6 +46,8 @@ export class HmoService {
     private serviceCategoryRepository: ServiceCategoryRepository,
     @InjectRepository(EncounterRepository)
     private encounterRepository: EncounterRepository,
+    @InjectRepository(AdmissionsRepository)
+    private admissionRepository: AdmissionsRepository
   ) { }
 
   async fetchHmos(options: PaginationOptionsInterface, params): Promise<Pagination> {
@@ -385,11 +390,20 @@ export class HmoService {
 
       const total = await query.getCount();
 
-      const result = await query
+      let result = [];
+      let claims = await query
         .orderBy('e.createdAt', 'DESC')
         .take(limit)
         .skip(skip)
         .getMany();
+
+      for (const item of claims) {
+        let admission = null;
+        if (item.patient.admission_id) {
+          admission = await this.admissionRepository.findOne(item.patient.admission_id);
+        };
+        result = [{ ...item, admission }, ...result];
+      }
 
       return {
         success: true,
@@ -400,6 +414,58 @@ export class HmoService {
         result,
       };
 
+    } catch (error) {
+      log(error);
+      return { success: false, message: error.message || "an error occurred" };
+    }
+  }
+
+  async printClaims(params) {
+    try {
+      const page = params.page && params.page != "" ? +params.page : 1;
+      const limit = params.limit && params.limit != "" ? +params.limit : 10;
+      const res = await this.getClaims({ page, limit }, params);
+
+      const date = new Date();
+      const filename = `claims-${date.getTime()}.pdf`;
+      const filepath = path.resolve(__dirname, `../../../public/outputs/${filename}`);
+      const viewsDir = path.resolve(__dirname, '../../../views/')
+
+      if (!res.success)
+        return { success: false, message: res.message };
+
+      const { result } = res;
+      let resArr = [];
+
+      for (const item of result) {
+        let diagnoses = { diagnosis: getDiagnosis(item.notes) }
+        let data = {
+          patient_id: `0000${item.patient.id}`,
+          patient_fullName: item.patient.surname + " " + item.patient.other_names,
+          enrollee_name: null,
+          enrollee_number: 0,
+          doctor: item.createdBy,
+          diagnoses,
+          date: date.toDateString(),
+          admission_date: item.admission?.createdAt,
+          discharge_date: item.admission?.date_discharged,
+          due_date: null,
+          complaints: null,
+          charts: null,
+          hmo_name: item.patient?.hmo?.name,
+          viewsDir
+        };
+        resArr = [...resArr, data]
+      };
+
+      await generatePDF('hmo-claims', { filepath, items: resArr });
+
+      return {
+        success: true,
+        url: `${process.env.ENDPOINT}/outputs/${filename}`,
+      };
+
+      // return { success: true, result: resArr}
     } catch (error) {
       log(error);
       return { success: false, message: error.message || "an error occurred" };

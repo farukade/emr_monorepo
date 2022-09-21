@@ -98,4 +98,9 @@ export class HmoController {
     const page = request.query.hasOwnProperty('page') ? parseInt(request.query.page, 10) : 1;
     return this.hmoService.getClaims({ page, limit }, urlParams);
   }
+
+  @Get('/claims/print')
+  printClaims(@Query() urlParams) {
+    return this.hmoService.printClaims(urlParams);
+  }
 }
