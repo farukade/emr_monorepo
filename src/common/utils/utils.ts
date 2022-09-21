@@ -26,7 +26,6 @@ import * as numeral from 'numeral';
 import * as startCase from 'lodash.startcase';
 import { S3Client } from '@aws-sdk/client-s3';
 import { PatientNote } from 'src/modules/patient/entities/patient_note.entity';
-const { log } = console;
 
 const mysql = require('mysql2/promise');
 
