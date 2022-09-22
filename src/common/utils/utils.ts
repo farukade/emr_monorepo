@@ -714,6 +714,9 @@ export const getDiagnosis = (notes: PatientNote[]) => {
       diagnoses = [...diagnoses, { diagnosis: startCase(note.diagnosis.description) }]
     }
   };
+  if (!diagnoses.length) {
+    diagnoses.push({ diagnosis: "-- -- --" });
+  }
   return diagnoses;
 }
 
@@ -733,7 +736,6 @@ export const getComplaints = (notes: PatientNote[]) => {
   let arr = str.split("<\/p>");
 
   let res = "";
-  let num = 1;
   for (let i = 0; i < arr.length; i++) {
 
     const item = arr[i];
@@ -741,8 +743,7 @@ export const getComplaints = (notes: PatientNote[]) => {
     newItem = newItem.replace(match3, "");
 
     if (!match1.test(newItem) && !match2.test(newItem) && newItem != "") {
-      res += `${num}-${startCase(newItem)} `
-      num++;
+      res += `${startCase(newItem)}, `;
     }
   };
   return res;
@@ -753,6 +754,9 @@ export const getCharts = (requests: PatientRequest[]) => {
   for (const request of requests) {
     result = [...result, { service: parseCharts(request.item) }]
   };
+  if (!result.length) {
+    result.push({ service: "-- -- --" })
+  }
   return result;
 }
 
@@ -768,7 +772,7 @@ export const parseCharts = (item) => {
   if (item?.transaction?.bill_source === 'drugs') {
     const reqItem = item;
 
-    return  startCase(item?.transaction?.bill_source) + `:  ${reqItem?.fill_quantity} ${reqItem?.drug?.unitOfMeasure} of ${reqItem?.drug?.generic?.name} (${reqItem?.drug?.name
+    return startCase(item?.transaction?.bill_source) + `:  ${reqItem?.drug?.unitOfMeasure} of ${reqItem?.drug?.generic?.name} (${reqItem?.drug?.name
       })`;
   }
 

@@ -427,7 +427,8 @@ export class HmoService {
       const viewsDir = path.resolve(__dirname, '../../../views/');
       const logo = `${process.env.ENDPOINT}/images/logo.png`;
 
-      if (!res.success) return { success: false, message: res.message };
+      if (!res.success || !res?.result?.length)
+        return { success: false, message: res.message || "no record" };
 
       const { result } = res;
       let resArr = [];
