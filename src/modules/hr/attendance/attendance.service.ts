@@ -295,7 +295,10 @@ export class AttendanceService {
       console.log(await zkInstance.getInfo());
 
       const logs = await zkInstance.getAttendances(function (data, err) {
-        if (err) throw err;
+        if (err) {
+          log(err);
+          return;
+        }
       });
       if (logs) {
         await zkInstance.disconnect();
