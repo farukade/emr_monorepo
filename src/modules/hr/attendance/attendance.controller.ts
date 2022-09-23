@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Query, Res, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags } from '@nestjs/swagger';
 import { AttendanceService } from './attendance.service';
@@ -27,7 +27,7 @@ export class AttendanceController {
   @Get('create-user')
   createUser(
     @Query() urlParams
-    ) {
+  ) {
     return this.attendanceService.createUser(urlParams);
   }
 
@@ -59,4 +59,9 @@ export class AttendanceController {
   addUsers() {
     return this.attendanceService.addUsers();
   };
+
+  @Delete('device/:id')
+  removeDevice(@Param('id') id) {
+    return this.attendanceService.removeDevice(+id);
+  }
 }
