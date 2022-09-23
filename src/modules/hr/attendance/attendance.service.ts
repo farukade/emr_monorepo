@@ -66,13 +66,11 @@ export class AttendanceService {
         );
       };
 
-      query.orderBy('q.updated_at', 'DESC').take(limit).skip(offset);
+      query.orderBy('q.date', 'DESC').take(limit).skip(offset);
 
       const total = await query.getCount();
 
       const attendance = await query.getMany();
-
-      if (!attendance) return { success: false, message: 'record not found' };
 
       return {
         success: true,
