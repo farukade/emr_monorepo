@@ -8,10 +8,13 @@ import { Brackets } from 'typeorm';
 import { DeviceRepository } from './repositories/device.repositories';
 import { DeviceDto } from './dto/device.dto';
 import { StaffRepository } from '../staff/staff.repository';
+import { DeviceIps } from './entities/device.entity';
 config();
 const port = process.env.BIO_PORT;
 const ip = process.env.BIO_IP;
 let zkInstance = new ZKLib(ip, parseInt(port), 5200, 5000);
+const { log } = console;
+
 
 @Injectable()
 export class AttendanceService {
@@ -118,7 +121,7 @@ export class AttendanceService {
         };
         attendanceArr = await logs.data;
 
-        
+
         for (const item of attendanceArr) {
 
           let staff = await this.staffRepository.findOne(item.deviceUserId);
@@ -333,4 +336,27 @@ export class AttendanceService {
       return { success: false, message: error.message || "an error occured" };
     }
   };
+
+  async removeDevice(id: number) {
+    try {
+      let res = await this.deviceRepository
+        .createQueryBuilder()
+        .delete()
+        .from(DeviceIps)
+        .where('id = :id', { id })
+        .execute();
+
+      if (res.affected) {
+        return {
+          success: true,
+          message: "Device deleted successfully"
+        };
+      }
+
+      return { success: false, message: "Device could not be deleted" }
+    } catch (error) {
+      log(error);
+      return { success: false, message: error.message || "an error occurred" };
+    }
+  }
 }
