@@ -162,6 +162,7 @@ export class ChatService {
         .getRawMany();
 
       let recipients = [];
+      if (recipient[0]?.recipient) {
       for (const item of recipient) {
         let user = await this.staffRepository.findOne(item.recipient);
         let messages = await this.chatRepository.find({
@@ -170,6 +171,7 @@ export class ChatService {
         });
         recipients = [{ ...user, userId: item.recipient, messages }, ...recipients];
       };
+    }
 
       return {
         success: true,
