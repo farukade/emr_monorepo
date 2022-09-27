@@ -1,4 +1,3 @@
-import { CustomBaseEntity } from "src/common/entities/custom-base.entity";
 import { Department } from "src/modules/settings/entities/department.entity";
 import { Column, Entity, JoinColumn, ManyToOne } from "typeorm";
 import { StaffDetails } from "../../staff/entities/staff_details.entity";

@@ -55,10 +55,10 @@ export class AttendanceController {
     return this.attendanceService.getDevice();
   }
 
-  @Get('bulk-create/users')
-  addUsers() {
-    return this.attendanceService.addUsers();
-  };
+  // @Get('bulk-create/users')
+  // addUsers() {
+  //   return this.attendanceService.addUsers();
+  // };
 
   @Delete('device/:id')
   removeDevice(@Param('id') id) {

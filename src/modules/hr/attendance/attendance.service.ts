@@ -7,7 +7,6 @@ import { Attendance } from './entities/attendance.entity';
 import { Brackets, ILike } from 'typeorm';
 import { DeviceRepository } from './repositories/device.repositories';
 import { DeviceDto } from './dto/device.dto';
-import { StaffRepository } from '../staff/staff.repository';
 import { DeviceIps } from './entities/device.entity';
 import { getNewUserData, updateBioDeviceUser } from 'src/common/utils/utils';
 import { BioUserRepository } from './repositories/device-user.repository';
@@ -25,8 +24,6 @@ export class AttendanceService {
     private attendanceRepository: AttendanceRepository,
     @InjectRepository(DeviceRepository)
     private deviceRepository: DeviceRepository,
-    @InjectRepository(StaffRepository)
-    private staffRepository: StaffRepository,
     @InjectRepository(BioUserRepository)
     private userRepository: BioUserRepository
   ) { }
@@ -208,44 +205,44 @@ export class AttendanceService {
   };
 
   // add users
-  async addUsers() {
-    try {
+  // async addUsers() {
+  //   try {
 
-      let zkInstance;
+  //     let zkInstance;
 
-      const staffs = await this.staffRepository.find();
-      const devices = await this.deviceRepository.find();
+  //     const staffs = await this.userRepository.find();
+  //     const devices = await this.deviceRepository.find();
 
-      for (const device of devices) {
-        zkInstance = new ZKLib(device.ip, parseInt(port), 5200, 5000);
+  //     for (const device of devices) {
+  //       zkInstance = new ZKLib(device.ip, parseInt(port), 5200, 5000);
 
-        // Create socket to machine
-        await zkInstance.createSocket();
-        console.log(await zkInstance.getInfo());
+  //       // Create socket to machine
+  //       await zkInstance.createSocket();
+  //       console.log(await zkInstance.getInfo());
 
-        for (const staff of staffs) {
+  //       for (const staff of staffs) {
 
-          // Create socket to machine
-          await zkInstance.createSocket();
-          console.log(await zkInstance.getInfo());
+  //         // Create socket to machine
+  //         await zkInstance.createSocket();
+  //         console.log(await zkInstance.getInfo());
 
-          await zkInstance.setUser(staff.id, `${staff.id}`, `${staff.first_name} ${staff.last_name} ${staff.other_names}`, '123456', 0, 0);
+  //         await zkInstance.setUser(staff.id, `${staff.id}`, `${staff.first_name} ${staff.last_name} ${staff.other_names}`, '123456', 0, 0);
 
-          staff.isOnDevice = true;
-          await this.staffRepository.save(staff);
+  //         staff.isOnDevice = true;
+  //         await this.staffRepository.save(staff);
 
-        };
-        await zkInstance.disconnect();
-      };
+  //       };
+  //       await zkInstance.disconnect();
+  //     };
 
-      return { success: true, message: "success" };
+  //     return { success: true, message: "success" };
 
-    } catch (error) {
-      console.log({ success: false, error });
-      if (zkInstance) await zkInstance.disconnect();
-      return { success: false, message: error.message || 'an error occured' };
-    }
-  };
+  //   } catch (error) {
+  //     console.log({ success: false, error });
+  //     if (zkInstance) await zkInstance.disconnect();
+  //     return { success: false, message: error.message || 'an error occured' };
+  //   }
+  // };
 
   // this will fetch users from a biometric device local database;
   async getAllLiveUsers() {
