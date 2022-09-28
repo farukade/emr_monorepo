@@ -26,6 +26,7 @@ import * as numeral from 'numeral';
 import * as startCase from 'lodash.startcase';
 import { S3Client } from '@aws-sdk/client-s3';
 import { PatientNote } from 'src/modules/patient/entities/patient_note.entity';
+const { log } = console;
 
 const mysql = require('mysql2/promise');
 
@@ -789,3 +790,53 @@ export const parseCharts = (item) => {
 
   return '--';
 };
+
+export const updateBioDeviceUser = (arr) => {
+  let result = [];
+  for (const item of arr) {
+    if (item?.ip == '192.168.1.209') {
+      result = [...result, {
+        id: item.id,
+        user_id: +`9${item?.staff?.id}`
+      }]
+    };
+    if (item?.ip == '192.168.1.201') {
+      result = [...result, {
+        id: item.id,
+        user_id: +`1${item?.staff?.id}`
+      }]
+    }
+  };
+  return result;
+}
+
+export const getNewUserData = (arr, device) => {
+  let result = [];
+  for (const item of arr) {
+    let namesArr = item.name.split(" ");
+    if (device.ip == "192.168.1.201") {
+      result = [{
+        first_name: namesArr[0] ? namesArr[0] : null,
+        last_name: namesArr[1] ? namesArr[1] : null,
+        other_names: namesArr[2] ? namesArr[2] : null,
+        staff_id: null,
+        id: +`1${item.uid}`,
+        device_id: device.id,
+        device
+      }, ...result]
+    }
+
+    if (device.ip == "192.168.1.209") {
+      result = [{
+        first_name: namesArr[0] ? namesArr[0] : null,
+        last_name: namesArr[1] ? namesArr[1] : null,
+        other_names: namesArr[2] ? namesArr[2] : null,
+        staff_id: null,
+        id: +`9${item.uid}`,
+        device_id: device.id,
+        device
+      }, ...result]
+    }
+  }
+  return result;
+}

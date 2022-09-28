@@ -4,11 +4,12 @@ import { AttendanceRepository } from './repositories/attendance.repository';
 import * as ZKLib from 'zklib-js';
 import { config } from 'dotenv';
 import { Attendance } from './entities/attendance.entity';
-import { Brackets } from 'typeorm';
+import { Brackets, ILike } from 'typeorm';
 import { DeviceRepository } from './repositories/device.repositories';
 import { DeviceDto } from './dto/device.dto';
-import { StaffRepository } from '../staff/staff.repository';
 import { DeviceIps } from './entities/device.entity';
+import { getNewUserData, updateBioDeviceUser } from 'src/common/utils/utils';
+import { BioUserRepository } from './repositories/device-user.repository';
 config();
 const port = process.env.BIO_PORT;
 const ip = process.env.BIO_IP;
@@ -23,8 +24,8 @@ export class AttendanceService {
     private attendanceRepository: AttendanceRepository,
     @InjectRepository(DeviceRepository)
     private deviceRepository: DeviceRepository,
-    @InjectRepository(StaffRepository)
-    private staffRepository: StaffRepository
+    @InjectRepository(BioUserRepository)
+    private userRepository: BioUserRepository
   ) { }
 
   // this will filter attendance already on emr either by date or staff or (staff & date);
@@ -34,7 +35,7 @@ export class AttendanceService {
       const offset = (parseInt(page) - 1) * parseInt(limit);
       const query = this.attendanceRepository
         .createQueryBuilder('q')
-        .leftJoinAndSelect('q.staff', 'staff')
+        .leftJoinAndSelect('q.user', 'staff')
         .leftJoinAndSelect('staff.department', 'department');
 
       //separate digits from alphabets
@@ -122,11 +123,11 @@ export class AttendanceService {
 
         for (const item of attendanceArr) {
 
-          let staff = await this.staffRepository.findOne(item.deviceUserId);
+          let user = await this.userRepository.findOne(item.deviceUserId);
 
           dataArr = [
             {
-              staff,
+              user,
               ip: item.ip,
               date: item.recordTime,
               device
@@ -162,37 +163,39 @@ export class AttendanceService {
 
   // this will add users to biometric device database;
   // "uid" and "userId" on device must be unique for this to work;
-  async createUser(params) {
+  async createUser(data) {
     try {
 
       let zkInstance;
-      const { staff_id } = params;
+      const { user_id, first_name, last_name, clinical } = data;
 
-      const staff = await this.staffRepository.findOne(staff_id);
-      if (!staff) return { success: false, message: "staff not found" };
+      const id = clinical ? +`9${user_id}` : +`1${user_id}`;
+      const device = clinical ?
+        await this.deviceRepository.find({ where: { name: ILike('clinical') } }) :
+        await this.deviceRepository.find({ where: { name: ILike('non_clinical') } });
 
-      const devices = await this.deviceRepository.find();
-      if (!devices.length) return { success: false, message: "device not found" };
+      zkInstance = new ZKLib(device[0].ip, parseInt(port), 5200, 5000);
 
-      for (const device of devices) {
+      // Create socket to machine
+      await zkInstance.createSocket();
+      console.log(await zkInstance.getInfo());
 
-        zkInstance = new ZKLib(device.ip, parseInt(port), 5200, 5000);
+      await zkInstance.setUser(user_id, `${user_id}`, `${first_name} ${last_name}`, '123456', 0, 0);
 
-        // Create socket to machine
-        await zkInstance.createSocket();
-        console.log(await zkInstance.getInfo());
+      let staff = await this.userRepository.findOne(id);
+      if (staff) return { success: false, message: "user exists" };
+      staff = this.userRepository.create({
+        id,
+        first_name,
+        last_name,
+        device: device[0]
+      });
 
-        await zkInstance.setUser(staff.id, `${staff.id}`, `${staff.first_name} ${staff.last_name} ${staff.other_names}`, '123456', 0, 0);
-
-        await zkInstance.disconnect();
-
-        staff.isOnDevice = true;
-        await this.staffRepository.save(staff);
-      };
+      await zkInstance.disconnect();
 
       return {
         success: true,
-        message: staff.first_name + " " + staff.last_name + ' was added successfully'
+        message: first_name + " " + last_name + ' was added successfully'
       };
     } catch (error) {
       console.log({ success: false, error });
@@ -202,44 +205,44 @@ export class AttendanceService {
   };
 
   // add users
-  async addUsers() {
-    try {
+  // async addUsers() {
+  //   try {
 
-      let zkInstance;
+  //     let zkInstance;
 
-      const staffs = await this.staffRepository.find();
-      const devices = await this.deviceRepository.find();
+  //     const staffs = await this.userRepository.find();
+  //     const devices = await this.deviceRepository.find();
 
-      for (const device of devices) {
-        zkInstance = new ZKLib(device.ip, parseInt(port), 5200, 5000);
+  //     for (const device of devices) {
+  //       zkInstance = new ZKLib(device.ip, parseInt(port), 5200, 5000);
 
-        // Create socket to machine
-        await zkInstance.createSocket();
-        console.log(await zkInstance.getInfo());
+  //       // Create socket to machine
+  //       await zkInstance.createSocket();
+  //       console.log(await zkInstance.getInfo());
 
-        for (const staff of staffs) {
+  //       for (const staff of staffs) {
 
-          // Create socket to machine
-          await zkInstance.createSocket();
-          console.log(await zkInstance.getInfo());
+  //         // Create socket to machine
+  //         await zkInstance.createSocket();
+  //         console.log(await zkInstance.getInfo());
 
-          await zkInstance.setUser(staff.id, `${staff.id}`, `${staff.first_name} ${staff.last_name} ${staff.other_names}`, '123456', 0, 0);
+  //         await zkInstance.setUser(staff.id, `${staff.id}`, `${staff.first_name} ${staff.last_name} ${staff.other_names}`, '123456', 0, 0);
 
-          staff.isOnDevice = true;
-          await this.staffRepository.save(staff);
+  //         staff.isOnDevice = true;
+  //         await this.staffRepository.save(staff);
 
-        };
-        await zkInstance.disconnect();
-      };
+  //       };
+  //       await zkInstance.disconnect();
+  //     };
 
-      return { success: true, message: "success" };
+  //     return { success: true, message: "success" };
 
-    } catch (error) {
-      console.log({ success: false, error });
-      if (zkInstance) await zkInstance.disconnect();
-      return { success: false, message: error.message || 'an error occured' };
-    }
-  };
+  //   } catch (error) {
+  //     console.log({ success: false, error });
+  //     if (zkInstance) await zkInstance.disconnect();
+  //     return { success: false, message: error.message || 'an error occured' };
+  //   }
+  // };
 
   // this will fetch users from a biometric device local database;
   async getAllLiveUsers() {
@@ -358,6 +361,111 @@ export class AttendanceService {
     } catch (error) {
       log(error);
       return { success: false, message: error.message || "an error occurred" };
+    }
+  }
+
+  async syncUsers() {
+    try {
+      let ips = ["192.168.1.209", "192.168.1.201"];
+
+      const clinical_device = await this.deviceRepository.find({
+        where: { ip: ips[0] }
+      });
+
+      const non_clinical_device = await this.deviceRepository.find({
+        where: { ip: ips[1] }
+      });
+
+      let clinical;
+      let non_clinical;
+      let zkInstance;
+
+      for (let i = 0; i < ips.length; i++) {
+
+        zkInstance = new ZKLib(ips[i], parseInt(port), 5200, 5000);
+
+        // Create socket to machine
+        await zkInstance.createSocket();
+        console.log(await zkInstance.getInfo());
+
+        let users = await zkInstance.getUsers();
+
+        if (i == 0) {
+          clinical = await users.data;
+        }
+        if (i == 1) {
+          non_clinical = await users.data;
+        }
+      };
+
+      let formattedClinic = getNewUserData(await clinical, clinical_device[0]);
+      let formattedNonClinic = getNewUserData(await non_clinical, non_clinical_device[0]);
+
+
+      for (const item of formattedClinic) {
+        let user = await this.userRepository.findOne(item.id);
+        if (!user) {
+          let newUser = this.userRepository.create(item);
+          await this.userRepository.save(newUser);
+        }
+      };
+
+      for (const item of formattedNonClinic) {
+        let user = await this.userRepository.findOne(item.id);
+        if (!user) {
+          let newUser = this.userRepository.create(item);
+          await this.userRepository.save(newUser);
+        }
+      }
+
+      return {
+        success: true,
+        formattedClinic,
+        formattedNonClinic
+      }
+
+
+    } catch (error) {
+      log(error);
+      return { success: true, message: error.message || "an error occurred" };
+    }
+  };
+
+  async updateLogs() {
+    try {
+      let logs = await this.attendanceRepository.find({
+        relations: ['staff']
+      });
+
+      const newLogs = updateBioDeviceUser(logs);
+
+      for (const log of newLogs) {
+        if (log?.user_id) {
+          let user = await this.userRepository.findOne(log?.user_id);
+          await this.attendanceRepository.update({ id: log.id }, { user });
+        }
+      }
+      return { success: true };
+    } catch (error) {
+      log(error);
+      return { success: true, message: error.message || "an error occurred" };
+    }
+  }
+
+  async updateUser(id, data) {
+    try {
+      const response = await this.userRepository.update({ id }, { ...data });
+      if (response.affected) {
+        const result = await this.userRepository.findOne({ id });
+
+        return {
+          success: true,
+          result
+        };
+      }
+    } catch (error) {
+      log(error);
+      return { success: true, message: error.message || "an error occurred" };
     }
   }
 }
