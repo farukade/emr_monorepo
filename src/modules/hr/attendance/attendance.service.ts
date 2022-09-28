@@ -13,9 +13,8 @@ import { BioUserRepository } from './repositories/device-user.repository';
 config();
 const port = process.env.BIO_PORT;
 const ip = process.env.BIO_IP;
-let zkInstance = new ZKLib(ip, parseInt(port), 5200, 5000);
+const zkInstance = new ZKLib(ip, parseInt(port), 5200, 5000);
 const { log } = console;
-
 
 @Injectable()
 export class AttendanceService {
@@ -25,8 +24,8 @@ export class AttendanceService {
     @InjectRepository(DeviceRepository)
     private deviceRepository: DeviceRepository,
     @InjectRepository(BioUserRepository)
-    private userRepository: BioUserRepository
-  ) { }
+    private userRepository: BioUserRepository,
+  ) {}
 
   // this will filter attendance already on emr either by date or staff or (staff & date);
   async emrFilter(params) {
@@ -65,7 +64,7 @@ export class AttendanceService {
               .orWhere('department.name iLike :name', { name: `%${chars}%` });
           }),
         );
-      };
+      }
 
       query.orderBy('q.date', 'DESC').take(limit).skip(offset);
 
@@ -84,13 +83,12 @@ export class AttendanceService {
     } catch (error) {
       return { success: false, message: error.message || 'an error occured' };
     }
-  };
+  }
 
   // this will get attendance from biometric device local database and save on emr database;
   // NOTE: if there are not logs, it throws error and crashes the server;
   async saveAttendance() {
     try {
-
       let zkInstance;
       let dataArr = [];
       const devices = await this.deviceRepository.find();
@@ -117,62 +115,54 @@ export class AttendanceService {
             success: false,
             message: 'no data in logs or bio-devive not connected to network',
           };
-        };
+        }
         attendanceArr = await logs.data;
 
-
         for (const item of attendanceArr) {
-
-          let user = await this.userRepository.findOne(item.deviceUserId);
+          const user = await this.userRepository.findOne(item.deviceUserId);
 
           dataArr = [
             {
               user,
               ip: item.ip,
               date: item.recordTime,
-              device
+              device,
             },
             ...dataArr,
           ];
-        };
+        }
 
         zkInstance.clearAttendanceLog();
         await zkInstance.disconnect();
-      };
+      }
 
-      const rs = await this.attendanceRepository
-        .createQueryBuilder()
-        .insert()
-        .into(Attendance)
-        .values(dataArr)
-        .execute();
+      const rs = await this.attendanceRepository.createQueryBuilder().insert().into(Attendance).values(dataArr).execute();
 
       return {
         success: true,
-        message: "attendance saved",
-        result: rs
+        message: 'attendance saved',
+        result: rs,
       };
     } catch (error) {
       console.log({ success: false, error });
       return {
         success: false,
-        message: error.message || "an error occured"
+        message: error.message || 'an error occured',
       };
     }
-  };
+  }
 
   // this will add users to biometric device database;
   // "uid" and "userId" on device must be unique for this to work;
   async createUser(data) {
     try {
-
       let zkInstance;
       const { user_id, first_name, last_name, clinical } = data;
 
       const id = clinical ? +`9${user_id}` : +`1${user_id}`;
-      const device = clinical ?
-        await this.deviceRepository.find({ where: { name: ILike('clinical') } }) :
-        await this.deviceRepository.find({ where: { name: ILike('non_clinical') } });
+      const device = clinical
+        ? await this.deviceRepository.find({ where: { name: ILike('clinical') } })
+        : await this.deviceRepository.find({ where: { name: ILike('non_clinical') } });
 
       zkInstance = new ZKLib(device[0].ip, parseInt(port), 5200, 5000);
 
@@ -183,26 +173,26 @@ export class AttendanceService {
       await zkInstance.setUser(user_id, `${user_id}`, `${first_name} ${last_name}`, '123456', 0, 0);
 
       let staff = await this.userRepository.findOne(id);
-      if (staff) return { success: false, message: "user exists" };
+      if (staff) return { success: false, message: 'user exists' };
       staff = this.userRepository.create({
         id,
         first_name,
         last_name,
-        device: device[0]
+        device: device[0],
       });
 
       await zkInstance.disconnect();
 
       return {
         success: true,
-        message: first_name + " " + last_name + ' was added successfully'
+        message: first_name + ' ' + last_name + ' was added successfully',
       };
     } catch (error) {
       console.log({ success: false, error });
       if (zkInstance) await zkInstance.disconnect();
       return { success: false, message: error.message || 'an error occured' };
     }
-  };
+  }
 
   // add users
   // async addUsers() {
@@ -247,17 +237,14 @@ export class AttendanceService {
   // this will fetch users from a biometric device local database;
   async getAllLiveUsers() {
     try {
-
       let zkInstance;
 
       const devices = await this.deviceRepository.find();
-      if (!devices) return { success: false, message: "devices not found" };
+      if (!devices) return { success: false, message: 'devices not found' };
 
       let result = [];
 
-
       for (const device of devices) {
-
         zkInstance = new ZKLib(device.ip, parseInt(port), 5200, 5000);
 
         // Create socket to machine
@@ -267,19 +254,17 @@ export class AttendanceService {
         const users = await zkInstance.getUsers();
         result = [users, ...result];
         await zkInstance.disconnect();
+      }
 
-      };
-
-      if (!result.length) return { success: false, message: "not found" };
+      if (!result.length) return { success: false, message: 'not found' };
 
       return { success: true, message: 'user creation success', result };
-
     } catch (error) {
       console.log({ success: false, error });
       if (zkInstance) await zkInstance.disconnect();
       return { success: false, message: error.message || 'an error occured' };
     }
-  };
+  }
 
   // this gets logs directly from the biometrics device;
   // NOTE: if there are not logs, it throws error and crashes the server;
@@ -287,9 +272,9 @@ export class AttendanceService {
     try {
       const { device_id } = params;
       const device = await this.deviceRepository.findOne(device_id);
-      if (!device) return { success: false, message: "device not found" };
+      if (!device) return { success: false, message: 'device not found' };
 
-      let zkInstance = new ZKLib(device.ip, parseInt(port), 5200, 5000);
+      const zkInstance = new ZKLib(device.ip, parseInt(port), 5200, 5000);
 
       // Create socket to machine
       await zkInstance.createSocket();
@@ -312,7 +297,7 @@ export class AttendanceService {
       await zkInstance.disconnect();
       return { success: false, message: error.message || 'an error occured' };
     }
-  };
+  }
 
   async addDevice(data: DeviceDto) {
     try {
@@ -320,30 +305,29 @@ export class AttendanceService {
       await this.deviceRepository.save(result);
       return {
         success: true,
-        result
+        result,
       };
     } catch (error) {
       console.log(error);
-      return { success: false, message: error.message || "an error occured" };
+      return { success: false, message: error.message || 'an error occured' };
     }
-  };
+  }
 
   async getDevice() {
     try {
-      let result = await this.deviceRepository.find();
+      const result = await this.deviceRepository.find();
 
-      if (!result) return { success: false, message: "device(s) not found" }
+      if (!result) return { success: false, message: 'device(s) not found' };
       return { success: true, result };
-
     } catch (error) {
       console.log(error);
-      return { success: false, message: error.message || "an error occured" };
+      return { success: false, message: error.message || 'an error occured' };
     }
-  };
+  }
 
   async removeDevice(id: number) {
     try {
-      let res = await this.deviceRepository
+      const res = await this.deviceRepository
         .createQueryBuilder()
         .delete()
         .from(DeviceIps)
@@ -353,27 +337,27 @@ export class AttendanceService {
       if (res.affected) {
         return {
           success: true,
-          message: "Device deleted successfully"
+          message: 'Device deleted successfully',
         };
       }
 
-      return { success: false, message: "Device could not be deleted" }
+      return { success: false, message: 'Device could not be deleted' };
     } catch (error) {
       log(error);
-      return { success: false, message: error.message || "an error occurred" };
+      return { success: false, message: error.message || 'an error occurred' };
     }
   }
 
   async syncUsers() {
     try {
-      let ips = ["192.168.1.209", "192.168.1.201"];
+      const ips = ['192.168.1.209', '192.168.1.201'];
 
       const clinical_device = await this.deviceRepository.find({
-        where: { ip: ips[0] }
+        where: { ip: ips[0] },
       });
 
       const non_clinical_device = await this.deviceRepository.find({
-        where: { ip: ips[1] }
+        where: { ip: ips[1] },
       });
 
       let clinical;
@@ -381,14 +365,13 @@ export class AttendanceService {
       let zkInstance;
 
       for (let i = 0; i < ips.length; i++) {
-
         zkInstance = new ZKLib(ips[i], parseInt(port), 5200, 5000);
 
         // Create socket to machine
         await zkInstance.createSocket();
         console.log(await zkInstance.getInfo());
 
-        let users = await zkInstance.getUsers();
+        const users = await zkInstance.getUsers();
 
         if (i == 0) {
           clinical = await users.data;
@@ -396,24 +379,23 @@ export class AttendanceService {
         if (i == 1) {
           non_clinical = await users.data;
         }
-      };
+      }
 
-      let formattedClinic = getNewUserData(await clinical, clinical_device[0]);
-      let formattedNonClinic = getNewUserData(await non_clinical, non_clinical_device[0]);
-
+      const formattedClinic = getNewUserData(await clinical, clinical_device[0]);
+      const formattedNonClinic = getNewUserData(await non_clinical, non_clinical_device[0]);
 
       for (const item of formattedClinic) {
-        let user = await this.userRepository.findOne(item.id);
+        const user = await this.userRepository.findOne(item.id);
         if (!user) {
-          let newUser = this.userRepository.create(item);
+          const newUser = this.userRepository.create(item);
           await this.userRepository.save(newUser);
         }
-      };
+      }
 
       for (const item of formattedNonClinic) {
-        let user = await this.userRepository.findOne(item.id);
+        const user = await this.userRepository.findOne(item.id);
         if (!user) {
-          let newUser = this.userRepository.create(item);
+          const newUser = this.userRepository.create(item);
           await this.userRepository.save(newUser);
         }
       }
@@ -421,34 +403,32 @@ export class AttendanceService {
       return {
         success: true,
         formattedClinic,
-        formattedNonClinic
-      }
-
-
+        formattedNonClinic,
+      };
     } catch (error) {
       log(error);
-      return { success: true, message: error.message || "an error occurred" };
+      return { success: true, message: error.message || 'an error occurred' };
     }
-  };
+  }
 
   async updateLogs() {
     try {
-      let logs = await this.attendanceRepository.find({
-        relations: ['staff']
+      const logs = await this.attendanceRepository.find({
+        relations: ['staff'],
       });
 
       const newLogs = updateBioDeviceUser(logs);
 
       for (const log of newLogs) {
         if (log?.user_id) {
-          let user = await this.userRepository.findOne(log?.user_id);
+          const user = await this.userRepository.findOne(log?.user_id);
           await this.attendanceRepository.update({ id: log.id }, { user });
         }
       }
       return { success: true };
     } catch (error) {
       log(error);
-      return { success: true, message: error.message || "an error occurred" };
+      return { success: true, message: error.message || 'an error occurred' };
     }
   }
 
@@ -460,12 +440,12 @@ export class AttendanceService {
 
         return {
           success: true,
-          result
+          result,
         };
       }
     } catch (error) {
       log(error);
-      return { success: true, message: error.message || "an error occurred" };
+      return { success: true, message: error.message || 'an error occurred' };
     }
   }
 }

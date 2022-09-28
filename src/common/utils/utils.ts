@@ -278,8 +278,8 @@ export const getOutstanding = async (patient_id) => {
   return patient.credit_limit > 0
     ? 0
     : transactions.reduce((totalAmount, item) => {
-      return totalAmount + item.amount;
-    }, 0);
+        return totalAmount + item.amount;
+      }, 0);
 };
 
 export const getBalance = async (patient_id) => {
@@ -637,8 +637,9 @@ export const parseDescription = (item) => {
   if (item.bill_source === 'drugs') {
     const reqItem = item.patientRequestItem;
 
-    return ` : ${reqItem.fill_quantity} ${reqItem.drug.unitOfMeasure} of ${reqItem.drugGeneric.name} (${reqItem.drug.name
-      }) at ${formatCurrency(reqItem.drugBatch.unitPrice)} each`;
+    return ` : ${reqItem.fill_quantity} ${reqItem.drug.unitOfMeasure} of ${reqItem.drugGeneric.name} (${
+      reqItem.drug.name
+    }) at ${formatCurrency(reqItem.drugBatch.unitPrice)} each`;
   }
 
   if (
@@ -667,8 +668,9 @@ export const parseDescriptionB = (item) => {
   if (item.bill_source === 'drugs') {
     const reqItem = item.patientRequestItem;
 
-    return `  ${reqItem.fill_quantity} ${reqItem.drug.unitOfMeasure} of ${reqItem.drugGeneric.name} (${reqItem.drug.name
-      }) at ${formatCurrency(reqItem.drugBatch.unitPrice)} each`;
+    return `  ${reqItem.fill_quantity} ${reqItem.drug.unitOfMeasure} of ${reqItem.drugGeneric.name} (${
+      reqItem.drug.name
+    }) at ${formatCurrency(reqItem.drugBatch.unitPrice)} each`;
   }
 
   if (
@@ -712,54 +714,52 @@ export const getDiagnosis = (notes: PatientNote[]) => {
   let diagnoses = [];
   for (const note of notes) {
     if (note.diagnosis) {
-      diagnoses = [...diagnoses, { diagnosis: startCase(note.diagnosis.description) }]
+      diagnoses = [...diagnoses, { diagnosis: startCase(note.diagnosis.description) }];
     }
-  };
+  }
   if (!diagnoses.length) {
-    diagnoses.push({ diagnosis: "-- -- --" });
+    diagnoses.push({ diagnosis: '-- -- --' });
   }
   return diagnoses;
-}
+};
 
 export const getComplaints = (notes: PatientNote[]) => {
-
-  let str = "";
+  let str = '';
   const match1 = /presenting complain/gi;
   const match2 = /seen/gi;
   const match3 = /&nbsp/gi;
   const tagMatch = /<\/?[a-z]([a-z])?>|\n/gi;
 
   for (const note of notes) {
-    if (note.type == "complaints") {
+    if (note.type == 'complaints') {
       str += note.description;
     }
   }
-  let arr = str.split("<\/p>");
+  const arr = str.split('</p>');
 
-  let res = "";
+  let res = '';
   for (let i = 0; i < arr.length; i++) {
-
     const item = arr[i];
-    let newItem = item.replace(tagMatch, "");
-    newItem = newItem.replace(match3, "");
+    let newItem = item.replace(tagMatch, '');
+    newItem = newItem.replace(match3, '');
 
-    if (!match1.test(newItem) && !match2.test(newItem) && newItem != "") {
+    if (!match1.test(newItem) && !match2.test(newItem) && newItem != '') {
       res += `${startCase(newItem)}, `;
     }
-  };
+  }
   return res;
-}
+};
 
 export const getCharts = (requests: PatientRequest[]) => {
   let result = [];
   for (const request of requests) {
-    result = [...result, { service: parseCharts(request.item), code: getHmoCodes(request) }]
-  };
+    result = [...result, { service: parseCharts(request.item), code: getHmoCodes(request) }];
+  }
   if (!result.length) {
-    result.push({ service: "-- -- --", code: "-- --" })
+    result.push({ service: '-- -- --', code: '-- --' });
   }
   return result;
-}
+};
 
 export const parseCharts = (item) => {
   if (!item) {
@@ -773,8 +773,10 @@ export const parseCharts = (item) => {
   if (item?.transaction?.bill_source === 'drugs') {
     const reqItem = item;
 
-    return startCase(item?.transaction?.bill_source) + `:  ${reqItem?.drug?.unitOfMeasure} of ${reqItem?.drug?.generic?.name} (${reqItem?.drug?.name
-      })`;
+    return (
+      startCase(item?.transaction?.bill_source) +
+      `:  ${reqItem?.drug?.unitOfMeasure} of ${reqItem?.drug?.generic?.name} (${reqItem?.drug?.name})`
+    );
   }
 
   if (
@@ -795,58 +797,70 @@ export const updateBioDeviceUser = (arr) => {
   let result = [];
   for (const item of arr) {
     if (item?.ip == '192.168.1.209') {
-      result = [...result, {
-        id: item.id,
-        user_id: +`9${item?.staff?.id}`
-      }]
-    };
-    if (item?.ip == '192.168.1.201') {
-      result = [...result, {
-        id: item.id,
-        user_id: +`1${item?.staff?.id}`
-      }]
+      result = [
+        ...result,
+        {
+          id: item.id,
+          user_id: +`9${item?.staff?.id}`,
+        },
+      ];
     }
-  };
+    if (item?.ip == '192.168.1.201') {
+      result = [
+        ...result,
+        {
+          id: item.id,
+          user_id: +`1${item?.staff?.id}`,
+        },
+      ];
+    }
+  }
   return result;
-}
+};
 
 export const getNewUserData = (arr, device) => {
   let result = [];
   for (const item of arr) {
-    let namesArr = item.name.split(" ");
-    if (device.ip == "192.168.1.201") {
-      result = [{
-        first_name: namesArr[0] ? namesArr[0] : null,
-        last_name: namesArr[1] ? namesArr[1] : null,
-        other_names: namesArr[2] ? namesArr[2] : null,
-        staff_id: null,
-        id: +`1${item.uid}`,
-        device_id: device.id,
-        device
-      }, ...result]
+    const namesArr = item.name.split(' ');
+    if (device.ip == '192.168.1.201') {
+      result = [
+        {
+          first_name: namesArr[0] ? namesArr[0] : null,
+          last_name: namesArr[1] ? namesArr[1] : null,
+          other_names: namesArr[2] ? namesArr[2] : null,
+          staff_id: null,
+          id: +`1${item.uid}`,
+          device_id: device.id,
+          device,
+        },
+        ...result,
+      ];
     }
 
-    if (device.ip == "192.168.1.209") {
-      result = [{
-        first_name: namesArr[0] ? namesArr[0] : null,
-        last_name: namesArr[1] ? namesArr[1] : null,
-        other_names: namesArr[2] ? namesArr[2] : null,
-        staff_id: null,
-        id: +`9${item.uid}`,
-        device_id: device.id,
-        device
-      }, ...result]
+    if (device.ip == '192.168.1.209') {
+      result = [
+        {
+          first_name: namesArr[0] ? namesArr[0] : null,
+          last_name: namesArr[1] ? namesArr[1] : null,
+          other_names: namesArr[2] ? namesArr[2] : null,
+          staff_id: null,
+          id: +`9${item.uid}`,
+          device_id: device.id,
+          device,
+        },
+        ...result,
+      ];
     }
   }
-  return;
+
+  return result;
 };
 
 export const getHmoCodes = (item) => {
-  if (!item)
-    return '-- --';
+  if (!item) return '-- --';
 
-  let result = item?.item?.transaction?.hmo_approval_code;
+  const result = item?.item?.transaction?.hmo_approval_code;
   if (!result) return '-- --';
 
   return result;
-}
+};
