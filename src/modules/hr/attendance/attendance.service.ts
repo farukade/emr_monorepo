@@ -10,6 +10,8 @@ import { DeviceDto } from './dto/device.dto';
 import { DeviceIps } from './entities/device.entity';
 import { getNewUserData, updateBioDeviceUser } from 'src/common/utils/utils';
 import { BioUserRepository } from './repositories/device-user.repository';
+import { BioDeviceUser } from './entities/bio-device-user.entity';
+import * as moment from 'moment';
 config();
 const port = process.env.BIO_PORT;
 const ip = process.env.BIO_IP;
@@ -25,7 +27,7 @@ export class AttendanceService {
     private deviceRepository: DeviceRepository,
     @InjectRepository(BioUserRepository)
     private userRepository: BioUserRepository,
-  ) {}
+  ) { }
 
   // this will filter attendance already on emr either by date or staff or (staff & date);
   async emrFilter(params) {
@@ -95,6 +97,11 @@ export class AttendanceService {
 
       for (const device of devices) {
         let attendanceArr = [];
+        let isClinical = false;
+        if (device.name == 'clinical') {
+          isClinical = true;
+        };
+
         zkInstance = new ZKLib(device.ip, parseInt(port), 5200, 5000);
 
         // Create socket to machine
@@ -115,26 +122,36 @@ export class AttendanceService {
             success: false,
             message: 'no data in logs or bio-devive not connected to network',
           };
-        }
+        };
+
         attendanceArr = await logs.data;
 
         for (const item of attendanceArr) {
-          const user = await this.userRepository.findOne(item.deviceUserId);
+          let user: BioDeviceUser;
+          if (isClinical) {
+            user = await this.userRepository.findOne(+`9${item.deviceUserId}`);
+          } else {
+            user = await this.userRepository.findOne(+`1${item.deviceUserId}`);
+          };
+
+          let date = new Date(item.recordTime);
 
           dataArr = [
             {
               user,
               ip: item.ip,
-              date: item.recordTime,
+              date: moment(date.toISOString()).toDate(),
               device,
+              device_id: device?.id,
+              user_id: user?.id
             },
             ...dataArr,
           ];
         }
 
-        zkInstance.clearAttendanceLog();
+        // zkInstance.clearAttendanceLog();
         await zkInstance.disconnect();
-      }
+      };
 
       const rs = await this.attendanceRepository.createQueryBuilder().insert().into(Attendance).values(dataArr).execute();
 
@@ -270,25 +287,66 @@ export class AttendanceService {
   // NOTE: if there are not logs, it throws error and crashes the server;
   async getLiveLogs(params) {
     try {
-      const { device_id } = params;
-      const device = await this.deviceRepository.findOne(device_id);
-      if (!device) return { success: false, message: 'device not found' };
+      const { type } = params;
+      const page = params.page && params.page != "" ? +params.page : 1;
+      const limit = params.limit && params.limit != "" ? +params.limit : 10;
+      const offset = (+page - 1) * limit;
+      const stop = offset + limit;
 
-      const zkInstance = new ZKLib(device.ip, parseInt(port), 5200, 5000);
+      let where = null;
+      if (type && type != "") {
+        where = { where: { name: ILike(type) } };
+      }
+      const devices = await this.deviceRepository.find(where);
 
-      // Create socket to machine
-      await zkInstance.createSocket();
-      console.log(await zkInstance.getInfo());
+      let logs = [];
+      for (const device of devices) {
 
-      const logs = await zkInstance.getAttendances(function (data, err) {
-        if (err) {
-          log(err);
-          return;
-        }
-      });
+        let zkInstance = new ZKLib(device.ip, parseInt(port), 5200, 5000);
+
+        // Create socket to machine
+        await zkInstance.createSocket();
+        console.log(await zkInstance.getInfo());
+
+        let rs = await zkInstance.getAttendances(function (data, err) {
+          if (err) {
+            log(err);
+            return;
+          }
+        });
+        logs = [...logs, ...rs.data];
+      };
+
       if (logs) {
-        await zkInstance.disconnect();
-        return { success: true, logs };
+        let result = [];
+        for (const log of logs) {
+          let date = new Date(log.recordTime);
+          result = [...result, { date: moment(date.toISOString()).toDate(), ...log }];
+        };
+        result = result.sort((a, b) => b.date - a.date);
+        const total = result.length;
+        result = result.slice(offset, stop);
+        let user;
+        for (let item of result) {
+          if (type == 'clinical') {
+            user = await this.userRepository.findOne(+`9${item?.deviceUserId}`);
+            result = [...result, { user: await user, ...item }];
+          }
+          if (type == 'non-clinical') {
+            user = await this.userRepository.findOne(+`1${item?.deviceUserId}`);
+            result = [...result, { user: await user, ...item }];
+          }
+        };
+
+        return {
+          success: true,
+          lastPage: Math.ceil(total / limit),
+          itemsPerPage: limit,
+          totalItems: total,
+          currentPage: +page,
+          result,
+
+        };
       }
       await zkInstance.disconnect();
       return { success: false, message: 'no logs found' };
@@ -350,22 +408,24 @@ export class AttendanceService {
 
   async syncUsers() {
     try {
-      const ips = ['192.168.1.209', '192.168.1.201'];
+
+      const devices = await this.deviceRepository.find();
 
       const clinical_device = await this.deviceRepository.find({
-        where: { ip: ips[0] },
+        where: { name: ILike('clinical') },
       });
 
       const non_clinical_device = await this.deviceRepository.find({
-        where: { ip: ips[1] },
+        where: { ip: ILike('non-clinical') },
       });
 
       let clinical;
       let non_clinical;
       let zkInstance;
 
-      for (let i = 0; i < ips.length; i++) {
-        zkInstance = new ZKLib(ips[i], parseInt(port), 5200, 5000);
+      for (let i = 0; i < devices.length; i++) {
+        let isClinical = devices[i].name == 'clinical' ? true : false;
+        zkInstance = new ZKLib(devices[i].ip, parseInt(port), 5200, 5000);
 
         // Create socket to machine
         await zkInstance.createSocket();
@@ -373,16 +433,15 @@ export class AttendanceService {
 
         const users = await zkInstance.getUsers();
 
-        if (i == 0) {
+        if (isClinical) {
           clinical = await users.data;
-        }
-        if (i == 1) {
+        } else {
           non_clinical = await users.data;
         }
       }
 
-      const formattedClinic = getNewUserData(await clinical, clinical_device[0]);
-      const formattedNonClinic = getNewUserData(await non_clinical, non_clinical_device[0]);
+      const formattedClinic = getNewUserData(await clinical, clinical_device);
+      const formattedNonClinic = getNewUserData(await non_clinical, non_clinical_device);
 
       for (const item of formattedClinic) {
         const user = await this.userRepository.findOne(item.id);

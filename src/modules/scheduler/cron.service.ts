@@ -11,13 +11,8 @@ import { Nicu } from '../patient/nicu/entities/nicu.entity';
 import { TransactionCreditDto } from '../finance/transactions/dto/transaction-credit.dto';
 import { postDebit } from '../../common/utils/utils';
 import { Appointment } from '../frontdesk/appointment/appointment.entity';
-import * as ZKLib from 'zklib-js';
 import { config } from 'dotenv';
-import { InjectRepository } from '@nestjs/typeorm';
-import { AttendanceRepository } from '../hr/attendance/repositories/attendance.repository';
-import { Attendance } from '../hr/attendance/entities/attendance.entity';
-import { DeviceRepository } from '../hr/attendance/repositories/device.repositories';
-import { StaffRepository } from '../hr/staff/staff.repository';
+import { AttendanceService } from '../hr/attendance/attendance.service';
 config();
 const port = process.env.BIO_PORT;
 
@@ -26,13 +21,8 @@ export class TasksService {
   private readonly logger = new Logger(TasksService.name);
 
   constructor(
-    @InjectRepository(AttendanceRepository)
-    private attendanceRepository: AttendanceRepository,
-    @InjectRepository(DeviceRepository)
-    private deviceRepository: DeviceRepository,
-    @InjectRepository(StaffRepository)
-    private staffRepository: StaffRepository,
-  ) {}
+    private attendanceService: AttendanceService,
+  ) { }
 
   @Cron(CronExpression.EVERY_HOUR)
   async runEveryHour() {
@@ -246,66 +236,12 @@ export class TasksService {
     }
   }
 
-  // save to emr database and erase records from biometric device local database;
-  // this was made to run once a day because without logs, it crashes the server;
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async saveAttendanceToDB() {
     this.logger.debug('saving attendance to database');
     try {
-      let zkInstance;
-      let dataArr = [];
-      const devices = await this.deviceRepository.find();
-
-      for (const device of devices) {
-        let attendanceArr = [];
-        zkInstance = new ZKLib(device.ip, parseInt(port), 5200, 5000);
-
-        // Create socket to machine
-        await zkInstance.createSocket();
-
-        // Get general info like logCapacity, user counts, logs count
-        // It's really useful to check the status of device
-
-        console.log(await zkInstance.getInfo());
-        const logs = await zkInstance.getAttendances();
-
-        if (!logs) {
-          console.log({
-            success: false,
-            message: 'no data in logs or bio-devive not connected to network',
-          });
-          return {
-            success: false,
-            message: 'no data in logs or bio-devive not connected to network',
-          };
-        }
-        attendanceArr = await logs.data;
-
-        for (const item of attendanceArr) {
-          const staff = await this.staffRepository.findOne(item.deviceUserId);
-
-          dataArr = [
-            {
-              staff,
-              ip: item.ip,
-              date: item.recordTime,
-              device,
-            },
-            ...dataArr,
-          ];
-        }
-
-        zkInstance.clearAttendanceLog();
-        await zkInstance.disconnect();
-      }
-
-      const rs = await this.attendanceRepository.createQueryBuilder().insert().into(Attendance).values(dataArr).execute();
-
-      return {
-        success: true,
-        message: 'attendance saved',
-        result: rs,
-      };
+      await this.attendanceService.saveAttendance();
+      this.logger.debug('logs saved to datebase');
     } catch (error) {
       console.log({ success: false, error });
       return;

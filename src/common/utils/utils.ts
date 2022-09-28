@@ -278,8 +278,8 @@ export const getOutstanding = async (patient_id) => {
   return patient.credit_limit > 0
     ? 0
     : transactions.reduce((totalAmount, item) => {
-        return totalAmount + item.amount;
-      }, 0);
+      return totalAmount + item.amount;
+    }, 0);
 };
 
 export const getBalance = async (patient_id) => {
@@ -637,9 +637,8 @@ export const parseDescription = (item) => {
   if (item.bill_source === 'drugs') {
     const reqItem = item.patientRequestItem;
 
-    return ` : ${reqItem.fill_quantity} ${reqItem.drug.unitOfMeasure} of ${reqItem.drugGeneric.name} (${
-      reqItem.drug.name
-    }) at ${formatCurrency(reqItem.drugBatch.unitPrice)} each`;
+    return ` : ${reqItem.fill_quantity} ${reqItem.drug.unitOfMeasure} of ${reqItem.drugGeneric.name} (${reqItem.drug.name
+      }) at ${formatCurrency(reqItem.drugBatch.unitPrice)} each`;
   }
 
   if (
@@ -668,9 +667,8 @@ export const parseDescriptionB = (item) => {
   if (item.bill_source === 'drugs') {
     const reqItem = item.patientRequestItem;
 
-    return `  ${reqItem.fill_quantity} ${reqItem.drug.unitOfMeasure} of ${reqItem.drugGeneric.name} (${
-      reqItem.drug.name
-    }) at ${formatCurrency(reqItem.drugBatch.unitPrice)} each`;
+    return `  ${reqItem.fill_quantity} ${reqItem.drug.unitOfMeasure} of ${reqItem.drugGeneric.name} (${reqItem.drug.name
+      }) at ${formatCurrency(reqItem.drugBatch.unitPrice)} each`;
   }
 
   if (
@@ -818,39 +816,42 @@ export const updateBioDeviceUser = (arr) => {
   return result;
 };
 
-export const getNewUserData = (arr, device) => {
+export const getNewUserData = (arr, devices) => {
   let result = [];
-  for (const item of arr) {
-    const namesArr = item.name.split(' ');
-    if (device.ip == '192.168.1.201') {
-      result = [
-        {
-          first_name: namesArr[0] ? namesArr[0] : null,
-          last_name: namesArr[1] ? namesArr[1] : null,
-          other_names: namesArr[2] ? namesArr[2] : null,
-          staff_id: null,
-          id: +`1${item.uid}`,
-          device_id: device.id,
-          device,
-        },
-        ...result,
-      ];
-    }
+  for (const device of devices) {
 
-    if (device.ip == '192.168.1.209') {
-      result = [
-        {
-          first_name: namesArr[0] ? namesArr[0] : null,
-          last_name: namesArr[1] ? namesArr[1] : null,
-          other_names: namesArr[2] ? namesArr[2] : null,
-          staff_id: null,
-          id: +`9${item.uid}`,
-          device_id: device.id,
-          device,
-        },
-        ...result,
-      ];
-    }
+    for (const item of arr) {
+      const namesArr = item.name.split(' ');
+      if (device?.name.toLowerCase() == 'clinical') {
+        result = [
+          {
+            first_name: namesArr[0] ? namesArr[0] : null,
+            last_name: namesArr[1] ? namesArr[1] : null,
+            other_names: namesArr[2] ? namesArr[2] : null,
+            staff_id: null,
+            id: +`9${item.uid}`,
+            device_id: device.id,
+            device,
+          },
+          ...result,
+        ];
+      }
+
+      if (device?.name.toLowerCase() == 'non-clinical') {
+        result = [
+          {
+            first_name: namesArr[0] ? namesArr[0] : null,
+            last_name: namesArr[1] ? namesArr[1] : null,
+            other_names: namesArr[2] ? namesArr[2] : null,
+            staff_id: null,
+            id: +`1${item.uid}`,
+            device_id: device.id,
+            device,
+          },
+          ...result,
+        ];
+      }
+    };
   }
 
   return result;
