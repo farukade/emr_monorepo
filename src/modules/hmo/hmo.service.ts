@@ -20,7 +20,7 @@ import { Patient } from '../patient/entities/patient.entity';
 import { ServiceCategoryRepository } from '../settings/services/repositories/service_category.repository';
 import { Error } from 'src/common/interface/error.interface';
 import { EncounterRepository } from '../patient/consultation/encounter.repository';
-import { generatePDF, getCharts, getComplaints, getDiagnosis, parseDescriptionB } from 'src/common/utils/utils';
+import { generatePDF, getCharts, getComplaints, getDiagnosis, getHmoCodes, parseDescriptionB } from 'src/common/utils/utils';
 import * as path from 'path';
 import { AdmissionsRepository } from '../patient/admissions/repositories/admissions.repository';
 const { log } = console;

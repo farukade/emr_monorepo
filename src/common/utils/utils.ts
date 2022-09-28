@@ -752,17 +752,17 @@ export const getComplaints = (notes: PatientNote[]) => {
 export const getCharts = (requests: PatientRequest[]) => {
   let result = [];
   for (const request of requests) {
-    result = [...result, { service: parseCharts(request.item) }]
+    result = [...result, { service: parseCharts(request.item), code: getHmoCodes(request) }]
   };
   if (!result.length) {
-    result.push({ service: "-- -- --" })
+    result.push({ service: "-- -- --", code: "-- --" })
   }
   return result;
 }
 
 export const parseCharts = (item) => {
   if (!item) {
-    return '--';
+    return;
   }
 
   if (item?.transaction?.bill_source === 'ward' || item?.transaction?.bill_source === 'nicu-accommodation') {
@@ -787,5 +787,15 @@ export const parseCharts = (item) => {
     return startCase(item?.transaction?.bill_source) + `: ${startCase(item?.transaction?.service?.item?.name)}`;
   }
 
-  return '--';
+  return;
 };
+
+export const getHmoCodes = (item) => {
+  if (!item)
+    return '-- --';
+
+  let result = item?.item?.transaction?.hmo_approval_code;
+  if (!result) return '-- --';
+
+  return result;
+}
