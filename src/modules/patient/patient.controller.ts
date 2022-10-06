@@ -221,9 +221,7 @@ export class PatientController {
 
   @UseGuards(AuthGuard('jwt'))
   @Post('look-up/phone')
-  lookUpPhone(
-    @Body() data
-  ) {
+  lookUpPhone(@Body() data) {
     return this.patientService.lookUpUsingPhone(data);
   }
 }

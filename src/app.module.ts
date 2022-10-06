@@ -77,7 +77,7 @@ fs.writeFileSync('./ormconfig.json', JSON.stringify(configService.getTypeOrmConf
     MigrationModule,
     IvfEmbryologyModule,
     EmbFreezingModule,
-    ChatModule
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppGateway, JwtStrategy],

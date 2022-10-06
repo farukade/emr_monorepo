@@ -521,6 +521,7 @@ export class PatientRequestService {
         res = { success: false, message: 'No data' };
         break;
     }
+
     return res;
   }
 
@@ -649,6 +650,8 @@ export class PatientRequestService {
       item.receivedAt = moment().format('YYYY-MM-DD HH:mm:ss');
       item.lastChangedBy = username;
       const rs = await item.save();
+
+      // console.log('rs', rs.labTest.category);
 
       return { success: true, data: rs };
     } catch (e) {

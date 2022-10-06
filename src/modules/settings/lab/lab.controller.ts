@@ -94,9 +94,10 @@ export class LabController {
    * LAB PARAMETERS
    */
   @Get('/parameters')
-  getParameters(@Query('q') q: string): Promise<LabTestCategory[]> {
+  getParameters(@Query('q') q: string) {
     return this.labService.getParameters(q);
   }
+  //: Promise<LabTestCategory[]>
 
   @Post('/parameters')
   @UsePipes(ValidationPipe)

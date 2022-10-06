@@ -32,6 +32,7 @@ export class PatientNoteController {
   @Post('')
   @UsePipes(ValidationPipe)
   saveNote(@Body() params, @Request() req) {
+    console.log(params);
     return this.patientNoteService.saveNote(params, req.user.username);
   }
 
