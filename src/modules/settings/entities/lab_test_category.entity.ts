@@ -5,4 +5,7 @@ import { CustomBaseEntity } from '../../../common/entities/custom-base.entity';
 export class LabTestCategory extends CustomBaseEntity {
   @Column({ type: 'varchar', length: 300 })
   name: string;
+
+  @Column({ type: 'integer', nullable: true })
+  duration: number;
 }
