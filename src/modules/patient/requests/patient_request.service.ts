@@ -444,7 +444,7 @@ export class PatientRequestService {
   }
 
   async doSaveRequest(param, createdBy) {
-    const { requestType, patient_id, scheduleData, procedure_type } = param;
+    const { requestType, patient_id, scheduleData, isImmediate } = param;
     if (!requestType && requestType === '') {
       return { success: false, message: 'Request Type cannot be empty' };
     }
@@ -512,7 +512,7 @@ export class PatientRequestService {
             payment: payment.transactions,
           });
 
-          if (procedure_type == "schedule" && scheduleData) {
+          if (isImmediate && scheduleData) {
             let date = new Date();
             await this.scheduleProcedure(
               await procedure.data[0].id,
