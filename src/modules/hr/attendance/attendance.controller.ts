@@ -7,7 +7,7 @@ import { DeviceDto } from './dto/device.dto';
 import { DeviceUserDto } from './dto/user.dto';
 
 @ApiTags('HR-Attendance')
-// @UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt'))
 @Controller('hr/attendance')
 export class AttendanceController {
   constructor(private attendanceService: AttendanceService) { }
