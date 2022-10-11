@@ -161,13 +161,12 @@ export class AttendanceService {
         await zkInstance.disconnect();
       };
 
-      // const rs = await this.attendanceRepository.createQueryBuilder().insert().into(Attendance).values(dataArr).execute();
+      const rs = await this.attendanceRepository.createQueryBuilder().insert().into(Attendance).values(dataArr).execute();
 
       return {
         success: true,
-        // message: 'attendance saved',
+        message: 'attendance saved',
         dataArr,
-        // result: rs,
       };
     } catch (error) {
       console.log({ success: false, error });
@@ -476,17 +475,13 @@ export class AttendanceService {
         formattedClinic = getNewUserData(await clinical, clinical_device);
 
         for (const item of await formattedClinic) {
-          // const user = await this.userRepository.findOne({
-          //   where: { id: item.id }
-          // });
-          // if (!user) {
-          try {
+          const user = await this.userRepository.findOne({
+            where: { id: item.id }
+          });
+          if (!user) {
             const newUser = this.userRepository.create(item);
             await this.userRepository.save(newUser);
-          } catch (error) {
-            log(error);
           }
-          //   }
         }
       };
 
@@ -494,18 +489,14 @@ export class AttendanceService {
         formattedNonClinic = getNewUserData(await non_clinical, non_clinical_device);
 
         for (const item of await formattedNonClinic) {
-          // const user = await this.userRepository.findOne({
-          //   where: { id: item.id }
-          // });
-          // if (!user) {
-          try {
+          const user = await this.userRepository.findOne({
+            where: { id: item.id }
+          });
+          if (!user) {
             const newUser = this.userRepository.create(item);
             await this.userRepository.save(newUser);
-          } catch (error) {
-            log(error);
           }
         }
-        // }
       };
 
       return {
@@ -563,7 +554,7 @@ export class AttendanceService {
       } else {
         response = await this.userRepository.update({ id }, { ...data, });
       };
-      
+
       if (await response.affected) {
         const result = await this.userRepository.findOne({ id });
 
