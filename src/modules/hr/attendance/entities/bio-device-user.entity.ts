@@ -1,3 +1,4 @@
+import { Patient } from "src/modules/patient/entities/patient.entity";
 import { Department } from "src/modules/settings/entities/department.entity";
 import { Column, Entity, JoinColumn, ManyToOne } from "typeorm";
 import { StaffDetails } from "../../staff/entities/staff_details.entity";
@@ -8,9 +9,9 @@ export class BioDeviceUser {
   @Column({ unique: true, primary: true })
   id: number;
 
-  @ManyToOne((type) => StaffDetails, { nullable: true })
-  @JoinColumn({ name: 'staff_id' })
-  staff: StaffDetails;
+  @ManyToOne((type) => Patient, { nullable: true })
+  @JoinColumn({ name: 'patient_id' })
+  patient: Patient;
 
   @Column({ nullable: true })
   first_name: string;

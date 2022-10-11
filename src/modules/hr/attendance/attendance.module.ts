@@ -6,6 +6,8 @@ import { AttendanceService } from './attendance.service';
 import { DeviceRepository } from './repositories/device.repositories';
 import { StaffRepository } from '../staff/staff.repository';
 import { BioUserRepository } from './repositories/device-user.repository';
+import { PatientRepository } from 'src/modules/patient/repositories/patient.repository';
+import { DepartmentRepository } from 'src/modules/settings/departments/department.repository';
 
 @Module({
   imports: [
@@ -13,7 +15,9 @@ import { BioUserRepository } from './repositories/device-user.repository';
       AttendanceRepository,
       DeviceRepository,
       StaffRepository,
-      BioUserRepository
+      BioUserRepository,
+      PatientRepository,
+      DepartmentRepository
     ])
   ],
   providers: [AttendanceService],

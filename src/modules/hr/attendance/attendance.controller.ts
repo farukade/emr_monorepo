@@ -7,7 +7,7 @@ import { DeviceDto } from './dto/device.dto';
 import { DeviceUserDto } from './dto/user.dto';
 
 @ApiTags('HR-Attendance')
-@UseGuards(AuthGuard('jwt'))
+// @UseGuards(AuthGuard('jwt'))
 @Controller('hr/attendance')
 export class AttendanceController {
   constructor(private attendanceService: AttendanceService) { }
@@ -81,5 +81,12 @@ export class AttendanceController {
     @Body() data
   ) {
     return this.attendanceService.updateUser(+id, data);
+  }
+
+  @Get('users')
+  getUsers(
+    @Query() urlParams
+  ) {
+    return this.attendanceService.getUsers(urlParams);
   }
 }
