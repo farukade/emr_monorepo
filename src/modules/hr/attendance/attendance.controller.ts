@@ -82,4 +82,11 @@ export class AttendanceController {
   ) {
     return this.attendanceService.updateUser(+id, data);
   }
+
+  @Get('users')
+  getUsers(
+    @Query() urlParams
+  ) {
+    return this.attendanceService.getUsers(urlParams);
+  }
 }

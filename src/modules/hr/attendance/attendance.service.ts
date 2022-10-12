@@ -12,6 +12,8 @@ import { getNewUserData, updateBioDeviceUser } from 'src/common/utils/utils';
 import { BioUserRepository } from './repositories/device-user.repository';
 import { BioDeviceUser } from './entities/bio-device-user.entity';
 import * as moment from 'moment';
+import { PatientRepository } from 'src/modules/patient/repositories/patient.repository';
+import { DepartmentRepository } from 'src/modules/settings/departments/department.repository';
 config();
 const port = process.env.BIO_PORT;
 const ip = process.env.BIO_IP;
@@ -27,6 +29,10 @@ export class AttendanceService {
     private deviceRepository: DeviceRepository,
     @InjectRepository(BioUserRepository)
     private userRepository: BioUserRepository,
+    @InjectRepository(PatientRepository)
+    private patientRepository: PatientRepository,
+    @InjectRepository(DepartmentRepository)
+    private departmentRepository: DepartmentRepository,
   ) { }
 
   // this will filter attendance already on emr either by date or staff or (staff & date);
@@ -140,7 +146,9 @@ export class AttendanceService {
             {
               user,
               ip: item.ip,
-              date: moment(date.toISOString()).toDate(),
+              date: moment(date.toLocaleString("en-US", {
+                timeZone: "Africa/Lagos",
+              })).toDate(),
               device,
               device_id: device?.id,
               user_id: user?.id
@@ -158,7 +166,7 @@ export class AttendanceService {
       return {
         success: true,
         message: 'attendance saved',
-        result: rs,
+        dataArr,
       };
     } catch (error) {
       console.log({ success: false, error });
@@ -174,31 +182,48 @@ export class AttendanceService {
   async createUser(data) {
     try {
       let zkInstance;
-      const { user_id, first_name, last_name, clinical } = data;
+      const {
+        user_id,
+        first_name,
+        patient_id,
+        last_name,
+        clinical,
+        isOnDevice,
+        department_id
+      } = data;
 
       const id = clinical ? +`9${user_id}` : +`1${user_id}`;
       const device = clinical
         ? await this.deviceRepository.find({ where: { name: ILike('clinical') } })
         : await this.deviceRepository.find({ where: { name: ILike('non_clinical') } });
 
-      zkInstance = new ZKLib(device[0].ip, parseInt(port), 5200, 5000);
+      if (!isOnDevice) {
+        zkInstance = new ZKLib(device[0].ip, parseInt(port), 5200, 5000);
 
-      // Create socket to machine
-      await zkInstance.createSocket();
-      console.log(await zkInstance.getInfo());
+        // Create socket to machine
+        await zkInstance.createSocket();
+        console.log(await zkInstance.getInfo());
 
-      await zkInstance.setUser(user_id, `${user_id}`, `${first_name} ${last_name}`, '123456', 0, 0);
+        await zkInstance.setUser(user_id, `${user_id}`, `${first_name} ${last_name}`, '123456', 0, 0);
+
+        await zkInstance.disconnect();
+      }
 
       let staff = await this.userRepository.findOne(id);
+      const patient = await this.patientRepository.findOne(patient_id);
+      const department = await this.departmentRepository.findOne(department_id);
       if (staff) return { success: false, message: 'user exists' };
+
       staff = this.userRepository.create({
         id,
         first_name,
         last_name,
         device: device[0],
+        patient,
+        department
       });
+      await this.userRepository.save(staff);
 
-      await zkInstance.disconnect();
 
       return {
         success: true,
@@ -321,7 +346,11 @@ export class AttendanceService {
         let result = [];
         for (const log of logs) {
           let date = new Date(log.recordTime);
-          result = [...result, { date: moment(date.toISOString()).toDate(), ...log }];
+          result = [...result, {
+            date: moment(date.toLocaleString("en-US", {
+              timeZone: "Africa/Lagos",
+            })).toDate(), ...log
+          }];
         };
         result = result.sort((a, b) => b.date - a.date);
         const total = result.length;
@@ -438,26 +467,37 @@ export class AttendanceService {
         } else {
           non_clinical = await users.data;
         }
-      }
+      };
 
-      const formattedClinic = getNewUserData(await clinical, clinical_device);
-      const formattedNonClinic = getNewUserData(await non_clinical, non_clinical_device);
+      let formattedClinic;
+      let formattedNonClinic;
+      if (await clinical) {
+        formattedClinic = getNewUserData(await clinical, clinical_device);
 
-      for (const item of formattedClinic) {
-        const user = await this.userRepository.findOne(item.id);
-        if (!user) {
-          const newUser = this.userRepository.create(item);
-          await this.userRepository.save(newUser);
+        for (const item of await formattedClinic) {
+          const user = await this.userRepository.findOne({
+            where: { id: item.id }
+          });
+          if (!user) {
+            const newUser = this.userRepository.create(item);
+            await this.userRepository.save(newUser);
+          }
         }
-      }
+      };
 
-      for (const item of formattedNonClinic) {
-        const user = await this.userRepository.findOne(item.id);
-        if (!user) {
-          const newUser = this.userRepository.create(item);
-          await this.userRepository.save(newUser);
+      if (await non_clinical) {
+        formattedNonClinic = getNewUserData(await non_clinical, non_clinical_device);
+
+        for (const item of await formattedNonClinic) {
+          const user = await this.userRepository.findOne({
+            where: { id: item.id }
+          });
+          if (!user) {
+            const newUser = this.userRepository.create(item);
+            await this.userRepository.save(newUser);
+          }
         }
-      }
+      };
 
       return {
         success: true,
@@ -466,7 +506,7 @@ export class AttendanceService {
       };
     } catch (error) {
       log(error);
-      return { success: true, message: error.message || 'an error occurred' };
+      return { success: false, message: error.message || 'an error occurred' };
     }
   }
 
@@ -493,18 +533,68 @@ export class AttendanceService {
 
   async updateUser(id, data) {
     try {
-      const response = await this.userRepository.update({ id }, { ...data });
-      if (response.affected) {
+      const { patient_id, department_id, ...restData } = data;
+      let patient;
+      if (patient_id) {
+        patient = await this.patientRepository.findOne(data.patient_id);
+      }
+
+      let department;
+      if (department_id) {
+        department = await this.departmentRepository.findOne(department_id);
+      };
+
+      let response;
+      if (await patient && await department) {
+        response = await this.userRepository.update({ id }, { ...restData, patient, department });
+      } else if (await patient) {
+        response = await this.userRepository.update({ id }, { ...restData, patient });
+      } else if (await department) {
+        response = await this.userRepository.update({ id }, { ...restData, department });
+      } else {
+        response = await this.userRepository.update({ id }, { ...data, });
+      };
+
+      if (await response.affected) {
         const result = await this.userRepository.findOne({ id });
 
         return {
           success: true,
           result,
         };
+      } else {
+        return {
+          success: false,
+          message: "nothing to update"
+        }
       }
     } catch (error) {
       log(error);
       return { success: true, message: error.message || 'an error occurred' };
+    }
+  }
+
+  async getUsers(params) {
+    try {
+      const { page, limit } = params;
+      const skip = (+page - 1) * +limit;
+      const take = +limit;
+      const [result, total] = await this.userRepository.findAndCount({
+        take,
+        skip
+      });
+
+      return {
+        success: true,
+        result,
+        lastPage: Math.ceil(total / +limit),
+        itemsPerPage: +limit,
+        totalItems: total,
+        currentPage: +params.page,
+      }
+    } catch (error) {
+      log(error);
+      return { success: true, message: error.message || "an error occurred" };
     }
   }
 }
