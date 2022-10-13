@@ -140,6 +140,11 @@ export class MigrationController {
     return this.migrationService.queueMigration('fix-services');
   }
 
+  @Get('/fix-docs')
+  fixDocs(): Promise<any> {
+    return this.migrationService.queueMigration('fix-docs');
+  }
+
   @Get('/test')
   test(): Promise<any> {
     return this.migrationService.queueMigration('test');

@@ -9,10 +9,11 @@ import { HmoScheme } from '../hmo/entities/hmo_scheme.entity';
 import { ServiceCost } from '../settings/entities/service_cost.entity';
 import { Nicu } from '../patient/nicu/entities/nicu.entity';
 import { TransactionCreditDto } from '../finance/transactions/dto/transaction-credit.dto';
-import { postDebit } from '../../common/utils/utils';
+import { backupDatabase, postDebit } from "../../common/utils/utils";
 import { Appointment } from '../frontdesk/appointment/appointment.entity';
 import { config } from 'dotenv';
 import { AttendanceService } from '../hr/attendance/attendance.service';
+
 config();
 const port = process.env.BIO_PORT;
 
@@ -20,9 +21,7 @@ const port = process.env.BIO_PORT;
 export class TasksService {
   private readonly logger = new Logger(TasksService.name);
 
-  constructor(
-    private attendanceService: AttendanceService,
-  ) { }
+  constructor(private attendanceService: AttendanceService) {}
 
   @Cron(CronExpression.EVERY_HOUR)
   async runEveryHour() {
@@ -97,7 +96,10 @@ export class TasksService {
               .getRawOne();
 
             if (transaction) {
-              const count = await getConnection().getRepository(Transaction).count({ admission: item, bill_source: 'ward' });
+              const count = await getConnection().getRepository(Transaction).count({
+                admission: item,
+                bill_source: 'ward',
+              });
 
               const service = await getConnection().getRepository(ServiceCost).findOne(transaction.service_cost_id);
               const hmo = await getConnection().getRepository(HmoScheme).findOne(transaction.hmo_scheme_id);
@@ -238,10 +240,21 @@ export class TasksService {
 
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async saveAttendanceToDB() {
-    this.logger.debug('saving attendance to database');
     try {
+      this.logger.debug('saving attendance to database');
       await this.attendanceService.saveAttendance();
-      this.logger.debug('logs saved to datebase');
+      this.logger.debug('logs saved to database');
+    } catch (error) {
+      console.log({ success: false, error });
+      return;
+    }
+  }
+
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async backupDb() {
+    try {
+      this.logger.debug('-------------------- backing up database');
+      await backupDatabase();
     } catch (error) {
       console.log({ success: false, error });
       return;

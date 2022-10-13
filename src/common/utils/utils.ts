@@ -24,9 +24,11 @@ import { Voucher } from '../../modules/finance/vouchers/voucher.entity';
 import { PatientRequestItem } from '../../modules/patient/entities/patient_request_items.entity';
 import * as numeral from 'numeral';
 import * as startCase from 'lodash.startcase';
-import { S3Client } from '@aws-sdk/client-s3';
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { PatientNote } from 'src/modules/patient/entities/patient_note.entity';
-const { log } = console;
+import { execute } from '@getvim/execute';
+import * as moment from 'moment';
+import * as compress from 'gzipme';
 
 const mysql = require('mysql2/promise');
 
@@ -278,8 +280,8 @@ export const getOutstanding = async (patient_id) => {
   return patient.credit_limit > 0
     ? 0
     : transactions.reduce((totalAmount, item) => {
-      return totalAmount + item.amount;
-    }, 0);
+        return totalAmount + item.amount;
+      }, 0);
 };
 
 export const getBalance = async (patient_id) => {
@@ -637,8 +639,9 @@ export const parseDescription = (item) => {
   if (item.bill_source === 'drugs') {
     const reqItem = item.patientRequestItem;
 
-    return ` : ${reqItem.fill_quantity} ${reqItem.drug.unitOfMeasure} of ${reqItem.drugGeneric.name} (${reqItem.drug.name
-      }) at ${formatCurrency(reqItem.drugBatch.unitPrice)} each`;
+    return ` : ${reqItem.fill_quantity} ${reqItem.drug.unitOfMeasure} of ${reqItem.drugGeneric.name} (${
+      reqItem.drug.name
+    }) at ${formatCurrency(reqItem.drugBatch.unitPrice)} each`;
   }
 
   if (
@@ -667,8 +670,9 @@ export const parseDescriptionB = (item) => {
   if (item.bill_source === 'drugs') {
     const reqItem = item.patientRequestItem;
 
-    return `  ${reqItem.fill_quantity} ${reqItem.drug.unitOfMeasure} of ${reqItem.drugGeneric.name} (${reqItem.drug.name
-      }) at ${formatCurrency(reqItem.drugBatch.unitPrice)} each`;
+    return `  ${reqItem.fill_quantity} ${reqItem.drug.unitOfMeasure} of ${reqItem.drugGeneric.name} (${
+      reqItem.drug.name
+    }) at ${formatCurrency(reqItem.drugBatch.unitPrice)} each`;
   }
 
   if (
@@ -819,7 +823,6 @@ export const updateBioDeviceUser = (arr) => {
 export const getNewUserData = (arr, devices) => {
   let result = [];
   for (const device of devices) {
-
     for (const item of arr) {
       const namesArr = item.name.split(' ');
       if (device?.name.toLowerCase() == 'clinical') {
@@ -851,7 +854,7 @@ export const getNewUserData = (arr, devices) => {
           ...result,
         ];
       }
-    };
+    }
   }
 
   return result;
@@ -864,4 +867,44 @@ export const getHmoCodes = (item) => {
   if (!result) return '-- --';
 
   return result;
+};
+
+export const uploadBackup = async (filename) => {
+  try {
+    const filepath = path.resolve(__dirname, `../../../backup/${filename}`);
+    const spaceKey = `backup/${filename}`;
+
+    const params = {
+      Bucket: 'deda-docs',
+      Key: spaceKey,
+      Body: fs.createReadStream(filepath),
+      ACL: 'private',
+    };
+
+    await s3Client.send(new PutObjectCommand(params));
+    fs.unlinkSync(filepath);
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+export const backupDatabase = async () => {
+  try {
+    const date = moment().format('YYYY-MM-DD-HHmmss');
+    const filename = `database-backup-${date}.tar`;
+    const filepath = path.resolve(__dirname, `../../../backup/${filename}`);
+
+    const username = process.env.POSTGRES_ADMIN;
+    const _database = process.env.POSTGRES_DATABASE;
+
+    await execute(`pg_dump -U ${username} -d ${_database} -f ${filepath} -F t`);
+    console.log('-------------------- backup complete');
+    await compress(filepath, { mode: 'best' });
+    console.log('-------------------- backup file compressed');
+    fs.unlinkSync(filepath);
+    await uploadBackup(`${filename}.gz`);
+    console.log('-------------------- backup file uploaded to cloud');
+  } catch (e) {
+    console.log(e);
+  }
 };

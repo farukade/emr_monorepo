@@ -188,7 +188,7 @@ export class QueueProcessor {
       const data = job.data;
       const filepath = path.resolve(__dirname, `../../../public/documents/${data.name}`);
       const file_type = slugify(data.type);
-      const spaceKey = `${data.patient_id}/${file_type}/${data.name}`;
+      const spaceKey = `documents/${data.patient_id}/${file_type}/${data.name}`;
 
       const params = {
         Bucket: 'deda-docs',

@@ -1279,30 +1279,15 @@ export class MigrationProcessor {
     }
   }
 
-  @Process('fix-services')
-  async fixServices(): Promise<any> {
-    const services = await getConnection()
-      .getRepository(Service)
-      .find({ order: { id: 'ASC' } });
+  @Process('fix-docs')
+  async fixDocs(): Promise<any> {
+    const documents = await getConnection().getRepository(PatientDocument).find({});
 
-    for (const service of services) {
-      if (service) {
-        const schemes = await this.hmoSchemeRepository.find();
-
-        for (const scheme of schemes) {
-          const cost = await getConnection().getRepository(ServiceCost).findOne({ code: service.code, hmo: scheme });
-
-          if (!cost) {
-            console.log({ id: service.id, name: service.name, code: service.code, hmo: scheme.name });
-            const serviceCost = new ServiceCost();
-            serviceCost.code = service.code;
-            serviceCost.item = service;
-            serviceCost.hmo = scheme;
-            serviceCost.tariff = 0;
-
-            await serviceCost.save();
-          }
-        }
+    for (const document of documents) {
+      if (document && document.cloud_uri && document.cloud_uri !== '') {
+        const file = await getConnection().getRepository(PatientDocument).findOne(document.id);
+        document.cloud_uri = `documents/${file.cloud_uri}`;
+        await document.save();
       }
     }
   }

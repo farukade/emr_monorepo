@@ -31,6 +31,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.100.0",
     "@aws-sdk/s3-request-presigner": "^3.100.0",
+    "@getvim/execute": "^1.0.0",
     "@nestjs-modules/mailer": "^1.6.1",
     "@nestjs/bull": "^0.5.4",
     "@nestjs/common": "^8.0.0",
@@ -53,6 +54,7 @@
     "compression": "^1.7.4",
     "dotenv": "^16.0.0",
     "exceljs": "^4.3.0",
+    "gzipme": "^1.0.0",
     "handlebars": "^4.7.7",
     "jsonwebtoken": "^8.5.1",
     "lodash.startcase": "^4.4.0",

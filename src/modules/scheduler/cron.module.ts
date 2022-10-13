@@ -17,8 +17,9 @@ import { TasksService } from './cron.service';
       StaffRepository,
       BioUserRepository,
       PatientRepository,
-      DepartmentRepository
-    ])],
+      DepartmentRepository,
+    ]),
+  ],
   providers: [TasksService, AttendanceService],
 })
-export class TasksModule { }
+export class TasksModule {}
