@@ -29,6 +29,7 @@ import { PatientNote } from 'src/modules/patient/entities/patient_note.entity';
 import { execute } from '@getvim/execute';
 import * as moment from 'moment';
 import * as compress from 'gzipme';
+import { Logger } from '@nestjs/common';
 
 const mysql = require('mysql2/promise');
 
@@ -890,6 +891,7 @@ export const uploadBackup = async (filename) => {
 
 export const backupDatabase = async () => {
   try {
+    const logger = new Logger('Utils');
     const date = moment().format('YYYY-MM-DD-HHmmss');
     const filename = `database-backup-${date}.tar`;
     const filepath = path.resolve(__dirname, `../../../backup/${filename}`);
@@ -898,12 +900,12 @@ export const backupDatabase = async () => {
     const _database = process.env.POSTGRES_DATABASE;
 
     await execute(`pg_dump -U ${username} -d ${_database} -f ${filepath} -F t`);
-    console.log('-------------------- backup complete');
+    logger.debug('backup complete');
     await compress(filepath, { mode: 'best' });
-    console.log('-------------------- backup file compressed');
+    logger.debug('backup file compressed');
     fs.unlinkSync(filepath);
     await uploadBackup(`${filename}.gz`);
-    console.log('-------------------- backup file uploaded to cloud');
+    logger.debug('backup file uploaded to cloud');
   } catch (e) {
     console.log(e);
   }

@@ -9,7 +9,7 @@ import { HmoScheme } from '../hmo/entities/hmo_scheme.entity';
 import { ServiceCost } from '../settings/entities/service_cost.entity';
 import { Nicu } from '../patient/nicu/entities/nicu.entity';
 import { TransactionCreditDto } from '../finance/transactions/dto/transaction-credit.dto';
-import { backupDatabase, postDebit } from "../../common/utils/utils";
+import { backupDatabase, postDebit } from '../../common/utils/utils';
 import { Appointment } from '../frontdesk/appointment/appointment.entity';
 import { config } from 'dotenv';
 import { AttendanceService } from '../hr/attendance/attendance.service';
@@ -250,10 +250,10 @@ export class TasksService {
     }
   }
 
-  @Cron(CronExpression.EVERY_5_MINUTES)
+  @Cron(CronExpression.EVERY_DAY_AT_1AM)
   async backupDb() {
     try {
-      this.logger.debug('-------------------- backing up database');
+      this.logger.debug('backing up database');
       await backupDatabase();
     } catch (error) {
       console.log({ success: false, error });
