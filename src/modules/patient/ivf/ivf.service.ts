@@ -17,7 +17,6 @@ import { AppGateway } from '../../../app.gateway';
 import { PatientRequestItemRepository } from '../repositories/patient_request_items.repository';
 import { PatientRequestRepository } from '../repositories/patient_request.repository';
 import { getStaff } from '../../../common/utils/utils';
-import { Patient } from '../entities/patient.entity';
 import { IvfHcgRepository } from './repositories/hcg.repository';
 const { log } = console;
 
@@ -37,7 +36,7 @@ export class IvfService {
     @InjectRepository(IvfHcgRepository)
     private hcgRepository: IvfHcgRepository,
     private readonly appGateway: AppGateway,
-  ) { }
+  ) {}
 
   async getEnrollments(options: PaginationOptionsInterface, params): Promise<Pagination> {
     const { startDate, endDate, patient_id } = params;
@@ -81,6 +80,10 @@ export class IvfService {
 
       ivf.staff = await getStaff(ivf.createdBy);
 
+      if (ivf.closed_by) {
+        ivf.closedBy = await this.staffRepository.findOne(ivf.closed_by);
+      }
+
       result = [...result, { ...ivf, requests }];
     }
 
@@ -111,7 +114,7 @@ export class IvfService {
       ivfEnrollmentDto.wife = await this.patientRepository.findOne(wife.id);
 
       // husband patient details
-      ivfEnrollmentDto.husband = await this.patientRepository.findOne(husband.id);
+      ivfEnrollmentDto.husband = husband ? await this.patientRepository.findOne(husband.id) : null;
 
       // save enrollment details
       const data = await this.ivfEnrollmentRepo.save({ ...ivfEnrollmentDto, serial_code: code, createdBy });
@@ -156,18 +159,8 @@ export class IvfService {
   }
 
   async doSaveHCGAdministration(params, username) {
-    const {
-      patient_id,
-      ivf_enrollment_id,
-      timeOfEntry,
-      timeOfAdmin,
-      typeOfDosage,
-      typeOfHcg,
-      routeOfAdmin,
-      nurse_id,
-      remarks,
-      id,
-    } = params;
+    const { patient_id, ivf_enrollment_id, timeOfEntry, timeOfAdmin, typeOfDosage, typeOfHcg, routeOfAdmin, remarks, id } =
+      params;
 
     try {
       // find patient
@@ -212,7 +205,7 @@ export class IvfService {
     }
   }
 
-  async doSaveTheatreProcedure(params, user) {
+  async doSaveTheatreProcedure(params) {
     const { patient_id, ivf_enrollment_id, schedule, remarks, procedure, folicile, id } = params;
 
     try {
@@ -270,25 +263,24 @@ export class IvfService {
 
       let patient;
       let hcg;
-      if (patient_id && patient_id != "") {
+      if (patient_id && patient_id != '') {
         patient = await this.patientRepository.findOne(patient_id, {
-          relations: ['hcg', 'hcg.staff']
+          relations: ['hcg', 'hcg.staff'],
         });
-      } else if (hcg_id && hcg_id != "") {
+      } else if (hcg_id && hcg_id != '') {
         hcg = await this.hcgRepository.findOne(hcg_id, {
-          relations: ['patient', 'staff']
+          relations: ['patient', 'staff'],
         });
-      };
+      }
 
-      if (!(await hcg || await patient)) {
-        return { success: false, message: "no params | not found" };
-      };
+      if (!hcg && !patient) {
+        return { success: false, message: 'no params | not found' };
+      }
 
       return { success: true, hcg, patient };
-
     } catch (error) {
       log(error);
-      return { success: false, message: error.message || "an error occurred" };
+      return { success: false, message: error.message || 'an error occurred' };
     }
   }
 }

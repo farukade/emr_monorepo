@@ -891,21 +891,23 @@ export const uploadBackup = async (filename) => {
 
 export const backupDatabase = async () => {
   try {
-    const logger = new Logger('Utils');
-    const date = moment().format('YYYY-MM-DD-HHmmss');
-    const filename = `database-backup-${date}.tar`;
-    const filepath = path.resolve(__dirname, `../../../backup/${filename}`);
+    if (process.env.DEBUG === 'false') {
+      const logger = new Logger('Utils');
+      const date = moment().format('YYYY-MM-DD-HHmmss');
+      const filename = `database-backup-${date}.tar`;
+      const filepath = path.resolve(__dirname, `../../../backup/${filename}`);
 
-    const username = process.env.POSTGRES_ADMIN;
-    const _database = process.env.POSTGRES_DATABASE;
+      const username = process.env.POSTGRES_ADMIN;
+      const _database = process.env.POSTGRES_DATABASE;
 
-    await execute(`pg_dump -U ${username} -d ${_database} -f ${filepath} -F t`);
-    logger.debug('backup complete');
-    await compress(filepath, { mode: 'best' });
-    logger.debug('backup file compressed');
-    fs.unlinkSync(filepath);
-    await uploadBackup(`${filename}.gz`);
-    logger.debug('backup file uploaded to cloud');
+      await execute(`pg_dump -U ${username} -d ${_database} -f ${filepath} -F t`);
+      logger.debug('backup complete');
+      await compress(filepath, { mode: 'best' });
+      logger.debug('backup file compressed');
+      fs.unlinkSync(filepath);
+      await uploadBackup(`${filename}.gz`);
+      logger.debug('backup file uploaded to cloud');
+    }
   } catch (e) {
     console.log(e);
   }

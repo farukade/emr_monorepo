@@ -80,6 +80,10 @@ export class LabourManagementService {
       const assessments = await this.labourRiskAssessmentRepository.find({ where: { enrolment: labour } });
       labour.assessment = assessments.length > 0;
 
+      if (labour.closed_by) {
+        labour.closedBy = await this.staffRepository.findOne(labour.closed_by);
+      }
+
       result = [...result, labour];
     }
 
