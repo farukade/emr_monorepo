@@ -42,7 +42,7 @@ export class IvfController {
 
   @Post('save/theatre-procedure')
   saveTheatreProcedure(@Body() params, @Request() req) {
-    return this.ivfService.doSaveTheatreProcedure(params, req.user);
+    return this.ivfService.doSaveTheatreProcedure(params);
   }
 
   @Delete('/:id')
