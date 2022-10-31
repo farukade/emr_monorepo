@@ -58,7 +58,7 @@ export class AppointmentService {
     @InjectRepository(AntenatalAssessmentRepository)
     private antenatalAssessmentRepository: AntenatalAssessmentRepository,
     private readonly appGateway: AppGateway,
-  ) {}
+  ) { }
 
   async listAppointments(options: PaginationOptionsInterface, params): Promise<Pagination> {
     const { startDate, endDate, patient_id, today, department_id, canSeeDoctor, status, is_queue, staff_id } = params;
@@ -203,6 +203,12 @@ export class AppointmentService {
       const { patient_id, doctor_id, consulting_room_id, sendToQueue, department_id, consultation_id, service_id } =
         appointmentDto;
 
+      let appointment_date =
+        moment(appointmentDto.appointment_date).format("YYYYMMDD") > moment(new Date()).format("YYYYMMDD") ?
+          moment(appointmentDto.appointment_date).format("DDMMYYYY") :
+          moment().format("DDMMYYYY");
+
+      appointmentDto.appointment_date = appointment_date;
       const pushToQueue =
         moment(appointmentDto.appointment_date).format('DDMMYYYY') === moment().format('DDMMYYYY') && sendToQueue;
 
@@ -269,7 +275,7 @@ export class AppointmentService {
 
       // update patient appointment date
       patient.last_appointment_date =
-        moment(appointmentDto.appointment_date).format('DDMMYYYY') !== moment().format('DDMMYYYY')
+        appointment_date !== moment().format('DDMMYYYY')
           ? patient.last_appointment_date
           : appointmentDto.appointment_date;
       await patient.save();
