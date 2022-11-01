@@ -13,6 +13,11 @@ import { backupDatabase, postDebit } from '../../common/utils/utils';
 import { Appointment } from '../frontdesk/appointment/appointment.entity';
 import { config } from 'dotenv';
 import { AttendanceService } from '../hr/attendance/attendance.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { AppointmentRepository } from '../frontdesk/appointment/appointment.repository';
+import { QueueService } from '../queue/queue.service';
+import * as startCase from 'lodash.startcase';
+const { log } = console;
 
 config();
 const port = process.env.BIO_PORT;
@@ -21,7 +26,12 @@ const port = process.env.BIO_PORT;
 export class TasksService {
   private readonly logger = new Logger(TasksService.name);
 
-  constructor(private attendanceService: AttendanceService) {}
+  constructor(
+    private attendanceService: AttendanceService,
+    @InjectRepository(AppointmentRepository)
+    private appointmentRepository: AppointmentRepository,
+    private queueService: QueueService,
+  ) { }
 
   @Cron(CronExpression.EVERY_HOUR)
   async runEveryHour() {
@@ -258,6 +268,51 @@ export class TasksService {
     } catch (error) {
       console.log({ success: false, error });
       return;
+    }
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_8PM)
+  async sendAppointmentReminder() {
+    try {
+      const tomorrow = moment().add(1, "days");
+      const start = moment(tomorrow).startOf('day').format("YYYY-MM-DD HH:MM:SS");
+      const end = moment(tomorrow).endOf('day').format("YYYY-MM-DD HH:MM:SS");
+
+      const appointments = await this.appointmentRepository.createQueryBuilder('q')
+        .leftJoinAndSelect('q.patient', 'patient')
+        .leftJoinAndSelect('q.whomToSee', 'whomToSee')
+        .where(`q.appointment_date <= '${end}'`)
+        .andWhere(`q.appointment_date >= '${start}'`)
+        .getMany();
+
+      if (appointments) {
+        appointments.forEach(async appointment => {
+          let name = startCase(appointment.patient.surname) + " " + startCase(appointment.patient.other_names);
+          let doctor = (startCase(appointment.whomToSee?.first_name) || "") + " " + (startCase(appointment.whomToSee?.last_name) || "")
+          let time = moment(appointment.appointment_date).format('hh:mm A');
+
+          const mail =
+          {
+            name,
+            doctor,
+            time,
+            patientId: appointment.patient.id,
+            date: moment().format("YYYY-MM-DD"),
+            email: appointment.patient.email,
+            phoneNumber: appointment.patient.phone_number,
+            message: `Dear ${name}, this is to remind you that your appointment with Dr. ${doctor} is scheduled for ${time} tomorrow. Thank you.`,
+          };
+          try {
+            await this.queueService.queueJob('appointment', mail);
+          } catch (error) {
+            log(error);
+          }
+        });
+      } else {
+        log('no appointments');
+      }
+    } catch (error) {
+      log(error);
     }
   }
 }
