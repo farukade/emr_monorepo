@@ -205,8 +205,8 @@ export class AppointmentService {
 
       let appointment_date =
         moment(appointmentDto.appointment_date).format("YYYYMMDD") > moment(new Date()).format("YYYYMMDD") ?
-          moment(appointmentDto.appointment_date).format("DDMMYYYY") :
-          moment().format("DDMMYYYY");
+          moment(appointmentDto.appointment_date).format("YYYY-MM-DD HH:MM:SS") :
+          moment().format("YYYY-MM-DD HH:MM:SS");
 
       appointmentDto.appointment_date = appointment_date;
       const pushToQueue =
