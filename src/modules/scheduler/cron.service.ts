@@ -13,6 +13,10 @@ import { backupDatabase, postDebit } from '../../common/utils/utils';
 import { Appointment } from '../frontdesk/appointment/appointment.entity';
 import { config } from 'dotenv';
 import { AttendanceService } from '../hr/attendance/attendance.service';
+import { AppointmentService } from '../frontdesk/appointment/appointment.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { AppointmentRepository } from '../frontdesk/appointment/appointment.repository';
+const { log } = console;
 
 config();
 const port = process.env.BIO_PORT;
@@ -21,7 +25,11 @@ const port = process.env.BIO_PORT;
 export class TasksService {
   private readonly logger = new Logger(TasksService.name);
 
-  constructor(private attendanceService: AttendanceService) {}
+  constructor(
+    private attendanceService: AttendanceService,
+    @InjectRepository(AppointmentRepository)
+    private appointmentRepository: AppointmentRepository,
+  ) { }
 
   @Cron(CronExpression.EVERY_HOUR)
   async runEveryHour() {
@@ -258,6 +266,27 @@ export class TasksService {
     } catch (error) {
       console.log({ success: false, error });
       return;
+    }
+  }
+
+  @Cron(CronExpression.EVERY_MINUTE)
+  async sendAppointmentReminder() {
+    try {
+      const tomorrow = moment().add(1, "days");
+      const start = moment(tomorrow).startOf('day').format("DDMMYYYY HH:MM:SS");
+      const end = moment(tomorrow).endOf('day').format("DDMMYYYY HH:MM:SS");
+
+      log(start, end)
+
+      const appointments = await this.appointmentRepository.createQueryBuilder('q')
+        .where(`DATE(q.appointment_date) <= '${end}'`)
+        .andWhere(`DATE(q.appointment_date) >= '${start}'`)
+        .getMany();
+
+      // log(appointments)
+      // return appointments;
+    } catch (error) {
+      log(error);
     }
   }
 }

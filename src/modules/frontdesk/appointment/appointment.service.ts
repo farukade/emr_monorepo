@@ -31,6 +31,8 @@ import { StaffRepository } from '../../hr/staff/staff.repository';
 import { AntenatalEnrollmentRepository } from '../../patient/antenatal/enrollment.repository';
 import { AntenatalAssessmentRepository } from '../../patient/antenatal/antenatal-assessment.repository';
 import { TransactionCreditDto } from '../../finance/transactions/dto/transaction-credit.dto';
+import { Error } from 'src/common/interface/error.interface';
+const { log } = console;
 
 @Injectable()
 export class AppointmentService {
@@ -58,7 +60,7 @@ export class AppointmentService {
     @InjectRepository(AntenatalAssessmentRepository)
     private antenatalAssessmentRepository: AntenatalAssessmentRepository,
     private readonly appGateway: AppGateway,
-  ) {}
+  ) { }
 
   async listAppointments(options: PaginationOptionsInterface, params): Promise<Pagination> {
     const { startDate, endDate, patient_id, today, department_id, canSeeDoctor, status, is_queue, staff_id } = params;
@@ -794,6 +796,19 @@ export class AppointmentService {
       };
     } catch (error) {
       return { success: false, message: error.message || 'could not fetch' };
+    }
+  }
+
+  async getTomorrowsAppointments(): Promise<Appointment[] | Error> {
+    try {
+      let tomorrow = moment().add(1, "days").format("DDMMYYYY");
+      const appointments = await this.appointmentRepository.find({
+        where: { appointment_date: tomorrow }
+      });
+      return appointments;
+    } catch (error) {
+      log(error);
+      return { success: false, message: error.message || "an error occurred" };
     }
   }
 }
