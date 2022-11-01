@@ -21,7 +21,7 @@ export class QueueProcessor {
     private readonly mailerService: MailerService,
     @InjectRepository(LoggerRepository)
     private loggerRepository: LoggerRepository,
-  ) {}
+  ) { }
 
   @OnQueueActive()
   onActive(job: Job) {
@@ -206,5 +206,51 @@ export class QueueProcessor {
       console.log(error);
       this.logger.error('Failed to upload document', error.stack);
     }
+  }
+
+  @Process('appointment')
+  async sendAppointmentReminder(job: Job<any>): Promise<any> {
+    const data = job.data;
+
+    this.logger.log(`Sending appointment reminder email to '${data.email}'`);
+
+    try {
+      if (process.env.DEBUG === 'false') {
+        await sendSMS(data.phoneNumber, data.message);
+      }
+    } catch (error) {
+      console.log(error);
+      this.logger.error(`Failed to send sms to '${data.phoneNumber}'`, error.stack);
+    }
+
+    // try {
+    //   await this.mailerService.sendMail({
+    //     to: data.email,
+    //     from: '"DEDA Hospital" <noreply@dedahospital.com>', // override default from
+    //     subject: 'Welcome to Deda Hospital',
+    //     template: 'appointment',
+    //     context: {
+    //       name: data.name,
+    //       time: data.time,
+    //       patientId: formatPID(data.id),
+    //       date: moment(data.createdAt).format('DD-MMM-YYYY'),
+    //       doctor: data.doctor,
+    //     },
+    //   });
+    // } catch (error) {
+    //   console.log(error);
+
+    //   const log = new LogEntity();
+    //   log.email = data.email;
+    //   log.type = 'email';
+    //   log.category = 'registration';
+    //   log.status = 'failed';
+    //   log.errorMessage = error.message;
+    //   log.data = data;
+
+    //   await this.loggerRepository.save(log);
+
+    //   this.logger.error(`Failed to send registration email to '${data.email}'`, error.stack);
+    // }
   }
 }
