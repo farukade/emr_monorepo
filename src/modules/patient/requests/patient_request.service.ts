@@ -35,7 +35,6 @@ import { IvfEnrollment } from '../ivf/entities/ivf_enrollment.entity';
 import { Encounter } from '../consultation/encouter.entity';
 import { NicuRepository } from '../nicu/nicu.repository';
 import { ServiceCostRepository } from '../../settings/services/repositories/service_cost.repository';
-const { log } = console;
 
 @Injectable()
 export class PatientRequestService {
@@ -59,7 +58,7 @@ export class PatientRequestService {
     private nicuRepository: NicuRepository,
     @InjectRepository(ServiceCostRepository)
     private serviceCostRepository: ServiceCostRepository,
-  ) { }
+  ) {}
 
   async listRequests(requestType: string, urlParams: any): Promise<any> {
     const { startDate, endDate, status, page, limit, today, item_id, type, patient_id } = urlParams;
@@ -150,8 +149,8 @@ export class PatientRequestService {
 
         const transaction = request.item
           ? await this.transactionsRepository.findOne({
-            where: { patientRequestItem: request.item },
-          })
+              where: { patientRequestItem: request.item },
+            })
           : null;
 
         let drug;
@@ -170,8 +169,8 @@ export class PatientRequestService {
 
         const admission = req.admission_id
           ? await this.admissionRepository.findOne(req.admission_id, {
-            relations: ['room', 'room.category'],
-          })
+              relations: ['room', 'room.category'],
+            })
           : null;
 
         result = [...result, { ...req, ...theRequest, patient, admission }];
@@ -279,8 +278,8 @@ export class PatientRequestService {
         for (const request of requests) {
           const transaction = request.item
             ? await this.transactionsRepository.findOne({
-              where: { patientRequestItem: request.item },
-            })
+                where: { patientRequestItem: request.item },
+              })
             : null;
 
           if (request?.item?.drug?.id) {
@@ -300,8 +299,8 @@ export class PatientRequestService {
 
         const admission = req.admission_id
           ? await this.admissionRepository.findOne(req.admission_id, {
-            relations: ['room', 'room.category'],
-          })
+              relations: ['room', 'room.category'],
+            })
           : null;
 
         const patientReq = allRequests.find((r) => r.item?.substituted === 0);
@@ -407,8 +406,8 @@ export class PatientRequestService {
       if (request.item) {
         const transaction = request.item
           ? await this.transactionsRepository.findOne({
-            where: { patientRequestItem: request.item },
-          })
+              where: { patientRequestItem: request.item },
+            })
           : null;
 
         let drug;
@@ -427,8 +426,8 @@ export class PatientRequestService {
 
         const admission = req.admission_id
           ? await this.admissionRepository.findOne(req.admission_id, {
-            relations: ['room', 'room.category'],
-          })
+              relations: ['room', 'room.category'],
+            })
           : null;
 
         result = [...result, { ...req, ...theRequest, patient, admission }];
@@ -514,14 +513,14 @@ export class PatientRequestService {
           });
 
           if (isImmediate && scheduleData) {
-            let date = new Date();
+            const date = new Date();
             await this.scheduleProcedure(
               await procedure.data[0].id,
               { ...scheduleData, start_date: date, end_date: date, isImmediate: true },
-              createdBy
+              createdBy,
             );
           }
-        };
+        }
         break;
       case 'vaccines':
         res = await PatientRequestHelper.handleVaccinationRequest(param, patient, createdBy);
@@ -795,8 +794,8 @@ export class PatientRequestService {
 
         const transaction = single.item
           ? await this.transactionsRepository.findOne({
-            where: { patientRequestItem: single.item },
-          })
+              where: { patientRequestItem: single.item },
+            })
           : null;
 
         const reqItem = { ...single.item, drug, transaction };

@@ -33,7 +33,7 @@ export class AttendanceService {
     private patientRepository: PatientRepository,
     @InjectRepository(DepartmentRepository)
     private departmentRepository: DepartmentRepository,
-  ) { }
+  ) {}
 
   // this will filter attendance already on emr either by date or staff or (staff & date);
   async emrFilter(params) {
@@ -106,7 +106,7 @@ export class AttendanceService {
         let isClinical = false;
         if (device.name == 'clinical') {
           isClinical = true;
-        };
+        }
 
         zkInstance = new ZKLib(device.ip, parseInt(port), 5200, 5000);
 
@@ -128,7 +128,7 @@ export class AttendanceService {
             success: false,
             message: 'no data in logs or bio-devive not connected to network',
           };
-        };
+        }
 
         attendanceArr = await logs.data;
 
@@ -138,20 +138,22 @@ export class AttendanceService {
             user = await this.userRepository.findOne(+`9${item.deviceUserId}`);
           } else {
             user = await this.userRepository.findOne(+`1${item.deviceUserId}`);
-          };
+          }
 
-          let date = new Date(item.recordTime);
+          const date = new Date(item.recordTime);
 
           dataArr = [
             {
               user,
               ip: item.ip,
-              date: moment(date.toLocaleString("en-US", {
-                timeZone: "Africa/Lagos",
-              })).toDate(),
+              date: moment(
+                date.toLocaleString('en-US', {
+                  timeZone: 'Africa/Lagos',
+                }),
+              ).toDate(),
               device,
               device_id: device?.id,
-              user_id: user?.id
+              user_id: user?.id,
             },
             ...dataArr,
           ];
@@ -159,7 +161,7 @@ export class AttendanceService {
 
         // zkInstance.clearAttendanceLog();
         await zkInstance.disconnect();
-      };
+      }
 
       const rs = await this.attendanceRepository.createQueryBuilder().insert().into(Attendance).values(dataArr).execute();
 
@@ -182,15 +184,7 @@ export class AttendanceService {
   async createUser(data) {
     try {
       let zkInstance;
-      const {
-        user_id,
-        first_name,
-        patient_id,
-        last_name,
-        clinical,
-        isOnDevice,
-        department_id
-      } = data;
+      const { user_id, first_name, patient_id, last_name, clinical, isOnDevice, department_id } = data;
 
       const id = clinical ? +`9${user_id}` : +`1${user_id}`;
       const device = clinical
@@ -220,10 +214,9 @@ export class AttendanceService {
         last_name,
         device: device[0],
         patient,
-        department
+        department,
       });
       await this.userRepository.save(staff);
-
 
       return {
         success: true,
@@ -313,50 +306,55 @@ export class AttendanceService {
   async getLiveLogs(params) {
     try {
       const { type } = params;
-      const page = params.page && params.page != "" ? +params.page : 1;
-      const limit = params.limit && params.limit != "" ? +params.limit : 10;
+      const page = params.page && params.page != '' ? +params.page : 1;
+      const limit = params.limit && params.limit != '' ? +params.limit : 10;
       const offset = (+page - 1) * limit;
       const stop = offset + limit;
 
       let where = null;
-      if (type && type != "") {
+      if (type && type != '') {
         where = { where: { name: ILike(type) } };
       }
       const devices = await this.deviceRepository.find(where);
 
       let logs = [];
       for (const device of devices) {
-
-        let zkInstance = new ZKLib(device.ip, parseInt(port), 5200, 5000);
+        const zkInstance = new ZKLib(device.ip, parseInt(port), 5200, 5000);
 
         // Create socket to machine
         await zkInstance.createSocket();
         console.log(await zkInstance.getInfo());
 
-        let rs = await zkInstance.getAttendances(function (data, err) {
+        const rs = await zkInstance.getAttendances(function (data, err) {
           if (err) {
             log(err);
             return;
           }
         });
         logs = [...logs, ...rs.data];
-      };
+      }
 
       if (logs) {
         let result = [];
         for (const log of logs) {
-          let date = new Date(log.recordTime);
-          result = [...result, {
-            date: moment(date.toLocaleString("en-US", {
-              timeZone: "Africa/Lagos",
-            })).toDate(), ...log
-          }];
-        };
+          const date = new Date(log.recordTime);
+          result = [
+            ...result,
+            {
+              date: moment(
+                date.toLocaleString('en-US', {
+                  timeZone: 'Africa/Lagos',
+                }),
+              ).toDate(),
+              ...log,
+            },
+          ];
+        }
         result = result.sort((a, b) => b.date - a.date);
         const total = result.length;
         result = result.slice(offset, stop);
         let user;
-        for (let item of result) {
+        for (const item of result) {
           if (type == 'clinical') {
             user = await this.userRepository.findOne(+`9${item?.deviceUserId}`);
             result = [...result, { user: await user, ...item }];
@@ -365,7 +363,7 @@ export class AttendanceService {
             user = await this.userRepository.findOne(+`1${item?.deviceUserId}`);
             result = [...result, { user: await user, ...item }];
           }
-        };
+        }
 
         return {
           success: true,
@@ -374,7 +372,6 @@ export class AttendanceService {
           totalItems: total,
           currentPage: +page,
           result,
-
         };
       }
       await zkInstance.disconnect();
@@ -437,7 +434,6 @@ export class AttendanceService {
 
   async syncUsers() {
     try {
-
       const devices = await this.deviceRepository.find();
 
       const clinical_device = await this.deviceRepository.find({
@@ -453,7 +449,7 @@ export class AttendanceService {
       let zkInstance;
 
       for (let i = 0; i < devices.length; i++) {
-        let isClinical = devices[i].name == 'clinical' ? true : false;
+        const isClinical = devices[i].name == 'clinical' ? true : false;
         zkInstance = new ZKLib(devices[i].ip, parseInt(port), 5200, 5000);
 
         // Create socket to machine
@@ -467,7 +463,7 @@ export class AttendanceService {
         } else {
           non_clinical = await users.data;
         }
-      };
+      }
 
       let formattedClinic;
       let formattedNonClinic;
@@ -476,28 +472,28 @@ export class AttendanceService {
 
         for (const item of await formattedClinic) {
           const user = await this.userRepository.findOne({
-            where: { id: item.id }
+            where: { id: item.id },
           });
           if (!user) {
             const newUser = this.userRepository.create(item);
             await this.userRepository.save(newUser);
           }
         }
-      };
+      }
 
       if (await non_clinical) {
         formattedNonClinic = getNewUserData(await non_clinical, non_clinical_device);
 
         for (const item of await formattedNonClinic) {
           const user = await this.userRepository.findOne({
-            where: { id: item.id }
+            where: { id: item.id },
           });
           if (!user) {
             const newUser = this.userRepository.create(item);
             await this.userRepository.save(newUser);
           }
         }
-      };
+      }
 
       return {
         success: true,
@@ -542,18 +538,18 @@ export class AttendanceService {
       let department;
       if (department_id) {
         department = await this.departmentRepository.findOne(department_id);
-      };
+      }
 
       let response;
-      if (await patient && await department) {
+      if ((await patient) && (await department)) {
         response = await this.userRepository.update({ id }, { ...restData, patient, department });
       } else if (await patient) {
         response = await this.userRepository.update({ id }, { ...restData, patient });
       } else if (await department) {
         response = await this.userRepository.update({ id }, { ...restData, department });
       } else {
-        response = await this.userRepository.update({ id }, { ...data, });
-      };
+        response = await this.userRepository.update({ id }, { ...data });
+      }
 
       if (await response.affected) {
         const result = await this.userRepository.findOne({ id });
@@ -565,8 +561,8 @@ export class AttendanceService {
       } else {
         return {
           success: false,
-          message: "nothing to update"
-        }
+          message: 'nothing to update',
+        };
       }
     } catch (error) {
       log(error);
@@ -581,7 +577,7 @@ export class AttendanceService {
       const take = +limit;
       const [result, total] = await this.userRepository.findAndCount({
         take,
-        skip
+        skip,
       });
 
       return {
@@ -591,10 +587,10 @@ export class AttendanceService {
         itemsPerPage: +limit,
         totalItems: total,
         currentPage: +params.page,
-      }
+      };
     } catch (error) {
       log(error);
-      return { success: true, message: error.message || "an error occurred" };
+      return { success: true, message: error.message || 'an error occurred' };
     }
   }
 }

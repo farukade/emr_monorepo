@@ -11,27 +11,15 @@ import { Nicu } from '../patient/nicu/entities/nicu.entity';
 import { TransactionCreditDto } from '../finance/transactions/dto/transaction-credit.dto';
 import { backupDatabase, postDebit } from '../../common/utils/utils';
 import { Appointment } from '../frontdesk/appointment/appointment.entity';
-import { config } from 'dotenv';
 import { AttendanceService } from '../hr/attendance/attendance.service';
-import { InjectRepository } from '@nestjs/typeorm';
-import { AppointmentRepository } from '../frontdesk/appointment/appointment.repository';
 import { QueueService } from '../queue/queue.service';
 import * as startCase from 'lodash.startcase';
-const { log } = console;
-
-config();
-const port = process.env.BIO_PORT;
 
 @Injectable()
 export class TasksService {
   private readonly logger = new Logger(TasksService.name);
 
-  constructor(
-    private attendanceService: AttendanceService,
-    @InjectRepository(AppointmentRepository)
-    private appointmentRepository: AppointmentRepository,
-    private queueService: QueueService,
-  ) { }
+  constructor(private attendanceService: AttendanceService, private queueService: QueueService) {}
 
   @Cron(CronExpression.EVERY_HOUR)
   async runEveryHour() {
@@ -274,45 +262,46 @@ export class TasksService {
   @Cron(CronExpression.EVERY_DAY_AT_8PM)
   async sendAppointmentReminder() {
     try {
-      const tomorrow = moment().add(1, "days");
-      const start = moment(tomorrow).startOf('day').format("YYYY-MM-DD HH:MM:SS");
-      const end = moment(tomorrow).endOf('day').format("YYYY-MM-DD HH:MM:SS");
+      this.logger.debug('sending appointment reminders');
 
-      const appointments = await this.appointmentRepository.createQueryBuilder('q')
+      const tomorrow = moment().add(1, 'days').format('YYYY-MM-DD');
+
+      const appointments = await getConnection()
+        .getRepository(Appointment)
+        .createQueryBuilder('q')
         .leftJoinAndSelect('q.patient', 'patient')
         .leftJoinAndSelect('q.whomToSee', 'whomToSee')
-        .where(`q.appointment_date <= '${end}'`)
-        .andWhere(`q.appointment_date >= '${start}'`)
+        .where(`CAST(q.appointment_date as text) LIKE '%${tomorrow}%'`)
         .getMany();
 
       if (appointments) {
-        appointments.forEach(async appointment => {
-          let name = startCase(appointment.patient.surname) + " " + startCase(appointment.patient.other_names);
-          let doctor = (startCase(appointment.whomToSee?.first_name) || "") + " " + (startCase(appointment.whomToSee?.last_name) || "")
-          let time = moment(appointment.appointment_date).format('hh:mm A');
+        appointments.forEach(async (appointment) => {
+          const name = `${startCase(appointment.patient.surname)} ${startCase(appointment.patient.other_names)}`;
+          const doctor = `${startCase(appointment.whomToSee?.first_name) || ''} ${
+            startCase(appointment.whomToSee?.last_name) || ''
+          }`;
+          const time = moment(appointment.appointment_date).format('hh:mm A');
 
-          const mail =
-          {
+          const mail = {
             name,
             doctor,
             time,
             patientId: appointment.patient.id,
-            date: moment().format("YYYY-MM-DD"),
+            date: moment().format('YYYY-MM-DD'),
             email: appointment.patient.email,
             phoneNumber: appointment.patient.phone_number,
             message: `Dear ${name}, this is to remind you that your appointment with Dr. ${doctor} is scheduled for ${time} tomorrow. Thank you.`,
           };
+
           try {
             await this.queueService.queueJob('appointment', mail);
           } catch (error) {
-            log(error);
+            console.log(error);
           }
         });
-      } else {
-        log('no appointments');
       }
     } catch (error) {
-      log(error);
+      console.log(error);
     }
   }
 }

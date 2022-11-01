@@ -10,7 +10,7 @@ import { QueueSystemRepository } from '../../frontdesk/queue-system/queue-system
 import { AppointmentRepository } from '../../frontdesk/appointment/appointment.repository';
 import { AppGateway } from '../../../app.gateway';
 import { Pagination } from '../../../common/paginate/paginate.interface';
-import { Brackets, getConnection, getRepository, Like } from 'typeorm';
+import { Brackets, getConnection } from 'typeorm';
 import {
   createServiceCost,
   getDepositBalance,
@@ -78,7 +78,7 @@ export class TransactionsService {
     private staffRepository: StaffRepository,
     @InjectRepository(OrderRepository)
     private orderRepository: OrderRepository,
-  ) { }
+  ) {}
 
   async fetchList(options: PaginationOptionsInterface, params): Promise<Pagination> {
     const { startDate, endDate, patient_id, staff_id, service_id, status } = params;
@@ -176,8 +176,8 @@ export class TransactionsService {
 
       transaction.admission = transaction.admission_id
         ? await this.admissionRepository.findOne(transaction.admission_id, {
-          relations: ['room', 'room.category'],
-        })
+            relations: ['room', 'room.category'],
+          })
         : null;
 
       transaction.cashier = await getStaff(transaction.createdBy);
@@ -278,8 +278,8 @@ export class TransactionsService {
 
       transaction.admission = transaction.admission_id
         ? await this.admissionRepository.findOne(transaction.admission_id, {
-          relations: ['room', 'room.category'],
-        })
+            relations: ['room', 'room.category'],
+          })
         : null;
 
       transaction.cashier = await getStaff(transaction.createdBy);
@@ -1423,12 +1423,13 @@ export class TransactionsService {
           break;
 
         case 'cafeteria':
-          query.leftJoinAndSelect('q.foodItems', 'food_items')
+          query
+            .leftJoinAndSelect('q.foodItems', 'food_items')
             .andWhere('q.transaction_type = :transaction_type', { transaction_type: 'debit' });
           break;
       }
 
-      if (status && status != "") {
+      if (status && status != '') {
         switch (status) {
           case 'paid':
             query.andWhere('q.status = :status', { status: 1 });
@@ -1438,12 +1439,11 @@ export class TransactionsService {
             query.andWhere('q.status = :status', { status: -1 });
             break;
 
-
           case 'pending':
             query.andWhere('q.status = :status', { status: 0 });
             break;
         }
-      };
+      }
 
       if (bill_source && bill_source != '') {
         query.andWhere('q.bill_source = :bill_source', { bill_source });
@@ -1496,7 +1496,7 @@ export class TransactionsService {
                 break;
 
               case 'cafeteria':
-                qb.orWhere('food_items.name iLike :name', { name: `%${chars}%` })
+                qb.orWhere('food_items.name iLike :name', { name: `%${chars}%` });
                 break;
             }
           }),
@@ -1509,22 +1509,21 @@ export class TransactionsService {
         log(digits);
         query.andWhere(
           new Brackets((qb) => {
-            qb.orWhere('q.patient_id = :id', { id: digits })
-              .orWhere('q.amount = :amount', { amount: digits });
-          })
-        )
+            qb.orWhere('q.patient_id = :id', { id: digits }).orWhere('q.amount = :amount', { amount: digits });
+          }),
+        );
       }
 
       if (hmo_id && hmo_id !== '') {
         query.andWhere(
           new Brackets((qb) => {
-            qb.orWhere('phmo.id = :id', { id: hmo_id })
-              .orWhere('hmo.id = :id', { id: hmo_id });
-          }))
-      };
+            qb.orWhere('phmo.id = :id', { id: hmo_id }).orWhere('hmo.id = :id', { id: hmo_id });
+          }),
+        );
+      }
 
-      if (category && category != "") {
-        query.andWhere('food_items.category_slug = :category', { category })
+      if (category && category != '') {
+        query.andWhere('food_items.category_slug = :category', { category });
       }
 
       let totalAmount = 0;
@@ -1584,15 +1583,17 @@ export class TransactionsService {
       const staff = await this.staffRepository.findOne(staff_id);
       if (!staff) {
         return { success: false, message: 'staff not found' };
-      };
+      }
 
-      const patient = await this.patientRepository.createQueryBuilder('q')
+      const patient = await this.patientRepository
+        .createQueryBuilder('q')
         .where('q.staff_id = :staff_id', { staff_id })
         .getOne();
 
       const patientId = patient?.id;
 
-      const query = this.transactionsRepository.createQueryBuilder('q')
+      const query = this.transactionsRepository
+        .createQueryBuilder('q')
         .leftJoinAndSelect('q.patient', 'patient')
         .leftJoinAndSelect('q.staff', 'staff')
         .leftJoinAndSelect('q.patientRequestItem', 'request_item')
@@ -1607,7 +1608,7 @@ export class TransactionsService {
         new Brackets((qb) => {
           qb.where('staff.id = :staff_id', { staff_id })
             .orWhere('patient.id = :patientId', { patientId })
-            .orWhere('patient.staff_id = :staff_id', { staff_id })
+            .orWhere('patient.staff_id = :staff_id', { staff_id });
         }),
       );
 
@@ -1625,8 +1626,7 @@ export class TransactionsService {
       const totalAmountPaid = trans.reduce((a, b) => a - b?.amount_paid, 0);
 
       for (const item of transactions) {
-
-        let { patientRequestItem, service, ...restItem } = item;
+        const { patientRequestItem, service, ...restItem } = item;
 
         let request;
         let drug;
@@ -1636,26 +1636,26 @@ export class TransactionsService {
 
         if (item?.patientRequestItem?.request) {
           request = item?.patientRequestItem?.request;
-        };
+        }
 
         if (item?.patientRequestItem?.drug) {
           drug = item?.patientRequestItem?.drug;
-        };
+        }
 
         if (item?.patientRequestItem?.drugBatch) {
           drugBatch = item?.patientRequestItem?.drugBatch;
-        };
+        }
 
         if (item?.patientRequestItem?.drugGeneric) {
           drugGeneric = item?.patientRequestItem?.drugGeneric;
-        };
+        }
 
         if (item?.patientRequestItem?.drugGeneric) {
           labTest = item?.patientRequestItem?.labTest;
-        };
+        }
 
         results = [{ patientRequestItem, drug, drugBatch, drugGeneric, labTest, request, service, ...restItem }, ...results];
-      };
+      }
 
       return {
         lastPage: Math.ceil(total / options.limit),

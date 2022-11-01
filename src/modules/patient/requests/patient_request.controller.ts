@@ -1,18 +1,4 @@
-import {
-  Controller,
-  Post,
-  Body,
-  Param,
-  Request,
-  Delete,
-  UseGuards,
-  Get,
-  Query,
-  UsePipes,
-  ValidationPipe,
-  Patch,
-  Put,
-} from '@nestjs/common';
+import { Controller, Post, Body, Param, Request, Delete, UseGuards, Get, Query, Patch, Put } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { PatientRequestService } from './patient_request.service';
 import { Pagination } from '../../../common/paginate/paginate.interface';

@@ -21,7 +21,7 @@ export class QueueProcessor {
     private readonly mailerService: MailerService,
     @InjectRepository(LoggerRepository)
     private loggerRepository: LoggerRepository,
-  ) { }
+  ) {}
 
   @OnQueueActive()
   onActive(job: Job) {

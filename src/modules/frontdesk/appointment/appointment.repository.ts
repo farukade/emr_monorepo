@@ -12,6 +12,7 @@ import { ServiceCost } from '../../settings/entities/service_cost.entity';
 export class AppointmentRepository extends Repository<Appointment> {
   async saveAppointment(
     appointmentDto: AppointmentDto,
+    appointment_date: string,
     patient: Patient,
     consultingRoom: ConsultingRoom,
     doctor: StaffDetails,
@@ -24,7 +25,7 @@ export class AppointmentRepository extends Repository<Appointment> {
     appointment.patient = patient;
     appointment.whomToSee = doctor;
     appointment.consultingRoom = consultingRoom;
-    appointment.appointment_date = appointmentDto.appointment_date;
+    appointment.appointment_date = appointment_date;
     appointment.serviceCategory = service.category;
     appointment.service = serviceCost;
     appointment.description = appointmentDto.description;

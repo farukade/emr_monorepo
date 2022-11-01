@@ -13,7 +13,7 @@ import { ServiceRepository } from '../../settings/services/repositories/service.
 import { Patient } from '../../patient/entities/patient.entity';
 import { TransactionsRepository } from '../../finance/transactions/transactions.repository';
 import { AppGateway } from '../../../app.gateway';
-import { getConnection, getRepository } from 'typeorm';
+import { getConnection, getRepository, Raw } from 'typeorm';
 import { StaffDetails } from '../../hr/staff/entities/staff_details.entity';
 import { Pagination } from '../../../common/paginate/paginate.interface';
 import { PaginationOptionsInterface } from '../../../common/paginate';
@@ -31,8 +31,7 @@ import { StaffRepository } from '../../hr/staff/staff.repository';
 import { AntenatalEnrollmentRepository } from '../../patient/antenatal/enrollment.repository';
 import { AntenatalAssessmentRepository } from '../../patient/antenatal/antenatal-assessment.repository';
 import { TransactionCreditDto } from '../../finance/transactions/dto/transaction-credit.dto';
-import { Error } from 'src/common/interface/error.interface';
-const { log } = console;
+import { Error } from '../../../common/interface/error.interface';
 
 @Injectable()
 export class AppointmentService {
@@ -60,7 +59,7 @@ export class AppointmentService {
     @InjectRepository(AntenatalAssessmentRepository)
     private antenatalAssessmentRepository: AntenatalAssessmentRepository,
     private readonly appGateway: AppGateway,
-  ) { }
+  ) {}
 
   async listAppointments(options: PaginationOptionsInterface, params): Promise<Pagination> {
     const { startDate, endDate, patient_id, today, department_id, canSeeDoctor, status, is_queue, staff_id } = params;
@@ -205,12 +204,6 @@ export class AppointmentService {
       const { patient_id, doctor_id, consulting_room_id, sendToQueue, department_id, consultation_id, service_id } =
         appointmentDto;
 
-      let appointment_date =
-        moment(appointmentDto.appointment_date).format("YYYYMMDD") > moment(new Date()).format("YYYYMMDD") ?
-          moment(appointmentDto.appointment_date).format("YYYY-MM-DD HH:MM:SS") :
-          moment().format("YYYY-MM-DD HH:MM:SS");
-
-      appointmentDto.appointment_date = appointment_date;
       const pushToQueue =
         moment(appointmentDto.appointment_date).format('DDMMYYYY') === moment().format('DDMMYYYY') && sendToQueue;
 
@@ -264,8 +257,14 @@ export class AppointmentService {
       const covered = ancEnrollment?.ancpackage?.coverage?.consultancy?.find((c) => c.code === serviceCost?.code) || null;
       const isCovered = covered && department.name === 'Antenatal';
 
+      let appointment_date = appointmentDto.appointment_date;
+      if (moment(appointmentDto.appointment_date).diff(moment(), 'day') < 0) {
+        appointment_date = moment().format('YYYY-MM-DD HH:mm:ss');
+      }
+
       const appointment = await this.appointmentRepository.saveAppointment(
         appointmentDto,
+        appointment_date,
         patient,
         consultingRoom,
         doctor,
@@ -275,9 +274,9 @@ export class AppointmentService {
         username,
       );
 
-      // update patient appointment date
+      // update patient last appointment date which should be todays appointment
       patient.last_appointment_date =
-        appointment_date !== moment().format('DDMMYYYY')
+        moment(appointmentDto.appointment_date).format('DDMMYYYY') !== moment().format('DDMMYYYY')
           ? patient.last_appointment_date
           : appointmentDto.appointment_date;
       await patient.save();
@@ -807,14 +806,16 @@ export class AppointmentService {
 
   async getTomorrowsAppointments(): Promise<Appointment[] | Error> {
     try {
-      let tomorrow = moment().add(1, "days").format("DDMMYYYY");
+      const tomorrow = moment().add(1, 'days').format('YYYY-MM-DD');
+
       const appointments = await this.appointmentRepository.find({
-        where: { appointment_date: tomorrow }
+        where: { appointment_date: Raw((alias) => `CAST(${alias} AS DATE) LIKE '%${tomorrow}%'`) },
       });
+
       return appointments;
     } catch (error) {
-      log(error);
-      return { success: false, message: error.message || "an error occurred" };
+      console.log(error);
+      return { success: false, message: error.message || 'an error occurred' };
     }
   }
 }
