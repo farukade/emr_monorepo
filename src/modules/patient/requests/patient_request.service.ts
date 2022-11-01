@@ -35,6 +35,7 @@ import { IvfEnrollment } from '../ivf/entities/ivf_enrollment.entity';
 import { Encounter } from '../consultation/encouter.entity';
 import { NicuRepository } from '../nicu/nicu.repository';
 import { ServiceCostRepository } from '../../settings/services/repositories/service_cost.repository';
+const { log } = console;
 
 @Injectable()
 export class PatientRequestService {
@@ -516,7 +517,7 @@ export class PatientRequestService {
             let date = new Date();
             await this.scheduleProcedure(
               await procedure.data[0].id,
-              { ...scheduleData, start_date: date, end_date: date },
+              { ...scheduleData, start_date: date, end_date: date, isImmediate: true },
               createdBy
             );
           }
@@ -978,7 +979,7 @@ export class PatientRequestService {
 
   async scheduleProcedure(id: number, params, username: string) {
     try {
-      const { resources, start_date, end_date } = params;
+      const { resources, start_date, end_date, isImmediate } = params;
 
       const request = await this.patientRequestRepository.findOne(id, {
         relations: ['item'],
@@ -990,6 +991,7 @@ export class PatientRequestService {
       item.scheduledStartDate = start_date;
       item.scheduledEndDate = end_date;
       item.lastChangedBy = username;
+      item.isImmediate = isImmediate ? Boolean(isImmediate) : false;
       const rs = await item.save();
 
       const transaction = await this.transactionsRepository.findOne({

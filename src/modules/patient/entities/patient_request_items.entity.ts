@@ -159,4 +159,7 @@ export class PatientRequestItem extends CustomBaseEntity {
 
   @Column({ default: true })
   can_schedule: boolean;
+
+  @Column({ nullable: false, default: false })
+  isImmediate: boolean;
 }
