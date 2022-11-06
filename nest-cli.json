@@ -1,11 +1,35 @@
 {
   "$schema": "https://json.schemastore.org/nest-cli",
   "collection": "@nestjs/schematics",
-  "sourceRoot": "src",
+  "sourceRoot": "apps/emr/src",
   "compilerOptions": {
     "deleteOutDir": true,
     "assets": [
       "modules/mail/templates/**/*"
-    ]
+    ],
+    "webpack": true,
+    "tsConfigPath": "apps/emr/tsconfig.app.json"
+  },
+  "monorepo": true,
+  "root": "apps/emr",
+  "projects": {
+    "emr": {
+      "type": "application",
+      "root": "apps/emr",
+      "entryFile": "main",
+      "sourceRoot": "apps/emr/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/emr/tsconfig.app.json"
+      }
+    },
+    "patient": {
+      "type": "application",
+      "root": "apps/patient",
+      "entryFile": "main",
+      "sourceRoot": "apps/patient/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/patient/tsconfig.app.json"
+      }
+    }
   }
 }

@@ -8,17 +8,19 @@
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "nest build",
-    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "format": "prettier --write \"apps/**/*.ts\" \"libs/**/*.ts\"",
     "start": "nest start",
-    "start:dev": "nest start --watch",
+    "start:dev:emr": "nest start --watch",
+    "start:dev:patient": "nest start patient --watch",
     "start:debug": "nest start --debug --watch",
+    "start:dev:all": "concurrently \"nest start emr --watch\" \"nest start patient --watch\"",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "test:e2e": "jest --config ./apps/emr/test/jest-e2e.json",
     "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js -f ./ormconfig.json",
     "typeorm:migration:generate": "yarn typeorm migration:generate -n",
     "typeorm:migration:create": "yarn typeorm migration:create -n",
@@ -36,6 +38,7 @@
     "@nestjs/bull": "^0.5.4",
     "@nestjs/common": "^8.0.0",
     "@nestjs/core": "^8.0.0",
+    "@nestjs/microservices": "^9.1.6",
     "@nestjs/passport": "^8.2.1",
     "@nestjs/platform-express": "^8.0.0",
     "@nestjs/platform-socket.io": "^8.4.4",
@@ -52,11 +55,15 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.13.2",
     "compression": "^1.7.4",
+    "concurrently": "^7.5.0",
+    "csv-parser": "^3.0.0",
+    "csv-writer": "^1.6.0",
     "dotenv": "^16.0.0",
     "exceljs": "^4.3.0",
     "gzipme": "^1.0.0",
     "handlebars": "^4.7.7",
     "jsonwebtoken": "^8.5.1",
+    "kafkajs": "^2.2.2",
     "lodash.startcase": "^4.4.0",
     "moment": "^2.29.4",
     "mysql2": "^2.3.3",
@@ -109,7 +116,7 @@
       "json",
       "ts"
     ],
-    "rootDir": "src",
+    "rootDir": ".",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
@@ -117,8 +124,11 @@
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "coverageDirectory": "./coverage",
+    "testEnvironment": "node",
+    "roots": [
+      "<rootDir>/apps/"
+    ]
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": []
